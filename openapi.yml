@@ -1,0 +1,242 @@
+openapi: 3.0.3
+info:
+  title: Subtitle Server API
+  description: |-
+    This is a Subtitle Server API based on the OpenAPI 3.0 specification.  
+  
+  version: "0.1"
+servers:
+  - url: https://domain/api/v1
+tags:
+  - name: subtitles
+    description: Access and manage subtitle content in specific language 
+  - name: questions
+    description: Access to manage question content in specific language
+paths:
+  /languages/hebrew/subtitles:
+    put:
+      tags:
+        - subtitles
+      summary: Update an subtitle content in hebrew by subtitle_id
+      description: Update an subtitle content in hebrew by subtitle_id
+      operationId: updateSubtitleInHebrew
+      requestBody:
+        description: Update an subtitle content in hebrew by subtitle_id
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subtitle'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subtitle'
+        '400':
+          description: Invalid ISO code
+        '404':
+          description: Subtitle not found
+        '405':
+          description: Validation exception
+      security:
+        - bearerAuth:
+            - write:subtitles
+            - read:subtitles
+    post:
+      tags:
+        - subtitles
+      summary: Add an subtitle content in hebrew
+      description: Add an subtitle content in hebrew
+      operationId: addSubtitleInHebrew
+      requestBody:
+        description: an subtitle content in hebrew
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subtitle'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subtitle'
+        '400':
+          description: Invalid ISO code
+        '405':
+          description: Invalid input
+      security:
+        - bearerAuth:
+            - write:subtitles
+            - read:subtitles
+    get:
+      tags:
+        - subtitles
+      summary: Finds subtitle in hebrew by id
+      description: Finds subtitle in hebrew by id
+      operationId: findSubtitleInHebrewById
+      parameters:
+        - name: id
+          in: query
+          description: Id values that need to be considered for filter
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subtitle'
+        '400':
+          description: Invalid subtitle id value
+        '404':
+          description: Subtitle not found
+      security:
+        - bearerAuth:
+            - read:subtitles
+  /languages/hebrew/questions:
+    put:
+      tags:
+        - questions
+      summary: Update an question content in hebrew by question_id
+      description: Update an question content in hebrew by question_id
+      operationId: updateQuestionInHebrew
+      requestBody:
+        description: Update an question content in hebrew by question_id
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Question'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '400':
+          description: Invalid ISO code
+        '404':
+          description: Question not found
+        '405':
+          description: Validation exception
+      security:
+        - bearerAuth:
+            - write:questions
+            - read:questions
+    post:
+      tags:
+        - questions
+      summary: Add an question content in hebrew
+      description: Add an question content in hebrew
+      operationId: addQuestionInHebrew
+      requestBody:
+        description: an question content in hebrew
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Question'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '400':
+          description: Invalid ISO code
+        '405':
+          description: Invalid input
+      security:
+        - bearerAuth:
+            - write:question
+            - read:question
+    get:
+      tags:
+        - questions
+      summary: Finds question in hebrew by id
+      description: Finds question in hebrew by id
+      operationId: findQuestionInHebrewById
+      parameters:
+        - name: id
+          in: query
+          description: Id values that need to be considered for filter
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question'
+        '400':
+          description: Invalid question id value
+        '404':
+          description: Question not found
+      security:
+        - bearerAuth:
+            - read:question
+components:
+  schemas:
+    Subtitle:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        iso_code:
+          type: string
+          description: iso language code to prevent wrong langauge update
+          example: he
+        text:
+          type: string
+          description: subtitle text
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        iso_code:
+          type: string
+          description: iso language code to prevent wrong langauge update
+          example: he
+        text:
+          type: string
+          description: subtitle text
+  requestBodies:
+    Subtitle:
+      description: Subtitle object has the content in the language
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Subtitle'
+    Question:
+      description: Question object has the content in the language
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Question'
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: auth-scheme
+      description: 'Bearer HTTP authentication through keycloak. Allowed headers -- Authorization: Bearer <api_key>'
+      scheme: bearer
+      type: http
