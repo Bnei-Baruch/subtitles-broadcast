@@ -32,8 +32,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Subtitle'
-        '400':
-          description: Invalid ISO code
         '404':
           description: Subtitle not found
         '405':
