@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Subtitle Server API
+  title: Broadcast Subtitles Server API
   description: |-
     This is a Subtitle Server API based on the OpenAPI 3.0 specification.  
   
@@ -9,9 +9,7 @@ servers:
   - url: https://domain/api/v1
 tags:
   - name: subtitles
-    description: Access and manage subtitle content in specific language 
-  - name: questions
-    description: Access to manage question content in specific language
+    description: Access and manage subtitle content in specific language
 paths:
   /languages/hebrew/subtitles:
     put:
@@ -102,95 +100,6 @@ paths:
       security:
         - bearerAuth:
             - read:subtitles
-  /languages/hebrew/questions:
-    put:
-      tags:
-        - questions
-      summary: Update an question content in hebrew by question_id
-      description: Update an question content in hebrew by question_id
-      operationId: updateQuestionInHebrew
-      requestBody:
-        description: Update an question content in hebrew by question_id
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Question'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Question'
-        '400':
-          description: Invalid ISO code
-        '404':
-          description: Question not found
-        '405':
-          description: Validation exception
-      security:
-        - bearerAuth:
-            - write:questions
-            - read:questions
-    post:
-      tags:
-        - questions
-      summary: Add an question content in hebrew
-      description: Add an question content in hebrew
-      operationId: addQuestionInHebrew
-      requestBody:
-        description: an question content in hebrew
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Question'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Question'
-        '400':
-          description: Invalid ISO code
-        '405':
-          description: Invalid input
-      security:
-        - bearerAuth:
-            - write:question
-            - read:question
-    get:
-      tags:
-        - questions
-      summary: Finds question in hebrew by id
-      description: Finds question in hebrew by id
-      operationId: findQuestionInHebrewById
-      parameters:
-        - name: id
-          in: query
-          description: Id values that need to be considered for filter
-          required: false
-          explode: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Question'
-        '400':
-          description: Invalid question id value
-        '404':
-          description: Question not found
-      security:
-        - bearerAuth:
-            - read:question
 components:
   schemas:
     Subtitle:
@@ -200,27 +109,25 @@ components:
           type: integer
           format: int64
           example: 10
-        iso_code:
+        author:
           type: string
-          description: iso language code to prevent wrong langauge update
-          example: he
-        text:
+          description: book author
+        title:
           type: string
-          description: subtitle text
-    Question:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        iso_code:
+          description: book title
+        content:
           type: string
-          description: iso language code to prevent wrong langauge update
-          example: he
-        text:
+          description: book content
+        created_at:
           type: string
-          description: subtitle text
+          format: date-time
+          example: "2021-06-20T01:02:03+00:00"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2021-06-20T01:02:03+00:00"
+        slides:
+          type: string
   requestBodies:
     Subtitle:
       description: Subtitle object has the content in the language
