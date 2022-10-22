@@ -77,9 +77,16 @@ paths:
       description: Finds subtitle in hebrew by id
       operationId: findSubtitleInHebrewById
       parameters:
-        - name: id
+        - name: limit
           in: query
-          description: Id values that need to be considered for filter
+          description: page size for pagination
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          description: start page
           required: false
           explode: true
           schema:
