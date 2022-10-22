@@ -11,7 +11,7 @@ tags:
   - name: subtitles
     description: Access and manage subtitle content in specific language
 paths:
-  /languages/hebrew/subtitles:
+  /subtitles:
     put:
       tags:
         - subtitles
