@@ -1,4 +1,4 @@
-package app
+package api
 
 import "ginhub.com/gin-gonic/gin"
 

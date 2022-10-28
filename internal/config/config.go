@@ -1,7 +1,10 @@
 package config
 
 type Config struct {
-	Postgres struct {
-		Url string
-	}
+	Port     int       `yaml:"port"`
+	Postgres *Postgres `yaml:"postgres"`
+}
+
+type Postgres struct {
+	Url string `yaml:"url"`
 }
