@@ -6,11 +6,11 @@ const (
 	subtitles = "subtitles"
 )
 
-func newRouter() *gin.Engine {
+func NewRouter(handler *Handler) *gin.Engine {
 	router := gin.Default().Group("/api/v1")
-	router.PUT("/"+subtitles, updateSubtitles)
-	router.GET("/"+subtitles, getSubtitles)
-	router.POST("/"+subtitles, addSubtitles)
+	router.PUT("/"+subtitles, handler.UpdateSubtitles)
+	router.GET("/"+subtitles, handler.GetSubtitles)
+	router.POST("/"+subtitles, handler.AddSubtitles)
 
 	return router
 }

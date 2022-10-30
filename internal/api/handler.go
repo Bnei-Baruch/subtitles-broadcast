@@ -1,12 +1,27 @@
 package api
 
-import "ginhub.com/gin-gonic/gin"
+import (
+	"ginhub.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
-func addSubtitles(g *gin.Context) {
+	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
+)
+
+type Handler struct {
+	Database *gorm.DB
 }
 
-func getSubtitles(g *gin.Context) {
+func NewHandler(database *gorm.DB) *Handler {
+	return &Handler{
+		Database: database,
+	}
 }
 
-func updateSubtitles(g *gin.Context) {
+func (h *Handler) AddSubtitles(g *gin.Context) {
+}
+
+func (h *Handler) GetSubtitles(g *gin.Context) {
+}
+
+func (h *Handler) UpdateSubtitles(g *gin.Context) {
 }

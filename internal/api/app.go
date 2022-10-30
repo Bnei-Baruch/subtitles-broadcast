@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"gorm.io/gorm"
@@ -10,16 +11,16 @@ import (
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
 
-type App struct {
-	Database *gorm.DB
-}
+const (
+	Port = "8080"
+)
 
-func NewApp() *App {
-	profile := fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE"))
-	config.SetConfig(profile)
-	config := config.GetConfig()
-	app := App{
-		Database: database.New(config.Postgres.Url),
+func NewApp() *http.Server {
+	config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
+	conf := config.GetConfig()
+
+	return &http.Server{
+		Addr:    ":" + Port,
+		Handler: NewRouter(NewHandler(database.New(conf.Postgres.Url))),
 	}
-	return &app
 }
