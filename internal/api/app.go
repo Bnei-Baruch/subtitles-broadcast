@@ -5,14 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"gorm.io/gorm"
-
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/config"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
-)
-
-const (
-	Port = "8080"
 )
 
 func NewApp() *http.Server {
@@ -20,7 +14,7 @@ func NewApp() *http.Server {
 	conf := config.GetConfig()
 
 	return &http.Server{
-		Addr:    ":" + Port,
+		Addr:    ":" + conf.Port,
 		Handler: NewRouter(NewHandler(database.New(conf.Postgres.Url))),
 	}
 }
