@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -11,14 +12,12 @@ const (
 )
 
 type UserRole struct {
-	Roles []struct {
-		ID          string `json:"id"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Composite   bool   `json:"composite"`
-		ClientRole  bool   `json:"clientRole"`
-		ContainerID string `json:"containerId"`
-	}
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Composite   bool   `json:"composite"`
+	ClientRole  bool   `json:"clientRole"`
+	ContainerID string `json:"containerId"`
 }
 
 type UserInfo struct {
@@ -31,7 +30,7 @@ type UserInfo struct {
 	Email             string `json:"email"`
 }
 
-func GetUserRole(token string) (*UserRole, error) {
+func GetUserRole(token string) ([]*UserRole, error) {
 	req, err := http.NewRequest("GET", userRoleUrl, nil)
 	if err != nil {
 		return nil, err
@@ -41,12 +40,13 @@ func GetUserRole(token string) (*UserRole, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var userRole UserRole
-	err = json.NewDecoder(resp.Body).Decode(&userRole)
+	var userRoles []*UserRole
+	err = json.NewDecoder(resp.Body).Decode(&userRoles)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
-	return &userRole, nil
+	return userRoles, nil
 }
 
 func GetUserInfo(token string) (*UserInfo, error) {
