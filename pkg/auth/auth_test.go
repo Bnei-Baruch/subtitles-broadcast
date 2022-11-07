@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+/*
 func TestGetUserRole(t *testing.T) {
 	tests := []struct {
 		token string
@@ -69,7 +70,7 @@ func TestGetUserRole(t *testing.T) {
 					ID:          "eb5d873f-b403-492f-b4cf-0ec812751ac1",
 					Name:        "admin",
 					Description: "${role_admin}",
-					Composite:   false,
+					Composite:   true,
 					ClientRole:  false,
 					ContainerID: "master",
 				},
@@ -97,8 +98,40 @@ func TestGetUserRole(t *testing.T) {
 		if err != nil {
 			t.Errorf("error: %s", err.Error())
 		}
-		if !reflect.DeepEqual(userRoles, test.want) {
-			t.Errorf("expected: %+v, got: %+v\n", userRoles, test.want)
+		for i, userRole := range userRoles {
+			if !reflect.DeepEqual(userRole, test.want[i]) {
+				t.Errorf("expected: %+v, got: %+v\n", userRole, test.want[i])
+			}
+		}
+	}
+}
+*/
+
+func TestGetUserInfo(t *testing.T) {
+	tests := []struct {
+		token string
+		want  *UserInfo
+	}{
+		{"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJlTnVZcklpN1hHYWhjZGhhbmtCSmp6VVFGdjh3OVlrRHZIeVpPQkRKSElzIn0.eyJleHAiOjE3NTM3NzQ0MTQsImlhdCI6MTY2NzM3NDQxNCwianRpIjoiODg1MjYwZjQtM2VmNC00ZTVhLThhMDgtZWZlNmUzN2JkODk0IiwiaXNzIjoiaHR0cHM6Ly9hdXRoLjJzZXJ2LmV1L2F1dGgvcmVhbG1zL21hc3RlciIsImF1ZCI6ImFyZ29jZCIsInN1YiI6ImQ3NjMyMmY3LWVmNjctNDAyYy1iMTUxLTE0MTkzZTIzYTg5MCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkbWluLWNsaSIsInNlc3Npb25fc3RhdGUiOiI5ZDgyNDAxMC1iMjE2LTRmNmYtOWExNC01NjdmNTFjNGE1OTYiLCJhY3IiOiIxIiwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJEb25nZ2VvbiBMZWUgYmFjay1lbmQgZGV2IEdPIiwicHJlZmVycmVkX3VzZXJuYW1lIjoicm9ja3kyMDEwYWFhQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJEb25nZ2VvbiIsImZhbWlseV9uYW1lIjoiTGVlIGJhY2stZW5kIGRldiBHTyIsImVtYWlsIjoicm9ja3kyMDEwYWFhQGdtYWlsLmNvbSJ9.q7I6prwz8cKVKCIXy7k4e1fWHK1YF9mIRyI6PLaxYl1tSW0MA0w3aPPwWg74c9earT8sC-Y5BEKH0RKcHwIn0IhqIlMwP7D4PLpGNnmgN1_ijqLC-rJgKA_iNA0Z9vtQtef68_mPIa8fW7ymcxBUzxmESGnuQ9gkBFxGucfTKlkhWltkrs3-pYLX_HRbW4N0glNeMhX169W4ewwpmjY4rA2JaO8mLyaTiQr68JdR_GmI9eCHBfHQlXmNCnMI6wq_7hDO2Dw19UsP9leOa3xWpg225nVz8QBzHRj4Oqj12P3yQ2A5A7iRdms3qGWFU3KTm7cWIFvNpeq_cUVhtr6KWw",
+			&UserInfo{
+				Sub:               "d76322f7-ef67-402c-b151-14193e23a890",
+				EmailVerified:     true,
+				Name:              "Donggeon Lee back-end dev GO",
+				PreferredUserName: "rocky2010aaa@gmail.com",
+				GivenName:         "Donggeon",
+				FamilyName:        "Lee back-end dev GO",
+				Email:             "rocky2010aaa@gmail.com",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		userInfo, err := GetUserInfo(test.token)
+		if err != nil {
+			t.Errorf("error: %s", err.Error())
+		}
+		if !reflect.DeepEqual(*userInfo, *test.want) {
+			t.Errorf("expected: %+v, got: %+v\n", *userInfo, *test.want)
 		}
 	}
 }
