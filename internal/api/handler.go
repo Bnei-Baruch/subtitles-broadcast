@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -28,6 +30,14 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 			"description": "",
 		})
 	}
+	if h.Database.WithContext(ctx).Create(req).Error != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         fmt.Sprintf("failed to insert book: %v\n", req),
+			"description": "",
+		})
+	}
 	ctx.JSON(200, gin.H{
 		"success":     true,
 		"data":        req,
@@ -35,8 +45,46 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) GetSubtitles(g *gin.Context) {
+func (h *Handler) GetSubtitles(ctx *gin.Context) {
+	book := &Book{}
+	if h.Database.WithContext(ctx).First(book).Where("id = ?", ctx.Query("id")).Error != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         "failed to get book",
+			"description": "",
+		})
+	}
+	ctx.JSON(200, gin.H{
+		"success":     true,
+		"data":        book,
+		"description": "",
+	})
 }
 
-func (h *Handler) UpdateSubtitles(g *gin.Context) {
+func (h *Handler) UpdateSubtitles(ctx *gin.Context) {
+	req := &Book{}
+
+	if err := ctx.BindJSON(req); err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "",
+		})
+	}
+	if h.Database.WithContext(ctx).Updates(req).Where("id = ?", req.Id).Error != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         fmt.Sprintf("failed to update book: %v\n", req),
+			"description": "",
+		})
+	}
+	ctx.JSON(200, gin.H{
+		"success":     true,
+		"data":        req,
+		"description": "",
+	})
 }
