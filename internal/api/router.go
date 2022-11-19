@@ -17,5 +17,8 @@ func NewRouter(handler *Handler) http.Handler {
 	router.GET("/"+subtitles, handler.GetSubtitles)
 	router.POST("/"+subtitles, handler.AddSubtitles)
 
+	router.Use(CORSMiddleware())
+	router.Use(UserRoleHandler())
+
 	return router
 }
