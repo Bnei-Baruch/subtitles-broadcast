@@ -1,12 +1,9 @@
 package api
 
 import (
-	"ginhub.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-
-	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
 
 type Handler struct {
@@ -24,14 +21,14 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 
 	if err := ctx.BindJSON(req); err != nil {
 		log.Error(err)
-		ctx.JSON(code, gin.H{
+		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
 			"description": "",
 		})
 	}
-	ctx.JSON(code, gin.H{
+	ctx.JSON(200, gin.H{
 		"success":     true,
 		"data":        req,
 		"description": "",

@@ -1,8 +1,10 @@
 package config
 
 import (
-	"github.com/spf13/viper"
 	"log"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
 )
 
 var configuration = Config{}
@@ -24,13 +26,14 @@ func SetConfig(profile string) error {
 	if err != nil {
 		return err
 	}
-	err = viper.Unmarshal(&Configuration)
+	var conf Config
+	err = viper.Unmarshal(&conf)
 	if err != err {
 		return err
 	}
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		log.Println("Config file changed:", e.Name)
-		err := viper.ReadConfig()
+		err := viper.ReadInConfig()
 		if err != nil {
 			log.Println(err)
 			return
@@ -43,6 +46,7 @@ func SetConfig(profile string) error {
 
 	})
 	viper.WatchConfig()
+	return nil
 }
 
 func GetConfig() *Config {

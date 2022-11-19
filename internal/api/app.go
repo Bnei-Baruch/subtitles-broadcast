@@ -18,9 +18,12 @@ func init() {
 func NewApp() *http.Server {
 	config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
 	conf := config.GetConfig()
+	db, err := database.New(conf.Postgres.Url)
+	if err != nil {
 
+	}
 	return &http.Server{
-		Addr:    ":" + conf.Port,
-		Handler: NewRouter(NewHandler(database.New(conf.Postgres.Url))),
+		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
+		Handler: NewRouter(NewHandler(db)),
 	}
 }

@@ -1,13 +1,18 @@
 package api
 
-import "ginhub.com/gin-gonic/gin"
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 const (
 	subtitles = "subtitles"
 )
 
-func NewRouter(handler *Handler) *gin.Engine {
-	router := gin.Default().Group("/api/v1")
+func NewRouter(handler *Handler) http.Handler {
+	router := gin.Default()
+	router.Group("/api/v1")
 	router.PUT("/"+subtitles, handler.UpdateSubtitles)
 	router.GET("/"+subtitles, handler.GetSubtitles)
 	router.POST("/"+subtitles, handler.AddSubtitles)
