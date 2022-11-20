@@ -47,7 +47,9 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 
 func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	book := &Book{}
-	if h.Database.WithContext(ctx).First(book).Where("id = ?", ctx.Query("id")).Error != nil {
+	err := h.Database.WithContext(ctx).First(book, ctx.Query("id")).Error
+	if err != nil {
+		log.Println(err)
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",

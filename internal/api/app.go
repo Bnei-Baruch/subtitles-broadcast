@@ -16,11 +16,17 @@ func init() {
 }
 
 func NewApp() *http.Server {
-	config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
+	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
+	if err != nil {
+
+	}
 	conf := config.GetConfig()
 	db, err := database.New(conf.Postgres.Url)
 	if err != nil {
-
+		log.Fatalln(err)
+	}
+	if err := db.AutoMigrate(&Book{}, &Bookmark{}); err != nil {
+		log.Fatalln(err)
 	}
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),

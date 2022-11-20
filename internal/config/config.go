@@ -19,15 +19,15 @@ type Postgres struct {
 }
 
 func SetConfig(profile string) error {
-	viper.AddConfigPath("../..")
+	viper.AddConfigPath(".")
 	viper.SetConfigName(profile)
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
 		return err
 	}
-	var conf Config
-	err = viper.Unmarshal(&conf)
+
+	err = viper.Unmarshal(&configuration)
 	if err != err {
 		return err
 	}

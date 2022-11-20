@@ -1,4 +1,4 @@
-package bssvr
+package main
 
 import (
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/api"
@@ -6,4 +6,5 @@ import (
 
 func main() {
 	svr := api.NewApp()
+	svr.ListenAndServe()
 }
