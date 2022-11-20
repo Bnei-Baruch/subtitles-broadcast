@@ -91,6 +91,6 @@ func (h *Handler) UpdateSubtitles(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) roleChecker() bool { // For checking super admin api
-	return (userRole == SUPER_ADMIN)
+func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
+	return (userRole == role)
 }
