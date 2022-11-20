@@ -9,14 +9,12 @@ import (
 )
 
 type Handler struct {
-	Database    *gorm.DB
-	RoleChecker func() bool
+	Database *gorm.DB
 }
 
 func NewHandler(database *gorm.DB) *Handler {
 	return &Handler{
-		Database:    database,
-		RoleChecker: roleChecker, // For Checking super admin api
+		Database: database,
 	}
 }
 
@@ -93,6 +91,6 @@ func (h *Handler) UpdateSubtitles(ctx *gin.Context) {
 	})
 }
 
-func roleChecker() bool {
+func (h *Handler) roleChecker() bool { // For checking super admin api
 	return (userRole == SUPER_ADMIN)
 }
