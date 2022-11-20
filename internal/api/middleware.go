@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	SUPER_ADMIN = "super admin"
+	//SUPER_ADMIN = "super admin"
+	SUPER_ADMIN = "mb_admin_users_finstats"
 	USER        = "user"
 	TRANSLATOR  = "translator"
 )
@@ -39,7 +40,14 @@ func UserRoleHandler() gin.HandlerFunc {
 		tokenString := authHeader[len("Bearer"):]
 		roles, err := auth.GetUserRole(tokenString)
 		if err != nil {
-
+			ctx.JSON(401, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err.Error(),
+				"description": "",
+			})
+			ctx.Abort()
+			return
 		}
 		isValidUser := false
 		for _, role := range roles {
@@ -50,7 +58,14 @@ func UserRoleHandler() gin.HandlerFunc {
 			}
 		}
 		if !isValidUser {
-
+			ctx.JSON(401, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         "The user is not authorized",
+				"description": "",
+			})
+			ctx.Abort()
+			return
 		}
 		ctx.Next()
 	}

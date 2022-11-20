@@ -12,14 +12,13 @@ const (
 
 func NewRouter(handler *Handler) http.Handler {
 	router := gin.Default()
+	router.Use(CORSMiddleware())
+	router.Use(UserRoleHandler())
 
 	v1 := router.Group("/api/v1")
 	v1.PUT("/"+subtitles, handler.UpdateSubtitles)
 	v1.GET("/"+subtitles, handler.GetSubtitles)
 	v1.POST("/"+subtitles, handler.AddSubtitles)
-
-	router.Use(CORSMiddleware())
-	router.Use(UserRoleHandler())
 
 	return router
 }

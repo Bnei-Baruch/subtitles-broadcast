@@ -39,6 +39,9 @@ func GetUserRole(token string) ([]*UserRole, error) {
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode == 401 {
+		return nil, fmt.Errorf("Not authorized")
+	}
 	defer resp.Body.Close()
 	var userRoles []*UserRole
 	err = json.NewDecoder(resp.Body).Decode(&userRoles)
