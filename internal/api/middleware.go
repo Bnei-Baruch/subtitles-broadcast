@@ -15,9 +15,9 @@ const (
 )
 
 var userRoles = map[string]struct{}{
-	SUPER_ADMIN: struct{}{},
-	USER:        struct{}{},
-	TRANSLATOR:  struct{}{},
+	SUPER_ADMIN: {},
+	USER:        {},
+	TRANSLATOR:  {},
 }
 
 var userRole string
