@@ -1,9 +1,10 @@
 package config
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -11,6 +12,7 @@ var configuration = Config{}
 
 type Config struct {
 	Port     int       `yaml:"port"`
+	LogLevel string    `yaml:"log_level"`
 	Postgres *Postgres `yaml:"postgres"`
 }
 
@@ -24,6 +26,7 @@ func SetConfig(profile string) error {
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -32,15 +35,15 @@ func SetConfig(profile string) error {
 		return err
 	}
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		log.Println("Config file changed:", e.Name)
+		log.Info(fmt.Sprintf("Config file changed: %s", e.Name))
 		err := viper.ReadInConfig()
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return
 		}
 		err = viper.Unmarshal(&configuration)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return
 		}
 

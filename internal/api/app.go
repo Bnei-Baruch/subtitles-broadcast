@@ -11,16 +11,24 @@ import (
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
 
-func init() {
-	log.SetFormatter(&log.JSONFormatter{})
-}
+var conf *config.Config
 
-func NewApp() *http.Server {
+func init() {
 	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
 	if err != nil {
 
 	}
-	conf := config.GetConfig()
+	conf = config.GetConfig()
+	ll, err := log.ParseLevel(conf.LogLevel)
+	if err != nil {
+		ll = log.DebugLevel
+	}
+	log.SetLevel(ll)
+	log.SetFormatter(&log.JSONFormatter{})
+}
+
+func NewApp() *http.Server {
+
 	db, err := database.New(conf.Postgres.Url)
 	if err != nil {
 		log.Fatalln(err)

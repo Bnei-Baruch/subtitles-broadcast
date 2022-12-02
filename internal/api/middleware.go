@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/pkg/auth"
 )
@@ -40,6 +41,7 @@ func UserRoleHandler() gin.HandlerFunc {
 		tokenString := authHeader[len("Bearer"):]
 		roles, err := auth.GetUserRole(tokenString)
 		if err != nil {
+			log.Error(err)
 			ctx.JSON(401, gin.H{
 				"success":     true,
 				"code":        "",
@@ -58,6 +60,7 @@ func UserRoleHandler() gin.HandlerFunc {
 			}
 		}
 		if !isValidUser {
+			log.Info("The user is not authorized")
 			ctx.JSON(401, gin.H{
 				"success":     true,
 				"code":        "",
