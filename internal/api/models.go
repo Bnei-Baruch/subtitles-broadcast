@@ -15,9 +15,12 @@ type Book struct {
 }
 
 type Bookmark struct {
-	Id       int    `json:"id"`
-	Book     string `json:"book"`
-	BookName string `json:"book_name"`
-	Page     int    `json:"page"`
-	Letter   string `json:"letter"`
+	Id        int       `json:"id"`
+	Author    string    `json:"author"`
+	Book      string    `json:"book"`
+	Page      int       `json:"page"`
+	Letter    string    `json:"letter"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	BookName  string    `json:"book_name"`
 }
