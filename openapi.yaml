@@ -8,76 +8,76 @@ info:
 servers:
   - url: https://domain/api/v1
 tags:
-  - name: subtitles
-    description: Access and manage subtitle content
+  - name: books
+    description: Access and manage book content
   - name: bookmarks
     description: Access and manage bookmark
 paths:
-  /subtitles:
+  /books:
     put:
       tags:
-        - subtitles
-      summary: Update an subtitle content by id
-      description: Update an subtitle content by id
-      operationId: updateSubtitle
+        - books
+      summary: Update an book content by id
+      description: Update an book content by id
+      operationId: updateBook
       requestBody:
         required: true
-        description: Update an subtitle content by id
+        description: Update an book content by id
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubtitlePutRequest'
+              $ref: '#/components/schemas/BookPutRequest'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubtitleResponse'
+                $ref: '#/components/schemas/BookResponse'
         '400':
           description: Invalid request value
         '404':
-          description: Subtitle not found
+          description: Book not found
         '405':
           description: Validation http method
       security:
         - bearerAuth:
-            - write:subtitles
-            - read:subtitles
+            - write:books
+            - read:books
     post:
       tags:
-        - subtitles
-      summary: Add an subtitle content
-      description: Add an subtitle content
-      operationId: addSubtitle
+        - books
+      summary: Add an book content
+      description: Add an book content
+      operationId: addBook
       requestBody:
         required: true
-        description: Add an subtitle content
+        description: Add an book content
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BasicSubtitle'
+              $ref: '#/components/schemas/BasicBook'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubtitleResponse'
+                $ref: '#/components/schemas/BookResponse'
         '400':
           description: Invalid request value
         '405':
           description: Invalid http method
       security:
         - bearerAuth:
-            - write:subtitles
-            - read:subtitles
+            - write:books
+            - read:books
     get:
       tags:
-        - subtitles
-      summary: Finds subtitle
-      description: Finds subtitle
-      operationId: findSubtitle
+        - books
+      summary: Finds book
+      description: Finds book
+      operationId: findBook
       parameters:
         - name: limit
           in: query
@@ -101,16 +101,16 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SubtitleResponse'
+                  $ref: '#/components/schemas/BookResponse'
         '400':
           description: Invalid request query
         '404':
-          description: Subtitle not found
+          description: Book not found
         '405':
           description: Invalid http method
       security:
         - bearerAuth:
-            - read:subtitles
+            - read:books
   /bookmarks:
     put:
       tags:
@@ -135,13 +135,13 @@ paths:
         '400':
           description: Invalid request value
         '404':
-          description: Subtitle not found
+          description: Book not found
         '405':
           description: Validation http method
       security:
         - bearerAuth:
-            - write:subtitles
-            - read:subtitles
+            - write:books
+            - read:books
     post:
       tags:
         - bookmarks
@@ -168,14 +168,14 @@ paths:
           description: Invalid http method
       security:
         - bearerAuth:
-            - write:subtitles
-            - read:subtitles
+            - write:books
+            - read:books
     get:
       tags:
         - bookmarks
-      summary: Finds subtitle in hebrew by id
-      description: Finds subtitle in hebrew by id
-      operationId: findSubtitleInHebrewById
+      summary: Finds book in hebrew by id
+      description: Finds book in hebrew by id
+      operationId: findBookInHebrewById
       parameters:
         - name: limit
           in: query
@@ -203,15 +203,15 @@ paths:
         '400':
           description: Invalid request query
         '404':
-          description: Subtitle not found
+          description: Book not found
         '405':
           description: Invalid http method
       security:
         - bearerAuth:
-            - read:subtitles
+            - read:books
 components:
   schemas:
-    BasicSubtitle:
+    BasicBook:
       type: object
       required:
         - author
@@ -239,9 +239,9 @@ components:
                     revert: 1
                     content: <b>חלק רביעי ~
                     }]"
-    SubtitlePutRequest:
+    BookPutRequest:
       allOf:     
-        - $ref: '#/components/schemas/BasicSubtitle'
+        - $ref: '#/components/schemas/BasicBook'
         - type: object
           required:
             - id
@@ -250,9 +250,9 @@ components:
               type: integer
               format: int64
               example: 10
-    SubtitleResponse:
+    BookResponse:
       allOf:     
-        - $ref: '#/components/schemas/SubtitlePutRequest'
+        - $ref: '#/components/schemas/BookPutRequest'
         - type: object
           required:
             - created_at
