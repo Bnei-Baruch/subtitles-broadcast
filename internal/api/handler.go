@@ -30,7 +30,34 @@ func (h *Handler) GetBooks(ctx *gin.Context) {
 
 func (h *Handler) UpdateBooks(ctx *gin.Context) {
 	req := &Book{}
-	updateHandler(ctx, h.Database, req, req.Id)
+	err := ctx.BindJSON(req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Binding data has failed",
+		})
+		return
+	}
+	targetData := &Book{}
+	err = h.Database.WithContext(ctx).First(targetData, req.Id).Error
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         "failed to get data",
+			"description": "Getting data has failed",
+		})
+		return
+	}
+	targetData.Author = req.Author
+	targetData.Content = req.Content
+	targetData.Slides = req.Slides
+	targetData.Title = req.Title
+	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
 
 func (h *Handler) AddBookmarks(ctx *gin.Context) {
@@ -45,7 +72,35 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 
 func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 	req := &Bookmark{}
-	updateHandler(ctx, h.Database, req, req.Id)
+	err := ctx.BindJSON(req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Binding data has failed",
+		})
+		return
+	}
+	targetData := &Bookmark{}
+	err = h.Database.WithContext(ctx).First(targetData, req.Id).Error
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         "failed to get data",
+			"description": "Getting data has failed",
+		})
+		return
+	}
+	targetData.Author = req.Author
+	targetData.Book = req.Book
+	targetData.BookName = req.BookName
+	targetData.Letter = req.Letter
+	targetData.Page = req.Page
+	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
 
 func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
@@ -84,11 +139,11 @@ func insertHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
 func getHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
 	err := db.WithContext(ctx).First(obj, ctx.Query("id")).Error
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         "failed to get book",
+			"err":         "failed to get data",
 			"description": "Getting data has failed",
 		})
 		return
@@ -101,18 +156,7 @@ func getHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
 }
 
 func updateHandler(ctx *gin.Context, db *gorm.DB, obj interface{}, id int) {
-	err := ctx.BindJSON(obj)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
-		return
-	}
-	err = db.WithContext(ctx).Updates(obj).Where("id = ?", id).Error
+	err := db.WithContext(ctx).Updates(obj).Where("id = ?", id).Error
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
