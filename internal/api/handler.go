@@ -53,27 +53,31 @@ func (h *Handler) roleChecker(role string) bool { // For checking user role veri
 }
 
 func insertHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
-	if err := ctx.BindJSON(obj); err != nil {
+	err := ctx.BindJSON(obj)
+	if err != nil {
 		log.Error(err)
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
-			"description": "",
+			"description": "Binding data has failed",
 		})
+		return
 	}
-	if db.WithContext(ctx).Create(obj).Error != nil {
+	err = db.WithContext(ctx).Create(obj).Error
+	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         fmt.Sprintf("failed to insert book: %v\n", obj),
-			"description": "",
+			"description": "Inserting data has failed",
 		})
+		return
 	}
 	ctx.JSON(200, gin.H{
 		"success":     true,
 		"data":        obj,
-		"description": "",
+		"description": "Inserting data has succeeded",
 	})
 }
 
@@ -85,38 +89,42 @@ func getHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
 			"success":     true,
 			"code":        "",
 			"err":         "failed to get book",
-			"description": "",
+			"description": "Getting data has failed",
 		})
+		return
 	}
 	ctx.JSON(200, gin.H{
 		"success":     true,
 		"data":        obj,
-		"description": "",
+		"description": "Getting data has succeeded",
 	})
 }
 
 func updateHandler(ctx *gin.Context, db *gorm.DB, obj interface{}, id int) {
-	if err := ctx.BindJSON(obj); err != nil {
+	err := ctx.BindJSON(obj)
+	if err != nil {
 		log.Error(err)
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
-			"description": "",
+			"description": "Binding data has failed",
 		})
+		return
 	}
-	if db.WithContext(ctx).Updates(obj).Where("id = ?", id).Error != nil {
+	err = db.WithContext(ctx).Updates(obj).Where("id = ?", id).Error
+	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         fmt.Sprintf("failed to update book: %v\n", obj),
-			"description": "",
+			"description": "Updating data has failed",
 		})
+		return
 	}
 	ctx.JSON(200, gin.H{
 		"success":     true,
 		"data":        obj,
-		"description": "",
+		"description": "Updating data has succeeded",
 	})
-
 }
