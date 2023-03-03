@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -38,6 +40,18 @@ func CORSMiddleware() gin.HandlerFunc {
 func UserRoleHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
+		if len(authHeader) == 0 {
+			err := fmt.Errorf("There is no authorization token")
+			log.Error(err)
+			ctx.JSON(401, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err.Error(),
+				"description": "",
+			})
+			ctx.Abort()
+			return
+		}
 		tokenString := authHeader[len("Bearer"):]
 		roles, err := auth.GetUserRole(tokenString)
 		if err != nil {
