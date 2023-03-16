@@ -54,8 +54,6 @@ func (h *Handler) UpdateBooks(ctx *gin.Context) {
 		return
 	}
 	targetData.Author = req.Author
-	targetData.Content = req.Content
-	targetData.Slides = req.Slides
 	targetData.Title = req.Title
 	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
@@ -95,11 +93,8 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 		})
 		return
 	}
-	targetData.Author = req.Author
-	targetData.Book = req.Book
-	targetData.BookName = req.BookName
-	targetData.Letter = req.Letter
-	targetData.Page = req.Page
+	targetData.BookId = req.BookId
+	targetData.Path = req.Path
 	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
 

@@ -8,19 +8,23 @@ type Book struct {
 	Id        int       `json:"id"`
 	Author    string    `json:"author"`
 	Title     string    `json:"title"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Content struct {
+	Id        int       `json:"id"`
+	BookId    int       `json:"book_id"`
 	Content   string    `json:"content"`
-	Slides    string    `json:"slides"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Bookmark struct {
 	Id        int       `json:"id"`
-	Author    string    `json:"author"`
-	Book      string    `json:"book"`
-	Page      int       `json:"page"`
-	Letter    string    `json:"letter"`
+	BookId    int       `json:"book_id"`
+	ContentId int       `json:"content_id"`
+	Path      string    `json:"path"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	BookName  string    `json:"book_name"`
 }

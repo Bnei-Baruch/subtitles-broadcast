@@ -16,7 +16,7 @@ var conf *config.Config
 func init() {
 	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
 	if err != nil {
-
+		log.Fatal("No BSSVR_PROFILE value. Cannot start the server application")
 	}
 	conf = config.GetConfig()
 	ll, err := log.ParseLevel(conf.LogLevel)

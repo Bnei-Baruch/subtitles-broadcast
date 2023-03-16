@@ -22,9 +22,9 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.GET("/"+books, handler.GetBooks)
 	v1.POST("/"+books, handler.AddBooks)
 
-	v1.PUT("/"+bookmarks, handler.UpdateBookmarks)
-	v1.GET("/"+bookmarks, handler.GetBookmarks)
-	v1.POST("/"+bookmarks, handler.AddBookmarks)
+	v1.PUT("/user/"+bookmarks, handler.UpdateBookmarks)
+	v1.GET("/user/"+bookmarks, handler.GetBookmarks)
+	v1.POST("/user/"+bookmarks, handler.AddBookmarks)
 
 	return router
 }

@@ -17,35 +17,42 @@ ALTER TABLE bookmarks RENAME TO old_bookmarks;
 CREATE TABLE IF NOT EXISTS books (
     id SERIAL PRIMARY KEY,
     author VARCHAR(50),
-    title VARCHAR(150)
+    title VARCHAR(150),
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
 );
 
 CREATE TABLE IF NOT EXISTS contents (
     id SERIAL PRIMARY KEY,
     book_id INT REFERENCES books (id),
     content VARCHAR,
-    page INT
+    page INT,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
 );
 
 CREATE TABLE IF NOT EXISTS bookmarks (
     id SERIAL PRIMARY KEY,
     book_id INT REFERENCES books (id),
     content_id INT REFERENCES contents (id),
-    path VARCHAR(50) 
+    path VARCHAR(50),
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
+
 );
 
-INSERT INTO books (id, author, title)
-SELECT id, author, title
+INSERT INTO books (id, author, title, created_at, updated_at)
+SELECT id, author, title, created_at, updated_at
 FROM old_books;
 
-INSERT INTO contents (book_id, content)
-SELECT id, content
+INSERT INTO contents (book_id, content, created_at, updated_at)
+SELECT id, content, created_at, updated_at
 FROM old_books;
 
-INSERT INTO bookmarks (book_id, path)
-SELECT DISTINCT id, book
+INSERT INTO bookmarks (book_id, path, created_at, updated_at)
+SELECT DISTINCT id, book, created_at, updated_at
 FROM 
-(SELECT DISTINCT old_books.id, old_bookmarks.book
+(SELECT DISTINCT old_books.id, old_bookmarks.book, old_bookmarks.created_at, old_bookmarks.updated_at
 FROM old_bookmarks
 RIGHT JOIN old_books ON old_books.author = old_bookmarks.author) AS bm
 WHERE bm.book IS NOT NULL;
