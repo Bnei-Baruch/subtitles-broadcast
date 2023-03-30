@@ -209,6 +209,58 @@ paths:
       security:
         - bearerAuth:
             - read:books
+  /archive:
+    get:
+      tags:
+        - archive
+      summary: Get archive information
+      description: all archive information or some by filter
+      operationId: findArchive
+      parameters:
+        - name: content
+          in: query
+          description: text to search for the filter
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: author name to search for the filter
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: type name to search for the filter
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: book_title
+          in: query
+          description: book title to search for the filter
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArchiveResponse'
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+      security:
+        - bearerAuth:
+            - read:books
 components:
   schemas:
     BasicBook:
@@ -322,6 +374,31 @@ components:
               type: string
               format: date-time
               example: "2021-06-20T01:02:03+00:00"
+    ArchiveResponse:
+      allOf:
+        - type: object
+          required:
+            - text
+            - author
+            - type
+            - book_title
+          properties:
+            text:
+              type: string
+              description: book content
+              example: ".1 והמשכילים יזהירו כזוהר הרקיע. המשכילים, הם המסתכלים בחכמה שהשיגו, כי חכמה מכונה אור העיניים, והשגתה מכונה הסתכלות. למה לא כתוב, יאירו? אלא, שמאירים ומתנוצצים בזיווה"
+            author:
+              type: string
+              description: author name
+              example: "זוהר לעם - כרכים א-ד"
+            type:
+              type: string
+              description: content type
+              example: "letter"
+            book_title:
+              type: string
+              description: book title
+              example: "כרך ד' - פרשת שמות"
   securitySchemes:
     bearerAuth:
       bearerFormat: auth-scheme
