@@ -98,6 +98,37 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
 
+func (h *Handler) GetArchive(ctx *gin.Context) {
+	obj := []Archive{}
+	err := h.Database.WithContext(ctx).Model(&Content{}).Select("contents.content as text, books.author as author, contents.type as type, books.title as title").Joins("inner join books on contents.book_id = books.id").Find(&obj)
+	//err := h.Database.WithContext(ctx).Preload("contents").Joins("inner join books on contents.book_id = books.id").Find(obj).Error
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         "failed to get data",
+			"description": "Getting data has failed",
+		})
+		return
+	}
+	log.Printf("**** %+v", obj)
+	/*
+		defer rows.Close()
+		for rows.Next() {
+			var data Archive
+			rows.Scan(&data)
+			log.Printf("**** %+v", data)
+			obj = append(obj, data)
+		}
+	*/
+	ctx.JSON(200, gin.H{
+		"success":     true,
+		"data":        obj,
+		"description": "Getting data has succeeded",
+	})
+}
+
 func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
 	return (userRole == role)
 }

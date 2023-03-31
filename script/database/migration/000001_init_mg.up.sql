@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS contents (
     id SERIAL PRIMARY KEY,
     book_id INT REFERENCES books (id),
     content VARCHAR,
+	type VARCHAR(20),
+	paragraph_order INT,
     page INT,
     created_at timestamp without time zone,
     updated_at timestamp without time zone
