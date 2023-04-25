@@ -11,9 +11,15 @@ import (
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
 
-var conf *config.Config
+var (
+	conf    *config.Config
+	Version string
+	Build   string
+	Date    string
+)
 
 func init() {
+	fmt.Printf("Build Date: %s\nBuild Version: %s\nBuild: %s\n\n", Date, Version, Build)
 	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
 	if err != nil {
 		log.Fatal("No BSSVR_PROFILE value. Cannot start the server application")

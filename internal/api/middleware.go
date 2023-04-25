@@ -23,7 +23,7 @@ var userRoles = map[string]struct{}{
 	TRANSLATOR:  {},
 }
 
-var userRole string
+// var userRole string
 
 func CORSMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
@@ -69,7 +69,7 @@ func UserRoleHandler() gin.HandlerFunc {
 		for _, role := range roles {
 			if _, ok := userRoles[role.Name]; ok {
 				isValidUser = true
-				userRole = role.Name
+				// userRole = role.Name
 				break
 			}
 		}
