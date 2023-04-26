@@ -41,7 +41,7 @@ func UserRoleHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if len(authHeader) == 0 {
-			err := fmt.Errorf("There is no authorization token")
+			err := fmt.Errorf("there is no authorization token")
 			log.Error(err)
 			ctx.JSON(401, gin.H{
 				"success":     true,
