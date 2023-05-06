@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -36,13 +38,19 @@ func GetUserRole(token string) ([]*UserRole, error) {
 		return nil, err
 	}
 	resp, err := getHttpResp(token, req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode == 401 {
-		return nil, fmt.Errorf("Not authorized")
+		_, err = io.Copy(ioutil.Discard, resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("not authorized")
 	}
-	defer resp.Body.Close()
 	var userRoles []*UserRole
 	err = json.NewDecoder(resp.Body).Decode(&userRoles)
 	if err != nil {
@@ -58,10 +66,12 @@ func GetUserInfo(token string) (*UserInfo, error) {
 		return nil, err
 	}
 	resp, err := getHttpResp(token, req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 	var userInfo UserInfo
 	err = json.NewDecoder(resp.Body).Decode(&userInfo)
 	if err != nil {

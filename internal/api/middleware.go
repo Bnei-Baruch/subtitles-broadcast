@@ -23,7 +23,7 @@ var userRoles = map[string]struct{}{
 	TRANSLATOR:  {},
 }
 
-var userRole string
+// var userRole string
 
 func CORSMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
@@ -41,7 +41,7 @@ func UserRoleHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if len(authHeader) == 0 {
-			err := fmt.Errorf("There is no authorization token")
+			err := fmt.Errorf("there is no authorization token")
 			log.Error(err)
 			ctx.JSON(401, gin.H{
 				"success":     true,
@@ -69,7 +69,7 @@ func UserRoleHandler() gin.HandlerFunc {
 		for _, role := range roles {
 			if _, ok := userRoles[role.Name]; ok {
 				isValidUser = true
-				userRole = role.Name
+				// userRole = role.Name
 				break
 			}
 		}

@@ -1,4 +1,9 @@
 ALTER TABLE books RENAME TO old_books;
+alter table old_books add column slides_jsonb JSONB default '{}';
+
+UPDATE old_books 
+SET slides_jsonb = slides::jsonb
+WHERE slides_jsonb = '{}';
 
 ALTER TABLE bookmarks RENAME TO old_bookmarks;
 
@@ -13,10 +18,11 @@ CREATE TABLE IF NOT EXISTS books (
 CREATE TABLE IF NOT EXISTS contents (
     id SERIAL PRIMARY KEY,
     book_id INT REFERENCES books (id),
+    page VARCHAR(20),
+	letter VARCHAR(20),
+	subletter VARCHAR(20),
+    revert VARCHAR(20),
     content VARCHAR,
-	type VARCHAR(20),
-	paragraph_order INT,
-    page INT,
     created_at timestamp without time zone,
     updated_at timestamp without time zone
 );
@@ -34,26 +40,27 @@ INSERT INTO books (id, author, title, created_at, updated_at)
 SELECT id, author, title, created_at, updated_at
 FROM old_books;
 
-INSERT INTO contents (book_id, content, created_at, updated_at)
-SELECT id, content, created_at, updated_at
-FROM old_books;
+INSERT INTO bookmarks (book_id, path, created_at, updated_at, content_id)
+SELECT old_books.id, old_bookmarks.book, old_bookmarks.created_at, old_bookmarks.updated_at, c.id
+FROM old_books
+INNER JOIN old_bookmarks ON old_books.author = old_bookmarks.author AND old_bookmarks.book IS NOT NULL
+LEFT JOIN contents c ON old_books.id = c.book_id;
 
-INSERT INTO bookmarks (book_id, path, created_at, updated_at)
-SELECT DISTINCT id, book, created_at, updated_at
-FROM 
-(SELECT DISTINCT old_books.id, old_bookmarks.book, old_bookmarks.created_at, old_bookmarks.updated_at
-FROM old_bookmarks
-RIGHT JOIN old_books ON old_books.author = old_bookmarks.author) AS bm
-WHERE bm.book IS NOT NULL;
-
-UPDATE bookmarks as bm SET content_id = c.id
-FROM contents c 
-WHERE bm.book_id = c.book_id;
-
-UPDATE contents as c SET page = bp.page
-FROM 
-(select id, page::int
-from
-(select id, slides::json->0->>'page'::text as page
-FROM old_books) as obp) as bp 
-WHERE c.book_id = bp.id;
+CREATE OR REPLACE FUNCTION parse_slides() RETURNS VOID AS $$
+BEGIN
+    INSERT INTO contents (book_id, page, letter, subletter, revert, content, created_at, updated_at)
+    SELECT
+        old_books.id,
+        elem->>'page'::text as page,
+        elem->>'letter'::text as letter,
+        elem->>'subletter'::text as subletter,
+        elem->>'revert'::text as revert,
+        elem->>'content'::text as content,
+        created_at,
+        updated_at
+    FROM
+        old_books,
+        jsonb_array_elements(slides_jsonb) AS elem;
+END $$ LANGUAGE plpgsql;
+SELECT parse_slides();
+DROP FUNCTION parse_slides;
