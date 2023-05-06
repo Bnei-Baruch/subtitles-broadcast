@@ -118,9 +118,9 @@ func (h *Handler) GetArchive(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
-	return (userRole == role)
-}
+// func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
+// 	return (userRole == role)
+// }
 
 func insertHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
 	err := ctx.BindJSON(obj)
