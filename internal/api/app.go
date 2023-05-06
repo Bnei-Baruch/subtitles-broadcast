@@ -13,9 +13,9 @@ import (
 
 var (
 	conf    *config.Config
-	Version string
-	Build   string
-	Date    string
+	Version = "Dev"
+	Build   = "Dev"
+	Date    = "Dev"
 )
 
 func init() {
