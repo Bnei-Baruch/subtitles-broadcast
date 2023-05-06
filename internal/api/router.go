@@ -26,5 +26,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.GET("/user/"+bookmarks, handler.GetBookmarks)
 	v1.POST("/user/"+bookmarks, handler.AddBookmarks)
 
+	v1.GET("/archive", handler.GetArchive)
+
 	return router
 }

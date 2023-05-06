@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     path VARCHAR(50),
     created_at timestamp without time zone,
     updated_at timestamp without time zone
-
 );
 
 INSERT INTO books (id, author, title, created_at, updated_at)
