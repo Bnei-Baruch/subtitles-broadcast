@@ -101,7 +101,9 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 func (h *Handler) GetArchive(ctx *gin.Context) {
 	obj := []Archive{}
 
-	err := h.Database.WithContext(ctx).Model(&Content{}).Select("contents.content as text, books.author as author, contents.type as type, books.title as title").Joins("inner join books on contents.book_id = books.id").Find(&obj).Error
+	err := h.Database.WithContext(ctx).Model(&Content{}).Limit(100).Order("books.title, contents.page, contents.letter, contents.subletter").
+		Select("contents.content As text, books.title As type, books.author As author, books.title As title").
+		Joins("inner join books on contents.book_id = books.id").Find(&obj).Error
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
