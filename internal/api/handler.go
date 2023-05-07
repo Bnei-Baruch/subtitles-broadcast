@@ -2,11 +2,14 @@ package api
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+const listLimit = 50
 
 type Handler struct {
 	Database *gorm.DB
@@ -99,9 +102,25 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 }
 
 func (h *Handler) GetArchive(ctx *gin.Context) {
+	page := 0
+	pageStr := ctx.Query("page")
+	page, err := strconv.Atoi(pageStr)
+	if len(pageStr) > 0 && err != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         "failed to get page number",
+			"description": "Getting data has failed",
+		})
+		return
+	}
+	if page > 1 {
+		page = listLimit * (page - 1)
+	}
+
 	obj := []Archive{}
 
-	err := h.Database.WithContext(ctx).Model(&Content{}).Limit(100).Order("books.title, contents.page, contents.letter, contents.subletter").
+	err = h.Database.WithContext(ctx).Model(&Content{}).Limit(listLimit).Offset(page).Order("books.title, contents.page, contents.letter, contents.subletter").
 		Select("contents.content As text, books.title As type, books.author As author, books.title As title").
 		Joins("inner join books on contents.book_id = books.id").Find(&obj).Error
 	if err != nil {
