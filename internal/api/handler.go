@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -102,39 +103,51 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 }
 
 func (h *Handler) GetArchive(ctx *gin.Context) {
-	page := 0
+	offset := 0
 	pageStr := ctx.Query("page")
 	page, err := strconv.Atoi(pageStr)
 	if len(pageStr) > 0 && err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         "failed to get page number",
+			"err":         err,
 			"description": "Getting data has failed",
 		})
 		return
 	}
 	if page > 1 {
-		page = listLimit * (page - 1)
+		offset = listLimit * (page - 1)
 	}
 
-	obj := []Archive{}
+	obj := []*Archive{}
 
-	err = h.Database.WithContext(ctx).Model(&Content{}).Limit(listLimit).Offset(page).Order("books.title, contents.page, contents.letter, contents.subletter").
+	var totalRows int64
+	err = h.Database.WithContext(ctx).Model(&Content{}).Limit(listLimit).Offset(offset).Order("books.title, contents.page, contents.letter, contents.subletter").
 		Select("contents.content As text, books.title As type, books.author As author, books.title As title").
-		Joins("inner join books on contents.book_id = books.id").Find(&obj).Error
+		Joins("inner join books on contents.book_id = books.id").Count(&totalRows).Find(&obj).Error
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         "failed to get data",
+			"err":         err,
 			"description": "Getting data has failed",
 		})
 		return
 	}
 	ctx.JSON(200, gin.H{
-		"success":     true,
-		"data":        obj,
+		"success": true,
+		"data": struct {
+			Pagination *Pagination `json:"pagination"`
+			Archives   []*Archive  `json:"archives"`
+		}{
+			Pagination: &Pagination{
+				Limit:      listLimit,
+				Page:       page,
+				TotalRows:  totalRows,
+				TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
+			},
+			Archives: obj,
+		},
 		"description": "Getting data has succeeded",
 	})
 }

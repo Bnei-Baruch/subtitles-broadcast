@@ -41,3 +41,10 @@ type Archive struct {
 	Type   *string `gorm:"column:type" json:"type"`
 	Title  string  `gorm:"column:title" json:"title"`
 }
+
+type Pagination struct {
+	Limit      int   `json:"limit"`
+	Page       int   `json:"page"`
+	TotalRows  int64 `json:"total_rows"`
+	TotalPages int   `json:"total_pages"`
+}
