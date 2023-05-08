@@ -32,7 +32,7 @@ clean:
 
 .PHONY: migrate
 migrate:
-	docker exec -it $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres -c "DROP TABLE schema_migrations;"
+	docker exec -it $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres -c "DROP TABLE IF EXISTS schema_migrations;"
 ifeq ("$(wildcard /usr/local/bin/migrate)","")
 	@echo "# Installing migrate"
 	sudo apt-get install migrate
