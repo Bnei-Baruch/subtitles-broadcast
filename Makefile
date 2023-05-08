@@ -36,7 +36,7 @@ migrate:
 ifeq ("$(wildcard /usr/local/bin/migrate)","")
 	@echo "# Installing migrate"
 	curl -L https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz | tar xvz
-	mv migrate.linux-amd64 $GOPATH/bin/migrate
+	mv migrate $GOPATH/bin/migrate
 endif
 	@echo "# Data Migrating"
 	migrate -source file://./script/database/migration/ -database "postgresql://postgres:1q2w3e4r@localhost:5432/postgres?sslmode=disable" -verbose up
