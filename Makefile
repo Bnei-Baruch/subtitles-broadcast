@@ -35,7 +35,7 @@ migrate:
 	docker exec -it $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres -c "DROP TABLE schema_migrations;"
 ifeq ("$(wildcard /usr/local/bin/migrate)","")
 	@echo "# Installing migrate"
-	apt-get install migrate	
+	sudo apt-get install migrate
 endif
 	@echo "# Data Migrating"
 	migrate -source file://./script/database/migration/ -database "postgresql://postgres:1q2w3e4r@localhost:5432/postgres?sslmode=disable" -verbose up
