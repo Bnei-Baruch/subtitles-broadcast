@@ -35,6 +35,7 @@ migrate:
 	docker exec -it $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres -c "DROP TABLE IF EXISTS schema_migrations;"
 ifeq ("$(wildcard /usr/local/bin/migrate)","")
 	@echo "# Installing migrate"
+	curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash
 	sudo apt-get update
 	sudo apt-get install migrate
 endif
