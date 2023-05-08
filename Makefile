@@ -35,9 +35,10 @@ migrate:
 	docker exec -it $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres -c "DROP TABLE IF EXISTS schema_migrations;"
 ifeq ("$(wildcard /usr/local/bin/migrate)","")
 	@echo "# Installing migrate"
+	curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 	curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash
 	sudo apt-get update
-	sudo apt-get install migrate
+	sudo apt-get install -y migrate
 endif
 	@echo "# Data Migrating"
 	migrate -source file://./script/database/migration/ -database "postgresql://postgres:1q2w3e4r@localhost:5432/postgres?sslmode=disable" -verbose up
