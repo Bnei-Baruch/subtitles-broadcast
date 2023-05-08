@@ -32,7 +32,6 @@ clean:
 
 .PHONY: migrate
 migrate:
-	docker exec -i $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres < ./script/database/initiation/ktuviot.sql
 	docker exec -it $(POSTGRES_CONTAINER_ID) psql -U postgres -d postgres -c "DROP TABLE schema_migrations;"
 ifeq ("$(wildcard /usr/local/bin/migrate)","")
 	@echo "# Installing migrate"
