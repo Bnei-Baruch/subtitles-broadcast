@@ -65,5 +65,8 @@ END $$ LANGUAGE plpgsql;
 SELECT parse_slides();
 DROP FUNCTION parse_slides;
 
+UPDATE contents
+SET content = regexp_replace(content, '<[^>]+>', '', 'g');
+
 CREATE INDEX idx_contents_book_id ON contents(book_id);
 CREATE INDEX idx_books_title ON books(title);
