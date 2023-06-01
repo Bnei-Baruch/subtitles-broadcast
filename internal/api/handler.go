@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -9,8 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
-
-const listLimit = 50
 
 type Handler struct {
 	Database *gorm.DB
@@ -103,10 +102,21 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 }
 
 func (h *Handler) GetArchive(ctx *gin.Context) {
+	var errPage, errLimit error
+	var page, limit int
 	offset := 0
+	listLimit := 50
+
 	pageStr := ctx.Query("page")
-	page, err := strconv.Atoi(pageStr)
-	if len(pageStr) > 0 && err != nil {
+	if len(pageStr) > 0 {
+		page, errPage = strconv.Atoi(pageStr)
+	}
+	limitStr := ctx.Query("limit")
+	if len(limitStr) > 0 {
+		limit, errLimit = strconv.Atoi(limitStr)
+	}
+	err := errors.Join(errPage, errLimit)
+	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
@@ -115,16 +125,28 @@ func (h *Handler) GetArchive(ctx *gin.Context) {
 		})
 		return
 	}
+	if limit > 1 {
+		listLimit = limit
+	}
 	if page > 1 {
 		offset = listLimit * (page - 1)
 	}
-	fmt.Println("Offset:", offset)
-	obj := []*Archive{}
 
 	var totalRows int64
-	err = h.Database.WithContext(ctx).Model(&Content{}).Count(&totalRows).Limit(listLimit).Offset(offset).Order("books.title, contents.page, contents.letter, contents.subletter").
-		Select("contents.content As text, books.title As type, books.author As author, books.title As title").
-		Joins("inner join books on contents.book_id = books.id").Find(&obj).Error
+	query := h.Database.WithContext(ctx).Model(&Content{}).Order("books.title, contents.page, contents.letter, contents.subletter").
+		Select("concat(contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
+		Joins("inner join books on contents.book_id = books.id")
+	title := ctx.Query("title")
+	if len(title) > 0 {
+		query = query.Where("title like ?", "%"+title+"%")
+	}
+	author := ctx.Query("author")
+	if len(author) > 0 {
+		query = query.Where("author like ?", "%"+author+"%")
+	}
+	fmt.Println("author:", author)
+	obj := []*Archive{}
+	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,

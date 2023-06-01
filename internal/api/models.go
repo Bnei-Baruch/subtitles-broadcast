@@ -36,6 +36,7 @@ type Bookmark struct {
 }
 
 type Archive struct {
+	Id     string  `gorm:"column:id" json:"id"`
 	Text   string  `gorm:"column:text" json:"text"`
 	Author string  `gorm:"column:author" json:"author"`
 	Type   *string `gorm:"column:type" json:"type"`
