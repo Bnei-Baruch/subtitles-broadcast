@@ -118,13 +118,13 @@ func (h *Handler) GetArchive(ctx *gin.Context) {
 	if page > 1 {
 		offset = listLimit * (page - 1)
 	}
-
+	fmt.Println("Offset:", offset)
 	obj := []*Archive{}
 
 	var totalRows int64
-	err = h.Database.WithContext(ctx).Model(&Content{}).Limit(listLimit).Offset(offset).Order("books.title, contents.page, contents.letter, contents.subletter").
+	err = h.Database.WithContext(ctx).Model(&Content{}).Count(&totalRows).Limit(listLimit).Offset(offset).Order("books.title, contents.page, contents.letter, contents.subletter").
 		Select("contents.content As text, books.title As type, books.author As author, books.title As title").
-		Joins("inner join books on contents.book_id = books.id").Count(&totalRows).Find(&obj).Error
+		Joins("inner join books on contents.book_id = books.id").Find(&obj).Error
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
