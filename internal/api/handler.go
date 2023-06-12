@@ -125,7 +125,7 @@ func (h *Handler) GetArchive(ctx *gin.Context) {
 		})
 		return
 	}
-	if limit > 1 {
+	if limit > 0 {
 		listLimit = limit
 	}
 	if page > 1 {
