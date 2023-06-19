@@ -26,9 +26,28 @@ func (h *Handler) AddBooks(ctx *gin.Context) {
 	insertHandler(ctx, h.Database, req)
 }
 
-func (h *Handler) GetBooks(ctx *gin.Context) {
+func (h *Handler) GetAuthors(ctx *gin.Context) {
+	obj := []*string{}
 	book := &Book{}
-	getHandler(ctx, h.Database, book)
+	err := h.Database.WithContext(ctx).Model(book).Distinct("author").Order("author").Debug().Find(&obj).Error
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err,
+			"description": "Getting data has failed",
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"success": true,
+		"data": struct {
+			Authors []*string `json:"authors"`
+		}{
+			Authors: obj,
+		},
+		"description": "Getting data has succeeded",
+	})
 }
 
 func (h *Handler) UpdateBooks(ctx *gin.Context) {
@@ -66,9 +85,28 @@ func (h *Handler) AddBookmarks(ctx *gin.Context) {
 	insertHandler(ctx, h.Database, req)
 }
 
-func (h *Handler) GetBookmarks(ctx *gin.Context) {
-	bookmark := &Bookmark{}
-	getHandler(ctx, h.Database, bookmark)
+func (h *Handler) GetBookTitles(ctx *gin.Context) {
+	obj := []*string{}
+	book := &Book{}
+	err := h.Database.WithContext(ctx).Model(book).Distinct("title").Order("title").Debug().Find(&obj).Error
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err,
+			"description": "Getting data has failed",
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"success": true,
+		"data": struct {
+			Titles []*string `json:"titles"`
+		}{
+			Titles: obj,
+		},
+		"description": "Getting data has succeeded",
+	})
 }
 
 func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
@@ -101,7 +139,7 @@ func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
 	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
 
-func (h *Handler) GetArchive(ctx *gin.Context) {
+func (h *Handler) GetArchives(ctx *gin.Context) {
 	var errPage, errLimit error
 	var page, limit int
 	offset := 0
@@ -144,7 +182,7 @@ func (h *Handler) GetArchive(ctx *gin.Context) {
 	if len(author) > 0 {
 		query = query.Where("author like ?", "%"+author+"%")
 	}
-	fmt.Println("author:", author)
+
 	obj := []*Archive{}
 	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
 	if err != nil {
@@ -204,25 +242,6 @@ func insertHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
 		"success":     true,
 		"data":        obj,
 		"description": "Inserting data has succeeded",
-	})
-}
-
-func getHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
-	err := db.WithContext(ctx).First(obj, ctx.Query("id")).Error
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         "failed to get data",
-			"description": "Getting data has failed",
-		})
-		return
-	}
-	ctx.JSON(200, gin.H{
-		"success":     true,
-		"data":        obj,
-		"description": "Getting data has succeeded",
 	})
 }
 
