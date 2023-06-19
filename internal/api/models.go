@@ -49,3 +49,17 @@ type Pagination struct {
 	TotalRows  int64 `json:"total_rows"`
 	TotalPages int   `json:"total_pages"`
 }
+
+type UsersSelectedContent struct {
+	UserID    string
+	ContentID int
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type UsersLastActivatedContent struct {
+	UserID    string
+	ContentID int
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}

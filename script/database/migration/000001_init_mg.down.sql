@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS users_selected_contents;
+
+DROP TABLE IF EXISTS users_last_activated_contents;
+
 DROP TABLE IF EXISTS bookmarks;
 
 DROP TABLE IF EXISTS contents;

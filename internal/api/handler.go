@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -21,9 +22,57 @@ func NewHandler(database *gorm.DB) *Handler {
 	}
 }
 
-func (h *Handler) AddBooks(ctx *gin.Context) {
-	req := &Book{}
-	insertHandler(ctx, h.Database, req)
+func (h *Handler) AddSelectedContent(ctx *gin.Context) {
+	req := struct {
+		ID string `json:"id"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Binding data has failed",
+		})
+		return
+	}
+	userID := ctx.GetString("sub")
+	contentIDStr := strings.Split(req.ID, "_")[0]
+	contentID, _ := strconv.Atoi(contentIDStr)
+	usersSelectedContent := UsersSelectedContent{
+		UserID:    userID,
+		ContentID: contentID,
+	}
+	err = h.Database.WithContext(ctx).Create(&usersSelectedContent).Debug().Error // Need to make this in procedure
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         fmt.Sprintf("failed to insert data: %v\n", usersSelectedContent),
+			"description": "Inserting data has failed",
+		})
+		return
+	}
+	usersLastActivatedContent := UsersLastActivatedContent{
+		UserID:    userID,
+		ContentID: contentID,
+	}
+	err = h.Database.WithContext(ctx).Create(&usersLastActivatedContent).Debug().Error
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         fmt.Sprintf("failed to insert data: %v\n", usersLastActivatedContent),
+			"description": "Inserting data has failed",
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"success":     true,
+		"data":        usersSelectedContent,
+		"description": "Inserting data has succeeded",
+	})
 }
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
@@ -172,7 +221,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 
 	var totalRows int64
 	query := h.Database.WithContext(ctx).Model(&Content{}).Order("books.title, contents.page, contents.letter, contents.subletter").
-		Select("concat(contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
+		Select("concat(content.id,'_',contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
 		Joins("inner join books on contents.book_id = books.id")
 	title := ctx.Query("title")
 	if len(title) > 0 {
@@ -217,23 +266,12 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 // }
 
 func insertHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
-	err := ctx.BindJSON(obj)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
-		return
-	}
-	err = db.WithContext(ctx).Create(obj).Error
+	err := db.WithContext(ctx).Create(obj).Error
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         fmt.Sprintf("failed to insert book: %v\n", obj),
+			"err":         fmt.Sprintf("failed to insert data: %v\n", obj),
 			"description": "Inserting data has failed",
 		})
 		return

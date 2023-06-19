@@ -3,8 +3,6 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -32,40 +30,38 @@ type UserInfo struct {
 	Email             string `json:"email"`
 }
 
-func GetUserRole(token string) ([]*UserRole, error) {
-	req, err := http.NewRequest("GET", userRoleUrl, nil)
-	if err != nil {
-		return nil, err
+type AuthError struct {
+	Err            string `json:"error,omitempty"`
+	ErrDescription string `json:"error_description,omitempty"`
+}
+
+func (r *AuthError) Error() string {
+	errString := r.Err
+	if len(r.ErrDescription) > 0 {
+		errString += fmt.Sprintf(", %s", r.ErrDescription)
 	}
-	resp, err := getHttpResp(token, req)
+
+	return errString
+}
+
+func GetUserRole(token string) ([]*UserRole, error) {
+	resp, err := getAuthenticationInfo(userRoleUrl, token)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == 401 {
-		_, err = io.Copy(ioutil.Discard, resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("not authorized")
-	}
 	var userRoles []*UserRole
 	err = json.NewDecoder(resp.Body).Decode(&userRoles)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	return userRoles, nil
 }
 
 func GetUserInfo(token string) (*UserInfo, error) {
-	req, err := http.NewRequest("GET", userInfoUrl, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := getHttpResp(token, req)
+	resp, err := getAuthenticationInfo(userInfoUrl, token)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -78,6 +74,27 @@ func GetUserInfo(token string) (*UserInfo, error) {
 		return nil, err
 	}
 	return &userInfo, nil
+}
+
+func getAuthenticationInfo(url, token string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := getHttpResp(token, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusUnauthorized {
+		var authError AuthError
+		err = json.NewDecoder(resp.Body).Decode(&authError)
+		if err != nil {
+			return nil, err
+		}
+		return nil, &authError
+	}
+
+	return resp, nil
 }
 
 func getHttpResp(token string, req *http.Request) (*http.Response, error) {

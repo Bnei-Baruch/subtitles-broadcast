@@ -87,3 +87,37 @@ func UserRoleHandler() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+func UserInfoHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		authHeader := ctx.GetHeader("Authorization")
+		if len(authHeader) == 0 {
+			err := fmt.Errorf("there is no authorization token")
+			log.Error(err)
+			ctx.JSON(401, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err.Error(),
+				"description": "",
+			})
+			ctx.Abort()
+			return
+		}
+		tokenString := authHeader[len("Bearer"):]
+		userInfo, err := auth.GetUserInfo(tokenString)
+		if err != nil {
+			log.Error(err)
+			ctx.JSON(401, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err.Error(),
+				"description": "",
+			})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Set("sub", userInfo.Sub)
+		ctx.Next()
+	}
+}
