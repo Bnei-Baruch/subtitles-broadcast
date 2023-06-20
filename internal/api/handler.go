@@ -44,13 +44,22 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 		UserID:    userID,
 		ContentID: contentID,
 	}
-	err = h.Database.WithContext(ctx).Create(&usersSelectedContent).Debug().Error // Need to make this in procedure
+
+	tx := h.Database.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	err = tx.WithContext(ctx).Create(&usersSelectedContent).Debug().Error
 	if err != nil {
+		tx.Rollback()
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         fmt.Sprintf("failed to insert data: %v\n", usersSelectedContent),
-			"description": "Inserting data has failed",
+			"err":         fmt.Sprintf("failed to insert user selected content data: %v\n", usersSelectedContent),
+			"description": "Inserting user selected content data has failed",
 		})
 		return
 	}
@@ -58,19 +67,36 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 		UserID:    userID,
 		ContentID: contentID,
 	}
-	err = h.Database.WithContext(ctx).Create(&usersLastActivatedContent).Debug().Error
+	err = tx.WithContext(ctx).Create(&usersLastActivatedContent).Debug().Error
 	if err != nil {
+		tx.Rollback()
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         fmt.Sprintf("failed to insert data: %v\n", usersLastActivatedContent),
-			"description": "Inserting data has failed",
+			"err":         fmt.Sprintf("failed to insert user last activated content data: %v\n", usersLastActivatedContent),
+			"description": "Inserting user last activated content data has failed",
+		})
+		return
+	}
+	// Commit the transaction if all DDL statements executed successfully
+	if err := tx.Commit().Error; err != nil {
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         fmt.Sprintf("failed to insert user selected content data: %v\nand user last activated content data: %v\n", usersSelectedContent, usersLastActivatedContent),
+			"description": fmt.Sprintf("Failed to commit transaction: %s\n", err),
 		})
 		return
 	}
 	ctx.JSON(200, gin.H{
-		"success":     true,
-		"data":        usersSelectedContent,
+		"success": true,
+		"data": struct {
+			Usc  UsersSelectedContent      `json:"user_selected_content"`
+			Ulac UsersLastActivatedContent `json:"user_last_activated_content"`
+		}{
+			usersSelectedContent,
+			usersLastActivatedContent,
+		},
 		"description": "Inserting data has succeeded",
 	})
 }
@@ -127,11 +153,6 @@ func (h *Handler) UpdateBooks(ctx *gin.Context) {
 	targetData.Author = req.Author
 	targetData.Title = req.Title
 	updateHandler(ctx, h.Database, targetData, targetData.Id)
-}
-
-func (h *Handler) AddBookmarks(ctx *gin.Context) {
-	req := &Bookmark{}
-	insertHandler(ctx, h.Database, req)
 }
 
 func (h *Handler) GetBookTitles(ctx *gin.Context) {
@@ -264,24 +285,6 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 // func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
 // 	return (userRole == role)
 // }
-
-func insertHandler(ctx *gin.Context, db *gorm.DB, obj interface{}) {
-	err := db.WithContext(ctx).Create(obj).Error
-	if err != nil {
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         fmt.Sprintf("failed to insert data: %v\n", obj),
-			"description": "Inserting data has failed",
-		})
-		return
-	}
-	ctx.JSON(200, gin.H{
-		"success":     true,
-		"data":        obj,
-		"description": "Inserting data has succeeded",
-	})
-}
 
 func updateHandler(ctx *gin.Context, db *gorm.DB, obj interface{}, id int) {
 	err := db.WithContext(ctx).Updates(obj).Where("id = ?", id).Error
