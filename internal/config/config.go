@@ -14,9 +14,14 @@ type Config struct {
 	Port     int       `yaml:"port"`
 	LogLevel string    `yaml:"log_level"`
 	Postgres *Postgres `yaml:"postgres"`
+	Redis    *Redis    `yaml:"redis"`
 }
 
 type Postgres struct {
+	Url string `yaml:"url"`
+}
+
+type Redis struct {
 	Url string `yaml:"url"`
 }
 

@@ -8,17 +8,26 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+const (
+	keyExpirationTime                 = 30
+	userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
+	userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
+)
+
 type Handler struct {
 	Database *gorm.DB
+	Cache    *redis.Client
 }
 
-func NewHandler(database *gorm.DB) *Handler {
+func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
 	return &Handler{
 		Database: database,
+		Cache:    cache,
 	}
 }
 
@@ -38,66 +47,121 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 		return
 	}
 	userID := ctx.GetString("sub")
-	contentIDStr := strings.Split(req.ID, "_")[0]
-	contentID, _ := strconv.Atoi(contentIDStr)
-	usersSelectedContent := UsersSelectedContent{
-		UserID:    userID,
-		ContentID: contentID,
-	}
+	contentID := strings.Split(req.ID, "_")[0]
+	// Create a new transaction
 
-	tx := h.Database.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	err = tx.WithContext(ctx).Create(&usersSelectedContent).Debug().Error
+	// Watch the key
+	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
+	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
+		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			// Add multiple commands to the transaction
+			pipe.Set(ctx, userSelectedContentkeyFormat, contentID, keyExpirationTime)
+			pipe.Set(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID),
+				"", keyExpirationTime)
+			return nil
+		})
+		return err
+	}, key)
 	if err != nil {
-		tx.Rollback()
+		// Handle the situation where the transaction was discarded
+		log.Error(err)
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         fmt.Sprintf("failed to insert user selected content data: %v\n", usersSelectedContent),
-			"description": "Inserting user selected content data has failed",
+			"err":         err.Error(),
+			"description": "Adding data has failed",
 		})
 		return
 	}
-	usersLastActivatedContent := UsersLastActivatedContent{
-		UserID:    userID,
-		ContentID: contentID,
-	}
-	err = tx.WithContext(ctx).Create(&usersLastActivatedContent).Debug().Error
+
+	ctx.JSON(200, gin.H{
+		"success":     true,
+		"data":        struct{}{},
+		"description": "Adding data has succeeded",
+	})
+}
+
+func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
+	req := struct {
+		ID string `json:"id"`
+	}{}
+	err := ctx.BindJSON(&req)
 	if err != nil {
-		tx.Rollback()
+		log.Error(err)
 		ctx.JSON(400, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         fmt.Sprintf("failed to insert user last activated content data: %v\n", usersLastActivatedContent),
-			"description": "Inserting user last activated content data has failed",
+			"err":         err.Error(),
+			"description": "Binding data has failed",
 		})
 		return
 	}
-	// Commit the transaction if all DDL statements executed successfully
-	if err := tx.Commit().Error; err != nil {
-		ctx.JSON(400, gin.H{
+	userID := ctx.GetString("sub")
+	contentID := strings.Split(req.ID, "_")[0]
+	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
+	err = h.Cache.Set(ctx, key, contentID, keyExpirationTime).Err()
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(500, gin.H{
 			"success":     true,
 			"code":        "",
-			"err":         fmt.Sprintf("failed to insert user selected content data: %v\nand user last activated content data: %v\n", usersSelectedContent, usersLastActivatedContent),
-			"description": fmt.Sprintf("Failed to commit transaction: %s\n", err),
+			"err":         "failed to update data",
+			"description": "Updating data has failed",
 		})
 		return
 	}
 	ctx.JSON(200, gin.H{
-		"success": true,
-		"data": struct {
-			Usc  UsersSelectedContent      `json:"user_selected_content"`
-			Ulac UsersLastActivatedContent `json:"user_last_activated_content"`
-		}{
-			usersSelectedContent,
-			usersLastActivatedContent,
-		},
-		"description": "Inserting data has succeeded",
+		"success":     true,
+		"data":        struct{}{},
+		"description": "Updating data has succeeded",
+	})
+}
+
+func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
+	req := struct {
+		ID string `json:"id"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Binding data has failed",
+		})
+		return
+	}
+	userID := ctx.GetString("sub")
+	contentID := strings.Split(req.ID, "_")[0]
+
+	// Watch the key
+	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
+	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
+		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID))
+			pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID))
+
+			return nil
+		})
+		return err
+	}, key)
+	if err != nil {
+		// Handle the situation where the transaction was discarded
+		log.Error(err)
+		ctx.JSON(400, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Adding data has failed",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"success":     true,
+		"data":        struct{}{},
+		"description": "Deleting data has succeeded",
 	})
 }
 
@@ -125,36 +189,6 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) UpdateBooks(ctx *gin.Context) {
-	req := &Book{}
-	err := ctx.BindJSON(req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
-		return
-	}
-	targetData := &Book{}
-	err = h.Database.WithContext(ctx).First(targetData, req.Id).Error
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         "failed to get data",
-			"description": "Getting data has failed",
-		})
-		return
-	}
-	targetData.Author = req.Author
-	targetData.Title = req.Title
-	updateHandler(ctx, h.Database, targetData, targetData.Id)
-}
-
 func (h *Handler) GetBookTitles(ctx *gin.Context) {
 	obj := []*string{}
 	book := &Book{}
@@ -177,36 +211,6 @@ func (h *Handler) GetBookTitles(ctx *gin.Context) {
 		},
 		"description": "Getting data has succeeded",
 	})
-}
-
-func (h *Handler) UpdateBookmarks(ctx *gin.Context) {
-	req := &Bookmark{}
-	err := ctx.BindJSON(req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
-		return
-	}
-	targetData := &Bookmark{}
-	err = h.Database.WithContext(ctx).First(targetData, req.Id).Error
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         "failed to get data",
-			"description": "Getting data has failed",
-		})
-		return
-	}
-	targetData.BookId = req.BookId
-	targetData.Path = req.Path
-	updateHandler(ctx, h.Database, targetData, targetData.Id)
 }
 
 func (h *Handler) GetArchives(ctx *gin.Context) {
@@ -285,21 +289,3 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 // func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
 // 	return (userRole == role)
 // }
-
-func updateHandler(ctx *gin.Context, db *gorm.DB, obj interface{}, id int) {
-	err := db.WithContext(ctx).Updates(obj).Where("id = ?", id).Error
-	if err != nil {
-		ctx.JSON(400, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         fmt.Sprintf("failed to update book: %v\n", obj),
-			"description": "Updating data has failed",
-		})
-		return
-	}
-	ctx.JSON(200, gin.H{
-		"success":     true,
-		"data":        obj,
-		"description": "Updating data has succeeded",
-	})
-}

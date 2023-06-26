@@ -6,7 +6,6 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
-
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/config"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
@@ -35,15 +34,20 @@ func init() {
 
 func NewApp() *http.Server {
 
-	db, err := database.New(conf.Postgres.Url)
+	db, err := database.NewPostgres(conf.Postgres.Url)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	if err := db.AutoMigrate(&Book{}, &Bookmark{}); err != nil {
 		log.Fatalln(err)
 	}
+	cache, err := database.NewRedis(conf.Redis.Url)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
-		Handler: NewRouter(NewHandler(db)),
+		Handler: NewRouter(NewHandler(db, cache)),
 	}
 }
