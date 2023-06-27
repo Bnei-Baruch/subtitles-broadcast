@@ -22,6 +22,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.POST("/selected-content", handler.AddSelectedContent)
 	v1.PUT("/selected-content", handler.UpdateSelectedContent)
 	v1.DELETE("/activated-content", handler.DeleteActivatedContent)
+	v1.GET("/book-list", handler.GetUserBookContents)
 	v1.GET("/author", handler.GetAuthors)
 	v1.GET("/booktitle", handler.GetBookTitles)
 	v1.GET("/archive", handler.GetArchives)

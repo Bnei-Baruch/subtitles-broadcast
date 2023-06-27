@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -38,7 +39,7 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
@@ -65,7 +66,7 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	if err != nil {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
@@ -74,11 +75,80 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(200, gin.H{
+	ctx.JSON(http.StatusCreated, gin.H{
 		"success":     true,
 		"data":        struct{}{},
 		"description": "Adding data has succeeded",
 	})
+}
+
+func (h *Handler) GetUserBookContents(ctx *gin.Context) {
+	userBooks := []*UserBook{}
+	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat[:37], ctx.GetString("sub"))
+	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
+	for iter.Next(ctx) {
+		keyComponents := strings.Split(iter.Val())
+		contentID := keyComponents[len(keyComponents)-1]
+		contents := getContents(h.Database, contentID)
+		bookContents := []string{}
+		for _, content := range contents {
+			bookContents = append(bookContents, content.Content)
+		}
+		userBook := UserBook{
+			BookTitle:     contents[0].Title,
+			LastActivated: Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
+			Contents:      bookContents,
+		}
+		userBooks = append(userBooks, &userBook)
+	}
+	if err := iter.Err(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err,
+			"description": "Getting data has failed",
+		})
+
+	}
+	if err := iter.Close(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         err,
+			"description": "Getting data has failed",
+		})
+
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"data":        bookContents,
+		"description": "Getting data has succeeded",
+	})
+}
+
+func getContents(db *gorm.DB, contentID string) ([]Content, error) {
+	contents := []*Content{}
+
+	subquery := db.
+		Table("(SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num, c.id AS content_id, b.title AS title, c.page AS page, c.letter AS letter, c.subletter AS subletter, c.content AS content FROM books AS b INNER JOIN contents AS c ON b.id = c.book_id)").
+		Select("row_num, title").
+		Where("content_id = ?", contentID).
+		QueryExpr()
+
+	err := db.
+		Table("(SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num, c.id AS content_id, b.title AS title, c.page AS page, c.letter AS letter, c.subletter AS subletter, c.content AS content FROM books AS b INNER JOIN contents AS c ON b.id = c.book_id) AS rowlist)").
+		Joins(fmt.Sprintf("JOIN (%s) AS start_row", subquery)).
+		Where("row_num >= (SELECT row_num FROM start_row)").
+		Where("title LIKE (SELECT title FROM start_row)").
+		Limit(5).
+		Find(&contents).
+		Error
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
 }
 
 func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
@@ -88,7 +158,7 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
@@ -102,7 +172,7 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 	err = h.Cache.Set(ctx, key, contentID, keyExpirationTime).Err()
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(500, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         "failed to update data",
@@ -110,7 +180,7 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.JSON(200, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"data":        struct{}{},
 		"description": "Updating data has succeeded",
@@ -124,7 +194,7 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
@@ -149,7 +219,7 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 	if err != nil {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
@@ -158,7 +228,7 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(200, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"data":        struct{}{},
 		"description": "Deleting data has succeeded",
@@ -170,7 +240,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 	book := &Book{}
 	err := h.Database.WithContext(ctx).Model(book).Distinct("author").Order("author").Debug().Find(&obj).Error
 	if err != nil {
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err,
@@ -178,7 +248,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.JSON(200, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": struct {
 			Authors []*string `json:"authors"`
@@ -194,7 +264,7 @@ func (h *Handler) GetBookTitles(ctx *gin.Context) {
 	book := &Book{}
 	err := h.Database.WithContext(ctx).Model(book).Distinct("title").Order("title").Debug().Find(&obj).Error
 	if err != nil {
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err,
@@ -202,7 +272,7 @@ func (h *Handler) GetBookTitles(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.JSON(200, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": struct {
 			Titles []*string `json:"titles"`
@@ -229,7 +299,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	}
 	err := errors.Join(errPage, errLimit)
 	if err != nil {
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err,
@@ -260,7 +330,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	obj := []*Archive{}
 	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
 	if err != nil {
-		ctx.JSON(400, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err,
@@ -268,7 +338,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.JSON(200, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": struct {
 			Pagination *Pagination `json:"pagination"`

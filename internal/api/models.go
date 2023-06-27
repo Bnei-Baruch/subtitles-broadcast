@@ -63,3 +63,19 @@ type UsersLastActivatedContent struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type BookContent struct {
+	RowNum    int
+	ContentID int
+	Title     string
+	Page      int
+	Letter    string
+	Subletter string
+	Content   string
+}
+
+type UserBook struct {
+	BookTitle     string   `json:"book_title"`
+	LastActivated string   `json:"last_activated"`
+	Contents      []string `json:"contents"`
+}
