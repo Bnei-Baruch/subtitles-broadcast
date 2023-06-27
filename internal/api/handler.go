@@ -87,16 +87,25 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat[:37], ctx.GetString("sub"))
 	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
 	for iter.Next(ctx) {
-		keyComponents := strings.Split(iter.Val())
+		keyComponents := strings.Split(iter.Val(), ":")
 		contentID := keyComponents[len(keyComponents)-1]
-		contents := getContents(h.Database, contentID)
+		contents, err := getContents(h.Database, contentID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err,
+				"description": "Getting data has failed",
+			})
+			return
+		}
 		bookContents := []string{}
 		for _, content := range contents {
 			bookContents = append(bookContents, content.Content)
 		}
 		userBook := UserBook{
 			BookTitle:     contents[0].Title,
-			LastActivated: Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
+			LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
 			Contents:      bookContents,
 		}
 		userBooks = append(userBooks, &userBook)
@@ -108,37 +117,26 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 			"err":         err,
 			"description": "Getting data has failed",
 		})
-
-	}
-	if err := iter.Close(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err,
-			"description": "Getting data has failed",
-		})
-
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"success":     true,
-		"data":        bookContents,
+		"data":        userBooks,
 		"description": "Getting data has succeeded",
 	})
 }
 
-func getContents(db *gorm.DB, contentID string) ([]Content, error) {
-	contents := []*Content{}
+func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
+	contents := []*BookContent{}
 
 	subquery := db.
 		Table("(SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num, c.id AS content_id, b.title AS title, c.page AS page, c.letter AS letter, c.subletter AS subletter, c.content AS content FROM books AS b INNER JOIN contents AS c ON b.id = c.book_id)").
 		Select("row_num, title").
-		Where("content_id = ?", contentID).
-		QueryExpr()
+		Where("content_id = ?", contentID)
 
 	err := db.
 		Table("(SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num, c.id AS content_id, b.title AS title, c.page AS page, c.letter AS letter, c.subletter AS subletter, c.content AS content FROM books AS b INNER JOIN contents AS c ON b.id = c.book_id) AS rowlist)").
-		Joins(fmt.Sprintf("JOIN (%s) AS start_row", subquery)).
+		Joins("JOIN ? AS start_row", subquery).
 		Where("row_num >= (SELECT row_num FROM start_row)").
 		Where("title LIKE (SELECT title FROM start_row)").
 		Limit(5).
