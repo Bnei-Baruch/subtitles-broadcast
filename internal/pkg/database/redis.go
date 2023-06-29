@@ -13,6 +13,5 @@ func NewRedis(url string) (*redis.Client, error) {
 		log.Error(err)
 		return nil, fmt.Errorf("failed to open redis conn: %w", err)
 	}
-
 	return redis.NewClient(opt), nil
 }

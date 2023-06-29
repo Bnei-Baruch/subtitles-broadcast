@@ -37,22 +37,6 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     updated_at timestamp without time zone
 );
 
-CREATE TABLE IF NOT EXISTS users_selected_contents (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(50),
-    content_id INT REFERENCES contents (id),
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
-);
-
-CREATE TABLE IF NOT EXISTS users_last_activated_contents (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(50),
-    content_id INT REFERENCES contents (id),
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
-);
-
 INSERT INTO books (id, author, title, created_at, updated_at)
 SELECT id, author, title, created_at, updated_at
 FROM old_books;

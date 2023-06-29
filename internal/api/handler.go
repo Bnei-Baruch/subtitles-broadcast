@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	keyExpirationTime                 = 30
+	keyExpirationTime                 = 3000
 	userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
 	userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
 )
@@ -56,13 +57,17 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
 		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 			// Add multiple commands to the transaction
-			pipe.Set(ctx, userSelectedContentkeyFormat, contentID, keyExpirationTime)
+			pipe.Set(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID), contentID, keyExpirationTime*time.Second)
 			pipe.Set(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID),
-				"", keyExpirationTime)
+				"", keyExpirationTime*time.Second)
 			return nil
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		return nil
 	}, key)
+
 	if err != nil {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
@@ -166,8 +171,8 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 	}
 	userID := ctx.GetString("sub")
 	contentID := strings.Split(req.ID, "_")[0]
-	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
-	err = h.Cache.Set(ctx, key, contentID, keyExpirationTime).Err()
+	err = h.Cache.Set(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID),
+		contentID, keyExpirationTime*time.Second).Err()
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -207,7 +212,13 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
 	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
 		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID))
+			val, err := pipe.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
+			if err != nil {
+				return err
+			}
+			if val == contentID {
+				pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID))
+			}
 			pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID))
 
 			return nil
@@ -314,7 +325,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 
 	var totalRows int64
 	query := h.Database.WithContext(ctx).Model(&Content{}).Order("books.title, contents.page, contents.letter, contents.subletter").
-		Select("concat(content.id,'_',contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
+		Select("concat(contents.id,'_',contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
 		Joins("inner join books on contents.book_id = books.id")
 	title := ctx.Query("title")
 	if len(title) > 0 {

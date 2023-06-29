@@ -6,11 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	books     = "books"
-	bookmarks = "bookmarks"
-)
-
 func NewRouter(handler *Handler) http.Handler {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
