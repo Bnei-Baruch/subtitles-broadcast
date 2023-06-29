@@ -89,7 +89,7 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 
 func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	userBooks := []*UserBook{}
-	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat[:37], ctx.GetString("sub"))
+	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
 	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
 	for iter.Next(ctx) {
 		keyComponents := strings.Split(iter.Val(), ":")
@@ -134,21 +134,30 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
 	contents := []*BookContent{}
 
-	subquery := db.
-		Table("(SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num, c.id AS content_id, b.title AS title, c.page AS page, c.letter AS letter, c.subletter AS subletter, c.content AS content FROM books AS b INNER JOIN contents AS c ON b.id = c.book_id)").
-		Select("row_num, title").
-		Where("content_id = ?", contentID)
-
-	err := db.
-		Table("(SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num, c.id AS content_id, b.title AS title, c.page AS page, c.letter AS letter, c.subletter AS subletter, c.content AS content FROM books AS b INNER JOIN contents AS c ON b.id = c.book_id) AS rowlist)").
-		Joins("JOIN ? AS start_row", subquery).
-		Where("row_num >= (SELECT row_num FROM start_row)").
-		Where("title LIKE (SELECT title FROM start_row)").
-		Limit(5).
-		Find(&contents).
-		Error
-	if err != nil {
-		return nil, err
+	subquery := db.Raw(`
+		WITH rowlist AS (
+			SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num,
+			c.id AS content_id,
+			b.title AS title,
+			c.page AS page,
+			c.letter AS letter,
+			c.subletter AS subletter,
+			c.content AS content
+			FROM books AS b
+			INNER JOIN contents AS c ON b.id = c.book_id
+		),
+		start_row AS (
+			SELECT row_num
+			FROM rowlist
+			WHERE content_id = ?
+		)
+		SELECT *
+		FROM rowlist
+		WHERE row_num >= (SELECT row_num FROM start_row)
+		LIMIT 5
+	`, contentID).Find(&contents)
+	if subquery.Error != nil {
+		return nil, subquery.Error
 	}
 
 	return contents, nil
