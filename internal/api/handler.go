@@ -50,8 +50,28 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	}
 	userID := ctx.GetString("sub")
 	contentID := strings.Split(req.ID, "_")[0]
-	// Create a new transaction
+	err = checkValidContentID(h.Database, contentID)
+	if err != nil {
+		log.Error(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err.Error(),
+				"description": fmt.Sprintf("Content id %s not found", contentID),
+			})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     false,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Adding data has failed",
+		})
+		return
+	}
 
+	// Create a new transaction
 	// Watch the key
 	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
 	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
@@ -72,7 +92,7 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
+			"success":     false,
 			"code":        "",
 			"err":         err.Error(),
 			"description": "Adding data has failed",
@@ -87,6 +107,18 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	})
 }
 
+func checkValidContentID(db *gorm.DB, contentID string) error {
+	contentIDInt, err := strconv.Atoi(contentID)
+	if err != nil {
+		return err
+	}
+	err = db.First(&Content{}, contentIDInt).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	userBooks := []*UserBook{}
 	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
@@ -97,7 +129,7 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 		contents, err := getContents(h.Database, contentID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"success":     true,
+				"success":     false,
 				"code":        "",
 				"err":         err,
 				"description": "Getting data has failed",
@@ -117,7 +149,7 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	}
 	if err := iter.Err(); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
+			"success":     false,
 			"code":        "",
 			"err":         err,
 			"description": "Getting data has failed",
@@ -180,12 +212,33 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 	}
 	userID := ctx.GetString("sub")
 	contentID := strings.Split(req.ID, "_")[0]
+	err = checkValidContentID(h.Database, contentID)
+	if err != nil {
+		log.Error(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"success":     true,
+				"code":        "",
+				"err":         err.Error(),
+				"description": fmt.Sprintf("Content id %s not found", contentID),
+			})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     false,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Updating data has failed",
+		})
+		return
+	}
+
 	err = h.Cache.Set(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID),
 		contentID, keyExpirationTime*time.Second).Err()
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
+			"success":     false,
 			"code":        "",
 			"err":         "failed to update data",
 			"description": "Updating data has failed",
@@ -220,15 +273,21 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 	// Watch the key
 	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
 	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
-		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			val, err := pipe.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
-			if err != nil {
-				return err
-			}
+		val, err := h.Cache.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
+		if err != nil {
+			return err
+		}
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 			if val == contentID {
-				pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID))
+				err := pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Err()
+				if err != nil {
+					return err
+				}
+				err = pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)).Err()
+				if err != nil {
+					return err
+				}
 			}
-			pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID))
 
 			return nil
 		})
@@ -238,10 +297,95 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     false,
+			"code":        "",
+			"err":         err.Error(),
+			"description": "Deleting data has failed",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"data":        struct{}{},
+		"description": "Deleting data has succeeded",
+	})
+}
+
+func (h *Handler) DeleteContent(ctx *gin.Context) {
+	req := struct {
+		ID string `json:"id"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success":     true,
 			"code":        "",
 			"err":         err.Error(),
-			"description": "Adding data has failed",
+			"description": "Binding data has failed",
+		})
+		return
+	}
+	userID := ctx.GetString("sub")
+	contentID := strings.Split(req.ID, "_")[0]
+	key := fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)
+	exist, err := h.Cache.Exists(ctx, key).Result()
+	if exist != 1 {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"success":     true,
+			"code":        "",
+			"err":         "failed to Delete data",
+			"description": fmt.Sprintf("Key %s not found", key),
+		})
+		return
+	}
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     false,
+			"code":        "",
+			"err":         "failed to Delete data",
+			"description": fmt.Sprintf("Checking key %s has failed", key),
+		})
+		return
+	}
+
+	// Perform Redis operations within the transaction
+	err = h.Cache.Watch(ctx, func(redisTx *redis.Tx) error {
+		val, err := h.Cache.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
+		if err != nil {
+			return err
+		}
+		_, err = h.Cache.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			err = pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)).Err()
+			if err != nil {
+				return err
+			}
+			if val == contentID {
+				err = pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Err()
+				if err != nil {
+					return err
+				}
+			}
+			contentIDInt, err := strconv.Atoi(contentID)
+			if err != nil {
+				return err
+			}
+			// Perform PostgreSQL operations within the transaction
+			if err := h.Database.Delete(&Content{}, contentIDInt).Error; err != nil {
+				return err
+			}
+			return nil
+		})
+		return err
+	}, key)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":     false,
+			"code":        "",
+			"err":         err,
+			"description": "failed to Delete data",
 		})
 		return
 	}
@@ -259,7 +403,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 	err := h.Database.WithContext(ctx).Model(book).Distinct("author").Order("author").Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
+			"success":     false,
 			"code":        "",
 			"err":         err,
 			"description": "Getting data has failed",
@@ -283,7 +427,7 @@ func (h *Handler) GetBookTitles(ctx *gin.Context) {
 	err := h.Database.WithContext(ctx).Model(book).Distinct("title").Order("title").Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
+			"success":     false,
 			"code":        "",
 			"err":         err,
 			"description": "Getting data has failed",
@@ -349,7 +493,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     true,
+			"success":     false,
 			"code":        "",
 			"err":         err,
 			"description": "Getting data has failed",
