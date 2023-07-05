@@ -118,6 +118,11 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	userBooks := []*UserBook{}
 	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
 	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
+	if err := iter.Err(); err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
 	for iter.Next(ctx) {
 		keyComponents := strings.Split(iter.Val(), ":")
 		contentID := keyComponents[len(keyComponents)-1]
@@ -142,10 +147,7 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	if len(userBooks) == 0 {
 		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "No user book content has found", "Getting data has failed"))
-	}
-	if err := iter.Err(); err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
 	}
 
 	ctx.JSON(http.StatusOK,
@@ -346,6 +348,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 	if len(obj) == 0 {
 		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "No author has found", "Getting data has failed"))
+		return
 	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
@@ -369,6 +372,7 @@ func (h *Handler) GetBookTitles(ctx *gin.Context) {
 	if len(obj) == 0 {
 		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "No book title has found", "Getting data has failed"))
+		return
 	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
@@ -430,6 +434,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	if len(obj) == 0 {
 		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "No archive has found", "Getting data has failed"))
+		return
 	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
