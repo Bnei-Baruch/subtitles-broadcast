@@ -20,7 +20,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.DELETE("/content", handler.DeleteContent)
 	v1.GET("/book-list", handler.GetUserBookContents)
 	v1.GET("/author", handler.GetAuthors)
-	v1.GET("/booktitle", handler.GetBookTitles)
+	v1.GET("/book-title", handler.GetBookTitles)
 	v1.GET("/archive", handler.GetArchives)
 
 	return router
