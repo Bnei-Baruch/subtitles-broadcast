@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS contents (
 	letter_int INT NULL,
 	subletter_int INT NULL,
     revert VARCHAR(20),
-    content VARCHAR,
+    content TEXT,
     
     created_at timestamp without time zone,
     updated_at timestamp without time zone

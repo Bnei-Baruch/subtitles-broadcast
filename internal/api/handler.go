@@ -16,6 +16,11 @@ import (
 )
 
 const (
+	responseSuccess     = "success"
+	responseData        = "data"
+	responseError       = "error"
+	responseDescription = "description"
+
 	keyExpirationTime                 = 3000
 	userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
 	userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
@@ -33,6 +38,15 @@ func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
 	}
 }
 
+func getResponse(success bool, data interface{}, err, description string) gin.H {
+	return gin.H{
+		responseSuccess:     success,
+		responseData:        data,
+		responseError:       err,
+		responseDescription: description,
+	}
+}
+
 func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	req := struct {
 		ID string `json:"id"`
@@ -40,12 +54,8 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
 	userID := ctx.GetString("sub")
@@ -54,20 +64,12 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	if err != nil {
 		log.Error(err)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         err.Error(),
-				"description": fmt.Sprintf("Content id %s not found", contentID),
-			})
+			ctx.JSON(http.StatusNotFound,
+				getResponse(true, nil, err.Error(), fmt.Sprintf("Content id %s not found", contentID)))
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Adding data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding data has failed"))
 		return
 	}
 
@@ -91,20 +93,13 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 	if err != nil {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Adding data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding data has failed"))
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"success":     true,
-		"data":        struct{}{},
-		"description": "Adding data has succeeded",
-	})
+	ctx.JSON(http.StatusCreated,
+		getResponse(true, struct{}{}, "", "Adding data has succeeded"))
 }
 
 func checkValidContentID(db *gorm.DB, contentID string) error {
@@ -127,13 +122,10 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 		keyComponents := strings.Split(iter.Val(), ":")
 		contentID := keyComponents[len(keyComponents)-1]
 		contents, err := getContents(h.Database, contentID)
+		fmt.Printf("%+v\n", *contents[0])
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"success":     false,
-				"code":        "",
-				"err":         err,
-				"description": "Getting data has failed",
-			})
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Getting data has failed"))
 			return
 		}
 		bookContents := []string{}
@@ -147,20 +139,17 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 		}
 		userBooks = append(userBooks, &userBook)
 	}
+	if len(userBooks) == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No user book content has found", "Getting data has failed"))
+	}
 	if err := iter.Err(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err,
-			"description": "Getting data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"data":        userBooks,
-		"description": "Getting data has succeeded",
-	})
+	ctx.JSON(http.StatusOK,
+		getResponse(true, userBooks, "", "Getting data has succeeded"))
 }
 
 func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
@@ -202,12 +191,8 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
 	userID := ctx.GetString("sub")
@@ -216,20 +201,12 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 	if err != nil {
 		log.Error(err)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         err.Error(),
-				"description": fmt.Sprintf("Content id %s not found", contentID),
-			})
+			ctx.JSON(http.StatusNotFound,
+				getResponse(true, nil, err.Error(), fmt.Sprintf("Content id %s not found", contentID)))
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Updating data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Updating data has failed"))
 		return
 	}
 
@@ -237,42 +214,27 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 		contentID, keyExpirationTime*time.Second).Err()
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         "failed to update data",
-			"description": "Updating data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, "failed to update data", "Updating data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"data":        struct{}{},
-		"description": "Updating data has succeeded",
-	})
+	ctx.JSON(http.StatusOK,
+		getResponse(true, struct{}{}, "", "Updating data has succeeded"))
 }
 
 func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
-	req := struct {
-		ID string `json:"id"`
-	}{}
-	err := ctx.BindJSON(&req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
+	id := ctx.Query("id")
+	if len(id) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, "No id parameter", "Getting id has failed"))
 		return
 	}
 	userID := ctx.GetString("sub")
-	contentID := strings.Split(req.ID, "_")[0]
+	contentID := strings.Split(id, "_")[0]
 
 	// Watch the key
 	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
-	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
+	err := h.Cache.Watch(ctx, func(tx *redis.Tx) error {
 		val, err := h.Cache.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
 		if err != nil {
 			return err
@@ -293,61 +255,43 @@ func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
 		})
 		return err
 	}, key)
+	if errors.Is(err, redis.Nil) {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(true, nil, "Not redis key found", fmt.Sprintf("The user %s does not have any content", userID)))
+		return
+	}
 	if err != nil {
 		// Handle the situation where the transaction was discarded
 		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Deleting data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting data has failed"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"data":        struct{}{},
-		"description": "Deleting data has succeeded",
-	})
+	ctx.JSON(http.StatusOK,
+		getResponse(true, struct{}{}, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) DeleteContent(ctx *gin.Context) {
-	req := struct {
-		ID string `json:"id"`
-	}{}
-	err := ctx.BindJSON(&req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err.Error(),
-			"description": "Binding data has failed",
-		})
+	id := ctx.Query("id")
+	if len(id) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, "No id parameter", "Getting id has failed"))
 		return
 	}
 	userID := ctx.GetString("sub")
-	contentID := strings.Split(req.ID, "_")[0]
+	contentID := strings.Split(id, "_")[0]
 	key := fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)
 	exist, err := h.Cache.Exists(ctx, key).Result()
 	if exist != 1 {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         "failed to Delete data",
-			"description": fmt.Sprintf("Key %s not found", key),
-		})
+		ctx.JSON(http.StatusNotFound,
+			getResponse(true, nil, "failed to Delete data", fmt.Sprintf("Key %s not found", key)))
 		return
 	}
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         "failed to Delete data",
-			"description": fmt.Sprintf("Checking key %s has failed", key),
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, "failed to Delete data", fmt.Sprintf("Checking key %s has failed", key)))
 		return
 	}
 
@@ -381,20 +325,13 @@ func (h *Handler) DeleteContent(ctx *gin.Context) {
 		return err
 	}, key)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err,
-			"description": "failed to Delete data",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "failed to Delete data"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"data":        struct{}{},
-		"description": "Deleting data has succeeded",
-	})
+	ctx.JSON(http.StatusOK,
+		getResponse(true, struct{}{}, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
@@ -402,23 +339,22 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 	book := &Book{}
 	err := h.Database.WithContext(ctx).Model(book).Distinct("author").Order("author").Debug().Find(&obj).Error
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err,
-			"description": "Getting data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": struct {
-			Authors []*string `json:"authors"`
-		}{
-			Authors: obj,
-		},
-		"description": "Getting data has succeeded",
-	})
+	if len(obj) == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No author has found", "Getting data has failed"))
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			struct {
+				Authors []*string `json:"authors"`
+			}{
+				Authors: obj,
+			},
+			"", "Getting data has succeeded"))
 }
 
 func (h *Handler) GetBookTitles(ctx *gin.Context) {
@@ -426,23 +362,22 @@ func (h *Handler) GetBookTitles(ctx *gin.Context) {
 	book := &Book{}
 	err := h.Database.WithContext(ctx).Model(book).Distinct("title").Order("title").Debug().Find(&obj).Error
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err,
-			"description": "Getting data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": struct {
-			Titles []*string `json:"titles"`
-		}{
-			Titles: obj,
-		},
-		"description": "Getting data has succeeded",
-	})
+	if len(obj) == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No book title has found", "Getting data has failed"))
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			struct {
+				Titles []*string `json:"titles"`
+			}{
+				Titles: obj,
+			},
+			"", "Getting data has succeeded"))
 }
 
 func (h *Handler) GetArchives(ctx *gin.Context) {
@@ -461,12 +396,8 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	}
 	err := errors.Join(errPage, errLimit)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"success":     true,
-			"code":        "",
-			"err":         err,
-			"description": "Getting data has failed",
-		})
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Getting data has failed"))
 		return
 	}
 	if limit > 0 {
@@ -492,30 +423,29 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	obj := []*Archive{}
 	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success":     false,
-			"code":        "",
-			"err":         err,
-			"description": "Getting data has failed",
-		})
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": struct {
-			Pagination *Pagination `json:"pagination"`
-			Archives   []*Archive  `json:"archives"`
-		}{
-			Pagination: &Pagination{
-				Limit:      listLimit,
-				Page:       page,
-				TotalRows:  totalRows,
-				TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
+	if len(obj) == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No archive has found", "Getting data has failed"))
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			struct {
+				Pagination *Pagination `json:"pagination"`
+				Archives   []*Archive  `json:"archives"`
+			}{
+				Pagination: &Pagination{
+					Limit:      listLimit,
+					Page:       page,
+					TotalRows:  totalRows,
+					TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
+				},
+				Archives: obj,
 			},
-			Archives: obj,
-		},
-		"description": "Getting data has succeeded",
-	})
+			"", "Getting data has succeeded"))
 }
 
 // func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis

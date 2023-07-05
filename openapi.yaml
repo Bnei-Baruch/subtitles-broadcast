@@ -8,204 +8,235 @@ info:
 servers:
   - url: https://domain/api/v1
 tags:
-  - name: books
-    description: Access and manage book content
-  - name: bookmarks
+  - name: author
+    description: Access and manage author information
+  - name: book
+    description: Access and manage book information
+  - name: bookmark
     description: Access and manage bookmark
+  - name: content
+    description: Access and manage book content
+  - name: selected-content
+    description: Access and manage the relationship between user and the book content. This means marking book content the user opened
+  - name: activated-content
+    description: Access and manage the relationship between user and the book content. This means marking book content the user opened previously
 paths:
-  /books:
-    put:
+  /selected-content:
+    post:
       tags:
-        - books
-      summary: Update an book content by id
-      description: Update an book content by id
-      operationId: updateBook
+        - selected-content
+      summary: Add a relationship between a content id and an user
+      description: marked content the user opened currently and also the one previously
+      operationId: addSelectedContent
       requestBody:
         required: true
-        description: Update an book content by id
+        description: book content unique id
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BookPutRequest'
+              $ref: '#/components/schemas/BasicContentRequest'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookResponse'
+                $ref: '#/components/schemas/ContentResponse'
+        '401':
+          description: Invalid request jwt token
         '400':
           description: Invalid request value
         '404':
-          description: Book not found
+          description: Book content not found
         '405':
           description: Validation http method
+        '500':
+          description: Internal error
       security:
         - bearerAuth:
             - write:books
             - read:books
-    post:
+    put:
       tags:
-        - books
-      summary: Add an book content
-      description: Add an book content
-      operationId: addBook
+        - selected-content
+      summary: Update a content id for the user
+      description: Update a content id the user opened currently
+      operationId: updateSelectedContent
       requestBody:
         required: true
-        description: Add an book content
+        description: book content unique id
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BasicBook'
+              $ref: '#/components/schemas/BasicContentRequest'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookResponse'
+                $ref: '#/components/schemas/ContentResponse'
+        '401':
+          description: Invalid request jwt token
         '400':
           description: Invalid request value
+        '404':
+          description: Book content not found
         '405':
-          description: Invalid http method
+          description: Validation http method
+        '500':
+          description: Internal error
       security:
         - bearerAuth:
             - write:books
             - read:books
-    get:
+  /activated-content:
+    delete:
       tags:
-        - books
-      summary: Finds book
-      description: Finds book
-      operationId: findBook
+        - activated-content
+      summary: Delete the relationship between a content id and an user
+      description: Delete the mark the content user opened previously and the mark the content user opened currently
+      operationId: deleteActivatedContent
       parameters:
-        - name: limit
+        - name: id
           in: query
-          description: page size for pagination
-          required: false
+          description: book content unique id
+          required: true
           explode: true
           schema:
             type: string
-        - name: start
-          in: query
-          description: start page
-          required: false
-          explode: true
-          schema:
-            type: string
+            format: contentID_page_letter_subletter
+            example: "231_3_4_2"
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BookResponse'
+                $ref: '#/components/schemas/ContentResponse'
+        '401':
+          description: Invalid request jwt token
         '400':
           description: Invalid request query
         '404':
-          description: Book not found
+          description: content not found
         '405':
           description: Invalid http method
-      security:
-        - bearerAuth:
-            - read:books
-  /bookmarks:
-    put:
-      tags:
-        - bookmarks
-      summary: Update an bookmark content by id
-      description: Update an bookmark by id
-      operationId: updateBookmark
-      requestBody:
-        required: true
-        description: Update an bookmark by id
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BookmarkPutRequest'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookmarkResponse'
-        '400':
-          description: Invalid request value
-        '404':
-          description: Book not found
-        '405':
-          description: Validation http method
+        '500':
+          description: Internal error
       security:
         - bearerAuth:
             - write:books
             - read:books
-    post:
+  /content:
+    delete:
       tags:
-        - bookmarks
-      summary: Add an bookmark
-      description: Add an bookmark
-      operationId: addBookmark
-      requestBody:
-        required: true
-        description: Add an bookmark
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BasicBookmark'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookmarkResponse'
-        '400':
-          description: Invalid request value
-        '405':
-          description: Invalid http method
-      security:
-        - bearerAuth:
-            - write:books
-            - read:books
-    get:
-      tags:
-        - bookmarks
-      summary: Finds book in hebrew by id
-      description: Finds book in hebrew by id
-      operationId: findBookInHebrewById
+        - content
+      summary: Delete the relationship between a content id and an user
+      description: Delete the mark the content user opened previously and the mark the content user opened currently
+      operationId: deleteContent
       parameters:
-        - name: limit
+        - name: id
           in: query
-          description: page size for pagination
-          required: false
+          description: book content unique id
+          required: true
           explode: true
           schema:
             type: string
-        - name: start
-          in: query
-          description: start page
-          required: false
-          explode: true
-          schema:
-            type: string
+            format: contentID_page_letter_subletter
+            example: "231_3_4_2"
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BookmarkResponse'
+                $ref: '#/components/schemas/ContentResponse'
+        '401':
+          description: Invalid request jwt token
         '400':
           description: Invalid request query
         '404':
-          description: Book not found
+          description: content not found
         '405':
           description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:books
+            - read:books
+  /book-list:
+    get:
+      tags:
+        - book
+      description: Finds book all contents an user opened previously and currently
+      operationId: getUserBookContents
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:books
+  /author:
+    get:
+      tags:
+        - author
+      description: Finds all authors
+      operationId: GetAuthors
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorResponse'
+        '401':
+          description: Invalid request jwt token
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:books
+  /book-title:
+    get:
+      tags:
+        - author
+      description: Finds all book titles
+      operationId: GetBookTitles
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTitleResponse'
+        '401':
+          description: Invalid request jwt token
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
       security:
         - bearerAuth:
             - read:books
@@ -215,32 +246,32 @@ paths:
         - archive
       summary: Get archive information
       description: all archive information or some by filter
-      operationId: findArchive
+      operationId: GetArchives
       parameters:
-        - name: content
+        - name: page
           in: query
-          description: text to search for the filter
+          description: page number
           required: false
           explode: true
           schema:
             type: string
-        - name: author
+        - name: limit
           in: query
-          description: author name to search for the filter
+          description: page size
           required: false
           explode: true
           schema:
             type: string
         - name: type
           in: query
-          description: type name to search for the filter
+          description: title to search for the filter
           required: false
           explode: true
           schema:
             type: string
         - name: book_title
           in: query
-          description: book title to search for the filter
+          description: author to search for the filter
           required: false
           explode: true
           schema:
@@ -254,151 +285,167 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ArchiveResponse'
+        '401':
+          description: Invalid request jwt token
         '400':
           description: Invalid request query
+        '404':
+          description: content not found
         '405':
           description: Invalid http method
+        '500':
+          description: Internal error
       security:
         - bearerAuth:
             - read:books
 components:
   schemas:
-    BasicBook:
+    BasicContentRequest:
       type: object
       required:
-        - author
-        - title
-        - content
-        - slides
+        - id
       properties:
-        author:
+        id:
           type: string
-          description: book author
-          example: "קלטות רבש"
-        title:
-          type: string
-          description: book title
-          example: "001_heb_o_rb_bs-tes-04_1"
-        content:
-          type: string
-          description: book content
-          example: "%author קלטות רבש %book 001_heb_o_rb_bs-tes-04_1"
-        slides:
-          type: string
-          example: "[{page: 0
-                    letter: 0
-                    subletter: 1
-                    revert: 1
-                    content: <b>חלק רביעי ~
-                    }]"
-    BookPutRequest:
-      allOf:     
-        - $ref: '#/components/schemas/BasicBook'
-        - type: object
-          required:
-            - id
-          properties:
-            id:
-              type: integer
-              format: int64
-              example: 10
-    BookResponse:
-      allOf:     
-        - $ref: '#/components/schemas/BookPutRequest'
-        - type: object
-          required:
-            - created_at
-            - updated_at
-          properties:
-            created_at:
-              type: string
-              format: date-time
-              example: "2021-06-20T01:02:03+00:00"
-            updated_at:
-              type: string
-              format: date-time
-              example: "2021-06-20T01:02:03+00:00"
-    BasicBookmark:
+          format: contentID_page_letter_subletter
+          description: book content unique id
+          example: "231_3_4_2"
+    BasicResponse:
       type: object
       required:
-        - author
-        - book
-        - book_name
-        - page
-        - letter
+        - success
+        - error
+        - description
       properties:
-        author:
+        success:
+          type: boolean
+          description: the boolean value if request has been successful or not 
+          example: true
+        error:
           type: string
-          description: book author
-          example: "כתובות מייל"
-        book:
+          description: the error message when request has been failed
+          example: ""
+        description:
           type: string
-          description: book path
-          example: "/books/1201"
-        book_name:
-          type: string
-          description: book name
-          example: "לכנסים רישום הנהלה והפצה"
-        page:
-          type: integer
-          format: int64
-          example: 232
-        letter:
-          type: string
-          description: letter
-          example: "0-38"
-    BookmarkPutRequest:
+          description: the description of the request result
+          example: Proper messages for the situations
+    ContentResponse:
+      allOf:
+        - $ref: '#/components/schemas/BasicResponse'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: object
+              description: data object when request has been successful
+              example: {}
+    BookListResponse:
       allOf:     
-        - $ref: '#/components/schemas/BasicBookmark'
+        - $ref: '#/components/schemas/BasicResponse'
         - type: object
           required:
-            - id
+            - data
           properties:
-            id:
-              type: integer
-              format: int64
-              example: 10
-    BookmarkResponse:
-      allOf:    
-        - $ref: '#/components/schemas/BookmarkPutRequest'
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  book_title:
+                    type: string
+                    description: "book title"
+                    example: "כרך י\"א - מאמרים ליום הכיפורים"
+                  last_activated:
+                    type: string
+                    description: "book content unique id"
+                    example: "7_215_0_1"
+                  contents:
+                    type: array
+                    items:
+                      type: string
+                      description: "book content"
+                      example: "זידונים, הם שאר העמים, ושיניים, הם השרים הממונים על שאר העמים עכו\"ם. והם מתברכים מצידם של ישראל."
+    AuthorResponse:
+      allOf:
+        - $ref: '#/components/schemas/BasicResponse'
         - type: object
           required:
-            - created_at
-            - updated_at
+            - data
           properties:
-            created_at:
-              type: string
-              format: date-time
-              example: "2021-06-20T01:02:03+00:00"
-            updated_at:
-              type: string
-              format: date-time
-              example: "2021-06-20T01:02:03+00:00"
+            data:
+              type: object
+              properties:
+                authors:
+                  type: array
+                  items:
+                    type: string
+                    description: author list
+                    example: "אאתוספות"
+    BookTitleResponse:
+      allOf:
+        - $ref: '#/components/schemas/BasicResponse'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: object
+              properties:
+                titles:
+                  type: array
+                  items:
+                    type: string
+                    description: book title list
+                    example: "001_heb_o_rb_bs-tes-04_1"
     ArchiveResponse:
       allOf:
+        - $ref: '#/components/schemas/BasicResponse'
         - type: object
           required:
-            - text
-            - author
-            - type
-            - book_title
+            - data
           properties:
-            text:
-              type: string
-              description: book content
-              example: ".1 והמשכילים יזהירו כזוהר הרקיע. המשכילים, הם המסתכלים בחכמה שהשיגו, כי חכמה מכונה אור העיניים, והשגתה מכונה הסתכלות. למה לא כתוב, יאירו? אלא, שמאירים ומתנוצצים בזיווה"
-            author:
-              type: string
-              description: author name
-              example: "זוהר לעם - כרכים א-ד"
-            type:
-              type: string
-              description: content type
-              example: "letter"
-            book_title:
-              type: string
-              description: book title
-              example: "כרך ד' - פרשת שמות"
+            data:
+              type: object
+              properties:
+                pagination:
+                  type: object
+                  properties:
+                    limit:
+                      type: integer
+                      description: page size
+                      example: 6
+                    page:
+                      type: integer
+                      example: 1
+                    total_rows:
+                      type: integer
+                      example: 226922
+                    total_pages:
+                      type: integer
+                      example: 37821
+                archives:
+                  type: array
+                  items:
+                    properties:
+                      id: 
+                        type: string
+                        description: book content unique id
+                        example: "36258_0_0_1"
+                      text: 
+                        type: string
+                        description: book content
+                        example: "<b>חלק רביעי</b> כאן מדובר מ- <b>עשר הספירות של עקודים <br/>כולל ו&#39; פרקים</b> אות <b>א.</b> כאן הוא אומר <b>אין לנו כח <br/>לעסוק קודם עולם האצילות.<b/>"
+                      author: 
+                        type: string
+                        example: "קלטות רבש"
+                      book_name: 
+                        type: string
+                        example: ""
+                      title: 
+                        type: string
+                        description: book title
+                        example: "001_heb_o_rb_bs-tes-04_1"
   securitySchemes:
     bearerAuth:
       bearerFormat: auth-scheme

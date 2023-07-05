@@ -1,46 +1,42 @@
 package api
 
 import (
-	"time"
+	"gorm.io/gorm"
 )
 
 type Book struct {
-	Id        int       `json:"id"`
-	Author    string    `json:"author"`
-	Title     string    `json:"title"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	gorm.Model
+	Author string `json:"author"`
+	Title  string `json:"title"`
 }
 
 type Content struct {
-	Id     int `json:"id"`
-	BookId int `json:"book_id"`
-	//Type           string    `json:"type"`
-	Page      string    `json:"page"`
-	Letter    string    `json:"letter"`
-	Subletter string    `json:"subletter"`
-	Revert    string    `json:"revert"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	gorm.Model
+	BookId       int    `json:"book_id" gorm:"type:integer"`
+	Page         string `json:"page"`
+	Letter       string `json:"letter"`
+	Subletter    string `json:"subletter"`
+	Revert       string `json:"revert"`
+	Content      string `json:"content"`
+	PageInt      int    `json:"page_int" gorm:"type:integer"`
+	LetterInt    int    `json:"letter_int" gorm:"type:integer"`
+	SubLetterInt int    `json:"subletter_int" gorm:"type:integer"`
 }
 
 type Bookmark struct {
-	Id        int       `json:"id"`
-	BookId    int       `json:"book_id"`
-	ContentId int       `json:"content_id"`
-	Path      string    `json:"path"`
-	User      string    `json:"user"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	gorm.Model
+	BookId    int    `json:"book_id"`
+	ContentId int    `json:"content_id"`
+	Path      string `json:"path"`
+	User      string `json:"user"`
 }
 
 type Archive struct {
-	Id     string  `gorm:"column:id" json:"id"`
-	Text   string  `gorm:"column:text" json:"text"`
-	Author string  `gorm:"column:author" json:"author"`
-	Type   *string `gorm:"column:type" json:"type"`
-	Title  string  `gorm:"column:title" json:"title"`
+	Id       string  `json:"id"`
+	Text     string  `json:"text"`
+	Author   string  `json:"author"`
+	BookName *string `json:"book_name"`
+	Title    string  `json:"title"`
 }
 
 type Pagination struct {
@@ -48,20 +44,6 @@ type Pagination struct {
 	Page       int   `json:"page"`
 	TotalRows  int64 `json:"total_rows"`
 	TotalPages int   `json:"total_pages"`
-}
-
-type UsersSelectedContent struct {
-	UserID    string
-	ContentID int
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-type UsersLastActivatedContent struct {
-	UserID    string
-	ContentID int
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 type BookContent struct {

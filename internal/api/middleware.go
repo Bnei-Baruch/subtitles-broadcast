@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -43,26 +44,24 @@ func UserRoleHandler() gin.HandlerFunc {
 		if len(authHeader) == 0 {
 			err := fmt.Errorf("there is no authorization token")
 			log.Error(err)
-			ctx.JSON(401, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success":     true,
 				"code":        "",
 				"err":         err.Error(),
 				"description": "",
 			})
-			ctx.Abort()
 			return
 		}
 		tokenString := authHeader[len("Bearer"):]
 		roles, err := auth.GetUserRole(tokenString)
 		if err != nil {
 			log.Error(err)
-			ctx.JSON(401, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success":     true,
 				"code":        "",
 				"err":         err.Error(),
 				"description": "",
 			})
-			ctx.Abort()
 			return
 		}
 		isValidUser := false
@@ -75,13 +74,12 @@ func UserRoleHandler() gin.HandlerFunc {
 		}
 		if !isValidUser {
 			log.Info("The user is not authorized")
-			ctx.JSON(401, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success":     true,
 				"code":        "",
 				"err":         "The user is not authorized",
 				"description": "",
 			})
-			ctx.Abort()
 			return
 		}
 		ctx.Next()
@@ -94,30 +92,54 @@ func UserInfoHandler() gin.HandlerFunc {
 		if len(authHeader) == 0 {
 			err := fmt.Errorf("there is no authorization token")
 			log.Error(err)
-			ctx.JSON(401, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success":     true,
 				"code":        "",
 				"err":         err.Error(),
 				"description": "",
 			})
-			ctx.Abort()
 			return
 		}
 		tokenString := authHeader[len("Bearer"):]
 		userInfo, err := auth.GetUserInfo(tokenString)
 		if err != nil {
 			log.Error(err)
-			ctx.JSON(401, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success":     true,
 				"code":        "",
 				"err":         err.Error(),
 				"description": "",
 			})
-			ctx.Abort()
 			return
 		}
 
 		ctx.Set("sub", userInfo.Sub)
+		ctx.Next()
+	}
+}
+
+func HttpMethodChecker(router *gin.Engine) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		method := ctx.Request.Method
+		route := ctx.Request.URL.Path
+		routes := router.Routes()
+
+		for _, r := range routes {
+			if r.Path == route {
+				if r.Method != method {
+					log.Info("Method Not Allowed")
+					ctx.AbortWithStatusJSON(http.StatusMethodNotAllowed, gin.H{
+						"success":     true,
+						"code":        "",
+						"err":         "Method Not Allowed",
+						"description": "",
+					})
+					return
+				}
+				break
+			}
+		}
+
 		ctx.Next()
 	}
 }
