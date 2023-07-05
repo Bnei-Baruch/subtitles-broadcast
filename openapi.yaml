@@ -8,23 +8,15 @@ info:
 servers:
   - url: https://domain/api/v1
 tags:
-  - name: author
-    description: Access and manage author information
   - name: book
     description: Access and manage book information
   - name: bookmark
     description: Access and manage bookmark
-  - name: content
-    description: Access and manage book content
-  - name: selected-content
-    description: Access and manage the relationship between user and the book content. This means marking book content the user opened
-  - name: activated-content
-    description: Access and manage the relationship between user and the book content. This means marking book content the user opened previously
 paths:
   /selected-content:
     post:
       tags:
-        - selected-content
+        - book
       summary: Add a relationship between a content id and an user
       description: marked content the user opened currently and also the one previously
       operationId: addSelectedContent
@@ -58,7 +50,7 @@ paths:
             - read:books
     put:
       tags:
-        - selected-content
+        - book
       summary: Update a content id for the user
       description: Update a content id the user opened currently
       operationId: updateSelectedContent
@@ -93,7 +85,7 @@ paths:
   /activated-content:
     delete:
       tags:
-        - activated-content
+        - book
       summary: Delete the relationship between a content id and an user
       description: Delete the mark the content user opened previously and the mark the content user opened currently
       operationId: deleteActivatedContent
@@ -131,7 +123,7 @@ paths:
   /content:
     delete:
       tags:
-        - content
+        - book
       summary: Delete the relationship between a content id and an user
       description: Delete the mark the content user opened previously and the mark the content user opened currently
       operationId: deleteContent
@@ -195,7 +187,7 @@ paths:
   /author:
     get:
       tags:
-        - author
+        - book
       description: Finds all authors
       operationId: GetAuthors
       responses:
@@ -219,7 +211,7 @@ paths:
   /book-title:
     get:
       tags:
-        - author
+        - book
       description: Finds all book titles
       operationId: GetBookTitles
       responses:
