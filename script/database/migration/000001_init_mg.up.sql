@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     book_id INT REFERENCES books (id),
     content_id INT REFERENCES contents (id),
     path VARCHAR(50),
+    user_id VARCHAR(50),
     created_at timestamp without time zone,
     updated_at timestamp without time zone
 );
