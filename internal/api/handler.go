@@ -173,6 +173,7 @@ func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
 			SELECT row_num
 			FROM rowlist
 			WHERE content_id = ?
+			LIMIT 1
 		)
 		SELECT *
 		FROM rowlist
