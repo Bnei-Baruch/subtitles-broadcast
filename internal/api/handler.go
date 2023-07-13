@@ -132,7 +132,6 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 		go func() {
 			defer wg.Done()
 			contents, err := getContents(h.Database, contentID)
-			fmt.Printf("%+v\n", *contents[0])
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError,
 					getResponse(false, nil, err.Error(), "Getting data has failed"))
