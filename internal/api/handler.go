@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -115,6 +116,7 @@ func checkValidContentID(db *gorm.DB, contentID string) error {
 }
 
 func (h *Handler) GetUserBookContents(ctx *gin.Context) {
+	var wg sync.WaitGroup
 	userBooks := []*UserBook{}
 	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
 	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
@@ -126,24 +128,29 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	for iter.Next(ctx) {
 		keyComponents := strings.Split(iter.Val(), ":")
 		contentID := keyComponents[len(keyComponents)-1]
-		contents, err := getContents(h.Database, contentID)
-		fmt.Printf("%+v\n", *contents[0])
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-			return
-		}
-		bookContents := []string{}
-		for _, content := range contents {
-			bookContents = append(bookContents, content.Content)
-		}
-		userBook := UserBook{
-			BookTitle:     contents[0].Title,
-			LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
-			Contents:      bookContents,
-		}
-		userBooks = append(userBooks, &userBook)
+		wg.Add(1)
+		go func() {
+			contents, err := getContents(h.Database, contentID)
+			fmt.Printf("%+v\n", *contents[0])
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError,
+					getResponse(false, nil, err.Error(), "Getting data has failed"))
+				return
+			}
+			bookContents := []string{}
+			for _, content := range contents {
+				bookContents = append(bookContents, content.Content)
+			}
+			userBook := UserBook{
+				BookTitle:     contents[0].Title,
+				LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
+				Contents:      bookContents,
+			}
+			userBooks = append(userBooks, &userBook)
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 	if len(userBooks) == 0 {
 		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "No user book content has found", "Getting data has failed"))
