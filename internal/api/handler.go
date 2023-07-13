@@ -130,6 +130,7 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 		contentID := keyComponents[len(keyComponents)-1]
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			contents, err := getContents(h.Database, contentID)
 			fmt.Printf("%+v\n", *contents[0])
 			if err != nil {
@@ -147,7 +148,6 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 				Contents:      bookContents,
 			}
 			userBooks = append(userBooks, &userBook)
-			wg.Done()
 		}()
 	}
 	wg.Wait()
