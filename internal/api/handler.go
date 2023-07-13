@@ -117,7 +117,7 @@ func checkValidContentID(db *gorm.DB, contentID string) error {
 
 func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	var wg sync.WaitGroup
-	userBooks := []*UserBook{}
+	//userBooks := []*UserBook{}
 	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
 	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
 	if err := iter.Err(); err != nil {
@@ -125,19 +125,54 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
+	// for iter.Next(ctx) {
+	// 	keyComponents := strings.Split(iter.Val(), ":")
+	// 	contentID := keyComponents[len(keyComponents)-1]
+	// 	wg.Add(1)
+	// 	go func() {
+	// 		defer wg.Done()
+	// 		contents, err := getContents(h.Database, contentID)
+	// 		if err != nil {
+	// 			ctx.JSON(http.StatusInternalServerError,
+	// 				getResponse(false, nil, err.Error(), "Getting data has failed"))
+	// 			return
+	// 		}
+	// 		bookContents := []string{}
+	// 		for _, content := range contents {
+	// 			bookContents = append(bookContents, content.Content)
+	// 		}
+	// 		userBook := UserBook{
+	// 			BookTitle:     contents[0].Title,
+	// 			LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
+	// 			Contents:      bookContents,
+	// 		}
+	// 		userBooks = append(userBooks, &userBook)
+	// 	}()
+	// }
+	// wg.Wait()
+	// if len(userBooks) == 0 {
+	// 	ctx.JSON(http.StatusNotFound,
+	// 		getResponse(false, nil, "No user book content has found", "Getting data has failed"))
+	// 	return
+	// }
+
+	// ctx.JSON(http.StatusOK,
+	// 	getResponse(true, userBooks, "", "Getting data has succeeded"))
+	errChan := make(chan error, 1)
+	resultsChan := make(chan *UserBook)
+
 	for iter.Next(ctx) {
 		keyComponents := strings.Split(iter.Val(), ":")
 		contentID := keyComponents[len(keyComponents)-1]
 		wg.Add(1)
-		go func() {
+		go func(contentID string) {
 			defer wg.Done()
 			contents, err := getContents(h.Database, contentID)
 			if err != nil {
-				ctx.JSON(http.StatusInternalServerError,
-					getResponse(false, nil, err.Error(), "Getting data has failed"))
+				errChan <- err
 				return
 			}
-			bookContents := []string{}
+			bookContents := make([]string, 0, len(contents))
 			for _, content := range contents {
 				bookContents = append(bookContents, content.Content)
 			}
@@ -146,18 +181,33 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 				LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
 				Contents:      bookContents,
 			}
-			userBooks = append(userBooks, &userBook)
-		}()
+			resultsChan <- &userBook
+		}(contentID)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	var userBooks []*UserBook
+	for userBook := range resultsChan {
+		userBooks = append(userBooks, userBook)
+	}
+
 	if len(userBooks) == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No user book content has found", "Getting data has failed"))
+		ctx.JSON(http.StatusNotFound, getResponse(false, nil, "No user book content has been found", "Getting data has failed"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK,
-		getResponse(true, userBooks, "", "Getting data has succeeded"))
+	select {
+	case err := <-errChan:
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	default:
+		ctx.JSON(http.StatusOK, getResponse(true, userBooks, "", "Getting data has succeeded"))
+	}
+
 }
 
 func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
