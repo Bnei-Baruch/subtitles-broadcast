@@ -21,7 +21,7 @@ const (
 	responseError       = "error"
 	responseDescription = "description"
 
-	keyExpirationTime                 = 3000
+	keyExpirationTime                 = 300000
 	userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
 	userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
 )
