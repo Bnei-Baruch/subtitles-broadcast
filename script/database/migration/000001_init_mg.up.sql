@@ -483,5 +483,8 @@ DROP FUNCTION ConvertHebrewToNumeric;
 --UPDATE contents
 --SET content = regexp_replace(content, '<[^>]+>', '', 'g');
 
+CREATE INDEX idx_contents_page ON contents(page);
+CREATE INDEX idx_contents_letter ON contents(letter);
+CREATE INDEX idx_contents_subletter ON contents(subletter);
 CREATE INDEX idx_contents_book_id ON contents(book_id);
-CREATE INDEX idx_books_title ON books(title);
+CREATE INDEX idx_books_id ON books(id);
