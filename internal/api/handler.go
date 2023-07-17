@@ -165,10 +165,10 @@ func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
 
 	subquery := db.Raw(`
 	SELECT *
-FROM my_view
+FROM view_book_content
 WHERE row_num >= (
     SELECT row_num
-    FROM my_view
+    FROM view_book_content
     WHERE content_id = ?
     LIMIT 1
 )

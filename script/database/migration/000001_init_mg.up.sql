@@ -487,4 +487,14 @@ CREATE INDEX idx_contents_page ON contents(page);
 CREATE INDEX idx_contents_letter ON contents(letter);
 CREATE INDEX idx_contents_subletter ON contents(subletter);
 CREATE INDEX idx_contents_book_id ON contents(book_id);
-CREATE INDEX idx_books_id ON books(id);
+
+CREATE VIEW view_book_content AS
+SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num,
+       c.id AS content_id,
+       b.title AS title,
+       c.page AS page,
+       c.letter AS letter,
+       c.subletter AS subletter,
+       c.content AS content
+FROM books AS b
+INNER JOIN contents AS c ON b.id = c.book_id;
