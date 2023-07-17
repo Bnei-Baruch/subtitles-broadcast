@@ -164,27 +164,15 @@ func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
 	contents := []*BookContent{}
 
 	subquery := db.Raw(`
-	WITH rowlist AS (
-		SELECT ROW_NUMBER() OVER (ORDER BY book_id, page, letter, subletter ASC) AS row_num,
-		c.id AS content_id,
-		b.title AS title,
-		c.page AS page,
-		c.letter AS letter,
-		c.subletter AS subletter,
-		c.content AS content
-		FROM books AS b
-		INNER JOIN contents AS c ON b.id = c.book_id
-	),
-	start_row AS (
-		SELECT row_num
-		FROM rowlist
-		WHERE content_id = ?
-		LIMIT 1
-	)
 	SELECT *
-	FROM rowlist
-	WHERE row_num >= (SELECT row_num FROM start_row)
-	LIMIT 5;
+FROM my_view
+WHERE row_num >= (
+    SELECT row_num
+    FROM my_view
+    WHERE content_id = ?
+    LIMIT 1
+)
+LIMIT 5;
 	
 	`, contentID).Find(&contents)
 	if subquery.Error != nil {
