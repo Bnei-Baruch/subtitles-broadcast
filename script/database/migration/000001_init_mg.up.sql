@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS file_sources (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50)
+    name VARCHAR(50) UNIQUE
 );
 
-INSERT INTO file_sources (name) values archive;
-INSERT INTO file_sources (name) values upload;
+INSERT INTO file_sources (name) VALUES ('archive');
+INSERT INTO file_sources (name) VALUES ('upload');
 
 CREATE TABLE IF NOT EXISTS files (
     id SERIAL PRIMARY KEY,
@@ -25,5 +25,5 @@ CREATE TABLE IF NOT EXISTS subtitles (
 
 CREATE TABLE IF NOT EXISTS bookmarks (
     id SERIAL PRIMARY KEY,
-    subtitle_id INT REFERENCES subtitles (id),
+    subtitle_id INT REFERENCES subtitles (id)
 );
