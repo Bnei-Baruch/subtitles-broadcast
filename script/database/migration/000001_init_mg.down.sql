@@ -1,12 +1,7 @@
 DROP TABLE IF EXISTS bookmarks;
 
-DROP TABLE IF EXISTS contents;
+DROP TABLE IF EXISTS subtitles;
 
-DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS files;
 
-ALTER TABLE old_books RENAME TO books;
-
-ALTER TABLE books DROP COLUMN slides_jsonb CASCADE;
-
-ALTER TABLE old_bookmarks RENAME TO bookmarks;
-
+DROP TABLE IF EXISTS file_sources;
