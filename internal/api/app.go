@@ -38,7 +38,7 @@ func NewApp() *http.Server {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if err := db.AutoMigrate(&Book{}, &Bookmark{}, &Content{}); err != nil {
+	if err := db.AutoMigrate(&File{}, &FileSource{}, &Bookmark{}, &Subtitle{}); err != nil {
 		log.Fatalln(err)
 	}
 	cache, err := database.NewRedis(conf.Redis.Url)

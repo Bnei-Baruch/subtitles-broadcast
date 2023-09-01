@@ -3,12 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"strings"
 
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
 
+	"code.sajari.com/docconv"
+	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/api"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/archive"
 )
 
@@ -58,12 +60,20 @@ func main() {
 		return
 	}
 
-	docContent, err := io.ReadAll(resp.Body)
+	res, _, err := docconv.ConvertDocx(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return
+		log.Fatal(err)
 	}
-
-	// Now you can work with the docContent byte slice as needed
-	fmt.Println("Retrieved document content:", string(docContent))
+	contents := strings.Split(strings.TrimSpace(res), "\n")
+	for i, content := range contents {
+		if len(content) > 0 {
+			subtitle := api.Subtitle{
+				FileUid:        fileUid,
+				FileSourceType: "archive",
+				Subtitle:       content,
+				OrderNumber:    i,
+			}
+			fmt.Printf("%+v\n", subtitle)
+		}
+	}
 }

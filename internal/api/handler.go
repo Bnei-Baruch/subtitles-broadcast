@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -108,7 +107,7 @@ func checkValidContentID(db *gorm.DB, contentID string) error {
 	if err != nil {
 		return err
 	}
-	err = db.First(&Content{}, contentIDInt).Error
+	err = db.First(&Subtitle{}, contentIDInt).Error
 	if err != nil {
 		return err
 	}
@@ -117,7 +116,7 @@ func checkValidContentID(db *gorm.DB, contentID string) error {
 
 func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 	var wg sync.WaitGroup
-	userBooks := []*UserBook{}
+	userBooks := []*Subtitle{}
 	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
 	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
 	if err := iter.Err(); err != nil {
@@ -139,13 +138,9 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 			}
 			bookContents := []string{}
 			for _, content := range contents {
-				bookContents = append(bookContents, content.Content)
+				bookContents = append(bookContents, content.Subtitle)
 			}
-			userBook := UserBook{
-				BookTitle:     contents[0].Title,
-				LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
-				Contents:      bookContents,
-			}
+			userBook := Subtitle{}
 			userBooks = append(userBooks, &userBook)
 		}()
 	}
@@ -160,8 +155,8 @@ func (h *Handler) GetUserBookContents(ctx *gin.Context) {
 		getResponse(true, userBooks, "", "Getting data has succeeded"))
 }
 
-func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
-	contents := []*BookContent{}
+func getContents(db *gorm.DB, contentID string) ([]*Subtitle, error) {
+	contents := []*Subtitle{}
 
 	subquery := db.Raw(`
 	SELECT *
@@ -315,7 +310,7 @@ func (h *Handler) DeleteContent(ctx *gin.Context) {
 				return err
 			}
 			// Perform PostgreSQL operations within the transaction
-			if err := h.Database.Delete(&Content{}, contentIDInt).Error; err != nil {
+			if err := h.Database.Delete(&Subtitle{}, contentIDInt).Error; err != nil {
 				return err
 			}
 			return nil
@@ -334,7 +329,7 @@ func (h *Handler) DeleteContent(ctx *gin.Context) {
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
 	obj := []*string{}
-	book := &Book{}
+	book := &Subtitle{}
 	err := h.Database.WithContext(ctx).Model(book).Distinct("author").Order("author").Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
@@ -358,7 +353,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 
 func (h *Handler) GetBookTitles(ctx *gin.Context) {
 	obj := []*string{}
-	book := &Book{}
+	book := &Subtitle{}
 	err := h.Database.WithContext(ctx).Model(book).Distinct("title").Order("title").Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
@@ -408,7 +403,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	}
 
 	var totalRows int64
-	query := h.Database.WithContext(ctx).Model(&Content{}).Order("books.title, contents.page, contents.letter, contents.subletter").
+	query := h.Database.WithContext(ctx).Model(&Subtitle{}).Order("books.title, contents.page, contents.letter, contents.subletter").
 		Select("concat(contents.id,'_',contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
 		Joins("inner join books on contents.book_id = books.id")
 	title := ctx.Query("title")
@@ -420,7 +415,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 		query = query.Where("author like ?", "%"+author+"%")
 	}
 
-	obj := []*Archive{}
+	obj := []*Subtitle{}
 	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
@@ -435,17 +430,7 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
-				Pagination *Pagination `json:"pagination"`
-				Archives   []*Archive  `json:"archives"`
-			}{
-				Pagination: &Pagination{
-					Limit:      listLimit,
-					Page:       page,
-					TotalRows:  totalRows,
-					TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
-				},
-				Archives: obj,
-			},
+			}{},
 			"", "Getting data has succeeded"))
 }
 
