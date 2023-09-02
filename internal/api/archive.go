@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -8,27 +8,17 @@ import (
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"code.sajari.com/docconv"
-	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/api"
-	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/archive"
-	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
 
-func main() {
-	db, err := database.NewPostgres("postgresql://postgres:1q2w3e4r@localhost:5432/postgres?sslmode=disable")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if err := db.AutoMigrate(&api.File{}, &api.FileSource{}, &api.Bookmark{}, &api.Subtitle{}); err != nil {
-		log.Fatalln(err)
-	}
-
+func archiveMigration(database *gorm.DB) {
 	resp, err := http.Get("https://kabbalahmedia.info/backend/sqdata?language=en")
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
-	var sources archive.ArchiveSources
+	var sources ArchiveSources
 
 	err = json.NewDecoder(resp.Body).Decode(&sources)
 	if err != nil {
@@ -40,7 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
-	var files archive.ArchiveFiles
+	var files ArchiveFiles
 
 	err = json.NewDecoder(resp.Body).Decode(&files)
 	if err != nil {
@@ -76,13 +66,13 @@ func main() {
 	contents := strings.Split(strings.TrimSpace(res), "\n")
 	for i, content := range contents {
 		if len(content) > 0 {
-			subtitle := api.Subtitle{
+			subtitle := Subtitle{
 				FileUid:        fileUid,
 				FileSourceType: "archive",
 				Subtitle:       content,
 				OrderNumber:    i,
 			}
-			db.Create(&subtitle)
+			database.Create(&subtitle)
 		}
 	}
 }

@@ -41,13 +41,15 @@ func NewApp() *http.Server {
 	// if err := db.AutoMigrate(&File{}, &FileSource{}, &Bookmark{}, &Subtitle{}); err != nil {
 	// 	log.Fatalln(err)
 	// }
-	cache, err := database.NewRedis(conf.Redis.Url)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	archiveMigration(db)
+
+	// cache, err := database.NewRedis(conf.Redis.Url)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
 
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
-		Handler: NewRouter(NewHandler(db, cache)),
+		Handler: NewRouter(NewHandler(db)),
 	}
 }

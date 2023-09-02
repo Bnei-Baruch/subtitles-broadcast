@@ -24,10 +24,16 @@ type Handler struct {
 	Cache    *redis.Client
 }
 
-func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
+// func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
+// 	return &Handler{
+// 		Database: database,
+// 		Cache:    cache,
+// 	}
+// }
+
+func NewHandler(database *gorm.DB) *Handler {
 	return &Handler{
 		Database: database,
-		Cache:    cache,
 	}
 }
 
