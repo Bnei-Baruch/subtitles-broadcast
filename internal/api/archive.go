@@ -81,6 +81,7 @@ func archiveMigration(database *gorm.DB, language string) {
 				FileSourceType: KabbalahmediaFileSourceType,
 				Subtitle:       content,
 				OrderNumber:    idx,
+				Language:       language,
 			}
 			database.Create(&subtitle)
 		}

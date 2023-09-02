@@ -69,15 +69,53 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
+func (h *Handler) AddBookmark(ctx *gin.Context) {
 	subtitleId := ctx.Param("subtitle_id")
-	language := ctx.Param("language")
 	subtitleIdInt, err := strconv.Atoi(subtitleId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
+
+	bookmark := Bookmark{
+		SubtitleId: subtitleIdInt,
+	}
+	err = h.Database.Create(&bookmark).Error
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding data has failed"))
+	}
+
+	ctx.JSON(http.StatusCreated,
+		getResponse(true,
+			bookmark,
+			"", "Adding data has succeeded"))
+}
+
+func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
+	subtitleId := ctx.Param("subtitle_id")
+	subtitleIdInt, err := strconv.Atoi(subtitleId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+
+	bookmark := Bookmark{}
+
+	err = h.Database.WithContext(ctx).Where("subtitle_id = ?", subtitleIdInt).First(&bookmark).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusOK,
+				getResponse(false, nil, err.Error(), "No bookmark data"))
+		} else {
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Getting data has failed"))
+		}
+		return
+	}
+
 	subtitle := Subtitle{}
 
 	err = h.Database.WithContext(ctx).Where("id = ?", subtitleIdInt).First(&subtitle).Error
@@ -92,7 +130,7 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
+	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, subtitle.Language))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))

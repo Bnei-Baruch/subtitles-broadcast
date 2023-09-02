@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS subtitles (
     file_source_type VARCHAR(50) REFERENCES file_sources (name),
     subtitle TEXT,
 	order_number INT,
+    language VARCHAR(10),
     
     created_at timestamp without time zone,
     updated_at timestamp without time zone
