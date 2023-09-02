@@ -12,9 +12,18 @@ import (
 	"code.sajari.com/docconv"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/api"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/archive"
+	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
 )
 
 func main() {
+	db, err := database.NewPostgres("postgresql://postgres:1q2w3e4r@localhost:5432/postgres?sslmode=disable")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := db.AutoMigrate(&api.File{}, &api.FileSource{}, &api.Bookmark{}, &api.Subtitle{}); err != nil {
+		log.Fatalln(err)
+	}
+
 	resp, err := http.Get("https://kabbalahmedia.info/backend/sqdata?language=en")
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
@@ -73,7 +82,7 @@ func main() {
 				Subtitle:       content,
 				OrderNumber:    i,
 			}
-			fmt.Printf("%+v\n", subtitle)
+			db.Create(&subtitle)
 		}
 	}
 }
