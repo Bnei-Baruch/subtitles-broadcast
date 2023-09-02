@@ -48,7 +48,7 @@ func NewApp() *http.Server {
 		log.Fatalln(err)
 	}
 	if err == nil {
-		archiveMigration(db)
+		archiveMigration(db, "en")
 	}
 
 	// cache, err := database.NewRedis(conf.Redis.Url)

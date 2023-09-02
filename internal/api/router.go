@@ -15,6 +15,7 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1 := router.Group("/api/v1")
 
+	v1.GET("/bookmark/:language/:subtitle_id", handler.GetBookmarkPath)
 	v1.GET("/subtitle", handler.GetSubtitles)
 
 	return router

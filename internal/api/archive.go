@@ -21,8 +21,8 @@ const (
 	KabbalahmediaFileSourceType = "archive"
 )
 
-func archiveMigration(database *gorm.DB) {
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, "en"))
+func archiveMigration(database *gorm.DB, language string) {
+	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -34,7 +34,8 @@ func archiveMigration(database *gorm.DB) {
 	}
 	resp.Body.Close()
 
-	resp, err = http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sources.Sources[0].Children[0].Children[0].Id))
+	sourceUid := sources.Sources[0].Children[0].Children[0].ID
+	resp, err = http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sources.Sources[0].Children[0].Children[0].ID))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -48,8 +49,8 @@ func archiveMigration(database *gorm.DB) {
 
 	var fileUid string
 	for _, file := range files.ContentUnits[0].Files {
-		if file.Language == "en" {
-			fileUid = file.Id
+		if file.Language == language {
+			fileUid = file.ID
 			break
 		}
 	}
@@ -72,13 +73,14 @@ func archiveMigration(database *gorm.DB) {
 		log.Fatal(err)
 	}
 	contents := strings.Split(strings.TrimSpace(res), "\n")
-	for i, content := range contents {
+	for idx, content := range contents {
 		if len(content) > 0 {
 			subtitle := Subtitle{
+				SourceUid:      sourceUid,
 				FileUid:        fileUid,
 				FileSourceType: KabbalahmediaFileSourceType,
 				Subtitle:       content,
-				OrderNumber:    i,
+				OrderNumber:    idx,
 			}
 			database.Create(&subtitle)
 		}

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS files (
 
 CREATE TABLE IF NOT EXISTS subtitles (
     id SERIAL PRIMARY KEY,
+    source_uid VARCHAR(50),
     file_uid VARCHAR(50),
     file_source_type VARCHAR(50) REFERENCES file_sources (name),
     subtitle TEXT,
