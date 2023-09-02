@@ -13,8 +13,16 @@ import (
 	"code.sajari.com/docconv"
 )
 
+const (
+	KabbalahmediaSourcesUrl = "https://kabbalahmedia.info/backend/sqdata?language=%s"
+	KabbalahmediaFilesUrl   = "https://kabbalahmedia.info/backend/content_units?id=%s&with_files=true"
+	KabbalahmediaCdnUrl     = "https://cdn.kabbalahmedia.info/%s"
+
+	KabbalahmediaFileSourceType = "archive"
+)
+
 func archiveMigration(database *gorm.DB) {
-	resp, err := http.Get("https://kabbalahmedia.info/backend/sqdata?language=en")
+	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, "en"))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -26,7 +34,7 @@ func archiveMigration(database *gorm.DB) {
 	}
 	resp.Body.Close()
 
-	resp, err = http.Get(fmt.Sprintf("https://kabbalahmedia.info/backend/content_units?id=%s&with_files=true", sources.Sources[0].Children[0].Children[0].Id))
+	resp, err = http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sources.Sources[0].Children[0].Children[0].Id))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -46,7 +54,7 @@ func archiveMigration(database *gorm.DB) {
 		}
 	}
 
-	resp, err = http.Get(fmt.Sprintf("https://cdn.kabbalahmedia.info/%s", fileUid))
+	resp, err = http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -68,7 +76,7 @@ func archiveMigration(database *gorm.DB) {
 		if len(content) > 0 {
 			subtitle := Subtitle{
 				FileUid:        fileUid,
-				FileSourceType: "archive",
+				FileSourceType: KabbalahmediaFileSourceType,
 				Subtitle:       content,
 				OrderNumber:    i,
 			}
