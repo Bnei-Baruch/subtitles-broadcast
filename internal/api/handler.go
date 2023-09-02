@@ -14,9 +14,9 @@ const (
 	responseError       = "error"
 	responseDescription = "description"
 
-	keyExpirationTime                 = 300000
-	userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
-	userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
+	// keyExpirationTime                 = 300000
+	// userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
+	// userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
 )
 
 type Handler struct {
@@ -56,7 +56,7 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	}
 	if len(subtitles) == 0 {
 		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No author has found", "Getting data has failed"))
+			getResponse(false, nil, "No subtitle has found", "Getting data has failed"))
 		return
 	}
 	ctx.JSON(http.StatusOK,

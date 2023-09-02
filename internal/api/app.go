@@ -5,9 +5,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/config"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/pkg/database"
+	"gorm.io/gorm"
 )
 
 var (
@@ -38,10 +43,13 @@ func NewApp() *http.Server {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	// if err := db.AutoMigrate(&File{}, &FileSource{}, &Bookmark{}, &Subtitle{}); err != nil {
-	// 	log.Fatalln(err)
-	// }
-	archiveMigration(db)
+	err = syncDBStructInsertionAndMigrations(db)
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatalln(err)
+	}
+	if err == nil {
+		archiveMigration(db)
+	}
 
 	// cache, err := database.NewRedis(conf.Redis.Url)
 	// if err != nil {
@@ -52,4 +60,35 @@ func NewApp() *http.Server {
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
 		Handler: NewRouter(NewHandler(db)),
 	}
+}
+
+func syncDBStructInsertionAndMigrations(db *gorm.DB) error {
+	log.Println("Starting DB Migration")
+	database, err := db.DB()
+	if err != nil {
+		log.Println("Error while creating migration instance ::", err)
+		return err
+	}
+	driver, err := postgres.WithInstance(database, &postgres.Config{})
+	if err != nil {
+		log.Println("Error while creating migration instance ::", err)
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://./script/database/migration/", "postgres", driver)
+	if err != nil {
+		log.Println("Error while creating migration instance ::", err)
+		return err
+	}
+	// Syncing Table struct (UP Mig), Insertion ( Up Mig ) & UP Migrations
+	if err := m.Up(); err != nil {
+		//m.Close()
+		if err == migrate.ErrNoChange {
+			log.Println("No changes in UP migration")
+		}
+		return err
+	}
+	//m.Close()
+	log.Println("UP Migration Done!")
+	return nil
 }
