@@ -2,7 +2,7 @@ version: '3'
 
 services:
   bssvr:
-    image: rocky2017aaa/test
+    image: rocky2017aaa/bssvr
     environment:
       BSSVR_PROFILE: test
     ports:
