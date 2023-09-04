@@ -29,8 +29,8 @@ type Subtitle struct {
 	OrderNumber    int    `json:"order_number"`
 	Language       string `json:"language"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // archive model

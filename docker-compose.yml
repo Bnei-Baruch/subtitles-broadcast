@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  bssvr:
+    image: rocky2017aaa/test
+    environment:
+      BSSVR_PROFILE: test
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    links:
+        - db
+    networks:
+      - mynetwork
+
+
+  db:
+    container_name: db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1q2w3e4r
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"  # Optional: Expose PostgreSQL port to the host if needed
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
