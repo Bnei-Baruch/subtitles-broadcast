@@ -17,7 +17,12 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.POST("/bookmark/:subtitle_id", handler.AddBookmark)
 	v1.GET("/bookmark/:subtitle_id", handler.GetBookmarkPath)
+	v1.POST("/subtitle", handler.AddSubtitles)
 	v1.GET("/subtitle", handler.GetSubtitles)
+	v1.PATCH("/subtitle", handler.UpdateSubtitle)
+
+	v1.GET("/source_name", handler.GetSourceName)
+	v1.GET("/source_path", handler.GetSourcePath)
 
 	return router
 }

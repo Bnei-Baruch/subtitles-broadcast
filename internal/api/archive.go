@@ -21,7 +21,7 @@ const (
 	KabbalahmediaFileSourceType = "archive"
 )
 
-func archiveMigration(database *gorm.DB, language string) {
+func archiveDataCopy(database *gorm.DB, language string) {
 	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
@@ -35,7 +35,27 @@ func archiveMigration(database *gorm.DB, language string) {
 	resp.Body.Close()
 
 	sourceUid := sources.Sources[0].Children[0].Children[0].ID
-	resp, err = http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sources.Sources[0].Children[0].Children[0].ID))
+	contents, fileUid, err := getFileContent(sourceUid, language)
+	if err != nil {
+		log.Fatalf("Internal error: %s", err)
+	}
+	for idx, content := range contents {
+		if len(content) > 0 {
+			subtitle := Subtitle{
+				SourceUid:      sourceUid,
+				FileUid:        fileUid,
+				FileSourceType: KabbalahmediaFileSourceType,
+				Subtitle:       content,
+				OrderNumber:    idx,
+				Language:       language,
+			}
+			database.Create(&subtitle)
+		}
+	}
+}
+
+func getFileContent(sourceUid, language string) ([]string, string, error) {
+	resp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -58,32 +78,21 @@ func archiveMigration(database *gorm.DB, language string) {
 	resp, err = http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
+		return nil, "", err
 	}
 
 	defer resp.Body.Close()
 
 	// Check if the response status code is successful
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Received non-successful status code: %d\n", resp.StatusCode)
-		return
+		err := fmt.Errorf("received non-successful status code: %d", resp.StatusCode)
+		log.Println(err)
+		return nil, "", err
 	}
 
 	res, _, err := docconv.ConvertDocx(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	contents := strings.Split(strings.TrimSpace(res), "\n")
-	for idx, content := range contents {
-		if len(content) > 0 {
-			subtitle := Subtitle{
-				SourceUid:      sourceUid,
-				FileUid:        fileUid,
-				FileSourceType: KabbalahmediaFileSourceType,
-				Subtitle:       content,
-				OrderNumber:    idx,
-				Language:       language,
-			}
-			database.Create(&subtitle)
-		}
-	}
+	return strings.Split(strings.TrimSpace(res), "\n"), fileUid, nil
 }
