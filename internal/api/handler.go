@@ -107,12 +107,12 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			nil,
-			"", "Getting data has succeeded"))
+			"", "Adding data has succeeded"))
 }
 
 func (h *Handler) UpdateSubtitle(ctx *gin.Context) {
 	req := struct {
-		SubtitleID string `json:"subtitle_id"`
+		SubtitleID int    `json:"subtitle_id"`
 		Language   string `json:"language"`
 		Subtitle   string `json:"subtitle"`
 	}{}
@@ -124,7 +124,7 @@ func (h *Handler) UpdateSubtitle(ctx *gin.Context) {
 		return
 	}
 	subtitle := Subtitle{}
-	err = h.Database.WithContext(ctx).Order("order_number").Debug().Where("subtitle_id = ?", req.SubtitleID).Where("language = ?", req.Language).Find(&subtitle).Error
+	err = h.Database.WithContext(ctx).Order("order_number").Debug().Where("id = ?", req.SubtitleID).Where("language = ?", req.Language).Find(&subtitle).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound,
