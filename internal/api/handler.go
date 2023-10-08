@@ -153,6 +153,7 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	sourceUid := ctx.Query("source_uid")
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
+	keyword := ctx.Query("keyword")
 	subtitles := []*Subtitle{}
 	query := h.Database.WithContext(ctx).Order("order_number").Debug()
 	if len(sourceUid) > 0 {
@@ -163,6 +164,9 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	}
 	if len(language) > 0 {
 		query = query.Where("language = ?", language)
+	}
+	if len(keyword) > 0 {
+		query = query.Where("subtitle like ?", "%"+keyword+"%")
 	}
 	err := query.Find(&subtitles).Error
 	if err != nil {
@@ -179,6 +183,36 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 		getResponse(true,
 			subtitles,
 			"", "Getting data has succeeded"))
+}
+
+func (h *Handler) DeleteSubtitles(ctx *gin.Context) {
+	req := struct {
+		SubtitleID string `json:"subtitle_id"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	subtitleID, err := strconv.Atoi(req.SubtitleID)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Subtitle ID must be an integer"))
+		return
+	}
+	if err := h.Database.Where("id = ?", subtitleID).Delete(&Subtitle{}).Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			nil,
+			"", "Deleting data has succeeded"))
 }
 
 func (h *Handler) AddBookmark(ctx *gin.Context) {
