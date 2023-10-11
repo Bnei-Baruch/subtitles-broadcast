@@ -72,7 +72,7 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 		return
 	}
 
-	tx := h.Database.Begin()
+	tx := h.Database.Debug().Begin()
 	if tx.Error != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
@@ -89,8 +89,8 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 				OrderNumber:    idx,
 				Language:       req.Language,
 			}
-			if err := h.Database.Create(&subtitle).Error; err != nil {
-				tx.Rollback()
+			if err := tx.Debug().Create(&subtitle).Error; err != nil {
+				tx.Debug().Rollback()
 				log.Error(err)
 				ctx.JSON(http.StatusInternalServerError,
 					getResponse(true, nil, err.Error(), "Binding data has failed"))
@@ -98,7 +98,7 @@ func (h *Handler) AddSubtitles(ctx *gin.Context) {
 			}
 		}
 	}
-	if err := tx.Commit().Error; err != nil {
+	if err := tx.Debug().Commit().Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(true, nil, err.Error(), "Binding data has failed"))
@@ -186,24 +186,15 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 }
 
 func (h *Handler) DeleteSubtitles(ctx *gin.Context) {
-	req := struct {
-		SubtitleID string `json:"subtitle_id"`
-	}{}
-	err := ctx.BindJSON(&req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(true, nil, err.Error(), "Binding data has failed"))
-		return
-	}
-	subtitleID, err := strconv.Atoi(req.SubtitleID)
+	subtitleId := ctx.Param("subtitle_id")
+	subtitleIdInt, err := strconv.Atoi(subtitleId)
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(true, nil, err.Error(), "Subtitle ID must be an integer"))
 		return
 	}
-	if err := h.Database.Where("id = ?", subtitleID).Delete(&Subtitle{}).Error; err != nil {
+	if err := h.Database.Where("id = ?", subtitleIdInt).Delete(&Subtitle{}).Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(true, nil, err.Error(), "Binding data has failed"))
@@ -328,25 +319,34 @@ func (h *Handler) GetSourceName(ctx *gin.Context) {
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
-	var sources ArchiveSources
 
-	err = json.NewDecoder(resp.Body).Decode(&sources)
+	// Create a map to store the JSON data
+	var data map[string][]interface{}
+
+	// Unmarshal the JSON data into the map
+	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		log.Fatalf("Internal error: %s", err)
+		fmt.Println("Error:", err)
+		return
 	}
 	resp.Body.Close()
 
 	sourceName := ""
-	for _, source := range sources.Sources {
-		for _, child1 := range source.Children {
-			for _, child2 := range child1.Children {
-				if child2.ID == sourceUid {
-					sourceName = child2.Name
-					break
+	for _, source := range data["sources"] {
+		if source.(map[string]interface{})["children"] != nil {
+			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
+				if child1.(map[string]interface{})["children"] != nil {
+					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
+						if child2.(map[string]interface{})["id"].(string) == sourceUid {
+							sourceName = child2.(map[string]interface{})["name"].(string)
+							break
+						}
+					}
 				}
 			}
 		}
 	}
+
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			sourceName,
@@ -365,25 +365,36 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
-	var sources ArchiveSources
 
-	err = json.NewDecoder(resp.Body).Decode(&sources)
+	// Create a map to store the JSON data
+	var data map[string][]interface{}
+
+	// Unmarshal the JSON data into the map
+	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		log.Fatalf("Internal error: %s", err)
+		fmt.Println("Error:", err)
+		return
 	}
 	resp.Body.Close()
 
 	sourcePath := ""
-	for _, source := range sources.Sources {
-		for _, child1 := range source.Children {
-			for _, child2 := range child1.Children {
-				if child2.ID == sourceUid {
-					sourcePath = source.FullName + "(" + source.Name + ") / " + child2.Type + " / " + child2.Name
-					break
+	for _, source := range data["sources"] {
+		if source.(map[string]interface{})["children"] != nil {
+			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
+				if child1.(map[string]interface{})["children"] != nil {
+					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
+						child2Data := child2.(map[string]interface{})
+						if child2Data["id"].(string) == sourceUid {
+							sourceData := source.(map[string]interface{})
+							sourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + child2Data["type"].(string) + " / " + child2Data["name"].(string)
+							break
+						}
+					}
 				}
 			}
 		}
 	}
+
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			sourcePath,
