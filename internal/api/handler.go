@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -18,6 +19,8 @@ const (
 	responseData        = "data"
 	responseError       = "error"
 	responseDescription = "description"
+
+	defaultListLimit = 50
 
 	// keyExpirationTime                 = 300000
 	// userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
@@ -150,13 +153,41 @@ func (h *Handler) UpdateSubtitle(ctx *gin.Context) {
 }
 
 func (h *Handler) GetSubtitles(ctx *gin.Context) {
+	var errPage, errLimit error
+	var offset, limit int
+	page := 1
+	listLimit := defaultListLimit
+
+	pageStr := ctx.Query("page")
+	if len(pageStr) > 0 {
+		page, errPage = strconv.Atoi(pageStr)
+	}
+	limitStr := ctx.Query("limit")
+	if len(limitStr) > 0 {
+		limit, errLimit = strconv.Atoi(limitStr)
+	}
+	err := errors.Join(errPage, errLimit)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	if limit > 0 {
+		listLimit = limit
+	}
+	if page > 1 {
+		offset = listLimit * (page - 1)
+	}
+
+	var totalRows int64
+
 	sourceUid := ctx.Query("source_uid")
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
 	keyword := ctx.Query("keyword")
 	subtitles := []*Subtitle{}
 
-	query := h.Database.WithContext(ctx).Order("order_number").Debug()
+	query := h.Database.WithContext(ctx).Model(&Subtitle{}).Order("id").Order("order_number").Debug()
 	if len(sourceUid) > 0 {
 		query = query.Where("source_uid = ?", sourceUid)
 	}
@@ -170,7 +201,7 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 		query = query.Where("subtitle like ?", "%"+keyword+"%")
 	}
 
-	err := query.Find(&subtitles).Error
+	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&subtitles).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
@@ -193,7 +224,18 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
-			subtitles,
+			struct {
+				Pagination *Pagination `json:"pagination"`
+				Subtitles  []*Subtitle `json:"subtitles"`
+			}{
+				Pagination: &Pagination{
+					Limit:      listLimit,
+					Page:       page,
+					TotalRows:  totalRows,
+					TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
+				},
+				Subtitles: subtitles,
+			},
 			"", "Getting data has succeeded"))
 }
 

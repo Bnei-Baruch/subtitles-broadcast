@@ -2,6 +2,13 @@ package api
 
 import "time"
 
+type Pagination struct {
+	Limit      int   `json:"limit"`
+	Page       int   `json:"page"`
+	TotalRows  int64 `json:"total_rows"`
+	TotalPages int   `json:"total_pages"`
+}
+
 // api model
 
 type File struct {
@@ -25,7 +32,7 @@ type Subtitle struct {
 	SourceUid      string `json:"source_uid"`
 	FileUid        string `json:"file_uid"`
 	FileSourceType string `json:"file_source_type"`
-	Author         string `json:"author"`
+	Author         string `json:"author" gorm:"-"`
 	Subtitle       string `json:"subtitle"`
 	OrderNumber    int    `json:"order_number"`
 	Language       string `json:"language"`

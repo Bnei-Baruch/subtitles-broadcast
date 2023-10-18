@@ -192,7 +192,28 @@ paths:
                     - data
                   properties:
                     data:
-                      $ref: '#/components/schemas/Subtitle'
+                      type: object
+                      properties:
+                        pagination:
+                          type: object
+                          properties:
+                            limit:
+                              type: integer
+                              description: page size
+                              example: 10
+                            page:
+                              type: integer
+                              example: 1
+                            total_rows:
+                              type: integer
+                              example: 150
+                            total_pages:
+                              type: integer
+                              example: 15
+                        subtitles:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/Subtitle'
         '401':
           description: Invalid request jwt token
         '400':
