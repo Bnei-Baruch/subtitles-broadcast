@@ -159,6 +159,20 @@ paths:
       description: Finds all subtitle
       operationId: getSubtitles
       parameters:
+        - name: page
+          in: query
+          description: page number
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: page size
+          required: false
+          explode: true
+          schema:
+            type: string
         - in: query
           name: source_uid
           schema:
