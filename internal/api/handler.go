@@ -155,6 +155,7 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	language := ctx.Query("language")
 	keyword := ctx.Query("keyword")
 	subtitles := []*Subtitle{}
+
 	query := h.Database.WithContext(ctx).Order("order_number").Debug()
 	if len(sourceUid) > 0 {
 		query = query.Where("source_uid = ?", sourceUid)
@@ -168,6 +169,7 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	if len(keyword) > 0 {
 		query = query.Where("subtitle like ?", "%"+keyword+"%")
 	}
+
 	err := query.Find(&subtitles).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
@@ -179,6 +181,16 @@ func (h *Handler) GetSubtitles(ctx *gin.Context) {
 			getResponse(false, nil, "No subtitle has found", "Getting data has failed"))
 		return
 	}
+	sourceData, _, err := getTargetSourceAndSourceGrandChild(subtitles[0].SourceUid, subtitles[0].Language)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	for _, subtitle := range subtitles {
+		subtitle.Author = sourceData["name"].(string)
+	}
+
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			subtitles,
@@ -267,32 +279,14 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, subtitle.Language))
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	var sources ArchiveSources
-
-	err = json.NewDecoder(resp.Body).Decode(&sources)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	resp.Body.Close()
-
 	bookmarkPath := ""
-	for _, source := range sources.Sources {
-		for _, child1 := range source.Children {
-			for _, child2 := range child1.Children {
-				if child2.ID == subtitle.SourceUid {
-					bookmarkPath = source.FullName + "(" + source.Name + ") / " + child2.Type + " / " + child2.Name
-					break
-				}
-			}
-		}
+	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(subtitle.SourceUid, subtitle.Language)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+	}
+	if sourceData != nil && sourceGrandChild != nil {
+		bookmarkPath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string)
 	}
 
 	if len(bookmarkPath) == 0 {
@@ -315,36 +309,15 @@ func (h *Handler) GetSourceName(ctx *gin.Context) {
 			getResponse(false, nil, "", "source_uid and language parameters both are needed"))
 		return
 	}
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
-	if err != nil {
-		log.Fatalf("Internal error: %s", err)
-	}
-
-	// Create a map to store the JSON data
-	var data map[string][]interface{}
-
-	// Unmarshal the JSON data into the map
-	err = json.NewDecoder(resp.Body).Decode(&data)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	resp.Body.Close()
 
 	sourceName := ""
-	for _, source := range data["sources"] {
-		if source.(map[string]interface{})["children"] != nil {
-			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
-				if child1.(map[string]interface{})["children"] != nil {
-					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
-						if child2.(map[string]interface{})["id"].(string) == sourceUid {
-							sourceName = child2.(map[string]interface{})["name"].(string)
-							break
-						}
-					}
-				}
-			}
-		}
+	_, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(sourceUid, language)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+	}
+	if sourceGrandChild != nil {
+		sourceName = sourceGrandChild["name"].(string)
 	}
 
 	ctx.JSON(http.StatusOK,
@@ -361,6 +334,24 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			getResponse(false, nil, "", "source_uid and language parameters both are needed"))
 		return
 	}
+
+	sourcePath := ""
+	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(sourceUid, language)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+	}
+	if sourceData != nil && sourceGrandChild != nil {
+		sourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string)
+	}
+
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			sourcePath,
+			"", "Getting data has succeeded"))
+}
+
+func getTargetSourceAndSourceGrandChild(sourceUid, language string) (map[string]interface{}, map[string]interface{}, error) {
 	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
@@ -373,11 +364,10 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return nil, nil, err
 	}
 	resp.Body.Close()
 
-	sourcePath := ""
 	for _, source := range data["sources"] {
 		if source.(map[string]interface{})["children"] != nil {
 			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
@@ -385,20 +375,14 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
 						child2Data := child2.(map[string]interface{})
 						if child2Data["id"].(string) == sourceUid {
-							sourceData := source.(map[string]interface{})
-							sourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + child2Data["type"].(string) + " / " + child2Data["name"].(string)
-							break
+							return source.(map[string]interface{}), child2Data, nil
 						}
 					}
 				}
 			}
 		}
 	}
-
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			sourcePath,
-			"", "Getting data has succeeded"))
+	return nil, nil, nil
 }
 
 // func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis

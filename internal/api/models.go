@@ -25,6 +25,7 @@ type Subtitle struct {
 	SourceUid      string `json:"source_uid"`
 	FileUid        string `json:"file_uid"`
 	FileSourceType string `json:"file_source_type"`
+	Author         string `json:"author"`
 	Subtitle       string `json:"subtitle"`
 	OrderNumber    int    `json:"order_number"`
 	Language       string `json:"language"`
