@@ -44,12 +44,11 @@ deploy_docker:
     - test
   before_script:
     - eval $(ssh-agent -s)
-    - chmod 400 "$SSH_KEY"
-    - ssh-add "$SSH_KEY"
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ssh_key.pem  # Create a temporary SSH key file
+    - chmod 400 ssh_key.pem 
+    - ssh-add ssh_key.pem 
   script:
-    - ssh ubuntu@{OCI_IP}
+    - ssh -i ssh_key.pem ubuntu@{OCI_IP}
     - cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
     - git pull
     - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
