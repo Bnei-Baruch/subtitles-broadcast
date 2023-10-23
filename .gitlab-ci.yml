@@ -2,18 +2,20 @@ stages:
   - build
 
 variables:
+  DOCKER_DRIVER: overlay
+  DOCKER_HOST: tcp://127.0.0.1:2375/
+  DOCKER_TLS_CERTDIR: ""
   TEST_IMAGE: rocky2017aaa/bssvr
   TEST_LATEST_IMAGE: rocky2017aaa/bssvr:latest
 build_docker:
-  image: docker:latest
+  image: docker:20-dind
   stage: build
   services:
-  - name: docker:dind
+  - name: docker:20-dind
     entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
   tags:
     - test
   script:
-    - export DOCKER_HOST=tcp://127.0.0.1:2375
     - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
     - docker pull $TEST_LATEST_IMAGE
     - docker build --cache-from $TEST_LATEST_IMAGE -t $TEST_IMAGE .
