@@ -1,0 +1,19 @@
+stages:
+  - build
+
+variables:
+  TEST_IMAGE: $rocky2017aaa/bssvr
+  TEST_LATEST_IMAGE: $rocky2017aaa/bssvr:latest
+build_docker:
+  stage: build
+  tags:
+    - rocky-ROG-Zephyrus-G14-GA401IU-GA401IU
+  script:
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+    - docker pull $TEST_LATEST_IMAGE
+    - docker build --cache-from $TEST_LATEST_IMAGE -t $TEST_IMAGE .
+    - docker tag $TEST_IMAGE $TEST_LATEST_IMAGE
+    - docker push $TEST_IMAGE
+    - docker push $TEST_LATEST_IMAGE
+  only:
+    - new_db_scheme
