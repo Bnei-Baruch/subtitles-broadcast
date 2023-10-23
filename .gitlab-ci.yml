@@ -5,7 +5,10 @@ variables:
   TEST_IMAGE: $rocky2017aaa/bssvr
   TEST_LATEST_IMAGE: $rocky2017aaa/bssvr:latest
 build_docker:
+  image: docker:latest
   stage: build
+  services:
+    - docker:dind
   tags:
     - test
   script:
