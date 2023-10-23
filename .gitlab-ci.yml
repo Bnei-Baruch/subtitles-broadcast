@@ -1,5 +1,6 @@
 stages:
   - build
+  - deploy
 
 variables:
   # using "docker" as the host is only possible if you alias the service below
@@ -30,5 +31,16 @@ build_docker:
     - docker tag $TEST_IMAGE $TEST_LATEST_IMAGE
     - docker push $TEST_IMAGE
     - docker push $TEST_LATEST_IMAGE
+  only:
+    - new_db_scheme
+
+deploy_docker:
+  variables:
+  stage: deploy
+  tags:
+    - test
+  script:
+    - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
+    - IMAGE_NAME=$TEST_IMAGE docker-compose up -d
   only:
     - new_db_scheme
