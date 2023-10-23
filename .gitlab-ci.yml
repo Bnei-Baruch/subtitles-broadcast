@@ -47,10 +47,9 @@ deploy_docker:
     - echo "$SSH_KEY" > ssh_key.pem
     - chmod 400 ssh_key.pem
     - ssh-add ssh_key.pem
-    - ssh -o StrictHostKeyChecking=no -v ubuntu@${OCI_IP} "cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles && git pull"
-    - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
-    - docker rm -f bssvr
-    - docker rmi -f $TEST_IMAGE
-    - IMAGE_NAME=$TEST_IMAGE docker-compose up -d
+    - ssh -o StrictHostKeyChecking=no -v ubuntu@${OCI_IP} \
+      "cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles && git pull &&" \
+      "docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD} &&" \
+      "docker rmi -f $TEST_IMAGE && docker rm -f bssvr && IMAGE_NAME=$TEST_IMAGE docker-compose up -d"
   only:
     - new_db_scheme
