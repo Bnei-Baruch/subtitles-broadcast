@@ -7,7 +7,7 @@ variables:
 build_docker:
   stage: build
   tags:
-    - rocky-ROG-Zephyrus-G14-GA401IU-GA401IU
+    - gitlab-runner
   script:
     - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
     - docker pull $TEST_LATEST_IMAGE
