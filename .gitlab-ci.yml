@@ -46,9 +46,7 @@ deploy_docker:
     - echo "$SSH_KEY" > ssh_key.pem
     - chmod 400 ssh_key.pem
     - ssh-add ssh_key.pem
-    - ssh -i ssh_key.pem ubuntu@{OCI_IP}
-    - cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
-    - git pull
+    - ssh -o StrictHostKeyChecking=no -v ubuntu@{OCI_IP} "cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles && git pull"
     - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
     - docker rm -f bssvr
     - docker rmi -f $TEST_IMAGE
