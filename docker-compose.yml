@@ -2,6 +2,7 @@ version: '3'
 
 services:
   bssvr:
+    container_name: bssvr
     image: rocky2017aaa/bssvr
     environment:
       BSSVR_PROFILE: test
