@@ -2,6 +2,9 @@ stages:
   - build
   - deploy
 
+before-script:
+ - apk add openssh-client
+
 variables:
   # using "docker" as the host is only possible if you alias the service below
   DOCKER_HOST: tcp://docker:2375 
@@ -40,7 +43,6 @@ deploy_docker:
   tags:
     - test
   script:
-    - apt update && apt install openssh-client
     - ssh -i ${SSH_KEY}} ubuntu@{OCI_IP}
     - cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
     - git pull
