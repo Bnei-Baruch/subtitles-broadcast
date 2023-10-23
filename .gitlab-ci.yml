@@ -4,9 +4,6 @@ stages:
 
 before_script:
   - apk add openssh-client
-  - eval $(ssh-agent -s)
-  - chmod 400 "$SSH_KEY"
-  - ssh-add "$SSH_KEY"
 
 variables:
   # using "docker" as the host is only possible if you alias the service below
@@ -45,6 +42,11 @@ deploy_docker:
   stage: deploy
   tags:
     - test
+  before_script:
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - chmod 400 "$SSH_KEY"
+    - ssh-add "$SSH_KEY"
   script:
     - ssh ubuntu@{OCI_IP}
     - cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
