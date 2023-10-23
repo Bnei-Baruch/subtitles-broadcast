@@ -44,6 +44,7 @@ deploy_docker:
   tags:
     - test
   before_script:
+    - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" > ssh_key.pem  # Create a temporary SSH key file
     - chmod 700 ssh_key.pem 
   script:
