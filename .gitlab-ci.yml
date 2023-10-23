@@ -9,10 +9,11 @@ build_docker:
   stage: build
   services:
   - name: docker:dind
-    command: ["--tls=false"]
+    entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
   tags:
     - test
   script:
+    - export DOCKER_HOST=tcp://127.0.0.1:2375
     - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
     - docker pull $TEST_LATEST_IMAGE
     - docker build --cache-from $TEST_LATEST_IMAGE -t $TEST_IMAGE .
