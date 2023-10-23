@@ -3,7 +3,7 @@ stages:
   - deploy
 
 before-script:
- - apk add openssh-client
+  - apk add openssh-client
 
 variables:
   # using "docker" as the host is only possible if you alias the service below
