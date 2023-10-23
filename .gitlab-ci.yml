@@ -43,10 +43,11 @@ deploy_docker:
   tags:
     - test
   before_script:
-    - mkdir -p ~/.ssh
     - eval $(ssh-agent -s)
-    - chmod 400 ${SSH_KEY}
-    - ssh-add ${SSH_KEY}
+    - chmod 400 "$SSH_KEY"
+    - ssh-add "$SSH_KEY"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
   script:
     - ssh ubuntu@{OCI_IP}
     - cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
