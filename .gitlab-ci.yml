@@ -2,7 +2,7 @@ stages:
   - build
   - deploy
 
-before-script:
+before_script:
   - apk add openssh-client
 
 variables:
