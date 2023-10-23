@@ -41,8 +41,7 @@ deploy_docker:
     - test
   image: alpine  # Use an Alpine Linux image
   script:
-    - apk update
-    - apk add openssh-client # Install the SSH client
+    - apk add --update --no-cache openssh-client
     - eval `ssh-agent -s`
     - echo "$SSH_KEY" > ssh_key.pem
     - chmod 400 ssh_key.pem
