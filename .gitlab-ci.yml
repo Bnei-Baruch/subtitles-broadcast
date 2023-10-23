@@ -40,6 +40,7 @@ deploy_docker:
   tags:
     - test
   script:
+    - apt update && apt install openssh-client
     - ssh -i ${SSH_KEY}} ubuntu@{OCI_IP}
     - cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
     - git pull
