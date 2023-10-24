@@ -49,6 +49,6 @@ deploy_docker:
     - ssh -o StrictHostKeyChecking=no -v ubuntu@${OCI_IP} \
       "cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles && git pull &&" \
       "docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD} &&" \
-      "docker rmi -f $TEST_IMAGE && docker rm -f bssvr && IMAGE_NAME=$TEST_IMAGE docker-compose up -d"
+      "docker-compose down && docker-compose pull && IMAGE_NAME=$TEST_IMAGE docker-compose up -d"
   only:
     - new_db_scheme
