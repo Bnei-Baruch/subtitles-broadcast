@@ -261,6 +261,7 @@ func (h *Handler) DeleteSubtitles(ctx *gin.Context) {
 }
 
 func (h *Handler) AddBookmark(ctx *gin.Context) {
+	userId, _ := ctx.Get("sub")
 	subtitleId := ctx.Param("subtitle_id")
 	subtitleIdInt, err := strconv.Atoi(subtitleId)
 	if err != nil {
@@ -271,6 +272,7 @@ func (h *Handler) AddBookmark(ctx *gin.Context) {
 
 	bookmark := Bookmark{
 		SubtitleId: subtitleIdInt,
+		UserId:     userId.(string),
 	}
 	err = h.Database.Create(&bookmark).Error
 	if err != nil {

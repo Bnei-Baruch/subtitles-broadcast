@@ -23,8 +23,9 @@ type FileSource struct {
 }
 
 type Bookmark struct {
-	ID         int `json:"id"`
-	SubtitleId int `json:"subtitle_id"`
+	ID         int    `json:"id"`
+	SubtitleId int    `json:"subtitle_id"`
+	UserId     string `json:"user_id"`
 }
 
 type Subtitle struct {

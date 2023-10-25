@@ -112,7 +112,6 @@ func UserInfoHandler() gin.HandlerFunc {
 			})
 			return
 		}
-
 		ctx.Set("sub", userInfo.Sub)
 		ctx.Next()
 	}

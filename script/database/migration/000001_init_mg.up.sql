@@ -27,5 +27,6 @@ CREATE TABLE IF NOT EXISTS subtitles (
 
 CREATE TABLE IF NOT EXISTS bookmarks (
     id SERIAL PRIMARY KEY,
-    subtitle_id INT REFERENCES subtitles (id)
+    subtitle_id INT REFERENCES subtitles (id),
+    user_id VARCHAR(50)
 );
