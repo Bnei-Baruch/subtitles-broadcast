@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  bssvr:
+    container_name: subtitles_backend
+    image: bneibaruch/subtitles_backend
+    environment:
+      BSSVR_PROFILE: test
+    ports:
+      - "7700:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    links:
+        - db
+    networks:
+      - mynetwork
+
+
+  db:
+    container_name: db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1q2w3e4r
+      POSTGRES_DB: postgres
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
