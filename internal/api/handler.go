@@ -1,14 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
 	"strconv"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -22,9 +20,11 @@ const (
 	responseError       = "error"
 	responseDescription = "description"
 
-	keyExpirationTime                 = 300000
-	userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
-	userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
+	defaultListLimit = 50
+
+	// keyExpirationTime                 = 300000
+	// userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
+	// userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
 )
 
 type Handler struct {
@@ -32,10 +32,16 @@ type Handler struct {
 	Cache    *redis.Client
 }
 
-func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
+// func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
+// 	return &Handler{
+// 		Database: database,
+// 		Cache:    cache,
+// 	}
+// }
+
+func NewHandler(database *gorm.DB) *Handler {
 	return &Handler{
 		Database: database,
-		Cache:    cache,
 	}
 }
 
@@ -48,9 +54,10 @@ func getResponse(success bool, data interface{}, err, description string) gin.H 
 	}
 }
 
-func (h *Handler) AddSelectedContent(ctx *gin.Context) {
+func (h *Handler) AddSubtitles(ctx *gin.Context) {
 	req := struct {
-		ID string `json:"id"`
+		SourceUid string `json:"source_uid"`
+		Language  string `json:"language"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -59,132 +66,58 @@ func (h *Handler) AddSelectedContent(ctx *gin.Context) {
 			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	userID := ctx.GetString("sub")
-	contentID := strings.Split(req.ID, "_")[0]
-	err = checkValidContentID(h.Database, contentID)
+
+	contents, fileUid, err := getFileContent(req.SourceUid, req.Language)
 	if err != nil {
 		log.Error(err)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(true, nil, err.Error(), fmt.Sprintf("Content id %s not found", contentID)))
-			return
-		}
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Adding data has failed"))
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
 
-	// Create a new transaction
-	// Watch the key
-	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
-	err = h.Cache.Watch(ctx, func(tx *redis.Tx) error {
-		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			// Add multiple commands to the transaction
-			pipe.Set(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID), contentID, keyExpirationTime*time.Second)
-			pipe.Set(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID),
-				"", keyExpirationTime*time.Second)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		return nil
-	}, key)
-
-	if err != nil {
-		// Handle the situation where the transaction was discarded
+	tx := h.Database.Debug().Begin()
+	if tx.Error != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Adding data has failed"))
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-
-	ctx.JSON(http.StatusCreated,
-		getResponse(true, struct{}{}, "", "Adding data has succeeded"))
-}
-
-func checkValidContentID(db *gorm.DB, contentID string) error {
-	contentIDInt, err := strconv.Atoi(contentID)
-	if err != nil {
-		return err
-	}
-	err = db.First(&Content{}, contentIDInt).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (h *Handler) GetUserBookContents(ctx *gin.Context) {
-	var wg sync.WaitGroup
-	userBooks := []*UserBook{}
-	userBookContentsKey := fmt.Sprintf(userLastActivatedContentkeyFormat, ctx.GetString("sub"), "*")
-	iter := h.Cache.Scan(ctx, 0, userBookContentsKey, 0).Iterator()
-	if err := iter.Err(); err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	for iter.Next(ctx) {
-		keyComponents := strings.Split(iter.Val(), ":")
-		contentID := keyComponents[len(keyComponents)-1]
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			contents, err := getContents(h.Database, contentID)
-			if err != nil {
+	for idx, content := range contents {
+		if len(content) > 0 {
+			subtitle := Subtitle{
+				SourceUid:      req.SourceUid,
+				FileUid:        fileUid,
+				FileSourceType: KabbalahmediaFileSourceType,
+				Subtitle:       content,
+				OrderNumber:    idx,
+				Language:       req.Language,
+			}
+			if err := tx.Debug().Create(&subtitle).Error; err != nil {
+				tx.Debug().Rollback()
+				log.Error(err)
 				ctx.JSON(http.StatusInternalServerError,
-					getResponse(false, nil, err.Error(), "Getting data has failed"))
+					getResponse(true, nil, err.Error(), "Binding data has failed"))
 				return
 			}
-			bookContents := []string{}
-			for _, content := range contents {
-				bookContents = append(bookContents, content.Content)
-			}
-			userBook := UserBook{
-				BookTitle:     contents[0].Title,
-				LastActivated: fmt.Sprintf("%d_%d_%s_%s", contents[0].ContentID, contents[0].Page, contents[0].Letter, contents[0].Subletter),
-				Contents:      bookContents,
-			}
-			userBooks = append(userBooks, &userBook)
-		}()
+		}
 	}
-	wg.Wait()
-	if len(userBooks) == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No user book content has found", "Getting data has failed"))
+	if err := tx.Debug().Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-
 	ctx.JSON(http.StatusOK,
-		getResponse(true, userBooks, "", "Getting data has succeeded"))
+		getResponse(true,
+			nil,
+			"", "Adding data has succeeded"))
 }
 
-func getContents(db *gorm.DB, contentID string) ([]*BookContent, error) {
-	contents := []*BookContent{}
-
-	subquery := db.Raw(`
-	SELECT *
-FROM view_book_content
-WHERE row_num >= (
-    SELECT row_num
-    FROM view_book_content
-    WHERE content_id = ?
-    LIMIT 1
-)
-LIMIT 5;
-	
-	`, contentID).Find(&contents)
-	if subquery.Error != nil {
-		return nil, subquery.Error
-	}
-
-	return contents, nil
-}
-
-func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
+func (h *Handler) UpdateSubtitle(ctx *gin.Context) {
 	req := struct {
-		ID string `json:"id"`
+		SubtitleID int    `json:"subtitle_id"`
+		Language   string `json:"language"`
+		Subtitle   string `json:"subtitle"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -193,198 +126,37 @@ func (h *Handler) UpdateSelectedContent(ctx *gin.Context) {
 			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	userID := ctx.GetString("sub")
-	contentID := strings.Split(req.ID, "_")[0]
-	err = checkValidContentID(h.Database, contentID)
+	subtitle := Subtitle{}
+	err = h.Database.WithContext(ctx).Order("order_number").Debug().Where("id = ?", req.SubtitleID).Where("language = ?", req.Language).Find(&subtitle).Error
 	if err != nil {
-		log.Error(err)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound,
-				getResponse(true, nil, err.Error(), fmt.Sprintf("Content id %s not found", contentID)))
+				getResponse(true, nil, err.Error(), "No subtitle to update"))
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Updating data has failed"))
-		return
-	}
-
-	err = h.Cache.Set(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID),
-		contentID, keyExpirationTime*time.Second).Err()
-	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, "failed to update data", "Updating data has failed"))
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true, struct{}{}, "", "Updating data has succeeded"))
-}
-
-func (h *Handler) DeleteActivatedContent(ctx *gin.Context) {
-	id := ctx.Query("id")
-	if len(id) == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(true, nil, "No id parameter", "Getting id has failed"))
-		return
-	}
-	userID := ctx.GetString("sub")
-	contentID := strings.Split(id, "_")[0]
-
-	// Watch the key
-	key := fmt.Sprintf(userSelectedContentkeyFormat, userID)
-	err := h.Cache.Watch(ctx, func(tx *redis.Tx) error {
-		val, err := h.Cache.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
-		if err != nil {
-			return err
-		}
-		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			if val == contentID {
-				err := pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Err()
-				if err != nil {
-					return err
-				}
-				err = pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)).Err()
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
-		})
-		return err
-	}, key)
-	if errors.Is(err, redis.Nil) {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(true, nil, "Not redis key found", fmt.Sprintf("The user %s does not have any content", userID)))
-		return
-	}
-	if err != nil {
-		// Handle the situation where the transaction was discarded
+	subtitle.Subtitle = req.Subtitle
+	if err := h.Database.WithContext(ctx).Updates(&subtitle).Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting data has failed"))
-		return
-	}
-
-	ctx.JSON(http.StatusOK,
-		getResponse(true, struct{}{}, "", "Deleting data has succeeded"))
-}
-
-func (h *Handler) DeleteContent(ctx *gin.Context) {
-	id := ctx.Query("id")
-	if len(id) == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(true, nil, "No id parameter", "Getting id has failed"))
-		return
-	}
-	userID := ctx.GetString("sub")
-	contentID := strings.Split(id, "_")[0]
-	key := fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)
-	exist, err := h.Cache.Exists(ctx, key).Result()
-	if exist != 1 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(true, nil, "failed to Delete data", fmt.Sprintf("Key %s not found", key)))
-		return
-	}
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, "failed to Delete data", fmt.Sprintf("Checking key %s has failed", key)))
-		return
-	}
-
-	// Perform Redis operations within the transaction
-	err = h.Cache.Watch(ctx, func(redisTx *redis.Tx) error {
-		val, err := h.Cache.Get(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Result()
-		if err != nil {
-			return err
-		}
-		_, err = h.Cache.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			err = pipe.Del(ctx, fmt.Sprintf(userLastActivatedContentkeyFormat, userID, contentID)).Err()
-			if err != nil {
-				return err
-			}
-			if val == contentID {
-				err = pipe.Del(ctx, fmt.Sprintf(userSelectedContentkeyFormat, userID)).Err()
-				if err != nil {
-					return err
-				}
-			}
-			contentIDInt, err := strconv.Atoi(contentID)
-			if err != nil {
-				return err
-			}
-			// Perform PostgreSQL operations within the transaction
-			if err := h.Database.Delete(&Content{}, contentIDInt).Error; err != nil {
-				return err
-			}
-			return nil
-		})
-		return err
-	}, key)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "failed to Delete data"))
-		return
-	}
-
-	ctx.JSON(http.StatusOK,
-		getResponse(true, struct{}{}, "", "Deleting data has succeeded"))
-}
-
-func (h *Handler) GetAuthors(ctx *gin.Context) {
-	obj := []*string{}
-	book := &Book{}
-	err := h.Database.WithContext(ctx).Model(book).Distinct("author").Order("author").Debug().Find(&obj).Error
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	if len(obj) == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No author has found", "Getting data has failed"))
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
-			struct {
-				Authors []*string `json:"authors"`
-			}{
-				Authors: obj,
-			},
-			"", "Getting data has succeeded"))
+			nil,
+			"", "Updating data has succeeded"))
 }
 
-func (h *Handler) GetBookTitles(ctx *gin.Context) {
-	obj := []*string{}
-	book := &Book{}
-	err := h.Database.WithContext(ctx).Model(book).Distinct("title").Order("title").Debug().Find(&obj).Error
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	if len(obj) == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No book title has found", "Getting data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			struct {
-				Titles []*string `json:"titles"`
-			}{
-				Titles: obj,
-			},
-			"", "Getting data has succeeded"))
-}
-
-func (h *Handler) GetArchives(ctx *gin.Context) {
+func (h *Handler) GetSubtitles(ctx *gin.Context) {
 	var errPage, errLimit error
-	var page, limit int
-	offset := 0
-	listLimit := 50
+	var offset, limit int
+	page := 1
+	listLimit := defaultListLimit
 
 	pageStr := ctx.Query("page")
 	if len(pageStr) > 0 {
@@ -408,35 +180,53 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 	}
 
 	var totalRows int64
-	query := h.Database.WithContext(ctx).Model(&Content{}).Order("books.title, contents.page, contents.letter, contents.subletter").
-		Select("concat(contents.id,'_',contents.page,'_',contents.letter,'_',contents.subletter) As id, contents.content As text, books.title As type, books.author As author, books.title As title").
-		Joins("inner join books on contents.book_id = books.id")
-	title := ctx.Query("title")
-	if len(title) > 0 {
-		query = query.Where("title like ?", "%"+title+"%")
+
+	sourceUid := ctx.Query("source_uid")
+	fileUid := ctx.Query("file_uid")
+	language := ctx.Query("language")
+	keyword := ctx.Query("keyword")
+	subtitles := []*Subtitle{}
+
+	query := h.Database.WithContext(ctx).Model(&Subtitle{}).Order("id").Order("order_number").Debug()
+	if len(sourceUid) > 0 {
+		query = query.Where("source_uid = ?", sourceUid)
 	}
-	author := ctx.Query("author")
-	if len(author) > 0 {
-		query = query.Where("author like ?", "%"+author+"%")
+	if len(fileUid) > 0 {
+		query = query.Where("file_uid = ?", fileUid)
+	}
+	if len(language) > 0 {
+		query = query.Where("language = ?", language)
+	}
+	if len(keyword) > 0 {
+		query = query.Where("subtitle like ?", "%"+keyword+"%")
 	}
 
-	obj := []*Archive{}
-	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Debug().Find(&obj).Error
+	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&subtitles).Error
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
-	if len(obj) == 0 {
+	if len(subtitles) == 0 {
 		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No archive has found", "Getting data has failed"))
+			getResponse(false, nil, "No subtitle has found", "Getting data has failed"))
 		return
 	}
+	sourceData, _, err := getTargetSourceAndSourceGrandChild(subtitles[0].SourceUid, subtitles[0].Language)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	for _, subtitle := range subtitles {
+		subtitle.Author = sourceData["name"].(string)
+	}
+
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
 				Pagination *Pagination `json:"pagination"`
-				Archives   []*Archive  `json:"archives"`
+				Subtitles  []*Subtitle `json:"subtitles"`
 			}{
 				Pagination: &Pagination{
 					Limit:      listLimit,
@@ -444,9 +234,199 @@ func (h *Handler) GetArchives(ctx *gin.Context) {
 					TotalRows:  totalRows,
 					TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
 				},
-				Archives: obj,
+				Subtitles: subtitles,
 			},
 			"", "Getting data has succeeded"))
+}
+
+func (h *Handler) DeleteSubtitles(ctx *gin.Context) {
+	subtitleId := ctx.Param("subtitle_id")
+	subtitleIdInt, err := strconv.Atoi(subtitleId)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(true, nil, err.Error(), "Subtitle ID must be an integer"))
+		return
+	}
+	if err := h.Database.Where("id = ?", subtitleIdInt).Delete(&Subtitle{}).Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			nil,
+			"", "Deleting data has succeeded"))
+}
+
+func (h *Handler) AddBookmark(ctx *gin.Context) {
+	userId, _ := ctx.Get("sub")
+	subtitleId := ctx.Param("subtitle_id")
+	subtitleIdInt, err := strconv.Atoi(subtitleId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+
+	bookmark := Bookmark{
+		SubtitleId: subtitleIdInt,
+		UserId:     userId.(string),
+	}
+	err = h.Database.Create(&bookmark).Error
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding data has failed"))
+	}
+
+	ctx.JSON(http.StatusCreated,
+		getResponse(true,
+			bookmark,
+			"", "Adding data has succeeded"))
+}
+
+func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
+	subtitleId := ctx.Param("subtitle_id")
+	subtitleIdInt, err := strconv.Atoi(subtitleId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+
+	bookmark := Bookmark{}
+
+	err = h.Database.WithContext(ctx).Where("subtitle_id = ?", subtitleIdInt).First(&bookmark).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusOK,
+				getResponse(false, nil, err.Error(), "No bookmark data"))
+		} else {
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Getting data has failed"))
+		}
+		return
+	}
+
+	subtitle := Subtitle{}
+
+	err = h.Database.WithContext(ctx).Where("id = ?", subtitleIdInt).First(&subtitle).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusOK,
+				getResponse(false, nil, err.Error(), "No subtitle data"))
+		} else {
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Getting data has failed"))
+		}
+		return
+	}
+
+	bookmarkPath := ""
+	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(subtitle.SourceUid, subtitle.Language)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+	}
+	if sourceData != nil && sourceGrandChild != nil {
+		bookmarkPath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string)
+	}
+
+	if len(bookmarkPath) == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, err.Error(), "No bookmark path"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			bookmarkPath,
+			"", "Getting data has succeeded"))
+}
+
+func (h *Handler) GetSourceName(ctx *gin.Context) {
+	sourceUid := ctx.Query("source_uid")
+	language := ctx.Query("language")
+	if len(sourceUid) == 0 || len(language) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "", "source_uid and language parameters both are needed"))
+		return
+	}
+
+	sourceName := ""
+	_, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(sourceUid, language)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+	}
+	if sourceGrandChild != nil {
+		sourceName = sourceGrandChild["name"].(string)
+	}
+
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			sourceName,
+			"", "Getting data has succeeded"))
+}
+
+func (h *Handler) GetSourcePath(ctx *gin.Context) {
+	sourceUid := ctx.Query("source_uid")
+	language := ctx.Query("language")
+	if len(sourceUid) == 0 || len(language) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "", "source_uid and language parameters both are needed"))
+		return
+	}
+
+	sourcePath := ""
+	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(sourceUid, language)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+	}
+	if sourceData != nil && sourceGrandChild != nil {
+		sourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string)
+	}
+
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			sourcePath,
+			"", "Getting data has succeeded"))
+}
+
+func getTargetSourceAndSourceGrandChild(sourceUid, language string) (map[string]interface{}, map[string]interface{}, error) {
+	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
+	if err != nil {
+		log.Fatalf("Internal error: %s", err)
+	}
+
+	// Create a map to store the JSON data
+	var data map[string][]interface{}
+
+	// Unmarshal the JSON data into the map
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil, nil, err
+	}
+	resp.Body.Close()
+
+	for _, source := range data["sources"] {
+		if source.(map[string]interface{})["children"] != nil {
+			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
+				if child1.(map[string]interface{})["children"] != nil {
+					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
+						child2Data := child2.(map[string]interface{})
+						if child2Data["id"].(string) == sourceUid {
+							return source.(map[string]interface{}), child2Data, nil
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil, nil, nil
 }
 
 // func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis

@@ -11,18 +11,25 @@ func NewRouter(handler *Handler) http.Handler {
 	router.Use(CORSMiddleware())
 	router.Use(UserRoleHandler())
 	router.Use(UserInfoHandler())
-	router.Use((HttpMethodChecker(router)))
+	//router.Use((HttpMethodChecker(router)))
 
 	v1 := router.Group("/api/v1")
 
-	v1.POST("/selected-content", handler.AddSelectedContent)
-	v1.PUT("/selected-content", handler.UpdateSelectedContent)
-	v1.DELETE("/activated-content", handler.DeleteActivatedContent)
-	v1.DELETE("/content", handler.DeleteContent)
-	v1.GET("/book-list", handler.GetUserBookContents)
-	v1.GET("/author", handler.GetAuthors)
-	v1.GET("/book-title", handler.GetBookTitles)
-	v1.GET("/archive", handler.GetArchives)
+	v1.POST("/bookmark/:subtitle_id", handler.AddBookmark)
+	v1.GET("/bookmark/:subtitle_id", handler.GetBookmarkPath)
+	v1.POST("/subtitle", handler.AddSubtitles)
+	v1.GET("/subtitle", handler.GetSubtitles)
+	v1.PATCH("/subtitle", handler.UpdateSubtitle)
+	v1.DELETE("/subtitle/:subtitle_id", handler.DeleteSubtitles)
+
+	v1.GET("/source_name", handler.GetSourceName)
+	v1.GET("/source_path", handler.GetSourcePath)
+
+	router.NoMethod(func(c *gin.Context) {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{
+			"message": "Method Not Allowed",
+		})
+	})
 
 	return router
 }

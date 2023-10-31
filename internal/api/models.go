@@ -1,43 +1,6 @@
 package api
 
-import (
-	"gorm.io/gorm"
-)
-
-type Book struct {
-	gorm.Model
-	Author string `json:"author"`
-	Title  string `json:"title"`
-}
-
-type Content struct {
-	gorm.Model
-	BookId       int    `json:"book_id" gorm:"type:integer"`
-	Page         string `json:"page"`
-	Letter       string `json:"letter"`
-	Subletter    string `json:"subletter"`
-	Revert       string `json:"revert"`
-	Content      string `json:"content"`
-	PageInt      int    `json:"page_int" gorm:"type:integer"`
-	LetterInt    int    `json:"letter_int" gorm:"type:integer"`
-	SubLetterInt int    `json:"subletter_int" gorm:"type:integer"`
-}
-
-type Bookmark struct {
-	gorm.Model
-	BookId    int    `json:"book_id"`
-	ContentId int    `json:"content_id"`
-	Path      string `json:"path"`
-	User      string `json:"user"`
-}
-
-type Archive struct {
-	Id       string  `json:"id"`
-	Text     string  `json:"text"`
-	Author   string  `json:"author"`
-	BookName *string `json:"book_name"`
-	Title    string  `json:"title"`
-}
+import "time"
 
 type Pagination struct {
 	Limit      int   `json:"limit"`
@@ -46,18 +9,101 @@ type Pagination struct {
 	TotalPages int   `json:"total_pages"`
 }
 
-type BookContent struct {
-	RowNum    int
-	ContentID int
-	Title     string
-	Page      int
-	Letter    string
-	Subletter string
-	Content   string
+// api model
+
+type File struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
 }
 
-type UserBook struct {
-	BookTitle     string   `json:"book_title"`
-	LastActivated string   `json:"last_activated"`
-	Contents      []string `json:"contents"`
+type FileSource struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Bookmark struct {
+	ID         int    `json:"id"`
+	SubtitleId int    `json:"subtitle_id"`
+	UserId     string `json:"user_id"`
+}
+
+type Subtitle struct {
+	ID             uint   `gorm:"primarykey"`
+	SourceUid      string `json:"source_uid"`
+	FileUid        string `json:"file_uid"`
+	FileSourceType string `json:"file_source_type"`
+	Author         string `json:"author" gorm:"-"`
+	Subtitle       string `json:"subtitle"`
+	OrderNumber    int    `json:"order_number"`
+	Language       string `json:"language"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// archive model
+
+type ArchiveSources struct {
+	Sources    []*Source    `json:"sources"`
+	Tags       []*Tag       `json:"tags"`
+	Publishers []*Publisher `json:"publishers"`
+	Persons    []*Person    `json:"persons"`
+}
+
+type Source struct {
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	FullName string         `json:"full_name"`
+	Children []*SourceChild `json:"children,omitempty"`
+}
+
+type SourceChild struct {
+	ID       string         `json:"id"`
+	ParentId string         `json:"parent_id"`
+	Type     string         `json:"type"`
+	Name     string         `json:"name"`
+	Children []*SourceChild `json:"children,omitempty"`
+}
+
+type Tag struct {
+	ID       string `json:"id"`
+	ParentId string `json:"parent_id"`
+	Label    string `json:"label"`
+	Children []*Tag `json:"children,omitempty"`
+}
+
+type Publisher struct {
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+type Person struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type ArchiveFiles struct {
+	Total        int            `json:"total"`
+	ContentUnits []*ContentUnit `json:"content_units"`
+}
+
+type ContentUnit struct {
+	ID          string      `json:"id"`
+	ContentType string      `json:"content_type"`
+	FilmType    string      `json:"film_type"`
+	Files       []*FileData `json:"files"`
+}
+
+type FileData struct {
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Size           int     `json:"size"`
+	Language       string  `json:"language"`
+	MimeType       string  `json:"mimetype"`
+	Type           string  `json:"type"`
+	InsertType     string  `json:"insert_type"`
+	IsHls          bool    `json:"is_hls"`
+	VideoQualities *string `json:"video_qualities"`
 }

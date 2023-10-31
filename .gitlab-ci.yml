@@ -1,0 +1,54 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  # using "docker" as the host is only possible if you alias the service below
+  DOCKER_HOST: tcp://docker:2375 
+  # could be wrong here but although Docker defaults to overlay2, 
+  # Docker-in-Docker (DIND) does not according to the following GitLab doc: 
+  # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-the-overlayfs-driver
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  TEST_IMAGE: rocky2017aaa/bssvr
+  TEST_LATEST_IMAGE: rocky2017aaa/bssvr:latest
+build_docker:
+  image: docker:20-dind
+  stage: build
+  services:
+  - name: docker:20-dind
+    alias: docker
+    # in our experience although you'd assume this would be sufficient, this did 
+    # nothing to prevent connection errors without `DOCKER_TLS_CERTDIR` being set 
+    # to an empty string, and I would call that beyond mildly infuriating.
+    command: ["--tls=false"]
+  tags:
+    - test
+  script:
+    - docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
+    - docker pull $TEST_LATEST_IMAGE
+    - docker build --cache-from $TEST_LATEST_IMAGE -t $TEST_IMAGE .
+    - docker tag $TEST_IMAGE $TEST_LATEST_IMAGE
+    - docker push $TEST_IMAGE
+    - docker push $TEST_LATEST_IMAGE
+  only:
+    - new_db_scheme
+
+deploy_docker:
+  variables:
+  stage: deploy
+  tags:
+    - test
+  image: alpine  # Use an Alpine Linux image
+  script:
+    - apk add --update --no-cache openssh-client
+    - eval `ssh-agent -s`
+    - echo "$SSH_KEY" > ssh_key.pem
+    - chmod 400 ssh_key.pem
+    - ssh-add ssh_key.pem
+    - ssh -o StrictHostKeyChecking=no -v ubuntu@${OCI_IP} \
+      "cd workspace/go/src/gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles && git pull &&" \
+      "docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD} &&" \
+      "docker-compose down && docker-compose pull && IMAGE_NAME=$TEST_IMAGE docker-compose up -d"
+  only:
+    - new_db_scheme
