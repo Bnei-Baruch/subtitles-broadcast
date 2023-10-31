@@ -296,3 +296,16 @@ font-size: 13px;
 line-height: 38px;
 color: #0C0C0C;
 }
+
+
+
+.ChangeToLtr{
+text-align: left;
+direction: ltr;
+}
+
+
+.ChangeToRtl{
+    direction: rtl;
+    text-align: right;
+}

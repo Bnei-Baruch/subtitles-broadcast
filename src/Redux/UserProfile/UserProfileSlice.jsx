@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const API = "http://localhost:3001/";
+const API = "http://localhost:3001/"; 
 
 const initialState = {
   userProfile: [],

@@ -4,6 +4,7 @@ import {combineReducers} from 'redux'
 import storage from 'redux-persist/lib/storage'
 import ArchiveSlice from './ArchiveTab/ArchiveSlice'
 import UserProfileSlice from './UserProfile/UserProfileSlice'
+import SubtitleSlice from './Subtitle/SubtitleSlice'
 
 const persistConfig = {
     key: 'root',
@@ -14,6 +15,7 @@ const persistConfig = {
 const RootReducer=combineReducers({
 ArchiveList:ArchiveSlice,
 UserProfile:UserProfileSlice,
+SubtitleData:SubtitleSlice
 })
 
 

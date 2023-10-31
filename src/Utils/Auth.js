@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 
 import ErrorLogin from "../Pages/Views/ErrorLogin";
 import LoadingScreen from "../Pages/Views/LoadingScreen";
-import {StoreProfile} from '../Redux/UserProfile/UserProfileSlice'
+import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 
 const Auth = (props) => {
   const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
@@ -15,11 +15,15 @@ const Auth = (props) => {
   useEffect(() => {
     const keycloak = Keycloak({
       realm: "master",
-      url: "https://auth.2serv.eu/auth/",
-      clientId: "membership_pay_dev",
+      url: "https://auth.2serv.eu/auth",
+      clientId: "kolman-dev",
     });
     keycloak
-      .init({ onLoad: "login-required", checkLoginIframe: false })
+      .init({
+        onLoad: "login-required",
+        checkLoginIframe: false,
+        redirectUri: window.location.origin + "/subtitle",
+      })
       .then((authenticated) => {
         if (keycloak.realmAccess.roles.includes("admin")) {
           setAccess(true);
@@ -35,9 +39,7 @@ const Auth = (props) => {
             // TODO: Add gender to the response
             gender: "male",
           };
-            dispatch(StoreProfile({keycloak,
-            authenticated,
-            profile}))
+          dispatch(StoreProfile({ keycloak, authenticated, profile }));
           localStorage.setItem("token", keycloak.token);
           setAuth({
             keycloak,
@@ -45,7 +47,6 @@ const Auth = (props) => {
             profile,
           });
         });
-       
       });
   }, [dispatch]);
 
