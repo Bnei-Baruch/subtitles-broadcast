@@ -1,3 +1,3 @@
-# broadcast-subtitles-ktuviyot
+# Subtitles Backend
 
-the module is designed to create and display subtitles for broadcast
+The module is designed to create and display subtitles for broadcast.
