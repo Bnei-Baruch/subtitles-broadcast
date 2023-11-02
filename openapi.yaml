@@ -1,0 +1,496 @@
+openapi: 3.0.3
+info:
+  title: Broadcast Subtitles Server API
+  description: |-
+    This is a Subtitle Server API based on the OpenAPI 3.0 specification.  
+  
+  version: "0.1"
+servers:
+  - url: https://domain/api/v1
+tags:
+  - name: subtitle
+    description: Access and manage subtitle information
+  - name: bookmark
+    description: Access and manage bookmark
+paths:
+  /bookmark/{subtitleId}:
+    post:
+      tags:
+        - bookmark
+      summary: Add a subtitle id for the user bookmark path
+      description: Add a subtitle id for the user bookmark path
+      operationId: addBookmark
+      parameters:
+        - in: path
+          name: subtitleId
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the subtitle to insert
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: bookmark id
+                          example: 1
+                        subtitle_id:
+                          type: integer
+                          description: subtitle id
+                          example: 1
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '404':
+          description: Book content not found
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:bookmarks
+            - read:bookmarks
+    get:
+      tags:
+        - bookmark
+      summary: Get a bookmark path
+      description: Finds bookmark path by subtitle id
+      operationId: GetBookmark
+      parameters:
+        - in: path
+          name: subtitleId
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the subtitle to get bookmark path
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: string
+                      description: bookmark path when request has been successful
+                      example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar"
+        '401':
+          description: Invalid request jwt token
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:books
+  /subtitle:
+    post:
+      tags:
+        - subtitle
+      summary: Add a subtitle
+      description: Add a subtitle with meta data
+      operationId: addSubtitle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                source_uid:
+                  type: string
+                  description: archive source uid
+                  example: "tswzgnWk"
+                langugae:
+                  type: string 
+                  description: language code
+                  example: "en"
+        description: Created user object
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '404':
+          description: Book content not found
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:subtitles
+            - read:subtitles
+    get:
+      tags:
+        - subtitle
+      summary: Get subtitles
+      description: Finds all subtitle
+      operationId: getSubtitles
+      parameters:
+        - name: page
+          in: query
+          description: page number
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: page size
+          required: false
+          explode: true
+          schema:
+            type: string
+        - in: query
+          name: source_uid
+          schema:
+            type: string
+          description: archive source uid
+        - in: query
+          name: file_uid
+          schema:
+            type: string
+          description: archive file uid
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: language code
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: the keyword to search subtitle includes
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        pagination:
+                          type: object
+                          properties:
+                            limit:
+                              type: integer
+                              description: page size
+                              example: 10
+                            page:
+                              type: integer
+                              example: 1
+                            total_rows:
+                              type: integer
+                              example: 150
+                            total_pages:
+                              type: integer
+                              example: 15
+                        subtitles:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/Subtitle'
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:subtitles
+    patch:
+      tags:
+        - subtitle
+      summary: Update a subtitle
+      description: Update a subtitle
+      operationId: updateSubtitle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                subtitle_id:
+                  type: integer
+                  description: subtitle id
+                  example: 1
+                langugae:
+                  type: string 
+                  description: language code
+                  example: "en"
+                subtitle:
+                  type: string
+                  description: subtitle to update
+                  example: "Hello"
+        description: Created user object
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '404':
+          description: Book content not found
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:subtitles
+            - read:subtitles
+  /subtitle/{subtitleId}:
+    delete:
+      tags:
+        - subtitle
+      summary: Delete a subtitle
+      description: Delete a subtitle
+      operationId: deleteSubtitle
+      parameters:
+        - in: path
+          name: subtitleId
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the subtitle to delete
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '404':
+          description: Book content not found
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:subtitles
+            - delete:subtitles
+  /source_name:
+    get:
+      tags:
+        - source
+      summary: Get source name
+      description: Get source name
+      operationId: getSourceName
+      parameters:
+        - in: query
+          name: source_uid
+          schema:
+            type: string
+          description: archive source uid
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: language code
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: string
+                      description: archive source name
+                      example: "Foreword to The Book of Zohar"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:subtitles
+  /source_path:
+    get:
+      tags:
+        - source
+      summary: Get source name
+      description: Get source name
+      operationId: getSourcePath
+      parameters:
+        - in: query
+          name: source_uid
+          schema:
+            type: string
+          description: archive source uid
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: language code
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: string
+                      description: archive source path
+                      example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:subtitles
+components:
+  schemas:
+    Subtitle:
+      title: Subtitle Data
+      description: An subtitle with meta data
+      type: object
+      properties:
+        id:
+          type: integer
+          description: subtitle id
+          example: 1
+        source_uid:
+          type: string
+          description: archive source uid
+          example: "tswzgnWk"
+        file_uid:
+          type: string
+          description: archive file uid
+          example: "OzSCqHYF"
+        file_source_type:
+          type: string
+          description: file source type(archive or upload)
+          example: "archive"
+        subtitle:
+          type: string
+          description: subtitle
+          example: "Foreword to The Book of Zohar"
+        order_number:
+          type: integer
+          description: subtitle order number
+          example: 0
+        langugae:
+          type: string 
+          description: language code
+          example: "en"
+        created_at:
+          type: string
+          description: created time
+          example: "2023-09-04T09:26:23.086238Z"
+        update_at:
+          type: string
+          description: updated time
+          example: "2023-09-04T09:26:23.086238Z"
+    BasicResponse:
+      type: object
+      required:
+        - success
+        - error
+        - description
+      properties:
+        success:
+          type: boolean
+          description: the boolean value if request has been successful or not 
+          example: true
+        error:
+          type: string
+          description: the error message when request has been failed
+          example: ""
+        description:
+          type: string
+          description: the description of the request result
+          example: Proper messages for the situations
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: auth-scheme
+      description: 'Bearer HTTP authentication through keycloak. Allowed headers -- Authorization: Bearer <api_key>'
+      scheme: bearer
+      type: http

@@ -1,0 +1,109 @@
+package api
+
+import "time"
+
+type Pagination struct {
+	Limit      int   `json:"limit"`
+	Page       int   `json:"page"`
+	TotalRows  int64 `json:"total_rows"`
+	TotalPages int   `json:"total_pages"`
+}
+
+// api model
+
+type File struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
+}
+
+type FileSource struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Bookmark struct {
+	ID         int    `json:"id"`
+	SubtitleId int    `json:"subtitle_id"`
+	UserId     string `json:"user_id"`
+}
+
+type Subtitle struct {
+	ID             uint   `gorm:"primarykey"`
+	SourceUid      string `json:"source_uid"`
+	FileUid        string `json:"file_uid"`
+	FileSourceType string `json:"file_source_type"`
+	Author         string `json:"author" gorm:"-"`
+	Subtitle       string `json:"subtitle"`
+	OrderNumber    int    `json:"order_number"`
+	Language       string `json:"language"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// archive model
+
+type ArchiveSources struct {
+	Sources    []*Source    `json:"sources"`
+	Tags       []*Tag       `json:"tags"`
+	Publishers []*Publisher `json:"publishers"`
+	Persons    []*Person    `json:"persons"`
+}
+
+type Source struct {
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	FullName string         `json:"full_name"`
+	Children []*SourceChild `json:"children,omitempty"`
+}
+
+type SourceChild struct {
+	ID       string         `json:"id"`
+	ParentId string         `json:"parent_id"`
+	Type     string         `json:"type"`
+	Name     string         `json:"name"`
+	Children []*SourceChild `json:"children,omitempty"`
+}
+
+type Tag struct {
+	ID       string `json:"id"`
+	ParentId string `json:"parent_id"`
+	Label    string `json:"label"`
+	Children []*Tag `json:"children,omitempty"`
+}
+
+type Publisher struct {
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+type Person struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type ArchiveFiles struct {
+	Total        int            `json:"total"`
+	ContentUnits []*ContentUnit `json:"content_units"`
+}
+
+type ContentUnit struct {
+	ID          string      `json:"id"`
+	ContentType string      `json:"content_type"`
+	FilmType    string      `json:"film_type"`
+	Files       []*FileData `json:"files"`
+}
+
+type FileData struct {
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Size           int     `json:"size"`
+	Language       string  `json:"language"`
+	MimeType       string  `json:"mimetype"`
+	Type           string  `json:"type"`
+	InsertType     string  `json:"insert_type"`
+	IsHls          bool    `json:"is_hls"`
+	VideoQualities *string `json:"video_qualities"`
+}

@@ -1,0 +1,10 @@
+* Devops todo list
+** [ ] create dummy config file
+** [ ] create Dockerfile
+** [ ] Docker compose
+** [ ] CI file
+* Request
+- make config optional: if we have a environment variable, it should enough
+* Question
+- Where is redis used? Which config for redis?
+- Is there a frontend for the project?
