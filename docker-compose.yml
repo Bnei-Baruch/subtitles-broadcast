@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   bssvr:
@@ -8,6 +8,7 @@ services:
       BSSVR_PROFILE: test
     ports:
       - "8080:8080"
+    restart: always
     depends_on:
       db:
         condition: service_healthy
@@ -28,6 +29,7 @@ services:
       - $HOME/data/postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"  # Optional: Expose PostgreSQL port to the host if needed
+    restart: always
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s

@@ -281,6 +281,12 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 			getResponse(true, nil, err.Error(), "Slide ID must be an integer"))
 		return
 	}
+	if err := h.Database.Debug().Where("slide_id = ?", slideIdInt).Delete(&Bookmark{}).Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(true, nil, err.Error(), "Binding data has failed"))
+		return
+	}
 	if err := h.Database.Debug().Where("id = ?", slideIdInt).Delete(&Slide{}).Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
@@ -310,6 +316,7 @@ func (h *Handler) AddBookmark(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Adding data has failed"))
+		return
 	}
 	ctx.JSON(http.StatusCreated,
 		getResponse(true,
@@ -514,7 +521,7 @@ func getTargetSourceAndSourceGrandChild(sourceUid, language string) (map[string]
 	var data map[string][]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		return nil, nil, err
 	}
 	resp.Body.Close()

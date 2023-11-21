@@ -33,5 +33,6 @@ CREATE TABLE IF NOT EXISTS slides (
 CREATE TABLE IF NOT EXISTS bookmarks (
     id SERIAL PRIMARY KEY,
     slide_id INT REFERENCES slides (id),
-    user_id VARCHAR(50)
+    user_id VARCHAR(50),
+    UNIQUE (slide_id, user_id)
 );
