@@ -1,3 +1,5 @@
+//go:build !apitest
+
 package api
 
 import (

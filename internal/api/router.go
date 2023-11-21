@@ -15,13 +15,14 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1 := router.Group("/api/v1")
 
-	v1.POST("/bookmark/:subtitle_id", handler.AddBookmark)
-	v1.GET("/bookmark/:subtitle_id", handler.GetBookmarkPath)
-	v1.POST("/subtitle", handler.AddSubtitles)
-	v1.GET("/subtitle", handler.GetSubtitles)
-	v1.PATCH("/subtitle", handler.UpdateSubtitle)
-	v1.DELETE("/subtitle/:subtitle_id", handler.DeleteSubtitles)
+	v1.POST("/bookmark/:slide_id", handler.AddBookmark)
+	v1.GET("/bookmark/", handler.GetUserBookmarks)
 
+	v1.GET("/bookmark/:slide_id", handler.GetBookmarkPath)
+	v1.POST("/slide", handler.AddSlides)
+	v1.GET("/slide", handler.GetSlides)
+	v1.PATCH("/slide", handler.UpdateSlide)
+	v1.DELETE("/slide/:slide_id", handler.DeleteSlides)
 	v1.GET("/source_name", handler.GetSourceName)
 	v1.GET("/source_path", handler.GetSourcePath)
 

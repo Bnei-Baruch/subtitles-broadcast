@@ -1,7 +1,9 @@
 DROP TABLE IF EXISTS bookmarks;
 
-DROP TABLE IF EXISTS subtitles;
+DROP TABLE IF EXISTS slides;
 
 DROP TABLE IF EXISTS files;
 
 DROP TABLE IF EXISTS file_sources;
+
+DROP TABLE IF EXISTS language_codes;

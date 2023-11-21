@@ -8,25 +8,61 @@ info:
 servers:
   - url: https://domain/api/v1
 tags:
-  - name: subtitle
-    description: Access and manage subtitle information
+  - name: slide
+    description: Access and manage slide information
   - name: bookmark
     description: Access and manage bookmark
 paths:
-  /bookmark/{subtitleId}:
+  /bookmark:
+    get:
+      tags:
+        - bookmark
+      summary: Get the user bookmark list
+      description: Finds bookmark paths by the user
+      operationId: GetUserBookmarks
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: bookmark path when request has been successful
+                        example: ["Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1", "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 2"]
+        '401':
+          description: Invalid request jwt token
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:books
+  /bookmark/{slideId}:
     post:
       tags:
         - bookmark
-      summary: Add a subtitle id for the user bookmark path
-      description: Add a subtitle id for the user bookmark path
+      summary: Add a slide id for the user bookmark path
+      description: Add a slide id for the user bookmark path
       operationId: addBookmark
       parameters:
         - in: path
-          name: subtitleId
+          name: slideId
           schema:
             type: integer
           required: true
-          description: Numeric ID of the subtitle to insert
+          description: Numeric ID of the slide to insert
       responses:
         '200':
           description: Successful operation
@@ -46,10 +82,14 @@ paths:
                           type: integer
                           description: bookmark id
                           example: 1
-                        subtitle_id:
+                        slide_id:
                           type: integer
-                          description: subtitle id
+                          description: slide id
                           example: 1
+                        user_id:
+                          type: string
+                          description: user id
+                          example: d76322f7-ef67-402c-b151-14193e23a890
         '401':
           description: Invalid request jwt token
         '400':
@@ -68,15 +108,15 @@ paths:
       tags:
         - bookmark
       summary: Get a bookmark path
-      description: Finds bookmark path by subtitle id
+      description: Finds bookmark path by slide id
       operationId: GetBookmark
       parameters:
         - in: path
-          name: subtitleId
+          name: slideId
           schema:
             type: integer
           required: true
-          description: Numeric ID of the subtitle to get bookmark path
+          description: Numeric ID of the slide to get bookmark path
       responses:
         '200':
           description: successful operation
@@ -92,7 +132,7 @@ paths:
                     data:
                       type: string
                       description: bookmark path when request has been successful
-                      example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar"
+                      example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1"
         '401':
           description: Invalid request jwt token
         '404':
@@ -104,13 +144,13 @@ paths:
       security:
         - bearerAuth:
             - read:books
-  /subtitle:
+  /slide:
     post:
       tags:
-        - subtitle
-      summary: Add a subtitle
-      description: Add a subtitle with meta data
-      operationId: addSubtitle
+        - slide
+      summary: Add a slide
+      description: Add a slide with meta data
+      operationId: addSlide
       requestBody:
         content:
           application/json:
@@ -150,14 +190,14 @@ paths:
           description: Internal error
       security:
         - bearerAuth:
-            - write:subtitles
-            - read:subtitles
+            - write:slides
+            - read:slides
     get:
       tags:
-        - subtitle
-      summary: Get subtitles
-      description: Finds all subtitle
-      operationId: getSubtitles
+        - slide
+      summary: Get slides
+      description: Finds all slide
+      operationId: getSlides
       parameters:
         - name: page
           in: query
@@ -192,7 +232,7 @@ paths:
           name: keyword
           schema:
             type: string
-          description: the keyword to search subtitle includes
+          description: the keyword to search slide includes
       responses:
         '200':
           description: successful operation
@@ -224,10 +264,10 @@ paths:
                             total_pages:
                               type: integer
                               example: 15
-                        subtitles:
+                        slides:
                           type: array
                           items:
-                              $ref: '#/components/schemas/Subtitle'
+                              $ref: '#/components/schemas/Slide'
         '401':
           description: Invalid request jwt token
         '400':
@@ -240,29 +280,29 @@ paths:
           description: Internal error
       security:
         - bearerAuth:
-            - read:subtitles
+            - read:slides
     patch:
       tags:
-        - subtitle
-      summary: Update a subtitle
-      description: Update a subtitle
-      operationId: updateSubtitle
+        - slide
+      summary: Update a slide
+      description: Update a slide
+      operationId: updateSlide
       requestBody:
         content:
           application/json:
             schema:
               properties:
-                subtitle_id:
+                slide_id:
                   type: integer
-                  description: subtitle id
+                  description: slide id
                   example: 1
                 langugae:
                   type: string 
                   description: language code
                   example: "en"
-                subtitle:
+                slide:
                   type: string
-                  description: subtitle to update
+                  description: slide to update
                   example: "Hello"
         description: Created user object
         required: true
@@ -290,22 +330,22 @@ paths:
           description: Internal error
       security:
         - bearerAuth:
-            - write:subtitles
-            - read:subtitles
-  /subtitle/{subtitleId}:
+            - write:slides
+            - read:slides
+  /slide/{slideId}:
     delete:
       tags:
-        - subtitle
-      summary: Delete a subtitle
-      description: Delete a subtitle
-      operationId: deleteSubtitle
+        - slide
+      summary: Delete a slide
+      description: Delete a slide
+      operationId: deleteSlide
       parameters:
         - in: path
-          name: subtitleId
+          name: slideId
           schema:
             type: integer
           required: true
-          description: Numeric ID of the subtitle to delete
+          description: Numeric ID of the slide to delete
       responses:
         '200':
           description: Successful operation
@@ -330,8 +370,8 @@ paths:
           description: Internal error
       security:
         - bearerAuth:
-            - read:subtitles
-            - delete:subtitles
+            - read:slides
+            - delete:slides
   /source_name:
     get:
       tags:
@@ -378,7 +418,7 @@ paths:
           description: Internal error
       security:
         - bearerAuth:
-            - read:subtitles
+            - read:slides
   /source_path:
     get:
       tags:
@@ -425,17 +465,17 @@ paths:
           description: Internal error
       security:
         - bearerAuth:
-            - read:subtitles
+            - read:slides
 components:
   schemas:
-    Subtitle:
-      title: Subtitle Data
-      description: An subtitle with meta data
+    Slide:
+      title: Slide Data
+      description: An slide with meta data
       type: object
       properties:
         id:
           type: integer
-          description: subtitle id
+          description: slide id
           example: 1
         source_uid:
           type: string
@@ -449,18 +489,22 @@ components:
           type: string
           description: file source type(archive or upload)
           example: "archive"
-        subtitle:
+        author:
           type: string
-          description: subtitle
+          description: author
+          example: "Baal HaSulam"
+        slide:
+          type: string
+          description: slide
           example: "Foreword to The Book of Zohar"
         order_number:
           type: integer
-          description: subtitle order number
+          description: slide order number
           example: 0
         langugae:
-          type: string 
-          description: language code
-          example: "en"
+          type: integer 
+          description: language code id in the launage code table in db
+          example: 1
         created_at:
           type: string
           description: created time

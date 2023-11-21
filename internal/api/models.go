@@ -1,6 +1,10 @@
 package api
 
-import "time"
+import (
+	"time"
+)
+
+// pagination model
 
 type Pagination struct {
 	Limit      int   `json:"limit"`
@@ -18,25 +22,30 @@ type File struct {
 }
 
 type FileSource struct {
-	ID   int    `json:"id"`
+	ID   int    `gorm:"primaryKey" json:"id"`
+	Name string `json:"name"`
+}
+
+type LanguageCode struct {
+	ID   int    `gorm:"primaryKey" json:"id"`
 	Name string `json:"name"`
 }
 
 type Bookmark struct {
-	ID         int    `json:"id"`
-	SubtitleId int    `json:"subtitle_id"`
-	UserId     string `json:"user_id"`
+	ID      int    `json:"id"`
+	SlideId int    `json:"slide_id"`
+	UserId  string `json:"user_id"`
 }
 
-type Subtitle struct {
+type Slide struct {
 	ID             uint   `gorm:"primarykey"`
 	SourceUid      string `json:"source_uid"`
 	FileUid        string `json:"file_uid"`
-	FileSourceType string `json:"file_source_type"`
-	Author         string `json:"author" gorm:"-"`
-	Subtitle       string `json:"subtitle"`
+	FileSourceType int    `json:"file_source_type"`
+	SourcePath     string `json:"source_path" gorm:"-"` // author/type/title
+	Slide          string `json:"slide"`
 	OrderNumber    int    `json:"order_number"`
-	Language       string `json:"language"`
+	Language       int    `json:"language"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

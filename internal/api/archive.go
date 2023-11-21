@@ -18,7 +18,7 @@ const (
 	KabbalahmediaFilesUrl   = "https://kabbalahmedia.info/backend/content_units?id=%s&with_files=true"
 	KabbalahmediaCdnUrl     = "https://cdn.kabbalahmedia.info/%s"
 
-	KabbalahmediaFileSourceType = "archive"
+	KabbalahmediaFileSourceType = 1
 )
 
 func archiveDataCopy(database *gorm.DB, language string) {
@@ -39,33 +39,56 @@ func archiveDataCopy(database *gorm.DB, language string) {
 	if err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
+	tx := database.Debug().Begin()
+	if tx.Error != nil {
+		log.Fatalf("Internal error: %s", err)
+	}
+	newLanguageCode := LanguageCode{
+		Name: language,
+	}
+	if err := tx.Create(&newLanguageCode).Error; err != nil {
+		tx.Rollback()
+		log.Fatalf("Internal error: %s", err)
+	}
 	for idx, content := range contents {
 		if len(content) > 0 {
-			subtitle := Subtitle{
+			slide := Slide{
 				SourceUid:      sourceUid,
 				FileUid:        fileUid,
 				FileSourceType: KabbalahmediaFileSourceType,
-				Subtitle:       content,
+				Slide:          content,
 				OrderNumber:    idx,
-				Language:       language,
+				Language:       newLanguageCode.ID,
 			}
-			database.Create(&subtitle)
+			if err := tx.Create(&slide).Error; err != nil {
+				tx.Rollback()
+				log.Fatalf("Internal error: %s", err)
+			}
 		}
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Fatalf("Internal error: %s", err)
 	}
 }
 
 func getFileContent(sourceUid, language string) ([]string, string, error) {
 	resp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
 	if err != nil {
-		log.Fatalf("Internal error: %s", err)
+		log.Printf("Internal error: %s", err)
+		return nil, "", err
 	}
 	var files ArchiveFiles
 
 	err = json.NewDecoder(resp.Body).Decode(&files)
 	if err != nil {
-		log.Fatalf("Internal error: %s", err)
+		log.Printf("Internal error: %s", err)
+		return nil, "", err
 	}
 	resp.Body.Close()
+
+	if len(files.ContentUnits) == 0 {
+		return nil, "", fmt.Errorf("No content units")
+	}
 
 	var fileUid string
 	for _, file := range files.ContentUnits[0].Files {
@@ -77,7 +100,7 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 
 	resp, err = http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
 	if err != nil {
-		log.Fatalf("Internal error: %s", err)
+		log.Printf("Internal error: %s", err)
 		return nil, "", err
 	}
 
@@ -92,7 +115,8 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 
 	res, _, err := docconv.ConvertDocx(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Internal error: %s", err)
+		return nil, "", err
 	}
 	return strings.Split(strings.TrimSpace(res), "\n"), fileUid, nil
 }
