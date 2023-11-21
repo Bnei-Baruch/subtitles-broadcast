@@ -174,6 +174,7 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 }
 
 func (h *Handler) GetSlides(ctx *gin.Context) {
+	userId, _ := ctx.Get("sub")
 	var errPage, errLimit error
 	var offset, limit int
 	page := 1
@@ -216,18 +217,23 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	}
 	keyword := ctx.Query("keyword")
 	slides := []*Slide{}
-	query := h.Database.Debug().WithContext(ctx).Model(&Slide{}).Order("id").Order("order_number")
+	//query := h.Database.Debug().WithContext(ctx).Model(&Slide{}).Order("id").Order("order_number")
+	query := h.Database.Debug().WithContext(ctx).
+		Table("slides").
+		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked", userId).
+		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id").
+		Order("slides.id").Order("order_number")
 	if len(sourceUid) > 0 {
-		query = query.Where("source_uid = ?", sourceUid)
+		query = query.Where("slides.source_uid = ?", sourceUid)
 	}
 	if len(fileUid) > 0 {
-		query = query.Where("file_uid = ?", fileUid)
+		query = query.Where("slides.file_uid = ?", fileUid)
 	}
 	if len(language) > 0 {
-		query = query.Where("language = ?", languageCode.ID)
+		query = query.Where("slides.language = ?", languageCode.ID)
 	}
 	if len(keyword) > 0 {
-		query = query.Where("slide like ?", "%"+keyword+"%")
+		query = query.Where("slides.slide like ?", "%"+keyword+"%")
 	}
 	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides).Error
 	if err != nil {

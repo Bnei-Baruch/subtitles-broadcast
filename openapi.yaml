@@ -489,10 +489,14 @@ components:
           type: string
           description: file source type(archive or upload)
           example: "archive"
-        author:
+        source_path:
           type: string
-          description: author
-          example: "Baal HaSulam"
+          description: source path including author name
+          example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 7"
+        bookmarked:
+          type: boolean
+          description: user's bookmark
+          example: true
         slide:
           type: string
           description: slide

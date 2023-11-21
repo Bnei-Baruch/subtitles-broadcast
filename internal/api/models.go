@@ -43,6 +43,7 @@ type Slide struct {
 	FileUid        string `json:"file_uid"`
 	FileSourceType int    `json:"file_source_type"`
 	SourcePath     string `json:"source_path" gorm:"-"` // author/type/title
+	Bookmarked     bool   `json:"bookmarked"`
 	Slide          string `json:"slide"`
 	OrderNumber    int    `json:"order_number"`
 	Language       int    `json:"language"`
