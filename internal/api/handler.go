@@ -379,7 +379,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			userBookmarkList,
-			"", "Adding data has succeeded"))
+			"", "Getting data has succeeded"))
 }
 
 func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
