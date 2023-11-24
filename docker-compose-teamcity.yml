@@ -8,7 +8,6 @@ services:
       BSSVR_PROFILE: test
     ports:
       - "${SUBTITLES_BACKEND_PORT}:8080"
-    restart: always
     depends_on:
       subtitles_dev_db:
         condition: service_healthy
@@ -27,7 +26,6 @@ services:
       POSTGRES_DB: ${SUBTITLES_DB}
     expose:
       - "5432"
-    restart: always
     volumes:
       - /root/teamcity/subtitles_backend/data:/var/lib/postgresql/data
     healthcheck:

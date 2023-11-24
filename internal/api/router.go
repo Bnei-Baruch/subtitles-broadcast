@@ -11,7 +11,6 @@ func NewRouter(handler *Handler) http.Handler {
 	router.Use(CORSMiddleware())
 	router.Use(UserRoleHandler())
 	router.Use(UserInfoHandler())
-	//router.Use((HttpMethodChecker(router)))
 
 	v1 := router.Group("/api/v1")
 

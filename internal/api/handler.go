@@ -22,23 +22,12 @@ const (
 	responseDescription = "description"
 
 	defaultListLimit = 50
-
-	// keyExpirationTime                 = 300000
-	// userSelectedContentkeyFormat      = "user_selected_content:userID:%s:contentID"
-	// userLastActivatedContentkeyFormat = "user_last_activated_content:userID:%s:contentID:%s"
 )
 
 type Handler struct {
 	Database *gorm.DB
 	Cache    *redis.Client
 }
-
-// func NewHandler(database *gorm.DB, cache *redis.Client) *Handler {
-// 	return &Handler{
-// 		Database: database,
-// 		Cache:    cache,
-// 	}
-// }
 
 func NewHandler(database *gorm.DB) *Handler {
 	return &Handler{
@@ -174,7 +163,7 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 }
 
 func (h *Handler) GetSlides(ctx *gin.Context) {
-	userId, _ := ctx.Get("sub")
+	userId, _ := ctx.Get("user_id")
 	var errPage, errLimit error
 	var offset, limit int
 	page := 1
@@ -217,7 +206,6 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	}
 	keyword := ctx.Query("keyword")
 	slides := []*Slide{}
-	//query := h.Database.Debug().WithContext(ctx).Model(&Slide{}).Order("id").Order("order_number")
 	query := h.Database.Debug().WithContext(ctx).
 		Table("slides").
 		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked", userId).
@@ -300,7 +288,7 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 }
 
 func (h *Handler) AddBookmark(ctx *gin.Context) {
-	userId, _ := ctx.Get("sub")
+	userId, _ := ctx.Get("user_id")
 	slideId := ctx.Param("slide_id")
 	slideIdInt, err := strconv.Atoi(slideId)
 	if err != nil {
@@ -325,7 +313,7 @@ func (h *Handler) AddBookmark(ctx *gin.Context) {
 }
 
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
-	userId, _ := ctx.Get("sub")
+	userId, _ := ctx.Get("user_id")
 	bookmarks := []*Bookmark{}
 	err := h.Database.Debug().WithContext(ctx).Where("user_id = ?", userId).Find(&bookmarks).Error
 	if err != nil {
@@ -513,6 +501,7 @@ func getSlideAndLanguageCodeBySlideId(database *gorm.DB, ctx context.Context, sl
 	return &slide, &languageCode, nil
 }
 
+// Get proper data to make source path from sources url
 func getTargetSourceAndSourceGrandChild(sourceUid, language string) (map[string]interface{}, map[string]interface{}, error) {
 	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
 	if err != nil {

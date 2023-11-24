@@ -18,9 +18,12 @@ const (
 	KabbalahmediaFilesUrl   = "https://kabbalahmedia.info/backend/content_units?id=%s&with_files=true"
 	KabbalahmediaCdnUrl     = "https://cdn.kabbalahmedia.info/%s"
 
-	KabbalahmediaFileSourceType = 1
+	KabbalahmediaFileSourceType = iota + 1
+	UploadFileSourceType
 )
 
+// Get source data by language and insert downloaded data to slide table
+// (slide data initialization)
 func archiveDataCopy(database *gorm.DB, language string) {
 	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
 	if err != nil {
@@ -71,6 +74,7 @@ func archiveDataCopy(database *gorm.DB, language string) {
 	}
 }
 
+// Download the file, convert the file content to string and return it
 func getFileContent(sourceUid, language string) ([]string, string, error) {
 	resp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
 	if err != nil {
@@ -87,7 +91,7 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 	resp.Body.Close()
 
 	if len(files.ContentUnits) == 0 {
-		return nil, "", fmt.Errorf("No content units")
+		return nil, "", fmt.Errorf("no content units")
 	}
 
 	var fileUid string

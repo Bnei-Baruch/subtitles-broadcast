@@ -53,11 +53,6 @@ func NewApp() *http.Server {
 		archiveDataCopy(db, "en")
 	}
 
-	// cache, err := database.NewRedis(conf.Redis.Url)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
 		Handler: NewRouter(NewHandler(db)),
