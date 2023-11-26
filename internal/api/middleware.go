@@ -28,12 +28,9 @@ var userRoles = map[string]struct{}{
 
 func CORSMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"POST", "PUT", "GET", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{
-			"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token",
-			"Authorization", "accept", "origin", "Cache-Control", "X-Requested-With",
-		},
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
 		AllowCredentials: true,
 	})
 }
