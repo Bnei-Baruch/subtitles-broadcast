@@ -140,7 +140,7 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 	err = h.Database.Debug().WithContext(ctx).Order("order_number").Where("id = ?", req.SlideID).Where("language = ?", req.Language).Find(&slide).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNoContent,
+			ctx.JSON(http.StatusNotFound,
 				getResponse(true, nil, err.Error(), "No slide to update"))
 			return
 		}
@@ -230,7 +230,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		return
 	}
 	if len(slides) == 0 {
-		ctx.JSON(http.StatusNoContent,
+		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "No slide has found", "No slide has found"))
 		return
 	}
@@ -318,7 +318,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	err := h.Database.Debug().WithContext(ctx).Where("user_id = ?", userId).Find(&bookmarks).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNoContent,
+			ctx.JSON(http.StatusNotFound,
 				getResponse(false, nil, err.Error(), "No bookmark data"))
 		} else {
 			ctx.JSON(http.StatusInternalServerError,
@@ -332,7 +332,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				if slide == nil {
-					ctx.JSON(http.StatusNoContent,
+					ctx.JSON(http.StatusNotFound,
 						getResponse(false, nil, err.Error(), "No slide data"))
 				} else {
 					ctx.JSON(http.StatusBadRequest,
@@ -354,7 +354,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		if sourceData != nil && sourceGrandChild != nil {
 			bookmarkPath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string) + " / " + fmt.Sprintf("%d", bookmark.SlideId)
 		} else {
-			ctx.JSON(http.StatusNoContent,
+			ctx.JSON(http.StatusNotFound,
 				getResponse(false, nil, "", "No source data"))
 			return
 		}
@@ -382,7 +382,7 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 	err = h.Database.Debug().WithContext(ctx).Where("slide_id = ?", slideIdInt).First(&bookmark).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNoContent,
+			ctx.JSON(http.StatusNotFound,
 				getResponse(false, nil, err.Error(), "No bookmark data"))
 		} else {
 			ctx.JSON(http.StatusInternalServerError,
@@ -394,7 +394,7 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if slide == nil {
-				ctx.JSON(http.StatusNoContent,
+				ctx.JSON(http.StatusNotFound,
 					getResponse(false, nil, err.Error(), "No slide data"))
 			} else {
 				ctx.JSON(http.StatusBadRequest,
@@ -416,12 +416,12 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 	if sourceData != nil && sourceGrandChild != nil {
 		bookmarkPath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string) + " / " + fmt.Sprintf("%d", bookmark.SlideId)
 	} else {
-		ctx.JSON(http.StatusNoContent,
+		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "", "No source data"))
 		return
 	}
 	if len(bookmarkPath) == 0 {
-		ctx.JSON(http.StatusNoContent,
+		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, err.Error(), "No bookmark path"))
 		return
 	}
@@ -449,7 +449,7 @@ func (h *Handler) GetSourceName(ctx *gin.Context) {
 	if sourceGrandChild != nil {
 		sourceName = sourceGrandChild["name"].(string)
 	} else {
-		ctx.JSON(http.StatusNoContent,
+		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "", "No source data"))
 		return
 	}
@@ -477,7 +477,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	if sourceData != nil && sourceGrandChild != nil {
 		sourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string)
 	} else {
-		ctx.JSON(http.StatusNoContent,
+		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, "", "No source data"))
 		return
 	}
