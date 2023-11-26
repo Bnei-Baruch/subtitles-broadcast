@@ -15,7 +15,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1 := router.Group("/api/v1")
 
 	v1.POST("/bookmark/:slide_id", handler.AddBookmark)
-	v1.GET("/bookmark/", handler.GetUserBookmarks)
+	v1.GET("/bookmark", handler.GetUserBookmarks)
 
 	v1.GET("/bookmark/:slide_id", handler.GetBookmarkPath)
 	v1.POST("/slide", handler.AddSlides)
