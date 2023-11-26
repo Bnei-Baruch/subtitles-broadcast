@@ -7,6 +7,7 @@ import {
   getAllBookAddedByUser,
 } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
+import { UserBookmarkList } from "../Redux/ArchiveTab/ArchiveSlice";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
@@ -16,6 +17,7 @@ const Subtitles = () => {
 
   useEffect(() => {
     dispatch(GetSubtitleData());
+    dispatch(UserBookmarkList());
   }, []);
   console.log(UserAddedList);
 
@@ -165,6 +167,7 @@ const Subtitles = () => {
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
+            <div className="">{}</div>
           </div>
 
           <div className="Questions whit-s">

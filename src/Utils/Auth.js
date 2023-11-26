@@ -18,11 +18,12 @@ const Auth = (props) => {
       url: "https://auth.2serv.eu/auth",
       clientId: "kolman-dev",
     });
+    console.log("TTTTTTTTTTTT", window.location);
     keycloak
       .init({
         onLoad: "login-required",
         checkLoginIframe: false,
-        redirectUri: window.location.origin + "/subtitle",
+        // redirectUri: window.location.origin,
       })
       .then((authenticated) => {
         if (keycloak.realmAccess.roles.includes("admin")) {
@@ -48,7 +49,7 @@ const Auth = (props) => {
           });
         });
       });
-  }, [dispatch]);
+  }, []);
 
   if (auth.keycloak) {
     if (auth.authenticated) {

@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
-import { GetAllArchiveData } from "../Redux/ArchiveTab/ArchiveSlice";
+import {
+  BookmarkSlide,
+  DeleteArchive,
+  GetAllArchiveData,
+} from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllArchiveList,
@@ -11,6 +15,8 @@ import DeleteConfirmation from "../Components/DeleteConfirmation";
 import Select from "react-select";
 import ReactPaginate from "react-paginate";
 import { useNavigate } from "react-router-dom";
+import Dropdown from "react-bootstrap/Dropdown";
+import useDebounce from "../Services/useDebounce";
 
 const Archive = () => {
   const dispatch = useDispatch();
@@ -24,27 +30,36 @@ const Archive = () => {
   });
   const [message, setMessage] = useState("");
   const [toggle, setToggle] = useState(false);
+  const [freeText, setFreeText] = useState("");
   const [finalConfirm, setFinalConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
+  const [deleteId, setDeleteId] = useState();
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
-
+  // const [bookmarkId, setBookmarkId] = useState();
+  const DebouncingFreeText = useDebounce(freeText, 3000);
   useEffect(() => {
-    dispatch(GetAllArchiveData(page));
-  }, [page]);
+    dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
+  }, [page, DebouncingFreeText]);
 
   useEffect(() => {
     if (finalConfirm === true) {
-      if (message?.split(" ")?.includes("delete")) {
-        alert("delete");
-      }
+      dispatch(DeleteArchive(deleteId));
+      setFinalConfirm(false);
+      // if (message?.split(" ")?.includes("delete")) {
+      //   alert("delete");
+      // }
     }
-  }, [finalConfirm]);
+    if (toggle) {
+      dispatch(BookmarkSlide(deleteId));
+      setToggle(false);
+    }
+  }, [finalConfirm, toggle]);
 
   console.log(ArchiveList, "ArchiveList");
   const DelectConfirmationModal = useMemo(
     () => (
       <DeleteConfirmation
-        confirm={setFinalConfirm}
+        confirm={() => setFinalConfirm(true)}
         show={deleteConfirmationPopup}
         handleClose={() => setDeleteConfirmationPopup(false)}
       />
@@ -63,6 +78,7 @@ const Archive = () => {
     ),
     [confirmation]
   );
+  console.log(ArchiveList, "<<<<<<<");
   return (
     <>
       {DelectConfirmationModal}
@@ -72,7 +88,13 @@ const Archive = () => {
           <div className="d-flex m-2">
             <div className="form-group col-3">
               <label>Free Text</label>
-              <input type="text" className="form-control input " />
+              <input
+                onChange={(e) => {
+                  setFreeText(e.target.value);
+                }}
+                type="text"
+                className="form-control input "
+              />
             </div>
 
             <div className="form-group col-2">
@@ -85,7 +107,7 @@ const Archive = () => {
                 }))}
               />
             </div>
-            <div className="form-group col-2">
+            {/* <div className="form-group col-2">
               <label>Book</label>
               <Select
                 options={ArchiveList?.archives?.map((key) => ({
@@ -93,8 +115,8 @@ const Archive = () => {
                   label: key.book,
                 }))}
               />
-            </div>
-            <div className="form-group col-2">
+            </div> */}
+            {/* <div className="form-group col-2">
               <label>Title</label>
               <Select
                 options={ArchiveList?.archives?.map((key) => ({
@@ -102,7 +124,7 @@ const Archive = () => {
                   label: key.title,
                 }))}
               />
-            </div>
+            </div> */}
           </div>
         </div>
         <div className="card">
@@ -117,10 +139,10 @@ const Archive = () => {
               </tr>
             </thead>
             <tbody>
-              {ArchiveList?.subtitles?.map((key) => (
-                <tr key={key.id}>
+              {ArchiveList?.slides?.map((key) => (
+                <tr key={key.ID}>
                   <th scope="row" className="textwidth">
-                    <span className="truncate">{key.subtitle}</span>
+                    <span className="truncate">{key.slide}</span>
                   </th>
                   <td>{key.author}</td>
 
@@ -136,12 +158,13 @@ const Archive = () => {
                         className="bi bi-plus"
                       />
                     }
-                    {key.bookmark == true ? (
+                    {key.bookmarked == true ? (
                       <i
                         onClick={() => {
                           setMessage(
                             "Are you sure , you want to bookmark this title"
                           );
+                          setDeleteId(key.ID);
                           setConfirmation(true);
                         }}
                         class="bi bi-bookmark-check-fill m-2"
@@ -152,17 +175,33 @@ const Archive = () => {
                           setMessage(
                             "Are you sure , you want to bookmark this title"
                           );
+                          setDeleteId(key.ID);
                           setConfirmation(true);
                         }}
                         class="bi bi-bookmark m-2"
                       />
                     )}
-                    <i
-                      onClick={() => {
-                        setDeleteConfirmationPopup(true);
-                      }}
-                      class="bi bi-trash3 m-2"
-                    />
+
+                    <Dropdown>
+                      <Dropdown.Toggle variant="Secondary" id="dropdown-basic">
+                        <i class="bi bi-three-dots-vertical"></i>
+                      </Dropdown.Toggle>
+
+                      <Dropdown.Menu>
+                        <Dropdown.Item>
+                          <i class="bi bi-pencil"></i>
+                        </Dropdown.Item>
+                        <Dropdown.Item>
+                          <i
+                            onClick={() => {
+                              setDeleteConfirmationPopup(true);
+                              setDeleteId(key.ID);
+                            }}
+                            class="bi bi-trash3 m-2"
+                          />
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
                   </td>
                 </tr>
               ))}
@@ -186,11 +225,11 @@ const Archive = () => {
             className={`bi bi-chevron-left  ${
               ArchiveList?.pagination?.page === 1 && "disablecolor"
             }`}
-            onClick={() => setPage({ ...page, page: page - 1 })}
+            onClick={() => setPage({ ...page, page: page.page - 1 })}
           />
           <i
             className="bi bi-chevron-right"
-            onClick={() => setPage({ ...page, page: page + 2 })}
+            onClick={() => setPage({ ...page, page: page.page + 2 })}
           />
           {/* 
 <ReactPaginate
