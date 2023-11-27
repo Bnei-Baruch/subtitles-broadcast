@@ -16,40 +16,32 @@ type Pagination struct {
 // api model
 
 type File struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Content []byte `json:"content"`
-}
-
-type FileSource struct {
-	ID   int    `gorm:"primaryKey" json:"id"`
-	Name string `json:"name"`
-}
-
-type LanguageCode struct {
-	ID   int    `gorm:"primaryKey" json:"id"`
-	Name string `json:"name"`
+	ID        uint   `json:"id"`
+	Type      string `json:"type"`
+	Language  string `json:"language"`
+	Filename  string `json:"filename"`
+	Content   []byte `json:"content"`
+	SourceUid string `json:"source_uid"`
+	FileUid   string `json:"file_uid"`
 }
 
 type Bookmark struct {
-	ID      int    `json:"id"`
+	ID      uint   `json:"id"`
 	SlideId int    `json:"slide_id"`
 	UserId  string `json:"user_id"`
 }
 
 type Slide struct {
-	ID             uint   `gorm:"primarykey"`
-	SourceUid      string `json:"source_uid"`
-	FileUid        string `json:"file_uid"`
-	FileSourceType int    `json:"file_source_type"`
-	SourcePath     string `json:"source_path" gorm:"->"` // author/type/title
-	Bookmarked     bool   `json:"bookmarked" gorm:"->"`
-	Slide          string `json:"slide"`
-	OrderNumber    int    `json:"order_number"`
-	Language       int    `json:"language"`
-
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          uint      `gorm:"primarykey"`
+	FileId      uint      `json:"file_id"`
+	SourcePath  string    `json:"source_path,omitempty" gorm:"->"` // author/type/title
+	Bookmarked  bool      `json:"bookmarked,omitempty" gorm:"->"`
+	Language    string    `json:"language,omitempty" gorm:"->"`
+	SourceUid   string    `json:"source_uid,omitempty" gorm:"->"`
+	Slide       string    `json:"slide"`
+	OrderNumber int       `json:"order_number"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // archive model

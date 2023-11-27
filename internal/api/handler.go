@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -68,23 +69,6 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	languageCode := LanguageCode{}
-	err = h.Database.Debug().WithContext(ctx).Where("name = ?", req.Language).First(&languageCode).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			languageCode.Name = req.Language
-			if err := h.Database.Create(&languageCode).Error; err != nil {
-				log.Error(err)
-				ctx.JSON(http.StatusInternalServerError,
-					getResponse(true, nil, err.Error(), "Binding data has failed"))
-				return
-			}
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-			return
-		}
-	}
 	tx := h.Database.Debug().Begin()
 	if tx.Error != nil {
 		log.Error(err)
@@ -92,15 +76,22 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			getResponse(true, nil, err.Error(), "Binding data has failed"))
 		return
 	}
+	newFile := File{
+		Type:      KabbalahmediaFileSourceType,
+		Language:  req.Language,
+		SourceUid: req.SourceUid,
+		FileUid:   fileUid,
+	}
+	if err := tx.Create(&newFile).Error; err != nil {
+		tx.Rollback()
+		log.Fatalf("Internal error: %s", err)
+	}
 	for idx, content := range contents {
 		if len(content) > 0 {
 			slide := Slide{
-				SourceUid:      req.SourceUid,
-				FileUid:        fileUid,
-				FileSourceType: KabbalahmediaFileSourceType,
-				Slide:          content,
-				OrderNumber:    idx,
-				Language:       languageCode.ID,
+				FileId:      newFile.ID,
+				Slide:       content,
+				OrderNumber: idx,
 			}
 			if err := tx.Create(&slide).Error; err != nil {
 				tx.Rollback()
@@ -137,9 +128,13 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 		return
 	}
 	slide := Slide{}
-	err = h.Database.Debug().WithContext(ctx).Order("order_number").Where("id = ?", req.SlideID).Where("language = ?", req.Language).Find(&slide).Error
+	err = h.Database.Debug().WithContext(ctx).
+		Table("slides").
+		Select("slides.*, files.language").
+		Joins("INNER JOIN files ON slides.file_id = files.id").
+		Where("slides.id = ?", req.SlideID).Where("files.language = ?", req.Language).First(&slide).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err.Error() == "record not found" {
 			ctx.JSON(http.StatusNotFound,
 				getResponse(true, nil, err.Error(), "No slide to update"))
 			return
@@ -192,33 +187,21 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	sourceUid := ctx.Query("source_uid")
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
-	languageCode := LanguageCode{}
-	err = h.Database.Debug().WithContext(ctx).Where("name = ?", language).First(&languageCode).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusBadRequest,
-				getResponse(false, nil, err.Error(), "Not a valid language code"))
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-		}
-		return
-	}
 	keyword := ctx.Query("keyword")
 	slides := []*Slide{}
 	query := h.Database.Debug().WithContext(ctx).
 		Table("slides").
-		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked", userId).
-		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id").
+		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked, files.source_uid, files.language", userId).
+		Joins("INNER JOIN files ON slides.file_id = files.id").Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id").
 		Order("slides.id").Order("order_number")
 	if len(sourceUid) > 0 {
-		query = query.Where("slides.source_uid = ?", sourceUid)
+		query = query.Where("files.source_uid = ?", sourceUid)
 	}
 	if len(fileUid) > 0 {
-		query = query.Where("slides.file_uid = ?", fileUid)
+		query = query.Where("files.file_uid = ?", fileUid)
 	}
 	if len(language) > 0 {
-		query = query.Where("slides.language = ?", languageCode.ID)
+		query = query.Where("files.language = ?", language)
 	}
 	if len(keyword) > 0 {
 		query = query.Where("slides.slide like ?", "%"+keyword+"%")
@@ -234,15 +217,16 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			getResponse(false, nil, "No slide has found", "No slide has found"))
 		return
 	}
-	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(slides[0].SourceUid, language)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
+	for i := range slides {
+		sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(slides[i].SourceUid, slides[i].Language)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, err.Error(), "Getting data has failed"))
+			return
+		}
+		slides[i].SourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string) + " / " + fmt.Sprintf("%d", slides[i].ID)
 	}
-	for _, slide := range slides {
-		slide.SourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string) + " / " + fmt.Sprintf("%d", slide.ID)
-	}
+
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
@@ -302,6 +286,11 @@ func (h *Handler) AddBookmark(ctx *gin.Context) {
 	}
 	err = h.Database.Debug().Create(&bookmark).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "SQLSTATE 23505") {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, err.Error(), "The same bookmark exists"))
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Adding data has failed"))
 		return
@@ -317,51 +306,27 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	bookmarks := []*Bookmark{}
 	err := h.Database.Debug().WithContext(ctx).Where("user_id = ?", userId).Find(&bookmarks).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(false, nil, err.Error(), "No bookmark data"))
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-		}
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	if len(bookmarks) == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, err.Error(), "No bookmark data"))
 		return
 	}
 	userBookmarkList := []string{}
 	for _, bookmark := range bookmarks {
-		slide, languageCode, err := getSlideAndLanguageCodeBySlideId(h.Database, ctx, bookmark.SlideId)
+		sourcePath, statusCode, description, err := getSourcePathFromSlice(h.Database, ctx, bookmark.SlideId)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				if slide == nil {
-					ctx.JSON(http.StatusNotFound,
-						getResponse(false, nil, err.Error(), "No slide data"))
-				} else {
-					ctx.JSON(http.StatusBadRequest,
-						getResponse(false, nil, err.Error(), "Not a valid language code"))
-				}
-			} else {
-				ctx.JSON(http.StatusInternalServerError,
-					getResponse(false, nil, err.Error(), "Getting data has failed"))
-			}
+			ctx.JSON(statusCode,
+				getResponse(false, nil, err.Error(), description))
 			return
 		}
-		bookmarkPath := ""
-		sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(slide.SourceUid, languageCode.Name)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-			return
-		}
-		if sourceData != nil && sourceGrandChild != nil {
-			bookmarkPath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string) + " / " + fmt.Sprintf("%d", bookmark.SlideId)
-		} else {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(false, nil, "", "No source data"))
-			return
-		}
-		if len(bookmarkPath) == 0 {
+		if len(sourcePath) == 0 {
 			continue
 		} else {
-			userBookmarkList = append(userBookmarkList, bookmarkPath)
+			userBookmarkList = append(userBookmarkList, sourcePath+" / "+fmt.Sprintf("%d", bookmark.SlideId))
 		}
 	}
 	ctx.JSON(http.StatusOK,
@@ -381,7 +346,7 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 	bookmark := Bookmark{}
 	err = h.Database.Debug().WithContext(ctx).Where("slide_id = ?", slideIdInt).First(&bookmark).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err.Error() == "record not found" {
 			ctx.JSON(http.StatusNotFound,
 				getResponse(false, nil, err.Error(), "No bookmark data"))
 		} else {
@@ -390,44 +355,20 @@ func (h *Handler) GetBookmarkPath(ctx *gin.Context) {
 		}
 		return
 	}
-	slide, languageCode, err := getSlideAndLanguageCodeBySlideId(h.Database, ctx, slideIdInt)
+	sourcePath, statusCode, description, err := getSourcePathFromSlice(h.Database, ctx, slideIdInt)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if slide == nil {
-				ctx.JSON(http.StatusNotFound,
-					getResponse(false, nil, err.Error(), "No slide data"))
-			} else {
-				ctx.JSON(http.StatusBadRequest,
-					getResponse(false, nil, err.Error(), "Not a valid language code"))
-			}
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-		}
+		ctx.JSON(statusCode,
+			getResponse(false, nil, err.Error(), description))
 		return
 	}
-	bookmarkPath := ""
-	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(slide.SourceUid, languageCode.Name)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	if sourceData != nil && sourceGrandChild != nil {
-		bookmarkPath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string) + " / " + fmt.Sprintf("%d", bookmark.SlideId)
-	} else {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "", "No source data"))
-		return
-	}
-	if len(bookmarkPath) == 0 {
+	if len(sourcePath) == 0 {
 		ctx.JSON(http.StatusNotFound,
 			getResponse(false, nil, err.Error(), "No bookmark path"))
 		return
 	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
-			bookmarkPath,
+			sourcePath+" / "+fmt.Sprintf("%d", bookmark.SlideId),
 			"", "Getting data has succeeded"))
 }
 
@@ -467,38 +408,69 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			getResponse(false, nil, "", "source_uid and language parameters both are needed"))
 		return
 	}
+	sourcePath, statusCode, description, err := getSourcePath(sourceUid, language)
+	if err != nil {
+		ctx.JSON(statusCode,
+			getResponse(false, nil, err.Error(), description))
+		return
+	}
+	ctx.JSON(statusCode,
+		getResponse(true,
+			sourcePath,
+			"", description))
+}
+
+func getSourcePath(sourceUid, language string) (string, int, string, error) {
 	sourcePath := ""
 	sourceData, sourceGrandChild, err := getTargetSourceAndSourceGrandChild(sourceUid, language)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
+		return "", http.StatusInternalServerError, "Getting data has failed", err
 	}
 	if sourceData != nil && sourceGrandChild != nil {
 		sourcePath = sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + sourceGrandChild["type"].(string) + " / " + sourceGrandChild["name"].(string)
 	} else {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "", "No source data"))
-		return
+		return "", http.StatusNotFound, "No source data", fmt.Errorf("no source data")
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			sourcePath,
-			"", "Getting data has succeeded"))
+	return sourcePath, http.StatusOK, "Getting data has succeeded", nil
 }
 
-func getSlideAndLanguageCodeBySlideId(database *gorm.DB, ctx context.Context, slideId int) (*Slide, *LanguageCode, error) {
+func getSourcePathFromSlice(database *gorm.DB, ctx context.Context, slideId int) (string, int, string, error) {
+	slide, languageCode, err := getSlideAndLanguageCodeBySlideId(database, ctx, slideId)
+	if err != nil {
+		if err.Error() == "record not found" {
+			if slide == nil {
+				return "", http.StatusNotFound, "No slide data", err
+			} else {
+				return "", http.StatusBadRequest, "Not a valid language code", err
+			}
+		} else {
+			return "", http.StatusInternalServerError, "Getting data has failed", err
+		}
+	}
+	file := File{}
+	err = database.Debug().WithContext(ctx).Where("id = ?", slide.FileId).First(&file).Error
+	if err != nil {
+		if err.Error() == "record not found" {
+			return "", http.StatusNotFound, "No file data", err
+		} else {
+			return "", http.StatusInternalServerError, "Getting data has failed", err
+		}
+	}
+	return getSourcePath(file.SourceUid, languageCode)
+}
+
+func getSlideAndLanguageCodeBySlideId(database *gorm.DB, ctx context.Context, slideId int) (*Slide, string, error) {
 	slide := Slide{}
 	err := database.Debug().WithContext(ctx).Where("id = ?", slideId).First(&slide).Error
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
-	languageCode := LanguageCode{}
-	err = database.Debug().WithContext(ctx).Where("id = ?", slide.Language).First(&languageCode).Error
+	file := File{}
+	err = database.Debug().WithContext(ctx).Where("id = ?", slide.FileId).First(&file).Error
 	if err != nil {
-		return &slide, nil, err
+		return nil, "", err
 	}
-	return &slide, &languageCode, nil
+	return &slide, file.Language, nil
 }
 
 // Get proper data to make source path from sources url

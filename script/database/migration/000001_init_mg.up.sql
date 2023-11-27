@@ -1,31 +1,18 @@
-CREATE TABLE IF NOT EXISTS file_sources (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE
-);
-
-INSERT INTO file_sources (name) VALUES ('archive');
-INSERT INTO file_sources (name) VALUES ('upload');
-
-CREATE TABLE IF NOT EXISTS language_codes (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE
-);
-
 CREATE TABLE IF NOT EXISTS files (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50),
-    content BYTEA
+  id SERIAL PRIMARY KEY,
+  type VARCHAR(10),         -- Either "archive" or "upload"
+  language VARCHAR(2),
+  filename VARCHAR(50),     -- Filled only for "upload" file type
+  content BYTEA,            -- Filled only for "upload" file type
+  source_uid VARCHAR(50),   -- Filled only for "archive" file type
+  file_uid VARCHAR(50)      -- Filled only for "archive" file type
 );
 
 CREATE TABLE IF NOT EXISTS slides (
     id SERIAL PRIMARY KEY,
-    source_uid VARCHAR(50),
-    file_uid VARCHAR(50),
-    file_source_type INT REFERENCES file_sources (id),
+    file_id INT REFERENCES files (id),
     slide TEXT,
 	order_number INT,
-    language INT,
-    
     created_at timestamp without time zone,
     updated_at timestamp without time zone
 );

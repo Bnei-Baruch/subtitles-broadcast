@@ -24,6 +24,10 @@ var (
 	Date    = "Dev"
 )
 
+const (
+	LanguageCodeEnglish = "en"
+)
+
 func init() {
 	fmt.Printf("Build Date: %s\nBuild Version: %s\nBuild: %s\n\n", Date, Version, Build)
 	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
@@ -50,7 +54,8 @@ func NewApp() *http.Server {
 		log.Fatalln(err)
 	}
 	if err == nil {
-		archiveDataCopy(db, "en")
+		languageCodes := []string{LanguageCodeEnglish}
+		archiveDataCopy(db, languageCodes)
 	}
 
 	return &http.Server{

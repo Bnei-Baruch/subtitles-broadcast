@@ -18,59 +18,69 @@ const (
 	KabbalahmediaFilesUrl   = "https://kabbalahmedia.info/backend/content_units?id=%s&with_files=true"
 	KabbalahmediaCdnUrl     = "https://cdn.kabbalahmedia.info/%s"
 
-	KabbalahmediaFileSourceType = iota + 1
-	UploadFileSourceType
+	KabbalahmediaFileSourceType = "archive"
+	UploadFileSourceType        = "upload"
 )
 
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
-func archiveDataCopy(database *gorm.DB, language string) {
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
-	if err != nil {
-		log.Fatalf("Internal error: %s", err)
-	}
-	var sources ArchiveSources
+func archiveDataCopy(database *gorm.DB, languageCodes []string) {
+	for _, languageCode := range languageCodes {
+		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
+		if err != nil {
+			log.Fatalf("Internal error: %s", err)
+		}
+		var sources ArchiveSources
 
-	err = json.NewDecoder(resp.Body).Decode(&sources)
-	if err != nil {
-		log.Fatalf("Internal error: %s", err)
-	}
-	resp.Body.Close()
+		err = json.NewDecoder(resp.Body).Decode(&sources)
+		if err != nil {
+			log.Fatalf("Internal error: %s", err)
+		}
+		resp.Body.Close()
 
-	sourceUid := sources.Sources[0].Children[0].Children[0].ID
-	contents, fileUid, err := getFileContent(sourceUid, language)
-	if err != nil {
-		log.Fatalf("Internal error: %s", err)
-	}
-	tx := database.Debug().Begin()
-	if tx.Error != nil {
-		log.Fatalf("Internal error: %s", err)
-	}
-	newLanguageCode := LanguageCode{
-		Name: language,
-	}
-	if err := tx.Create(&newLanguageCode).Error; err != nil {
-		tx.Rollback()
-		log.Fatalf("Internal error: %s", err)
-	}
-	for idx, content := range contents {
-		if len(content) > 0 {
-			slide := Slide{
-				SourceUid:      sourceUid,
-				FileUid:        fileUid,
-				FileSourceType: KabbalahmediaFileSourceType,
-				Slide:          content,
-				OrderNumber:    idx,
-				Language:       newLanguageCode.ID,
-			}
-			if err := tx.Create(&slide).Error; err != nil {
-				tx.Rollback()
-				log.Fatalf("Internal error: %s", err)
+		// for _, source := range sources.Sources {
+		// 	for _, child1 := range source.Children {
+		// 		for _, child2 := range child1.Children {
+		//			sourceUid := child2.ID
+		// 		}
+		// 	}
+		// }
+		// - will use for all slides in the future
+		sourceUid := sources.Sources[0].Children[0].Children[0].ID
+		contents, fileUid, err := getFileContent(sourceUid, languageCode)
+		if err != nil {
+			log.Fatalf("Internal error: %s", err)
+		}
+		tx := database.Debug().Begin()
+		if tx.Error != nil {
+			log.Fatalf("Internal error: %s", err)
+		}
+		newFile := File{
+			Type:      KabbalahmediaFileSourceType,
+			Language:  languageCode,
+			SourceUid: sourceUid,
+			FileUid:   fileUid,
+		}
+		if err := tx.Create(&newFile).Error; err != nil {
+			tx.Rollback()
+			log.Fatalf("Internal error: %s", err)
+		}
+		for idx, content := range contents {
+			if len(content) > 0 {
+				slide := Slide{
+					FileId:      newFile.ID,
+					Slide:       content,
+					OrderNumber: idx,
+				}
+				if err := tx.Create(&slide).Error; err != nil {
+					tx.Rollback()
+					log.Fatalf("Internal error: %s", err)
+				}
 			}
 		}
-	}
-	if err := tx.Commit().Error; err != nil {
-		log.Fatalf("Internal error: %s", err)
+		if err := tx.Commit().Error; err != nil {
+			log.Fatalf("Internal error: %s", err)
+		}
 	}
 }
 
