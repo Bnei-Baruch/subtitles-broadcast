@@ -17,6 +17,7 @@ import ReactPaginate from "react-paginate";
 import { useNavigate } from "react-router-dom";
 import Dropdown from "react-bootstrap/Dropdown";
 import useDebounce from "../Services/useDebounce";
+import EditArcive from "./EditArchive";
 
 const Archive = () => {
   const dispatch = useDispatch();
@@ -28,6 +29,7 @@ const Archive = () => {
     page: 1,
     limit: 10,
   });
+  const [editSlide, setEditSlide] = useState("");
   const [message, setMessage] = useState("");
   const [toggle, setToggle] = useState(false);
   const [freeText, setFreeText] = useState("");
@@ -83,31 +85,34 @@ const Archive = () => {
     <>
       {DelectConfirmationModal}
       {ConfirmationMessage}
-      <div className="archiveBackground vh-100 ">
-        <div class="search-box">
-          <div className="d-flex m-2">
-            <div className="form-group col-3">
-              <label>Free Text</label>
-              <input
-                onChange={(e) => {
-                  setFreeText(e.target.value);
-                }}
-                type="text"
-                className="form-control input "
-              />
-            </div>
+      {editSlide ? (
+        <EditArcive />
+      ) : (
+        <div className="archiveBackground  ">
+          <div class="search-box">
+            <div className="d-flex m-2">
+              <div className="form-group col-3">
+                <label>Free Text</label>
+                <input
+                  onChange={(e) => {
+                    setFreeText(e.target.value);
+                  }}
+                  type="text"
+                  className="form-control input "
+                />
+              </div>
 
-            <div className="form-group col-2">
-              <label>Author</label>
+              <div className="form-group col-2">
+                <label>Author</label>
 
-              <Select
-                options={ArchiveList?.archives?.map((key) => ({
-                  value: key.author,
-                  label: key.author,
-                }))}
-              />
-            </div>
-            {/* <div className="form-group col-2">
+                <Select
+                  options={ArchiveList?.archives?.map((key) => ({
+                    value: key.author,
+                    label: key.author,
+                  }))}
+                />
+              </div>
+              {/* <div className="form-group col-2">
               <label>Book</label>
               <Select
                 options={ArchiveList?.archives?.map((key) => ({
@@ -116,7 +121,7 @@ const Archive = () => {
                 }))}
               />
             </div> */}
-            {/* <div className="form-group col-2">
+              {/* <div className="form-group col-2">
               <label>Title</label>
               <Select
                 options={ArchiveList?.archives?.map((key) => ({
@@ -125,113 +130,120 @@ const Archive = () => {
                 }))}
               />
             </div> */}
+            </div>
           </div>
-        </div>
-        <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th scope="col">Text</th>
-                <th scope="col">Author</th>
-                {/* <th scope="col">Book</th>
+          <div className="card">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Text</th>
+                  <th scope="col">Author</th>
+                  {/* <th scope="col">Book</th>
                 <th scope="col">Title</th> */}
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ArchiveList?.slides?.map((key) => (
-                <tr key={key.ID}>
-                  <th scope="row" className="textwidth">
-                    <span className="truncate">{key.slide}</span>
-                  </th>
-                  <td>{key.author}</td>
-
-                  {/* <td>{key.book}</td>
-                  <td>{key.title}</td> */}
-                  <td>
-                    {
-                      <i
-                        onClick={() => {
-                          dispatch(AddToSubtitleList({ id: key?.id }));
-                          navigate("/subtitle");
-                        }}
-                        className="bi bi-plus"
-                      />
-                    }
-                    {key.bookmarked == true ? (
-                      <i
-                        onClick={() => {
-                          setMessage(
-                            "Are you sure , you want to bookmark this title"
-                          );
-                          setDeleteId(key.ID);
-                          setConfirmation(true);
-                        }}
-                        class="bi bi-bookmark-check-fill m-2"
-                      />
-                    ) : (
-                      <i
-                        onClick={() => {
-                          setMessage(
-                            "Are you sure , you want to bookmark this title"
-                          );
-                          setDeleteId(key.ID);
-                          setConfirmation(true);
-                        }}
-                        class="bi bi-bookmark m-2"
-                      />
-                    )}
-
-                    <Dropdown>
-                      <Dropdown.Toggle variant="Secondary" id="dropdown-basic">
-                        <i class="bi bi-three-dots-vertical"></i>
-                      </Dropdown.Toggle>
-
-                      <Dropdown.Menu>
-                        <Dropdown.Item>
-                          <i class="bi bi-pencil"></i>
-                        </Dropdown.Item>
-                        <Dropdown.Item>
-                          <i
-                            onClick={() => {
-                              setDeleteConfirmationPopup(true);
-                              setDeleteId(key.ID);
-                            }}
-                            class="bi bi-trash3 m-2"
-                          />
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </td>
+                  <th scope="col">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {ArchiveList?.slides?.map((key) => (
+                  <tr key={key.ID}>
+                    <th scope="row" className="textwidth">
+                      <span className="truncate">{key.slide}</span>
+                    </th>
 
-        <div className="m-3 ">
-          <div
-            className=""
-            onChange={(e) => setPage({ page: 1, limit: e.target.value })}
-          >
-            <span>Row per page:</span>
-            <select>
-              <option>10</option>
-              <option>20</option>
-              <option>30</option>
-            </select>
+                    <td>{key.source_path?.split("/")?.[0]}</td>
+
+                    {/* <td>{key.book}</td>
+                  <td>{key.title}</td> */}
+                    <td>
+                      {
+                        <i
+                          onClick={() => {
+                            dispatch(AddToSubtitleList({ id: key?.id }));
+                            navigate("/subtitle");
+                          }}
+                          className="bi bi-plus"
+                        />
+                      }
+                      {key.bookmarked == true ? (
+                        <i
+                          onClick={() => {
+                            setMessage(
+                              "Are you sure , you want to bookmark this title"
+                            );
+                            setDeleteId(key.ID);
+                            setConfirmation(true);
+                          }}
+                          class="bi bi-bookmark-check-fill m-2"
+                        />
+                      ) : (
+                        <i
+                          onClick={() => {
+                            setMessage(
+                              "Are you sure , you want to bookmark this title"
+                            );
+                            setDeleteId(key.ID);
+                            setConfirmation(true);
+                          }}
+                          class="bi bi-bookmark m-2"
+                        />
+                      )}
+
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="Secondary"
+                          id="dropdown-basic"
+                        >
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu>
+                          <Dropdown.Item>
+                            <i
+                              class="bi bi-pencil"
+                              onClick={() => setEditSlide(key.ID)}
+                            />
+                          </Dropdown.Item>
+                          <Dropdown.Item>
+                            <i
+                              onClick={() => {
+                                setDeleteConfirmationPopup(true);
+                                setDeleteId(key.ID);
+                              }}
+                              class="bi bi-trash3 m-2"
+                            />
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <i
-            className={`bi bi-chevron-left  ${
-              ArchiveList?.pagination?.page === 1 && "disablecolor"
-            }`}
-            onClick={() => setPage({ ...page, page: page.page - 1 })}
-          />
-          <i
-            className="bi bi-chevron-right"
-            onClick={() => setPage({ ...page, page: page.page + 2 })}
-          />
-          {/* 
+
+          <div className="m-3 ">
+            <div
+              className=""
+              onChange={(e) => setPage({ page: 1, limit: e.target.value })}
+            >
+              <span>Row per page:</span>
+              <select>
+                <option>10</option>
+                <option>20</option>
+                <option>30</option>
+              </select>
+            </div>
+            <i
+              className={`bi bi-chevron-left  ${
+                ArchiveList?.pagination?.page === 1 && "disablecolor"
+              }`}
+              onClick={() => setPage({ ...page, page: page.page - 1 })}
+            />
+            <i
+              className="bi bi-chevron-right"
+              onClick={() => setPage({ ...page, page: page.page + 2 })}
+            />
+            {/* 
 <ReactPaginate
         breakLabel="..."
         nextLabel="next >"
@@ -242,7 +254,7 @@ const Archive = () => {
         previousLabel="< previous"
         renderOnZeroPageCount={null}
       /> */}
-          {/* <div className="">
+            {/* <div className="">
         <span>Rows per page:</span>
         <select>
             <option>10</option>
@@ -250,8 +262,9 @@ const Archive = () => {
             <option>10</option>
         </select>
     </div> */}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

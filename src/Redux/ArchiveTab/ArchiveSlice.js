@@ -24,7 +24,6 @@ const API_URL = {
 export const GetAllArchiveData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    console.log();
     const response = await axios.get(`${API}${API_URL.GetALL}`, {
       params: data,
     });
@@ -53,9 +52,10 @@ export const DeleteArchive = createAsyncThunk(
 );
 
 export const UserBookmarkList = createAsyncThunk(
-  `UserBookmarkList`,
+  `/UserBookmarkList`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}bookmark`);
+    const response = await axios.get(`${API}bookmark`, { params: {} });
+    return response.data;
   }
 );
 
