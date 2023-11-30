@@ -413,7 +413,6 @@ paths:
                       type: string
                       description: archive source path
                       example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar"
-                               "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1" 
         '401':
           description: Invalid request jwt token
         '400':
