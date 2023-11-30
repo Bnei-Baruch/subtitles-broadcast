@@ -32,16 +32,28 @@ type Bookmark struct {
 }
 
 type Slide struct {
-	ID          uint      `gorm:"primarykey"`
-	FileId      uint      `json:"file_id"`
-	SourcePath  string    `json:"source_path,omitempty" gorm:"->"` // author/type/title
-	Bookmarked  bool      `json:"bookmarked,omitempty" gorm:"->"`
-	Language    string    `json:"language,omitempty" gorm:"->"`
-	SourceUid   string    `json:"source_uid,omitempty" gorm:"->"`
-	Slide       string    `json:"slide"`
-	OrderNumber int       `json:"order_number"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID              uint      `gorm:"primarykey"`
+	FileId          uint      `json:"file_id"`
+	SlideSourcePath string    `json:"slide_source_path,omitempty" gorm:"->"` // author/type/title/slide_id
+	Bookmarked      bool      `json:"bookmarked" gorm:"->"`
+	Language        string    `json:"language" gorm:"->"`
+	SourceUid       string    `json:"source_uid" gorm:"->"`
+	Slide           string    `json:"slide"`
+	OrderNumber     int       `json:"order_number"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type SourcePath struct {
+	ID        uint   `json:"id,omitempty"`
+	SourceUid string `json:"source_uid,omitempty"`
+	Path      string `json:"path"`
+}
+
+type SourcePathView struct {
+	ID         uint   `json:"id"`
+	SourceUid  string `json:"source_uid"`
+	SourcePath string `json:"source_path"`
 }
 
 // archive model

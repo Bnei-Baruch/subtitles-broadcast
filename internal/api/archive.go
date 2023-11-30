@@ -55,6 +55,19 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 		if tx.Error != nil {
 			log.Fatalf("Internal error: %s", err)
 		}
+		sourcePath, err := getSourcePath(sourceUid, languageCode)
+		if err != nil {
+			tx.Rollback()
+			log.Fatalf("Internal error: %s", err)
+		}
+		newSourcePath := SourcePath{
+			SourceUid: sourceUid,
+			Path:      sourcePath,
+		}
+		if err := tx.Create(&newSourcePath).Error; err != nil {
+			tx.Rollback()
+			log.Fatalf("Internal error: %s", err)
+		}
 		newFile := File{
 			Type:      KabbalahmediaFileSourceType,
 			Language:  languageCode,
@@ -133,4 +146,35 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 		return nil, "", err
 	}
 	return strings.Split(strings.TrimSpace(res), "\n"), fileUid, nil
+}
+
+// Get proper data to make source path from sources url
+func getSourcePath(sourceUid, language string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
+	if err != nil {
+		log.Fatalf("Internal error: %s", err)
+	}
+	var data map[string][]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		log.Println("Error:", err)
+		return "", err
+	}
+	resp.Body.Close()
+	for _, source := range data["sources"] {
+		if source.(map[string]interface{})["children"] != nil {
+			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
+				if child1.(map[string]interface{})["children"] != nil {
+					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
+						child2Data := child2.(map[string]interface{})
+						if child2Data["id"].(string) == sourceUid {
+							sourceData := source.(map[string]interface{})
+							return sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + child2Data["type"].(string) + " / " + child2Data["name"].(string), nil
+						}
+					}
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("no source path data")
 }

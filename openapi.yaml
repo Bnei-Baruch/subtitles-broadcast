@@ -104,46 +104,6 @@ paths:
         - bearerAuth:
             - write:bookmarks
             - read:bookmarks
-    get:
-      tags:
-        - bookmark
-      summary: Get a bookmark path
-      description: Finds bookmark path by slide id
-      operationId: GetBookmark
-      parameters:
-        - in: path
-          name: slideId
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of the slide to get bookmark path
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/BasicResponse'
-                - type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: string
-                      description: bookmark path when request has been successful
-                      example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1"
-        '401':
-          description: Invalid request jwt token
-        '404':
-          description: content not found
-        '405':
-          description: Invalid http method
-        '500':
-          description: Internal error
-      security:
-        - bearerAuth:
-            - read:books
   /slide:
     post:
       tags:
@@ -431,12 +391,12 @@ paths:
           name: source_uid
           schema:
             type: string
-          description: archive source uid
+          description: archive source uid to get source path
         - in: query
-          name: language
+          name: slideId
           schema:
-            type: string
-          description: language code
+            type: integer
+          description: slide id to get slide source path(source path / slide id)
       responses:
         '200':
           description: successful operation
@@ -453,6 +413,7 @@ paths:
                       type: string
                       description: archive source path
                       example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar"
+                               "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1" 
         '401':
           description: Invalid request jwt token
         '400':
@@ -489,9 +450,9 @@ components:
           type: string
           description: file source type(archive or upload)
           example: "archive"
-        source_path:
+        slide_source_path:
           type: string
-          description: source path including author name
+          description: source path including author name for slide
           example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 7"
         bookmarked:
           type: boolean

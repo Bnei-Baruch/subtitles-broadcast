@@ -28,7 +28,7 @@ services:
     volumes:
       - $HOME/data/postgres:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # Optional: Expose PostgreSQL port to the host if needed
+      - "5432:5432"
     restart: always
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]

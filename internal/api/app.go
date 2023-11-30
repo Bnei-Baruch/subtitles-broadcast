@@ -57,7 +57,6 @@ func NewApp() *http.Server {
 		languageCodes := []string{LanguageCodeEnglish}
 		archiveDataCopy(db, languageCodes)
 	}
-
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
 		Handler: NewRouter(NewHandler(db)),
