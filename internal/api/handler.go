@@ -244,7 +244,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-func (h *Handler) DeleteSlides(ctx *gin.Context) {
+func (h *Handler) DeleteSlide(ctx *gin.Context) {
 	slideId := ctx.Param("slide_id")
 	slideIdInt, err := strconv.Atoi(slideId)
 	if err != nil {
@@ -279,7 +279,7 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 			"", "Deleting data has succeeded"))
 }
 
-func (h *Handler) AddBookmark(ctx *gin.Context) {
+func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	slideId := ctx.Param("slide_id")
 	slideIdInt, err := strconv.Atoi(slideId)
@@ -332,6 +332,54 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			userBookmarkList,
+			"", "Getting data has succeeded"))
+}
+
+func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
+	userId, _ := ctx.Get("user_id")
+	slideId := ctx.Param("slide_id")
+	slideIdInt, err := strconv.Atoi(slideId)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
+		return
+	}
+	result := h.Database.Debug().Where("slide_id = ? AND user_id = ?", slideIdInt, userId).Delete(&Bookmark{})
+	if result.Error != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting user bookmark data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
+		return
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			nil,
+			"", "Deleting data has succeeded"))
+}
+
+func (h *Handler) GetAuthors(ctx *gin.Context) {
+	authorList := []string{}
+	err := h.Database.Debug().WithContext(ctx).Table("source_paths").Distinct("substring(path FROM 1 FOR position('(' IN path) - 1)").Pluck("substring(path FROM 1 FOR position('(' IN path) - 1)", &authorList).Error
+	if err != nil {
+		if err.Error() == "record not found" {
+			ctx.JSON(http.StatusNotFound,
+				getResponse(false, nil, err.Error(), "No author list"))
+		} else {
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Getting data has failed"))
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			authorList,
 			"", "Getting data has succeeded"))
 }
 
