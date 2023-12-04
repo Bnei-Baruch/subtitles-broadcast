@@ -476,6 +476,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-// func (h *Handler) roleChecker(role string) bool { // For checking user role verification for some apis
+// For checking user role verification for the permissions (need to define user roles soon)
+// func (h *Handler) roleChecker(role string) bool {
 // 	return (userRole == role)
 // }

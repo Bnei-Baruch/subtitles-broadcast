@@ -46,6 +46,9 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 		// 	}
 		// }
 		// - will use for all slides in the future
+
+		// Import/Migration function should be used once. Loads all sources, their content and splits them to slides.
+		// TODO: Currently will load only one source. Make it go over all sources.
 		sourceUid := sources.Sources[0].Children[0].Children[0].ID
 		contents, fileUid, err := getFileContent(sourceUid, languageCode)
 		if err != nil {
