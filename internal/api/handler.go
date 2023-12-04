@@ -163,6 +163,7 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 			"", "Updating data has succeeded"))
 }
 
+// Get all slides with bookmarked info by user
 func (h *Handler) GetSlides(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	var errPage, errLimit error
