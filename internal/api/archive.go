@@ -58,19 +58,6 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 		if tx.Error != nil {
 			log.Fatalf("Internal error: %s", err)
 		}
-		sourcePath, err := getSourcePath(sourceUid, languageCode)
-		if err != nil {
-			tx.Rollback()
-			log.Fatalf("Internal error: %s", err)
-		}
-		newSourcePath := SourcePath{
-			SourceUid: sourceUid,
-			Path:      sourcePath,
-		}
-		if err := tx.Create(&newSourcePath).Error; err != nil {
-			tx.Rollback()
-			log.Fatalf("Internal error: %s", err)
-		}
 		newFile := File{
 			Type:      KabbalahmediaFileSourceType,
 			Language:  languageCode,
@@ -97,6 +84,87 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 		if err := tx.Commit().Error; err != nil {
 			log.Fatalf("Internal error: %s", err)
 		}
+	}
+}
+
+func updateSourcePath(database *gorm.DB, languageCodes []string) {
+	sourcePathsToCheck := [][]interface{}{}
+	sourcePathsToInsert := []*SourcePath{}
+	for _, languageCode := range languageCodes {
+		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
+		if err != nil {
+			log.Printf("Internal error: %s", err)
+			return
+		}
+		var sources ArchiveSources
+
+		err = json.NewDecoder(resp.Body).Decode(&sources)
+		if err != nil {
+			log.Printf("Internal error: %s", err)
+			return
+		}
+		resp.Body.Close()
+
+		// for _, source := range sources.Sources {
+		// 	for _, child1 := range source.Children {
+		// 		for _, child2 := range child1.Children {
+		//			sourceUid := child2.ID
+		// 		}
+		// 	}
+		// }
+		// - will use for all slides in the future
+
+		// Import/Migration function should be used once. Loads all sources, their content and splits them to slides.
+		// TODO: Currently will load only one source. Make it go over all sources.
+		sourceUid := sources.Sources[0].Children[0].Children[0].ID
+		sourcePath, err := getSourcePath(sourceUid, languageCode)
+		if err != nil {
+			log.Printf("Internal error: %s", err)
+			return
+		}
+		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{sourceUid, sourcePath})
+		sourcePathsToInsert = append(sourcePathsToInsert, &SourcePath{SourceUid: sourceUid, Path: sourcePath})
+	}
+	sourcePathsToDelete := []*SourcePath{}
+	err := database.Debug().Where("(source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete).Error
+	if err != nil {
+		if err.Error() != "record not found" {
+			log.Printf("Internal error: %s", err)
+			return
+		}
+	}
+	tx := database.Debug().Begin()
+	if tx.Error != nil {
+		log.Printf("Internal error: %s", err)
+		return
+	}
+	for _, sourcePathToInsert := range sourcePathsToInsert {
+		err = database.Debug().First(&sourcePathToInsert).Error
+		if err != nil {
+			if err.Error() == "record not found" {
+				err = tx.Create(&sourcePathToInsert).Error
+				if err != nil {
+					tx.Rollback()
+					log.Printf("Internal error: %s", err)
+					return
+				}
+			} else {
+				continue
+			}
+		}
+	}
+	for _, sourcePathToDelete := range sourcePathsToDelete {
+		err = tx.Delete(&sourcePathToDelete).Error
+		if err != nil {
+			tx.Rollback()
+			log.Printf("Internal error: %s", err)
+			return
+		}
+	}
+	err = tx.Commit().Error
+	if err != nil {
+		log.Printf("Internal error: %s", err)
+		return
 	}
 }
 

@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -53,10 +56,25 @@ func NewApp() *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	if err == nil {
-		languageCodes := []string{LanguageCodeEnglish}
-		archiveDataCopy(db, languageCodes)
-	}
+	languageCodes := []string{LanguageCodeEnglish}
+	updateSourcePath(db, languageCodes)
+	archiveDataCopy(db, languageCodes)
+
+	ticker := time.NewTicker(time.Hour)
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				updateSourcePath(db, languageCodes)
+			case <-signalCh:
+				fmt.Println("Received signal. Stopping routine.")
+				return
+			}
+		}
+	}()
+
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
 		Handler: NewRouter(NewHandler(db)),

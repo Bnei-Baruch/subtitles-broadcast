@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -41,7 +40,7 @@ func getResponse(success bool, data interface{}, err, description string) gin.H 
 	}
 }
 
-func (h *Handler) AddSlides(ctx *gin.Context) {
+func (h *Handler) ImportSource(ctx *gin.Context) {
 	req := struct {
 		SourceUid string `json:"source_uid"`
 		Language  string `json:"language"`
@@ -63,22 +62,6 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Creating transaction has failed"))
-		return
-	}
-	sourcePath, err := getSourcePath(req.SourceUid, req.Language)
-	if err != nil {
-		tx.Rollback()
-		log.Fatalf("Internal error: %s", err)
-	}
-	newSourcePath := SourcePath{
-		SourceUid: req.SourceUid,
-		Path:      sourcePath,
-	}
-	if err := tx.Create(&newSourcePath).Error; err != nil {
-		tx.Rollback()
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Creating source path data has failed"))
 		return
 	}
 	contents, fileUid, err := getFileContent(req.SourceUid, req.Language)
@@ -132,9 +115,8 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 
 func (h *Handler) UpdateSlide(ctx *gin.Context) {
 	req := struct {
-		SlideID  int    `json:"slide_id"`
-		Language string `json:"language"`
-		Slide    string `json:"slide"`
+		SlideID int    `json:"slide_id"`
+		Slide   string `json:"slide"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -144,7 +126,7 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 		return
 	}
 	result := h.Database.Debug().WithContext(ctx).
-		Exec("UPDATE slides SET slide=? WHERE id = ? AND file_id in (SELECT id FROM files WHERE language = ?)", req.Slide, req.SlideID, req.Language)
+		Exec("UPDATE slides SET slide=? WHERE id = ?", req.Slide, req.SlideID)
 	if result.Error != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
@@ -383,100 +365,101 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-func (h *Handler) GetSourceName(ctx *gin.Context) {
-	sourceUid := ctx.Query("source_uid")
-	if len(sourceUid) == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "", "source_uid parameter is needed"))
-		return
-	}
-	sourcePath := SourcePath{}
-	err := h.Database.Debug().WithContext(ctx).
-		Table("source_paths").
-		Where("source_uid = ?", sourceUid).First(&sourcePath).Error
-	if err != nil {
-		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(false, nil, err.Error(), "No slide source path data"))
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting source path has failed"))
-		}
-		return
-	}
-	re := regexp.MustCompile(`\(([^)]+)\)`)
-	matches := re.FindStringSubmatch(sourcePath.Path)
+// Unnecessary handler at this moment. If need, will be used
 
-	if len(matches) < 2 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, err.Error(), "No source name found"))
-		return
-	}
+// func (h *Handler) GetSourceName(ctx *gin.Context) {
+// 	sourceUid := ctx.Query("source_uid")
+// 	if len(sourceUid) == 0 {
+// 		ctx.JSON(http.StatusBadRequest,
+// 			getResponse(false, nil, "", "source_uid parameter is needed"))
+// 		return
+// 	}
+// 	sourcePath := SourcePath{}
+// 	err := h.Database.Debug().WithContext(ctx).
+// 		Table("source_paths").
+// 		Where("source_uid = ?", sourceUid).First(&sourcePath).Error
+// 	if err != nil {
+// 		if err.Error() == "record not found" {
+// 			ctx.JSON(http.StatusNotFound,
+// 				getResponse(false, nil, err.Error(), "No slide source path data"))
+// 		} else {
+// 			ctx.JSON(http.StatusInternalServerError,
+// 				getResponse(false, nil, err.Error(), "Getting source path has failed"))
+// 		}
+// 		return
+// 	}
+// 	re := regexp.MustCompile(`\(([^)]+)\)`)
+// 	matches := re.FindStringSubmatch(sourcePath.Path)
+// 	if len(matches) < 2 {
+// 		ctx.JSON(http.StatusNotFound,
+// 			getResponse(false, nil, err.Error(), "No source name found"))
+// 		return
+// 	}
+// 	ctx.JSON(http.StatusOK,
+// 		getResponse(true,
+// 			matches[1],
+// 			"", "Getting data has succeeded"))
+// }
 
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			matches[1],
-			"", "Getting data has succeeded"))
-}
+// func (h *Handler) GetSourcePath(ctx *gin.Context) {
+// 	slideId := ctx.Query("slide_id")
+// 	sourceUid := ctx.Query("source_uid")
+// 	slideIdLength := len(slideId)
+// 	sourceUidLength := len(sourceUid)
+// 	if slideIdLength == 0 && sourceUidLength == 0 {
+// 		ctx.JSON(http.StatusBadRequest,
+// 			getResponse(false, nil, "", "Either the slide_id or source_uid is needed"))
+// 		return
+// 	}
+// 	path := SourcePath{}
+// 	if slideIdLength > 0 {
+// 		slideIdInt, err := strconv.Atoi(slideId)
+// 		if err != nil {
+// 			ctx.JSON(http.StatusBadRequest,
+// 				getResponse(false, nil, err.Error(), "The slide id must be an integer"))
+// 			return
+// 		}
+// 		err = h.Database.Debug().WithContext(ctx).
+// 			Select("source_paths.path || ' / ' || slides.id AS path").
+// 			Table("slides").
+// 			Joins("INNER JOIN files on slides.file_id = files.id").
+// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
+// 			Where("slides.id = ?", slideIdInt).First(&path).Error
+// 		if err != nil {
+// 			if err.Error() == "record not found" {
+// 				ctx.JSON(http.StatusNotFound,
+// 					getResponse(false, nil, err.Error(), "No slide source path data"))
+// 			} else {
+// 				ctx.JSON(http.StatusInternalServerError,
+// 					getResponse(false, nil, err.Error(), "Getting slide source path has failed"))
+// 			}
+// 			return
+// 		}
+// 	} else if sourceUidLength > 0 {
+// 		err := h.Database.Debug().WithContext(ctx).
+// 			Select("path").
+// 			Table("source_paths").
+// 			Where("source_uid = ?", sourceUid).First(&path).Error
+// 		if err != nil {
+// 			if err.Error() == "record not found" {
+// 				ctx.JSON(http.StatusNotFound,
+// 					getResponse(false, nil, err.Error(), "No source path data"))
+// 			} else {
+// 				ctx.JSON(http.StatusInternalServerError,
+// 					getResponse(false, nil, err.Error(), "Getting source path has failed"))
+// 			}
+// 			return
+// 		}
+// 	}
 
-func (h *Handler) GetSourcePath(ctx *gin.Context) {
-	slideId := ctx.Query("slide_id")
-	sourceUid := ctx.Query("source_uid")
-	slideIdLength := len(slideId)
-	sourceUidLength := len(sourceUid)
-	if slideIdLength == 0 && sourceUidLength == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "", "Either the slide_id or source_uid is needed"))
-		return
-	}
-	path := SourcePath{}
-	if slideIdLength > 0 {
-		slideIdInt, err := strconv.Atoi(slideId)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest,
-				getResponse(false, nil, err.Error(), "The slide id must be an integer"))
-			return
-		}
-		err = h.Database.Debug().WithContext(ctx).
-			Select("source_paths.path || ' / ' || slides.id AS path").
-			Table("slides").
-			Joins("INNER JOIN files on slides.file_id = files.id").
-			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
-			Where("slides.id = ?", slideIdInt).First(&path).Error
-		if err != nil {
-			if err.Error() == "record not found" {
-				ctx.JSON(http.StatusNotFound,
-					getResponse(false, nil, err.Error(), "No slide source path data"))
-			} else {
-				ctx.JSON(http.StatusInternalServerError,
-					getResponse(false, nil, err.Error(), "Getting slide source path has failed"))
-			}
-			return
-		}
-	} else if sourceUidLength > 0 {
-		err := h.Database.Debug().WithContext(ctx).
-			Select("path").
-			Table("source_paths").
-			Where("source_uid = ?", sourceUid).First(&path).Error
-		if err != nil {
-			if err.Error() == "record not found" {
-				ctx.JSON(http.StatusNotFound,
-					getResponse(false, nil, err.Error(), "No source path data"))
-			} else {
-				ctx.JSON(http.StatusInternalServerError,
-					getResponse(false, nil, err.Error(), "Getting source path has failed"))
-			}
-			return
-		}
-	}
-
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			path,
-			"", "Getting data has succeeded"))
-}
+// 	ctx.JSON(http.StatusOK,
+// 		getResponse(true,
+// 			path,
+// 			"", "Getting data has succeeded"))
+// }
 
 // For checking user role verification for the permissions (need to define user roles soon)
+
 // func (h *Handler) roleChecker(role string) bool {
 // 	return (userRole == role)
 // }
