@@ -5,9 +5,9 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -19,6 +19,8 @@ const (
 	responseDescription = "description"
 
 	defaultListLimit = 50
+
+	ERR_UNIQUE_VIOLATION = "23505"
 )
 
 type Handler struct {
@@ -59,9 +61,9 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 	}
 	tx := h.Database.Debug().Begin()
 	if tx.Error != nil {
-		log.Error(err)
+		log.Error(tx.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Creating transaction has failed"))
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
 	contents, fileUid, err := getFileContent(req.SourceUid, req.Language)
@@ -78,7 +80,7 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 		SourceUid: req.SourceUid,
 		FileUid:   fileUid,
 	}
-	if err := tx.Create(&newFile).Error; err != nil {
+	if err = tx.Create(&newFile).Error; err != nil {
 		tx.Rollback()
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
@@ -92,7 +94,7 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 				Slide:       content,
 				OrderNumber: idx,
 			}
-			if err := tx.Create(&slide).Error; err != nil {
+			if err = tx.Create(&slide).Error; err != nil {
 				tx.Rollback()
 				log.Error(err)
 				ctx.JSON(http.StatusInternalServerError,
@@ -101,7 +103,7 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 			}
 		}
 	}
-	if err := tx.Commit().Error; err != nil {
+	if err = tx.Commit().Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
@@ -128,13 +130,12 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 	result := h.Database.Debug().WithContext(ctx).
 		Exec("UPDATE slides SET slide=? WHERE id = ?", req.Slide, req.SlideID)
 	if result.Error != nil {
-		log.Error(err)
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Updating slide data has failed"))
+			getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
 		return
 	}
 	if result.RowsAffected == 0 {
-		log.Error(err)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "No slide to update in the condition", "No slide to update in the condition"))
 		return
@@ -162,6 +163,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	}
 	err := errors.Join(errPage, errLimit)
 	if err != nil {
+		log.Error(err)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
@@ -197,18 +199,18 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	if len(keyword) > 0 {
 		query = query.Where("(slides.slide LIKE ? OR source_paths.path || ' / ' || slides.id LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 	}
-	err = query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides).Error
-	if err != nil {
-		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(false, nil, err.Error(), "No slide has found"))
-			return
-		}
+	result := query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides)
+	if result.Error != nil {
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
+			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No slide has found", "No slide has found"))
+		return
+	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
@@ -237,20 +239,19 @@ func (h *Handler) DeleteSlide(ctx *gin.Context) {
 	}
 	result := h.Database.Debug().Where("slide_id = ?", slideIdInt).Delete(&Bookmark{})
 	if result.Error != nil {
-		log.Error(err)
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting bookmark data related to the slide has failed"))
+			getResponse(false, nil, result.Error.Error(), "Deleting bookmark data related to the slide has failed"))
 		return
 	}
 	result = h.Database.Debug().Where("id = ?", slideIdInt).Delete(&Slide{})
 	if result.Error != nil {
-		log.Error(err)
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting slide data has failed"))
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
 		return
 	}
 	if result.RowsAffected == 0 {
-		log.Error(err)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "No slide with the id", "No slide with the id"))
 		return
@@ -266,6 +267,7 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 	slideId := ctx.Param("slide_id")
 	slideIdInt, err := strconv.Atoi(slideId)
 	if err != nil {
+		log.Error(err)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
@@ -276,7 +278,8 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 	}
 	err = h.Database.Debug().Create(&bookmark).Error
 	if err != nil {
-		if strings.Contains(err.Error(), "SQLSTATE 23505") {
+		log.Error(err)
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION {
 			ctx.JSON(http.StatusBadRequest,
 				getResponse(false, nil, err.Error(), "The same bookmark exists"))
 			return
@@ -294,21 +297,22 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	userBookmarkList := []string{}
-	err := h.Database.Debug().WithContext(ctx).
+	result := h.Database.Debug().WithContext(ctx).
 		Select("source_paths.path || ' / ' || slides.id AS slide_source_path").
 		Table("bookmarks").
 		Joins("INNER JOIN slides on bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files on slides.file_id = files.id").
 		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
-		Where("bookmarks.user_id = ?", userId).Find(&userBookmarkList).Error
-	if err != nil {
-		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(false, nil, err.Error(), "No slide source path data"))
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-		}
+		Where("bookmarks.user_id = ?", userId).Find(&userBookmarkList)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
 		return
 	}
 	ctx.JSON(http.StatusOK,
@@ -329,13 +333,12 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 	}
 	result := h.Database.Debug().Where("slide_id = ? AND user_id = ?", slideIdInt, userId).Delete(&Bookmark{})
 	if result.Error != nil {
-		log.Error(err)
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting user bookmark data has failed"))
+			getResponse(false, nil, result.Error.Error(), "Deleting user bookmark data has failed"))
 		return
 	}
 	if result.RowsAffected == 0 {
-		log.Error(err)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
 		return
@@ -348,15 +351,16 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
 	authorList := []string{}
-	err := h.Database.Debug().WithContext(ctx).Table("source_paths").Distinct("substring(path FROM 1 FOR position('(' IN path) - 1)").Pluck("substring(path FROM 1 FOR position('(' IN path) - 1)", &authorList).Error
-	if err != nil {
-		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusNotFound,
-				getResponse(false, nil, err.Error(), "No author list"))
-		} else {
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting data has failed"))
-		}
+	result := h.Database.Debug().WithContext(ctx).Table("source_paths").Distinct("substring(path FROM 1 FOR position('(' IN path) - 1)").Pluck("substring(path FROM 1 FOR position('(' IN path) - 1)", &authorList)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusNotFound,
+			getResponse(false, nil, "No author list", "No author list"))
 		return
 	}
 	ctx.JSON(http.StatusOK,
@@ -379,7 +383,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 		Table("source_paths").
 // 		Where("source_uid = ?", sourceUid).First(&sourcePath).Error
 // 	if err != nil {
-// 		if err.Error() == "record not found" {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
 // 			ctx.JSON(http.StatusNotFound,
 // 				getResponse(false, nil, err.Error(), "No slide source path data"))
 // 		} else {
@@ -426,7 +430,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {
-// 			if err.Error() == "record not found" {
+// 			if errors.Is(err, gorm.ErrRecordNotFound) {
 // 				ctx.JSON(http.StatusNotFound,
 // 					getResponse(false, nil, err.Error(), "No slide source path data"))
 // 			} else {
@@ -441,7 +445,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 			Table("source_paths").
 // 			Where("source_uid = ?", sourceUid).First(&path).Error
 // 		if err != nil {
-// 			if err.Error() == "record not found" {
+// 			if errors.Is(err, gorm.ErrRecordNotFound) {
 // 				ctx.JSON(http.StatusNotFound,
 // 					getResponse(false, nil, err.Error(), "No source path data"))
 // 			} else {

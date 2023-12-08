@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -126,22 +127,20 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 		sourcePathsToInsert = append(sourcePathsToInsert, &SourcePath{SourceUid: sourceUid, Path: sourcePath})
 	}
 	sourcePathsToDelete := []*SourcePath{}
-	err := database.Debug().Where("(source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete).Error
-	if err != nil {
-		if err.Error() != "record not found" {
-			log.Printf("Internal error: %s", err)
-			return
-		}
+	result := database.Debug().Where("(source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
+	if result.RowsAffected == 0 {
+		log.Printf("No source path")
+		return
 	}
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
-		log.Printf("Internal error: %s", err)
+		log.Printf("Internal error: %s", tx.Error)
 		return
 	}
 	for _, sourcePathToInsert := range sourcePathsToInsert {
-		err = database.Debug().First(&sourcePathToInsert).Error
+		err := database.Debug().First(&sourcePathToInsert).Error
 		if err != nil {
-			if err.Error() == "record not found" {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				err = tx.Create(&sourcePathToInsert).Error
 				if err != nil {
 					tx.Rollback()
@@ -154,14 +153,14 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 		}
 	}
 	for _, sourcePathToDelete := range sourcePathsToDelete {
-		err = tx.Delete(&sourcePathToDelete).Error
+		err := tx.Delete(&sourcePathToDelete).Error
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Internal error: %s", err)
 			return
 		}
 	}
-	err = tx.Commit().Error
+	err := tx.Commit().Error
 	if err != nil {
 		log.Printf("Internal error: %s", err)
 		return
