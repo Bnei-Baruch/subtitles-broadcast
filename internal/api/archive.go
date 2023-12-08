@@ -26,6 +26,16 @@ const (
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
 func archiveDataCopy(database *gorm.DB, languageCodes []string) {
+	// checking if slide table has data
+	var slideCount int64
+	if err := database.Table("slides").Count(&slideCount).Error; err != nil {
+		log.Fatalf("Internal error: %s", err)
+	}
+	// If so then does not import archive data for slides
+	if slideCount > 0 {
+		log.Println("Importing archive data has already done before")
+		return
+	}
 	for _, languageCode := range languageCodes {
 		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
 		if err != nil {
@@ -88,6 +98,7 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 	}
 }
 
+// Update source_paths table(to sync source data regularly)
 func updateSourcePath(database *gorm.DB, languageCodes []string) {
 	sourcePathsToCheck := [][]interface{}{}
 	sourcePathsToInsert := []*SourcePath{}
@@ -126,20 +137,32 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{sourceUid, sourcePath})
 		sourcePathsToInsert = append(sourcePathsToInsert, &SourcePath{SourceUid: sourceUid, Path: sourcePath})
 	}
+	// Compare sources in db with source from archive
+	// Get source list to be deleted from db(means sources are no more existed in archive)
 	sourcePathsToDelete := []*SourcePath{}
 	result := database.Debug().Where("(source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
 	if result.RowsAffected == 0 {
 		log.Printf("No source path")
-		return
 	}
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
 		log.Printf("Internal error: %s", tx.Error)
 		return
 	}
+	// Delete source list to be delete we get from above
+	for _, sourcePathToDelete := range sourcePathsToDelete {
+		err := tx.Delete(&sourcePathToDelete).Error
+		if err != nil {
+			tx.Rollback()
+			log.Printf("Internal error: %s", err)
+			return
+		}
+	}
+	// Insert source list to db
 	for _, sourcePathToInsert := range sourcePathsToInsert {
 		err := database.Debug().First(&sourcePathToInsert).Error
 		if err != nil {
+			// insert only the ones not in db
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				err = tx.Create(&sourcePathToInsert).Error
 				if err != nil {
@@ -148,16 +171,9 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 					return
 				}
 			} else {
+				// if exists in db already then skip
 				continue
 			}
-		}
-	}
-	for _, sourcePathToDelete := range sourcePathsToDelete {
-		err := tx.Delete(&sourcePathToDelete).Error
-		if err != nil {
-			tx.Rollback()
-			log.Printf("Internal error: %s", err)
-			return
 		}
 	}
 	err := tx.Commit().Error

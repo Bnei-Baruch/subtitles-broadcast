@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -29,6 +27,8 @@ var (
 
 const (
 	LanguageCodeEnglish = "en"
+
+	SourcePathUpdateTermHour = 6
 )
 
 func init() {
@@ -46,7 +46,7 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 }
 
-func NewApp() *http.Server {
+func NewApp(sig chan os.Signal) *http.Server {
 
 	db, err := database.NewPostgres(conf.Postgres.Url)
 	if err != nil {
@@ -60,16 +60,15 @@ func NewApp() *http.Server {
 	updateSourcePath(db, languageCodes)
 	archiveDataCopy(db, languageCodes)
 
-	ticker := time.NewTicker(time.Hour)
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	ticker := time.NewTicker(SourcePathUpdateTermHour * time.Hour)
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
+				log.Println("Updating source path.")
 				updateSourcePath(db, languageCodes)
-			case <-signalCh:
-				fmt.Println("Received signal. Stopping routine.")
+			case <-sig:
+				log.Println("Stopping source path update routine.")
 				return
 			}
 		}
