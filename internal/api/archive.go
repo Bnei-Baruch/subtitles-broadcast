@@ -170,9 +170,6 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 					log.Printf("Internal error: %s", err)
 					return
 				}
-			} else {
-				// if exists in db already then skip
-				continue
 			}
 		}
 	}
