@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS files (
   language VARCHAR(2),
   filename VARCHAR(50),                                                -- Filled only for "upload" file type
   content BYTEA,                                                       -- Filled only for "upload" file type
-  source_uid VARCHAR(50) REFERENCES source_paths (source_uid),         -- Filled only for "archive" file type
+  source_uid VARCHAR(50),         -- Filled only for "archive" file type
   file_uid VARCHAR(50)                                                 -- Filled only for "archive" file type
 );
 
