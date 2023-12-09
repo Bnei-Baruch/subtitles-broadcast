@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS source_paths (
   id SERIAL PRIMARY KEY,
-  source_uid VARCHAR(50) UNIQUE,
-  path VARCHAR
+  source_uid VARCHAR(50),
+  path VARCHAR,
+  UNIQUE (source_uid, path)
 );
 
 CREATE TABLE IF NOT EXISTS files (
