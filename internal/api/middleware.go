@@ -28,6 +28,7 @@ var userRoles = map[string]struct{}{
 
 func CORSMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
+		// Now for testing, no cors filter but in the future, will add preventing ones.
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"*"},
 		AllowHeaders:     []string{"*"},

@@ -27,6 +27,9 @@ var (
 
 const (
 	LanguageCodeEnglish = "en"
+	LanguageCodeSpanish = "es"
+	LanguageCodeHebrew  = "he"
+	LanguageCodeRussian = "ru"
 
 	SourcePathUpdateTermHour = 6
 )
@@ -56,7 +59,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	languageCodes := []string{LanguageCodeEnglish}
+	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
 	updateSourcePath(db, languageCodes)
 	archiveDataCopy(db, languageCodes)
 

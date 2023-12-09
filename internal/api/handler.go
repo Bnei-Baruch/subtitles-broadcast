@@ -206,11 +206,6 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No slide has found", "No slide has found"))
-		return
-	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
@@ -310,11 +305,6 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
-		return
-	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			userBookmarkList,
@@ -358,11 +348,6 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusNotFound,
-			getResponse(false, nil, "No author list", "No author list"))
-		return
-	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			authorList,
@@ -383,22 +368,13 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 		Table("source_paths").
 // 		Where("source_uid = ?", sourceUid).First(&sourcePath).Error
 // 	if err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			ctx.JSON(http.StatusNotFound,
-// 				getResponse(false, nil, err.Error(), "No slide source path data"))
-// 		} else {
+// 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 // 			ctx.JSON(http.StatusInternalServerError,
 // 				getResponse(false, nil, err.Error(), "Getting source path has failed"))
-// 		}
 // 		return
 // 	}
 // 	re := regexp.MustCompile(`\(([^)]+)\)`)
 // 	matches := re.FindStringSubmatch(sourcePath.Path)
-// 	if len(matches) < 2 {
-// 		ctx.JSON(http.StatusNotFound,
-// 			getResponse(false, nil, err.Error(), "No source name found"))
-// 		return
-// 	}
 // 	ctx.JSON(http.StatusOK,
 // 		getResponse(true,
 // 			matches[1],
@@ -430,13 +406,8 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {
-// 			if errors.Is(err, gorm.ErrRecordNotFound) {
-// 				ctx.JSON(http.StatusNotFound,
-// 					getResponse(false, nil, err.Error(), "No slide source path data"))
-// 			} else {
 // 				ctx.JSON(http.StatusInternalServerError,
 // 					getResponse(false, nil, err.Error(), "Getting slide source path has failed"))
-// 			}
 // 			return
 // 		}
 // 	} else if sourceUidLength > 0 {
@@ -445,13 +416,9 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 			Table("source_paths").
 // 			Where("source_uid = ?", sourceUid).First(&path).Error
 // 		if err != nil {
-// 			if errors.Is(err, gorm.ErrRecordNotFound) {
-// 				ctx.JSON(http.StatusNotFound,
-// 					getResponse(false, nil, err.Error(), "No source path data"))
-// 			} else {
+// 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 // 				ctx.JSON(http.StatusInternalServerError,
 // 					getResponse(false, nil, err.Error(), "Getting source path has failed"))
-// 			}
 // 			return
 // 		}
 // 	}
