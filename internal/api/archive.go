@@ -134,8 +134,8 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 			log.Printf("Internal error: %s", err)
 			return
 		}
-		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{sourceUid, sourcePath})
-		sourcePathsToInsert = append(sourcePathsToInsert, &SourcePath{SourceUid: sourceUid, Path: sourcePath})
+		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{languageCode, sourceUid, sourcePath})
+		sourcePathsToInsert = append(sourcePathsToInsert, &SourcePath{Language: languageCode, SourceUid: sourceUid, Path: sourcePath})
 	}
 	// Compare sources in db with source from archive
 	// Get source list to be deleted from db(means sources are no more existed in archive)

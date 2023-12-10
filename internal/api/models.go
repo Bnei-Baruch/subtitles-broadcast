@@ -44,15 +44,10 @@ type Slide struct {
 }
 
 type SourcePath struct {
-	ID        uint   `json:"id,omitempty"`
-	SourceUid string `json:"source_uid,omitempty"`
+	ID        uint   `json:"id"`
+	Language  string `json:"language"`
+	SourceUid string `json:"source_uid"`
 	Path      string `json:"path"`
-}
-
-type SourcePathView struct {
-	ID         uint   `json:"id"`
-	SourceUid  string `json:"source_uid"`
-	SourcePath string `json:"source_path"`
 }
 
 // archive model
