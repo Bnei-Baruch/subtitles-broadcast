@@ -1,6 +1,10 @@
 package api
 
-import "time"
+import (
+	"time"
+)
+
+// pagination model
 
 type Pagination struct {
 	Limit      int   `json:"limit"`
@@ -12,34 +16,38 @@ type Pagination struct {
 // api model
 
 type File struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Content []byte `json:"content"`
-}
-
-type FileSource struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID        uint   `json:"id"`
+	Type      string `json:"type"`
+	Language  string `json:"language"`
+	Filename  string `json:"filename"`
+	Content   []byte `json:"content"`
+	SourceUid string `json:"source_uid"`
+	FileUid   string `json:"file_uid"`
 }
 
 type Bookmark struct {
-	ID         int    `json:"id"`
-	SubtitleId int    `json:"subtitle_id"`
-	UserId     string `json:"user_id"`
+	ID      uint   `json:"id"`
+	SlideId int    `json:"slide_id"`
+	UserId  string `json:"user_id"`
 }
 
-type Subtitle struct {
-	ID             uint   `gorm:"primarykey"`
-	SourceUid      string `json:"source_uid"`
-	FileUid        string `json:"file_uid"`
-	FileSourceType string `json:"file_source_type"`
-	Author         string `json:"author" gorm:"-"`
-	Subtitle       string `json:"subtitle"`
-	OrderNumber    int    `json:"order_number"`
-	Language       string `json:"language"`
+type Slide struct {
+	ID              uint      `gorm:"primarykey"`
+	FileId          uint      `json:"file_id"`
+	SlideSourcePath string    `json:"slide_source_path,omitempty" gorm:"->"` // author/type/title/slide_id
+	Bookmarked      bool      `json:"bookmarked" gorm:"->"`
+	SourceUid       string    `json:"source_uid" gorm:"->"`
+	Slide           string    `json:"slide"`
+	OrderNumber     int       `json:"order_number"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+type SourcePath struct {
+	ID        uint   `json:"id"`
+	Language  string `json:"language"`
+	SourceUid string `json:"source_uid"`
+	Path      string `json:"path"`
 }
 
 // archive model

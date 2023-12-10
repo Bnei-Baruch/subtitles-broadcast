@@ -14,7 +14,8 @@ import (
 )
 
 func main() {
-	svr := api.NewApp()
+	signalReceived := make(chan os.Signal, 1)
+	svr := api.NewApp(signalReceived)
 	go func() {
 		if err := svr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %s", err)
@@ -23,9 +24,9 @@ func main() {
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
+	signalReceived <- <-sigChan
 
-	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 1*time.Second)
 	defer shutdownRelease()
 
 	if err := svr.Shutdown(shutdownCtx); err != nil {

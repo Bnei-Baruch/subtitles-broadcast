@@ -1,9 +1,12 @@
+//go:build !apitest
+
 package api
 
 import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -22,6 +25,15 @@ var (
 	Date    = "Dev"
 )
 
+const (
+	LanguageCodeEnglish = "en"
+	LanguageCodeSpanish = "es"
+	LanguageCodeHebrew  = "he"
+	LanguageCodeRussian = "ru"
+
+	SourcePathUpdateTermHour = 6
+)
+
 func init() {
 	fmt.Printf("Build Date: %s\nBuild Version: %s\nBuild: %s\n\n", Date, Version, Build)
 	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
@@ -37,7 +49,7 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 }
 
-func NewApp() *http.Server {
+func NewApp(sig chan os.Signal) *http.Server {
 
 	db, err := database.NewPostgres(conf.Postgres.Url)
 	if err != nil {
@@ -47,14 +59,23 @@ func NewApp() *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	if err == nil {
-		archiveDataCopy(db, "en")
-	}
+	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
+	updateSourcePath(db, languageCodes)
+	archiveDataCopy(db, languageCodes)
 
-	// cache, err := database.NewRedis(conf.Redis.Url)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
+	ticker := time.NewTicker(SourcePathUpdateTermHour * time.Hour)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				log.Println("Updating source path.")
+				updateSourcePath(db, languageCodes)
+			case <-sig:
+				log.Println("Stopping source path update routine.")
+				return
+			}
+		}
+	}()
 
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
