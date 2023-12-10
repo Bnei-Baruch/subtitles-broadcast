@@ -28,12 +28,10 @@ var userRoles = map[string]struct{}{
 
 func CORSMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"POST", "PUT", "GET", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{
-			"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token",
-			"Authorization", "accept", "origin", "Cache-Control", "X-Requested-With",
-		},
+		// Now for testing, no cors filter but in the future, will add preventing ones.
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
 		AllowCredentials: true,
 	})
 }
@@ -112,7 +110,7 @@ func UserInfoHandler() gin.HandlerFunc {
 			})
 			return
 		}
-		ctx.Set("sub", userInfo.Sub)
+		ctx.Set("user_id", userInfo.Sub)
 		ctx.Next()
 	}
 }

@@ -1,32 +1,33 @@
-CREATE TABLE IF NOT EXISTS file_sources (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE
+CREATE TABLE IF NOT EXISTS source_paths (
+  id SERIAL PRIMARY KEY,
+  language VARCHAR(2),
+  source_uid VARCHAR(50),
+  path VARCHAR,
+  UNIQUE (language, source_uid, path)
 );
-
-INSERT INTO file_sources (name) VALUES ('archive');
-INSERT INTO file_sources (name) VALUES ('upload');
 
 CREATE TABLE IF NOT EXISTS files (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50),
-    content BYTEA
+  id SERIAL PRIMARY KEY,
+  type VARCHAR(10),                                                    -- Either "archive" or "upload"
+  language VARCHAR(2),
+  filename VARCHAR(50),                                                -- Filled only for "upload" file type
+  content BYTEA,                                                       -- Filled only for "upload" file type
+  source_uid VARCHAR(50),         -- Filled only for "archive" file type
+  file_uid VARCHAR(50)                                                 -- Filled only for "archive" file type
 );
 
-CREATE TABLE IF NOT EXISTS subtitles (
-    id SERIAL PRIMARY KEY,
-    source_uid VARCHAR(50),
-    file_uid VARCHAR(50),
-    file_source_type VARCHAR(50) REFERENCES file_sources (name),
-    subtitle TEXT,
-	order_number INT,
-    language VARCHAR(10),
-    
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
+CREATE TABLE IF NOT EXISTS slides (
+  id SERIAL PRIMARY KEY,
+  file_id INT REFERENCES files (id),
+  slide TEXT,
+  order_number INT,
+  created_at timestamp without time zone,
+  updated_at timestamp without time zone
 );
 
 CREATE TABLE IF NOT EXISTS bookmarks (
-    id SERIAL PRIMARY KEY,
-    subtitle_id INT REFERENCES subtitles (id),
-    user_id VARCHAR(50)
+  id SERIAL PRIMARY KEY,
+  slide_id INT REFERENCES slides (id),
+  user_id VARCHAR(50),
+  UNIQUE (slide_id, user_id)
 );
