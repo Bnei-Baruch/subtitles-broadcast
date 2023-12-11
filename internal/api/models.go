@@ -53,43 +53,13 @@ type SourcePath struct {
 // archive model
 
 type ArchiveSources struct {
-	Sources    []*Source    `json:"sources"`
-	Tags       []*Tag       `json:"tags"`
-	Publishers []*Publisher `json:"publishers"`
-	Persons    []*Person    `json:"persons"`
+	Sources []*Source `json:"sources"`
 }
 
 type Source struct {
-	ID       string         `json:"id"`
-	Name     string         `json:"name"`
-	FullName string         `json:"full_name"`
-	Children []*SourceChild `json:"children,omitempty"`
-}
-
-type SourceChild struct {
-	ID       string         `json:"id"`
-	ParentId string         `json:"parent_id"`
-	Type     string         `json:"type"`
-	Name     string         `json:"name"`
-	Children []*SourceChild `json:"children,omitempty"`
-}
-
-type Tag struct {
-	ID       string `json:"id"`
-	ParentId string `json:"parent_id"`
-	Label    string `json:"label"`
-	Children []*Tag `json:"children,omitempty"`
-}
-
-type Publisher struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-}
-
-type Person struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Children []*Source `json:"children,omitempty"`
 }
 
 type ArchiveFiles struct {
@@ -100,7 +70,7 @@ type ArchiveFiles struct {
 type ContentUnit struct {
 	ID          string      `json:"id"`
 	ContentType string      `json:"content_type"`
-	FilmType    string      `json:"film_type"`
+	FilmType    string      `json:"film_type,"`
 	Files       []*FileData `json:"files"`
 }
 
@@ -114,4 +84,9 @@ type FileData struct {
 	InsertType     string  `json:"insert_type"`
 	IsHls          bool    `json:"is_hls"`
 	VideoQualities *string `json:"video_qualities"`
+}
+
+type AchiveTempData struct {
+	Texts []string
+	File  *File
 }

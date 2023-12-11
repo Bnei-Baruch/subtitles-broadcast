@@ -60,8 +60,12 @@ func NewApp(sig chan os.Signal) *http.Server {
 		log.Fatalln(err)
 	}
 	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
-	updateSourcePath(db, languageCodes)
-	archiveDataCopy(db, languageCodes)
+	sourcePaths, err := getSourcePathListByLanguage(languageCodes)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	updateSourcePath(db, sourcePaths)
+	archiveDataCopy(db, sourcePaths)
 
 	ticker := time.NewTicker(SourcePathUpdateTermHour * time.Hour)
 	go func() {
@@ -69,7 +73,11 @@ func NewApp(sig chan os.Signal) *http.Server {
 			select {
 			case <-ticker.C:
 				log.Println("Updating source path.")
-				updateSourcePath(db, languageCodes)
+				sourcePaths, err := getSourcePathListByLanguage(languageCodes)
+				if err != nil {
+					log.Println(err)
+				}
+				updateSourcePath(db, sourcePaths)
 			case <-sig:
 				log.Println("Stopping source path update routine.")
 				return
@@ -77,6 +85,9 @@ func NewApp(sig chan os.Signal) *http.Server {
 		}
 	}()
 
+	for _, err := range errs {
+		fmt.Println(err)
+	}
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
 		Handler: NewRouter(NewHandler(db)),
