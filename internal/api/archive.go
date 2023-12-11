@@ -189,8 +189,8 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 				if file.MimeType != DocType &&
 					file.MimeType != DocxType &&
 					file.MimeType != DocxPdf {
-					archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("sourceUid: %s, fileUid: %s, fileType: %s. not text type", sourceUid, file.ID, file.MimeType))
-					log.Printf("File type is not a text, %s. sourceUid: %s, fileUid: %s", file.MimeType, sourceUid, file.ID)
+					archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, fileType: %s. not text type", language, sourceUid, file.ID, file.MimeType))
+					log.Printf("File type is not a text, %s. language: %s, sourceUid: %s, fileUid: %s", file.MimeType, language, sourceUid, file.ID)
 					return []string{}, ""
 				}
 				fileUid = file.ID
@@ -211,8 +211,8 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 	defer contentResp.Body.Close()
 	// Check if the response status code is successful
 	if contentResp.StatusCode != http.StatusOK {
-		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("sourceUid: %s, fileUid: %s, file not found", sourceUid, fileUid))
-		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", fmt.Errorf("received non-successful status code: %d", contentResp.StatusCode), sourceUid, fileUid)
+		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, file not found", language, sourceUid, fileUid))
+		log.Printf("Internal error: %s, language: %s, sourceUid: %s, fileUid: %s", fmt.Errorf("received non-successful status code: %d", contentResp.StatusCode), language, sourceUid, fileUid)
 		return []string{}, ""
 	}
 
@@ -225,8 +225,8 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 		res, _, err = docconv.ConvertPDF(contentResp.Body)
 	}
 	if err != nil {
-		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("sourceUid: %s, fileUid: %s, error: %s", sourceUid, fileUid, err))
-		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
+		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, error: %s", language, sourceUid, fileUid, err))
+		log.Printf("Internal error: %s, language: %s, sourceUid: %s, fileUid: %s", err, language, sourceUid, fileUid)
 		return []string{}, ""
 	}
 
