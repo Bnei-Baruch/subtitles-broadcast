@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	errs = []string{}
+	archiveDataCopyErrors = []error{}
 )
 
 const (
@@ -54,10 +54,7 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 		wg.Add(1)
 		go func(idx int, sourcePath *SourcePath) {
 			defer wg.Done()
-			texts, fileUid, err := getFileContent(sourcePath.SourceUid, sourcePath.Language)
-			if err != nil {
-				log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
-			}
+			texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
 			log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
 			if len(texts) > 0 {
 				contents[idx] = &AchiveTempData{
@@ -104,46 +101,9 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 			}
 		}
 	}
-
-	// for _, sourcePath := range sourcePaths {
-	// 	contents, fileUid, err := getFileContent(sourcePath.SourceUid, sourcePath.Language)
-	// 	if err != nil {
-	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
-	// 	}
-	// 	if len(contents) == 0 {
-	// 		continue
-	// 	}
-	// 	tx := database.Debug().Begin()
-	// 	if tx.Error != nil {
-	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", tx.Error, sourcePath.SourceUid, sourcePath.Language)
-	// 	}
-	// 	newFile := File{
-	// 		Type:      KabbalahmediaFileSourceType,
-	// 		Language:  sourcePath.Language,
-	// 		SourceUid: sourcePath.SourceUid,
-	// 		FileUid:   fileUid,
-	// 	}
-	// 	if err := tx.Create(&newFile).Error; err != nil {
-	// 		tx.Rollback()
-	// 		log.Fatalf("Internal error: %s, file: %+v", err, newFile)
-	// 	}
-	// 	for idx, content := range contents {
-	// 		if len(content) > 0 {
-	// 			slide := Slide{
-	// 				FileId:      newFile.ID,
-	// 				Slide:       content,
-	// 				OrderNumber: idx,
-	// 			}
-	// 			if err := tx.Create(&slide).Error; err != nil {
-	// 				tx.Rollback()
-	// 				log.Fatalf("Internal error: %s, slide: %+v", err, slide)
-	// 			}
-	// 		}
-	// 	}
-	// 	if err := tx.Commit().Error; err != nil {
-	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
-	// 	}
-	// }
+	for _, error := range archiveDataCopyErrors {
+		log.Println(error)
+	}
 }
 
 // Update source_paths table(to sync source data regularly)
@@ -198,21 +158,21 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 }
 
 // Download the file, convert the file content to string and return it
-func getFileContent(sourceUid, language string) ([]string, string, error) {
+func getFileContent(sourceUid, language string) ([]string, string) {
 	fileResp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
 	if err != nil {
 		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
-		return nil, "", err
+		return nil, ""
 	}
 	var files ArchiveFiles
 	err = json.NewDecoder(fileResp.Body).Decode(&files)
 	if err != nil {
 		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
-		return nil, "", err
+		return nil, ""
 	}
 	fileResp.Body.Close()
 	if files.Total == 0 {
-		return []string{}, "", nil
+		return []string{}, ""
 	}
 	var fileUid, fileType string
 	for _, contentUnit := range files.ContentUnits {
@@ -221,9 +181,9 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 				if file.MimeType != DocType &&
 					file.MimeType != DocxType &&
 					file.MimeType != DocxPdf {
-					errs = append(errs, fmt.Sprintf("sourceUid: %s, fileUid: %s, fileType: %s. NOT TEXT", sourceUid, file.ID, file.MimeType))
+					archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("sourceUid: %s, fileUid: %s, fileType: %s. not text type", sourceUid, file.ID, file.MimeType))
 					log.Printf("File type is not a text, %s. sourceUid: %s, fileUid: %s", file.MimeType, sourceUid, file.ID)
-					return []string{}, "", nil
+					return []string{}, ""
 				}
 				fileUid = file.ID
 				fileType = file.MimeType
@@ -232,48 +192,37 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 		}
 	}
 	if fileUid == "" {
-		return []string{}, "", nil
+		return []string{}, ""
 	}
 	contentResp, err := http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
 	if err != nil {
 		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
-		return nil, "", err
+		return []string{}, ""
 	}
 
 	defer contentResp.Body.Close()
 	// Check if the response status code is successful
 	if contentResp.StatusCode != http.StatusOK {
-		errs = append(errs, fmt.Sprintf("sourceUid: %s, fileUid: %s, NOT FOUND", sourceUid, fileUid))
-		err := fmt.Errorf("received non-successful status code: %d", contentResp.StatusCode)
-		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
-		if contentResp.StatusCode == http.StatusNotFound {
-			return []string{}, "", nil
-		}
-		return nil, "", err
+		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("sourceUid: %s, fileUid: %s, file not found", sourceUid, fileUid))
+		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", fmt.Errorf("received non-successful status code: %d", contentResp.StatusCode), sourceUid, fileUid)
+		return []string{}, ""
 	}
 
 	res := ""
 	if fileType == DocType {
 		res, _, err = docconv.ConvertDoc(contentResp.Body)
-		if err != nil {
-			log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
-			return nil, "", err
-		}
 	} else if fileType == DocxType {
 		res, _, err = docconv.ConvertDocx(contentResp.Body)
-		if err != nil {
-			log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
-			return nil, "", err
-		}
 	} else if fileType == DocxPdf {
 		res, _, err = docconv.ConvertPDF(contentResp.Body)
-		if err != nil {
-			log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
-			return nil, "", err
-		}
+	}
+	if err != nil {
+		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("sourceUid: %s, fileUid: %s, error: %s", sourceUid, fileUid, err))
+		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
+		return []string{}, ""
 	}
 
-	return strings.Split(strings.TrimSpace(res), "\n"), fileUid, nil
+	return strings.Split(strings.TrimSpace(res), "\n"), fileUid
 }
 
 func getSourcePathListByLanguage(languageCodes []string) ([]*SourcePath, error) {

@@ -60,7 +60,6 @@ func NewApp(sig chan os.Signal) *http.Server {
 		log.Fatalln(err)
 	}
 	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
-	//languageCodes := []string{LanguageCodeRussian}
 	sourcePaths, err := getSourcePathListByLanguage(languageCodes)
 	if err != nil {
 		log.Fatalln(err)
@@ -86,9 +85,6 @@ func NewApp(sig chan os.Signal) *http.Server {
 		}
 	}()
 
-	for _, err := range errs {
-		fmt.Println(err)
-	}
 	return &http.Server{
 		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
 		Handler: NewRouter(NewHandler(db)),
