@@ -233,7 +233,7 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 	return strings.Split(strings.TrimSpace(res), "\n"), fileUid
 }
 
-func getSourcePathListByLanguage(languageCodes []string) ([]*SourcePath, error) {
+func getSourcePathListByLanguages(languageCodes []string) ([]*SourcePath, error) {
 	sourcePaths := []*SourcePath{}
 	for _, languageCode := range languageCodes {
 		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
@@ -273,7 +273,5 @@ func getSourcePath(sourcePaths *[]*SourcePath, source *Source, language, path st
 		for _, child := range source.Children {
 			getSourcePath(sourcePaths, child, language, currentPath)
 		}
-	} else {
-		return
 	}
 }

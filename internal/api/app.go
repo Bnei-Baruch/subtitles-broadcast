@@ -60,7 +60,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 		log.Fatalln(err)
 	}
 	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
-	sourcePaths, err := getSourcePathListByLanguage(languageCodes)
+	sourcePaths, err := getSourcePathListByLanguages(languageCodes)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -73,7 +73,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 			select {
 			case <-ticker.C:
 				log.Println("Updating source path.")
-				sourcePaths, err := getSourcePathListByLanguage(languageCodes)
+				sourcePaths, err := getSourcePathListByLanguages(languageCodes)
 				if err != nil {
 					log.Println(err)
 				}
