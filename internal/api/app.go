@@ -60,6 +60,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 		log.Fatalln(err)
 	}
 	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
+	//languageCodes := []string{LanguageCodeRussian}
 	sourcePaths, err := getSourcePathListByLanguage(languageCodes)
 	if err != nil {
 		log.Fatalln(err)

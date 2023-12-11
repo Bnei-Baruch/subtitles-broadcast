@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"net/http"
 
@@ -24,6 +26,10 @@ const (
 
 	KabbalahmediaFileSourceType = "archive"
 	UploadFileSourceType        = "upload"
+
+	DocType  = "application/msword"
+	DocxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	DocxPdf  = "application/pdf"
 )
 
 // Get source data by language and insert downloaded data to slide table
@@ -39,47 +45,93 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 		log.Println("Importing archive data has already done before")
 		return
 	}
-	//var wg sync.WaitGroup
-	// contents := make([]*AchiveTempData, len(sourcePaths))
-	// for idx, sourcePath := range sourcePaths {
-	// 	//wg.Add(1)
-	// 	//go func(idx int, sourcePath *SourcePath) {
-	// 	//defer wg.Done()
-	// 	texts, fileUid, err := getFileContent(sourcePath.SourceUid, sourcePath.Language)
-	// 	fmt.Println(idx, texts, fileUid, err)
+	//getFileContent("Nw0ew8p4", "he")
+
+	var wg sync.WaitGroup
+	contents := make([]*AchiveTempData, len(sourcePaths))
+	log.Printf("Importing %d sources is started", len(sourcePaths))
+	for idx, sourcePath := range sourcePaths {
+		wg.Add(1)
+		go func(idx int, sourcePath *SourcePath) {
+			defer wg.Done()
+			texts, fileUid, err := getFileContent(sourcePath.SourceUid, sourcePath.Language)
+			if err != nil {
+				log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
+			}
+			log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
+			if len(texts) > 0 {
+				contents[idx] = &AchiveTempData{
+					Texts: texts,
+					File: &File{
+						Type:      KabbalahmediaFileSourceType,
+						Language:  sourcePath.Language,
+						SourceUid: sourcePath.SourceUid,
+						FileUid:   fileUid,
+					},
+				}
+			}
+		}(idx, sourcePath)
+		time.Sleep(time.Second / 30)
+	}
+	wg.Wait()
+
+	for _, content := range contents {
+		if content != nil {
+			tx := database.Debug().Begin()
+			if tx.Error != nil {
+				log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", tx.Error, content.File.SourceUid, content.File.Language)
+			}
+			newFile := content.File
+			if err := tx.Create(newFile).Error; err != nil {
+				tx.Rollback()
+				log.Fatalf("Internal error: %s, file: %+v", err, newFile)
+			}
+			for idx, text := range content.Texts {
+				if len(text) > 0 {
+					slide := Slide{
+						FileId:      newFile.ID,
+						Slide:       text,
+						OrderNumber: idx,
+					}
+					if err := tx.Create(&slide).Error; err != nil {
+						tx.Rollback()
+						log.Fatalf("Internal error: %s, slide: %+v", err, slide)
+					}
+				}
+			}
+			if err := tx.Commit().Error; err != nil {
+				log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, content.File.SourceUid, content.File.Language)
+			}
+		}
+	}
+
+	// for _, sourcePath := range sourcePaths {
+	// 	contents, fileUid, err := getFileContent(sourcePath.SourceUid, sourcePath.Language)
 	// 	if err != nil {
 	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
 	// 	}
-	// 	if len(texts) > 0 {
-	// 		contents[idx] = &AchiveTempData{
-	// 			Texts: texts,
-	// 			File: &File{
-	// 				Type:      KabbalahmediaFileSourceType,
-	// 				Language:  sourcePath.Language,
-	// 				SourceUid: sourcePath.SourceUid,
-	// 				FileUid:   fileUid,
-	// 			},
-	// 		}
+	// 	if len(contents) == 0 {
+	// 		continue
 	// 	}
-	// 	//}(idx, sourcePath)
-	// 	//time.Sleep(1 * time.Second)
-	// }
-	//wg.Wait()
-	// for _, content := range contents {
 	// 	tx := database.Debug().Begin()
 	// 	if tx.Error != nil {
-	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", tx.Error, content.File.SourceUid, content.File.Language)
+	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", tx.Error, sourcePath.SourceUid, sourcePath.Language)
 	// 	}
-	// 	newFile := content.File
-	// 	if err := tx.Create(newFile).Error; err != nil {
+	// 	newFile := File{
+	// 		Type:      KabbalahmediaFileSourceType,
+	// 		Language:  sourcePath.Language,
+	// 		SourceUid: sourcePath.SourceUid,
+	// 		FileUid:   fileUid,
+	// 	}
+	// 	if err := tx.Create(&newFile).Error; err != nil {
 	// 		tx.Rollback()
 	// 		log.Fatalf("Internal error: %s, file: %+v", err, newFile)
 	// 	}
-	// 	for idx, text := range content.Texts {
-	// 		if len(text) > 0 {
+	// 	for idx, content := range contents {
+	// 		if len(content) > 0 {
 	// 			slide := Slide{
 	// 				FileId:      newFile.ID,
-	// 				Slide:       text,
+	// 				Slide:       content,
 	// 				OrderNumber: idx,
 	// 			}
 	// 			if err := tx.Create(&slide).Error; err != nil {
@@ -89,49 +141,9 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	// 		}
 	// 	}
 	// 	if err := tx.Commit().Error; err != nil {
-	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, content.File.SourceUid, content.File.Language)
+	// 		log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
 	// 	}
 	// }
-
-	for _, sourcePath := range sourcePaths {
-		contents, fileUid, err := getFileContent(sourcePath.SourceUid, sourcePath.Language)
-		if err != nil {
-			log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
-		}
-		if len(contents) == 0 {
-			continue
-		}
-		tx := database.Debug().Begin()
-		if tx.Error != nil {
-			log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", tx.Error, sourcePath.SourceUid, sourcePath.Language)
-		}
-		newFile := File{
-			Type:      KabbalahmediaFileSourceType,
-			Language:  sourcePath.Language,
-			SourceUid: sourcePath.SourceUid,
-			FileUid:   fileUid,
-		}
-		if err := tx.Create(&newFile).Error; err != nil {
-			tx.Rollback()
-			log.Fatalf("Internal error: %s, file: %+v", err, newFile)
-		}
-		for idx, content := range contents {
-			if len(content) > 0 {
-				slide := Slide{
-					FileId:      newFile.ID,
-					Slide:       content,
-					OrderNumber: idx,
-				}
-				if err := tx.Create(&slide).Error; err != nil {
-					tx.Rollback()
-					log.Fatalf("Internal error: %s, slide: %+v", err, slide)
-				}
-			}
-		}
-		if err := tx.Commit().Error; err != nil {
-			log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, sourcePath.SourceUid, sourcePath.Language)
-		}
-	}
 }
 
 // Update source_paths table(to sync source data regularly)
@@ -202,21 +214,26 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 	if files.Total == 0 {
 		return []string{}, "", nil
 	}
-	var fileUid string
+	var fileUid, fileType string
 	for _, contentUnit := range files.ContentUnits {
 		for _, file := range contentUnit.Files {
 			if file.Language == language {
-				if file.MimeType != "application/vnd.openxmlformats-officedocument.wordprocessingml.document" {
-					errs = append(errs, fmt.Sprintf("sourceUid: %s, fileUid: %s, NOT TEXT", sourceUid, fileUid))
-					log.Printf("File type is not a text, sourceUid: %s, fileUid: %s", sourceUid, fileUid)
+				if file.MimeType != DocType &&
+					file.MimeType != DocxType &&
+					file.MimeType != DocxPdf {
+					errs = append(errs, fmt.Sprintf("sourceUid: %s, fileUid: %s, fileType: %s. NOT TEXT", sourceUid, file.ID, file.MimeType))
+					log.Printf("File type is not a text, %s. sourceUid: %s, fileUid: %s", file.MimeType, sourceUid, file.ID)
 					return []string{}, "", nil
 				}
 				fileUid = file.ID
+				fileType = file.MimeType
 				break
 			}
 		}
 	}
-
+	if fileUid == "" {
+		return []string{}, "", nil
+	}
 	contentResp, err := http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
 	if err != nil {
 		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
@@ -235,11 +252,27 @@ func getFileContent(sourceUid, language string) ([]string, string, error) {
 		return nil, "", err
 	}
 
-	res, _, err := docconv.ConvertDocx(contentResp.Body)
-	if err != nil {
-		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
-		return nil, "", err
+	res := ""
+	if fileType == DocType {
+		res, _, err = docconv.ConvertDoc(contentResp.Body)
+		if err != nil {
+			log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
+			return nil, "", err
+		}
+	} else if fileType == DocxType {
+		res, _, err = docconv.ConvertDocx(contentResp.Body)
+		if err != nil {
+			log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
+			return nil, "", err
+		}
+	} else if fileType == DocxPdf {
+		res, _, err = docconv.ConvertPDF(contentResp.Body)
+		if err != nil {
+			log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
+			return nil, "", err
+		}
 	}
+
 	return strings.Split(strings.TrimSpace(res), "\n"), fileUid, nil
 }
 
