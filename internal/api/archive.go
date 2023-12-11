@@ -145,7 +145,8 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	}
 	// Insert source list to db
 	for _, sourcePathToInsert := range sourcePathsToInsert {
-		err := database.Debug().First(&sourcePathToInsert).Error
+		sourcePath := SourcePath{}
+		err := database.Debug().Where("language = ? AND source_uid = ?", sourcePathToInsert.Language, sourcePathToInsert.SourceUid).First(&sourcePath).Error
 		if err != nil {
 			// insert only the ones not in db
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -155,6 +156,15 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 					log.Printf("Internal error: %s", err)
 					return
 				}
+			}
+		}
+		// if path has changed, update it in db
+		if sourcePath.Path != sourcePathToInsert.Path {
+			err := database.Debug().Exec("UPDATE source_paths SET path = ? WHERE id = ?", sourcePathToInsert.Path, sourcePath.ID).Error
+			if err != nil {
+				tx.Rollback()
+				log.Printf("Internal error: %s", err)
+				return
 			}
 		}
 	}
