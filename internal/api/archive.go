@@ -157,10 +157,8 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 					return
 				}
 			}
-			continue
-		}
-		// if path has changed, update it in db
-		if sourcePath.Path != sourcePathToInsert.Path {
+			// if path has changed, update it in db
+		} else if sourcePath.Path != sourcePathToInsert.Path {
 			err := database.Debug().Exec("UPDATE source_paths SET path = ? WHERE id = ?", sourcePathToInsert.Path, sourcePath.ID).Error
 			if err != nil {
 				tx.Rollback()
