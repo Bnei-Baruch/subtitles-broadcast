@@ -45,8 +45,11 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 		log.Println("Importing archive data has already done before")
 		return
 	}
-	//getFileContent("Nw0ew8p4", "he")
 
+	// Download file contents from source and file apis.
+	// Downloading contents from urls is quite a lot of work and made process slow.
+	// So get all file contents first. But contents order is important.
+	// The contents will be inserted into DB by order so go routines are applied to only here.
 	var wg sync.WaitGroup
 	contents := make([]*AchiveTempData, len(sourcePaths))
 	log.Printf("Importing %d sources is started", len(sourcePaths))
@@ -72,6 +75,7 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	}
 	wg.Wait()
 
+	// Insert all slide data(including slide) into tables
 	for _, content := range contents {
 		if content != nil {
 			tx := database.Debug().Begin()
@@ -101,6 +105,10 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 			}
 		}
 	}
+
+	// All file url are not what we want
+	// like non text type file or non valid url or wrong file content
+	// Get all error and list it at the end.
 	for _, error := range archiveDataCopyErrors {
 		log.Println(error)
 	}
