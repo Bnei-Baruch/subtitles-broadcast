@@ -343,7 +343,18 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
 	authorList := []string{}
-	result := h.Database.Debug().WithContext(ctx).Table("source_paths").Distinct("substring(path FROM 1 FOR position('(' IN path) - 1)").Pluck("substring(path FROM 1 FOR position('(' IN path) - 1)", &authorList)
+	result := h.Database.Debug().WithContext(ctx).Raw(`
+		SELECT DISTINCT 
+			TRIM(BOTH ' ' FROM
+			CASE 
+				WHEN POSITION('/' IN path) > 0 THEN SUBSTRING(path FROM 1 FOR POSITION('/' IN path) - 1)
+				ELSE path
+			END
+			) AS first_name
+		FROM source_paths
+		WHERE path IS NOT NULL
+		ORDER BY first_name
+	`).Scan(&authorList)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
