@@ -33,7 +33,7 @@ type Bookmark struct {
 
 type Slide struct {
 	ID          uint      `gorm:"primarykey"`
-	FileId      uint      `json:"file_id"`
+	FileUid     string    `json:"file_uid"`
 	Slide       string    `json:"slide"`
 	OrderNumber int       `json:"order_number"`
 	CreatedAt   time.Time `json:"created_at"`

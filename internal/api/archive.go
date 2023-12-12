@@ -82,14 +82,10 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 		for idx, content := range contents {
 			if len(content) > 0 {
 				slide := Slide{
-					FileId:      newFile.ID,
+					FileUid:     newFile.FileUid,
 					Slide:       content,
 					OrderNumber: idx,
 				}
-				// slide.FileId = newFile.ID
-				// slide.Slide = content
-				// slide.OrderNumber = idx
-
 				if err := tx.Create(&slide).Error; err != nil {
 					tx.Rollback()
 					log.Fatalf("Internal error: %s", err)

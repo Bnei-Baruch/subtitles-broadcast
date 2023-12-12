@@ -371,7 +371,7 @@ paths:
         - bearerAuth:
             - read:slides
             - delete:slides
-  /file_slide/{fileId}:
+  /file_slide/{fileUid}:
     get:
       tags:
         - slide
@@ -463,8 +463,8 @@ components:
           type: integer
           description: slide id
           example: 1
-        file_id:
-          type: integer
+        file_uid:
+          type: string
           description: archive file uid
           example: 1
         slide:
@@ -496,8 +496,8 @@ components:
           type: string
           description: archive source uid
           example: "tswzgnWk"
-        file_id:
-          type: integer
+        file_uid:
+          type: string
           description: archive file uid
           example: 1
         slide_source_path:
