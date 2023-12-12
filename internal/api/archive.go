@@ -125,7 +125,7 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	// Compare sources in db with source from archive
 	// Get source list to be deleted from db(means sources are no more existed in archive)
 	sourcePathsToDelete := []*SourcePath{}
-	result := database.Debug().Where("(source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
+	result := database.Debug().Where("(language, source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
 	if result.RowsAffected == 0 {
 		log.Printf("No source path")
 	}
