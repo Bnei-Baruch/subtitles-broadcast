@@ -266,7 +266,7 @@ paths:
                         slides:
                           type: array
                           items:
-                              $ref: '#/components/schemas/Slide'
+                              $ref: '#/components/schemas/SlideDetail'
         '401':
           description: Invalid request jwt token
         '400':
@@ -371,6 +371,49 @@ paths:
         - bearerAuth:
             - read:slides
             - delete:slides
+  /file_slide/{fileId}:
+    get:
+      tags:
+        - slide
+      summary: Get slides
+      description: Finds all slide by file id
+      operationId: getSlidesByFile
+      parameters:
+        - in: path
+          name: fileId
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the file
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Slide'
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '404':
+          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
   /author:
     get:
       tags:
@@ -420,18 +463,43 @@ components:
           type: integer
           description: slide id
           example: 1
+        file_id:
+          type: integer
+          description: archive file uid
+          example: 1
+        slide:
+          type: string
+          description: slide
+          example: "Foreword to The Book of Zohar"
+        order_number:
+          type: integer
+          description: slide order number
+          example: 0
+        created_at:
+          type: string
+          description: created time
+          example: "2023-09-04T09:26:23.086238Z"
+        update_at:
+          type: string
+          description: updated time
+          example: "2023-09-04T09:26:23.086238Z"
+    SlideDetail:
+      title: Slide Data with extra data
+      description: An slide with meta data
+      type: object
+      properties:
+        id:
+          type: integer
+          description: slide id
+          example: 1
         source_uid:
           type: string
           description: archive source uid
           example: "tswzgnWk"
-        file_uid:
-          type: string
+        file_id:
+          type: integer
           description: archive file uid
-          example: "OzSCqHYF"
-        file_source_type:
-          type: string
-          description: file source type(archive or upload)
-          example: "archive"
+          example: 1
         slide_source_path:
           type: string
           description: source path including author name for slide
@@ -448,10 +516,6 @@ components:
           type: integer
           description: slide order number
           example: 0
-        langugae:
-          type: integer 
-          description: language code id in the launage code table in db
-          example: 1
         created_at:
           type: string
           description: created time

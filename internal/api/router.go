@@ -22,6 +22,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.GET("/slide", handler.GetSlides)
 	v1.PATCH("/slide", handler.UpdateSlide)
 	v1.DELETE("/slide/:slide_id", handler.DeleteSlide)
+	v1.GET("/file_slide/:file_id", handler.GetSlidesByFile)
 
 	v1.GET("/author", handler.GetAuthors)
 

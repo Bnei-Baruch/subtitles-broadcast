@@ -94,6 +94,9 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 				Slide:       content,
 				OrderNumber: idx,
 			}
+			// slide.FileId = newFile.ID
+			// slide.Slide = content
+			// slide.OrderNumber = idx
 			if err = tx.Create(&slide).Error; err != nil {
 				tx.Rollback()
 				log.Error(err)
@@ -179,7 +182,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
 	keyword := ctx.Query("keyword")
-	slides := []*Slide{}
+	slides := []*SlideDetail{}
 	query := h.Database.Debug().WithContext(ctx).
 		Table("slides").
 		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked, files.source_uid, files.language, source_paths.path || ' / ' || slides.id AS slide_source_path", userId).
@@ -209,8 +212,8 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
-				Pagination *Pagination `json:"pagination"`
-				Slides     []*Slide    `json:"slides"`
+				Pagination *Pagination    `json:"pagination"`
+				Slides     []*SlideDetail `json:"slides"`
 			}{
 				Pagination: &Pagination{
 					Limit:      listLimit,
@@ -255,6 +258,26 @@ func (h *Handler) DeleteSlide(ctx *gin.Context) {
 		getResponse(true,
 			nil,
 			"", "Deleting data has succeeded"))
+}
+
+func (h *Handler) GetSlidesByFile(ctx *gin.Context) {
+	fileIdInt, err := strconv.Atoi(ctx.Param("file_id"))
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	slides := []*Slide{}
+	err = h.Database.Debug().WithContext(ctx).Where("file_id = ?", fileIdInt).Find(&slides).Error
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true, slides, "", "Getting data has succeeded"))
 }
 
 func (h *Handler) AddUserBookmark(ctx *gin.Context) {
