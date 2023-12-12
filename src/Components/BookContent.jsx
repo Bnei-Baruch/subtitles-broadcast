@@ -4,6 +4,9 @@ const BookContent = ({ bookTitle, lastActivated, contents, isLtr }) => {
   console.log("iiiiiiiiiiiiii", contents);
   return (
     <>
+      <div className={`box-content ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}>
+        sgdgsfjhvshjsvhshvjsfhjvdfvhdfskhjdsfhbjv
+      </div>
       {contents.map((item, index) => (
         <div className={`box-content ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}>
           {item}{" "}

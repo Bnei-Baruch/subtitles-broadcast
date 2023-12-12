@@ -7,17 +7,32 @@ import {
   getAllBookAddedByUser,
 } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
-import { UserBookmarkList } from "../Redux/ArchiveTab/ArchiveSlice";
+import {
+  UnBookmarkSlide,
+  UserBookmarkList,
+  getAllBookmarkList,
+} from "../Redux/ArchiveTab/ArchiveSlice";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
-  const UserAddedList = useSelector(getAllBookAddedByUser) || [];
+  const UserAddedList = useSelector(getAllBookAddedByUser);
+  const GetAllBookmarkList = useSelector(getAllBookmarkList);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState("");
 
   useEffect(() => {
     dispatch(GetSubtitleData());
     dispatch(UserBookmarkList());
+  }, []);
+
+  //This useEffect will get all fileid from local storage and make api call
+  useEffect(() => {
+    const fileId = JSON.parse(localStorage.getItem("fileids"));
+    console.log(fileId, "uuuuuuuuuuu");
+    // for (let index = 0; index < fileId.length; index++) {
+    //   const element = fileId[index];
+    //   ///Pass file id and get all data
+    // }
   }, []);
   console.log(UserAddedList);
 
@@ -112,6 +127,13 @@ const Subtitles = () => {
                 tabindex="0"
               >
                 <div>
+                  <div
+                    className={`box-content ${
+                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    hbdffdbfdbhhfbdbhdfbhfbhjbh
+                  </div>
                   {UserAddedList?.map(
                     (item, index) =>
                       activatedTab == "" &&
@@ -127,6 +149,20 @@ const Subtitles = () => {
                   )}
                 </div>
                 <div>
+                  <div
+                    className={`box-content ${
+                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    sdbcdsfbujb
+                  </div>
+                  <div
+                    className={`box-content ${
+                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    sdbcdsfbujbadsd333333333
+                  </div>
                   {UserAddedList?.map(
                     (item, index) =>
                       activatedTab == item?.book_title && (
@@ -167,7 +203,30 @@ const Subtitles = () => {
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
-            <div className="">{}</div>
+            <div className="">
+              {GetAllBookmarkList?.map((key) => {
+                return (
+                  <div className="d-flex justify-content-between">
+                    <i
+                      onClick={() =>
+                        dispatch(
+                          UnBookmarkSlide(key.split("/").at(-1).trim(""))
+                        )
+                      }
+                      className="bi bi-trash"
+                    />
+                    <a
+                      className="text-truncate mx-3"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="top"
+                      title={key}
+                    >
+                      {key}
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="Questions whit-s">

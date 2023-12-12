@@ -4,6 +4,7 @@ import {
   BookmarkSlide,
   DeleteArchive,
   GetAllArchiveData,
+  UnBookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -112,137 +113,147 @@ const Archive = () => {
                   }))}
                 />
               </div>
-              {/* <div className="form-group col-2">
-              <label>Book</label>
-              <Select
-                options={ArchiveList?.archives?.map((key) => ({
-                  value: key.book,
-                  label: key.book,
-                }))}
-              />
-            </div> */}
-              {/* <div className="form-group col-2">
-              <label>Title</label>
-              <Select
-                options={ArchiveList?.archives?.map((key) => ({
-                  value: key.title,
-                  label: key.title,
-                }))}
-              />
-            </div> */}
             </div>
           </div>
+
           <div className="card">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th scope="col">Text</th>
-                  <th scope="col">Author</th>
-                  {/* <th scope="col">Book</th>
+            {ArchiveList ? (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Text</th>
+                    <th scope="col">Author</th>
+                    {/* <th scope="col">Book</th>
                 <th scope="col">Title</th> */}
-                  <th scope="col">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ArchiveList?.slides?.map((key) => (
-                  <tr key={key.ID}>
-                    <th scope="row" className="textwidth">
-                      <span className="truncate">{key.slide}</span>
-                    </th>
-
-                    <td>{key.source_path?.split("/")?.[0]}</td>
-
-                    {/* <td>{key.book}</td>
-                  <td>{key.title}</td> */}
-                    <td>
-                      {
-                        <i
-                          onClick={() => {
-                            dispatch(AddToSubtitleList({ id: key?.id }));
-                            navigate("/subtitle");
-                          }}
-                          className="bi bi-plus"
-                        />
-                      }
-                      {key.bookmarked == true ? (
-                        <i
-                          onClick={() => {
-                            setMessage(
-                              "Are you sure , you want to bookmark this title"
-                            );
-                            setDeleteId(key.ID);
-                            setConfirmation(true);
-                          }}
-                          class="bi bi-bookmark-check-fill m-2"
-                        />
-                      ) : (
-                        <i
-                          onClick={() => {
-                            setMessage(
-                              "Are you sure , you want to bookmark this title"
-                            );
-                            setDeleteId(key.ID);
-                            setConfirmation(true);
-                          }}
-                          class="bi bi-bookmark m-2"
-                        />
-                      )}
-
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="Secondary"
-                          id="dropdown-basic"
-                        >
-                          <i class="bi bi-three-dots-vertical"></i>
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu>
-                          <Dropdown.Item>
-                            <i
-                              class="bi bi-pencil"
-                              onClick={() => setEditSlide(key.ID)}
-                            />
-                          </Dropdown.Item>
-                          <Dropdown.Item>
-                            <i
-                              onClick={() => {
-                                setDeleteConfirmationPopup(true);
-                                setDeleteId(key.ID);
-                              }}
-                              class="bi bi-trash3 m-2"
-                            />
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    </td>
+                    <th scope="col">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {ArchiveList?.slides?.map((key) => (
+                    <tr key={key.ID}>
+                      <th scope="row" className="textwidth">
+                        <span className="truncate">{key.slide}</span>
+                      </th>
+
+                      <td>{key.slide_source_path?.split("/")?.[0]}</td>
+
+                      {/* <td>{key.book}</td>
+                  <td>{key.title}</td> */}
+                      <td>
+                        {
+                          <i
+                            onClick={() => {
+                              const fileIds = Array.isArray(
+                                JSON.parse(localStorage.getItem("fileids"))
+                              )
+                                ? JSON.parse(localStorage.getItem("fileids"))
+                                : [];
+
+                              const fileIdsArr = new Set([
+                                ...fileIds,
+                                key?.file_id,
+                              ]);
+
+                              localStorage.setItem(
+                                "fileids",
+                                JSON.stringify(Array.from(fileIdsArr))
+                              );
+
+                              navigate("/subtitle");
+                            }}
+                            className="bi bi-plus"
+                          />
+                        }
+                        {key.bookmarked == true ? (
+                          <i
+                            onClick={() => {
+                              dispatch(UnBookmarkSlide(key?.ID));
+                              // setMessage(
+                              //   "Are you sure , you want to bookmark this title"
+                              // );
+                              // setDeleteId(key.ID);
+                              // setConfirmation(true);
+                            }}
+                            class="bi bi-bookmark-check-fill m-2"
+                          />
+                        ) : (
+                          <i
+                            onClick={() => {
+                              dispatch(BookmarkSlide(key?.ID));
+                              // setMessage(
+                              //   "Are you sure , you want to unbookmark this title"
+                              // );
+                              // setDeleteId(key.ID);
+                              // setConfirmation(true);
+                            }}
+                            class="bi bi-bookmark m-2"
+                          />
+                        )}
+
+                        <Dropdown>
+                          <Dropdown.Toggle
+                            variant="Secondary"
+                            id="dropdown-basic"
+                          >
+                            <i class="bi bi-three-dots-vertical"></i>
+                          </Dropdown.Toggle>
+
+                          <Dropdown.Menu>
+                            <Dropdown.Item>
+                              <i
+                                class="bi bi-pencil"
+                                onClick={() => setEditSlide(key.ID)}
+                              />
+                            </Dropdown.Item>
+                            <Dropdown.Item>
+                              <i
+                                onClick={() => {
+                                  setDeleteConfirmationPopup(true);
+                                  setDeleteId(key.ID);
+                                }}
+                                class="bi bi-trash3 m-2"
+                              />
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="card d-flex h-50%">
+                <div>NO Data</div>
+              </div>
+            )}
           </div>
 
-          <div className="m-3 ">
+          <div className="m-3 d-flex justify-content-between">
             <div
               className=""
               onChange={(e) => setPage({ page: 1, limit: e.target.value })}
             >
               <span>Row per page:</span>
-              <select>
+              <select className="ms-2">
                 <option>10</option>
                 <option>20</option>
                 <option>30</option>
               </select>
             </div>
-            <i
-              className={`bi bi-chevron-left  ${
-                ArchiveList?.pagination?.page === 1 && "disablecolor"
-              }`}
-              onClick={() => setPage({ ...page, page: page.page - 1 })}
-            />
-            <i
-              className="bi bi-chevron-right"
-              onClick={() => setPage({ ...page, page: page.page + 2 })}
-            />
+            <div className="arrow">
+              <button
+                className={`bi bi-chevron-left me-1  ${
+                  ArchiveList?.pagination?.page === 1 && "disablecolor"
+                }`}
+                disabled={page.page == 1}
+                onClick={() => setPage({ ...page, page: page.page - 1 })}
+              />
+              <button
+                className="bi bi-chevron-right ms-1"
+                onClick={() => setPage({ ...page, page: page.page + 1 })}
+              />
+            </div>
+            <div className="blank"></div>
             {/* 
 <ReactPaginate
         breakLabel="..."

@@ -209,3 +209,14 @@ table {
   overflow: hidden;
   overflow-y: scroll;
 }
+.table td:last-child {
+  width: 150px;
+}
+.table .dropdown {
+  width: 60px;
+  display: inline;
+}
+.table .dropdown-menu.show {
+  min-width: 50px;
+  width: 50px;
+}

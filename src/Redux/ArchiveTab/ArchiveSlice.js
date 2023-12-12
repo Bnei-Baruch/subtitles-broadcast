@@ -11,6 +11,7 @@ const initialState = {
   getAuthorList: [],
   getBookList: [],
   getTitleList: [],
+  bookmarkList: [],
 };
 const API_URL = {
   AddData: "selected-content",
@@ -62,7 +63,7 @@ export const UserBookmarkList = createAsyncThunk(
 export const GetAllAuthor = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}${API_URL.GetALL}`);
+    const response = await axios.get(`${API}/author`);
     console.log(response, "archive data");
     return response.data;
   }
@@ -93,7 +94,16 @@ export const BookmarkSlide = createAsyncThunk(
     return response.data;
   }
 );
-
+export const UnBookmarkSlide = createAsyncThunk(
+  "/UnBookmarkSlide",
+  async (data, thunkAPI) => {
+    const response = await axios.delete(`${API}bookmark/${data}`);
+    console.log(response, "archive data");
+    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+    thunkAPI.dispatch(UserBookmarkList());
+    return response.data;
+  }
+);
 const ArchiveSlice = createSlice({
   name: "Archive",
   initialState,
@@ -102,10 +112,19 @@ const ArchiveSlice = createSlice({
     builder.addCase(GetAllArchiveData.fulfilled, (state, action) => {
       return { ...state, archiveList: action?.payload };
     });
+    builder.addCase(GetAllAuthor, (state, { payload }) => {
+      return { ...state, authorList: payload };
+    });
+    builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
+      return { ...state, bookmarkList: payload };
+    });
   },
 });
 
 export const getAllArchiveList = (state) =>
   state?.ArchiveList?.archiveList?.data;
+
+export const getAllBookmarkList = (state) =>
+  state?.ArchiveList?.bookmarkList?.data;
 
 export default ArchiveSlice.reducer;
