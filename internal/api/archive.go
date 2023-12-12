@@ -76,12 +76,12 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	wg.Wait()
 
 	// Insert all slide data(including slide) into tables
+	tx := database.Debug().Begin()
+	if tx.Error != nil {
+		log.Fatalf("Internal error: %s", tx.Error)
+	}
 	for _, content := range contents {
 		if content != nil {
-			tx := database.Debug().Begin()
-			if tx.Error != nil {
-				log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", tx.Error, content.File.SourceUid, content.File.Language)
-			}
 			newFile := content.File
 			if err := tx.Create(newFile).Error; err != nil {
 				tx.Rollback()
@@ -100,10 +100,10 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 					}
 				}
 			}
-			if err := tx.Commit().Error; err != nil {
-				log.Fatalf("Internal error: %s, sourceUid: %s, language: %s", err, content.File.SourceUid, content.File.Language)
-			}
 		}
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Fatalf("Internal error: %s", err)
 	}
 
 	// All file url are not what we want
