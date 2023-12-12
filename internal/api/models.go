@@ -33,7 +33,7 @@ type Bookmark struct {
 
 type Slide struct {
 	ID              uint      `gorm:"primarykey"`
-	FileId          uint      `json:"file_id"`
+	FileUid         string    `json:"file_uid"`
 	SlideSourcePath string    `json:"slide_source_path,omitempty" gorm:"->"` // author/type/title/slide_id
 	Bookmarked      bool      `json:"bookmarked" gorm:"->"`
 	SourceUid       string    `json:"source_uid" gorm:"->"`

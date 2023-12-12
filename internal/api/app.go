@@ -50,7 +50,6 @@ func init() {
 }
 
 func NewApp(sig chan os.Signal) *http.Server {
-
 	db, err := database.NewPostgres(conf.Postgres.Url)
 	if err != nil {
 		log.Fatalln(err)
@@ -59,7 +58,9 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
+	// will be used later
+	//languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
+	languageCodes := []string{LanguageCodeEnglish}
 	sourcePaths, err := getSourcePathListByLanguages(languageCodes)
 	if err != nil {
 		log.Fatalln(err)

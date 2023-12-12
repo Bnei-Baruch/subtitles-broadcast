@@ -53,7 +53,9 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	var wg sync.WaitGroup
 	contents := make([]*AchiveTempData, len(sourcePaths))
 	log.Printf("Importing %d sources is started", len(sourcePaths))
-	for idx, sourcePath := range sourcePaths {
+	// will be used for all sources
+	//for idx, sourcePath := range sourcePaths {
+	for idx, sourcePath := range sourcePaths[0:3] {
 		wg.Add(1)
 		go func(idx int, sourcePath *SourcePath) {
 			defer wg.Done()
@@ -90,7 +92,7 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 			for idx, text := range content.Texts {
 				if len(text) > 0 {
 					slide := Slide{
-						FileId:      newFile.ID,
+						FileUid:     newFile.FileUid,
 						Slide:       text,
 						OrderNumber: idx,
 					}
@@ -192,22 +194,24 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 		return []string{}, ""
 	}
 	var fileUid, fileType string
-	for _, contentUnit := range files.ContentUnits {
-		for _, file := range contentUnit.Files {
-			if file.Language == language {
-				if file.MimeType != DocType &&
-					file.MimeType != DocxType &&
-					file.MimeType != DocxPdf {
-					archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, fileType: %s. not text type", language, sourceUid, file.ID, file.MimeType))
-					log.Printf("File type is not a text, %s. language: %s, sourceUid: %s, fileUid: %s", file.MimeType, language, sourceUid, file.ID)
-					return []string{}, ""
-				}
-				fileUid = file.ID
-				fileType = file.MimeType
-				break
+	// will be used for all files
+	//for _, contentUnit := range files.ContentUnits {
+	contentUnit := files.ContentUnits[0]
+	for _, file := range contentUnit.Files {
+		if file.Language == language {
+			if file.MimeType != DocType &&
+				file.MimeType != DocxType &&
+				file.MimeType != DocxPdf {
+				archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, fileType: %s. not text type", language, sourceUid, file.ID, file.MimeType))
+				log.Printf("File type is not a text, %s. language: %s, sourceUid: %s, fileUid: %s", file.MimeType, language, sourceUid, file.ID)
+				return []string{}, ""
 			}
+			fileUid = file.ID
+			fileType = file.MimeType
+			break
 		}
 	}
+	//}
 	if fileUid == "" {
 		return []string{}, ""
 	}
