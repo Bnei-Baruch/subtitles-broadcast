@@ -318,9 +318,9 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	result := h.Database.Debug().WithContext(ctx).
 		Select("source_paths.path || ' / ' || slides.id AS slide_source_path").
 		Table("bookmarks").
-		Joins("INNER JOIN slides on bookmarks.slide_id = slides.id").
-		Joins("INNER JOIN files on slides.file_id = files.id").
-		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
+		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
+		Joins("INNER JOIN files ON slides.file_id = files.id").
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
 		Where("bookmarks.user_id = ?", userId).Find(&userBookmarkList)
 	if result.Error != nil {
 		log.Error(result.Error)
