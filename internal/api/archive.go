@@ -152,10 +152,10 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 		err := database.Debug().Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "language"}, {Name: "source_uid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"path"}),
-		}).Create(&sourcePathToInsert)
+		}).Create(&sourcePathToInsert).Error
 		if err != nil {
 			tx.Rollback()
-			log.Printf("Internal error: %s", err.Error)
+			log.Printf("Internal error: %s", err.Error())
 			return
 		}
 	}

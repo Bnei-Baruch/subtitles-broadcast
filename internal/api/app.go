@@ -64,6 +64,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	updateSourcePath(db, sourcePaths)
 	archiveDataCopy(db, sourcePaths)
 
