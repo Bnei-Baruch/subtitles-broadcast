@@ -57,25 +57,28 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	log.Printf("Importing %d sources is started", len(sourcePaths))
 	// will be used for all sources
 	//for idx, sourcePath := range sourcePaths {
-	for idx, sourcePath := range sourcePaths[0:3] {
-		wg.Add(1)
-		go func(idx int, sourcePath *SourcePath) {
-			defer wg.Done()
-			texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
-			log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
-			if len(texts) > 0 {
-				contents[idx] = &AchiveTempData{
-					Texts: texts,
-					File: &File{
-						Type:      KabbalahmediaFileSourceType,
-						Language:  sourcePath.Language,
-						SourceUid: sourcePath.SourceUid,
-						FileUid:   fileUid,
-					},
+	for idx, sourcePath := range sourcePaths {
+		// for testing only. 4 files for 4 languages
+		if sourcePath.SourceUid == "tswzgnWk" {
+			wg.Add(1)
+			go func(idx int, sourcePath *SourcePath) {
+				defer wg.Done()
+				texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
+				log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
+				if len(texts) > 0 {
+					contents[idx] = &AchiveTempData{
+						Texts: texts,
+						File: &File{
+							Type:      KabbalahmediaFileSourceType,
+							Language:  sourcePath.Language,
+							SourceUid: sourcePath.SourceUid,
+							FileUid:   fileUid,
+						},
+					}
 				}
-			}
-		}(idx, sourcePath)
-		time.Sleep(time.Second / 30)
+			}(idx, sourcePath)
+			time.Sleep(time.Second / 30)
+		}
 	}
 	wg.Wait()
 
