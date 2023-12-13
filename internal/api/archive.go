@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,6 +12,7 @@ import (
 	"code.sajari.com/docconv"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -30,6 +30,9 @@ const (
 	DocType  = "application/msword"
 	DocxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	DocxPdf  = "application/pdf"
+
+	DBTableSlides      = "slides"
+	DBTableSourcePaths = "source_paths"
 )
 
 // Get source data by language and insert downloaded data to slide table
@@ -37,7 +40,7 @@ const (
 func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	// checking if slide table has data
 	var slideCount int64
-	if err := database.Table("slides").Count(&slideCount).Error; err != nil {
+	if err := database.Table(DBTableSlides).Count(&slideCount).Error; err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
 	// If so then does not import archive data for slides
@@ -127,7 +130,7 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	// Compare sources in db with source from archive
 	// Get source list to be deleted from db(means sources are no more existed in archive)
 	sourcePathsToDelete := []*SourcePath{}
-	result := database.Debug().Where("(language, source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
+	result := database.Debug().Table(DBTableSourcePaths).Where("(language, source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
 	if result.RowsAffected == 0 {
 		log.Printf("No source path")
 	}
@@ -145,28 +148,16 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 			return
 		}
 	}
-	// Insert source list to db
+	// Upsert source path by gorm way
 	for _, sourcePathToInsert := range sourcePathsToInsert {
-		sourcePath := SourcePath{}
-		err := database.Debug().Where("language = ? AND source_uid = ?", sourcePathToInsert.Language, sourcePathToInsert.SourceUid).First(&sourcePath).Error
+		err := database.Debug().Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "language"}, {Name: "source_uid"}},
+			DoUpdates: clause.AssignmentColumns([]string{"path"}),
+		}).Create(&sourcePathToInsert)
 		if err != nil {
-			// insert only the ones not in db
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = tx.Create(&sourcePathToInsert).Error
-				if err != nil {
-					tx.Rollback()
-					log.Printf("Internal error: %s", err)
-					return
-				}
-			}
-			// if path has changed, update it in db
-		} else if sourcePath.Path != sourcePathToInsert.Path {
-			err := database.Debug().Exec("UPDATE source_paths SET path = ? WHERE id = ?", sourcePathToInsert.Path, sourcePath.ID).Error
-			if err != nil {
-				tx.Rollback()
-				log.Printf("Internal error: %s", err)
-				return
-			}
+			tx.Rollback()
+			log.Printf("Internal error: %s", err.Error)
+			return
 		}
 	}
 	err := tx.Commit().Error
