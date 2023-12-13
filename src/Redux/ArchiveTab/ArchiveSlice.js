@@ -3,8 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
 
-// const API = "https://subtitles.bbdev1.kbb1.com/backend/api/v1/";
-const API = "http://140.238.249.19:8080/api/v1/";
+const API = process.env.REACT_APP_API_BASE_URL;
 
 const initialState = {
   archiveList: [],
@@ -32,7 +31,16 @@ export const GetAllArchiveData = createAsyncThunk(
     return response.data;
   }
 );
+export const GetAllAuthorList = createAsyncThunk(
+  `/GetAllAuthorList`,
+  async (data, thunkAPI) => {
+    const response = await axios.get(`${API}author`, {
+      params: data,
+    });
 
+    return response.data;
+  }
+);
 export const AddToSubtitleList = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
@@ -118,6 +126,9 @@ const ArchiveSlice = createSlice({
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
       return { ...state, bookmarkList: payload };
     });
+    builder.addCase(GetAllAuthorList.fulfilled, (state, { payload }) => {
+      return { ...state, getAuthorList: payload };
+    });
   },
 });
 
@@ -126,5 +137,8 @@ export const getAllArchiveList = (state) =>
 
 export const getAllBookmarkList = (state) =>
   state?.ArchiveList?.bookmarkList?.data;
+
+export const getAllAuthorList = (state) =>
+  state?.ArchiveList?.getAuthorList?.data;
 
 export default ArchiveSlice.reducer;

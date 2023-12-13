@@ -4,7 +4,9 @@ import {
   BookmarkSlide,
   DeleteArchive,
   GetAllArchiveData,
+  GetAllAuthorList,
   UnBookmarkSlide,
+  getAllAuthorList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -23,8 +25,11 @@ import EditArcive from "./EditArchive";
 const Archive = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  var htmlRegexG = /<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>/g;
+  console.log(process.env.REACT_API_URL, "LLLLLLLLLL");
   const ArchiveList = useSelector(getAllArchiveList);
+  const AuthorList = useSelector(getAllAuthorList);
+
+  console.log(AuthorList, "AuthorList");
   // const [delete,setDelete]=useState('')
   const [page, setPage] = useState({
     page: 1,
@@ -40,6 +45,9 @@ const Archive = () => {
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
   // const [bookmarkId, setBookmarkId] = useState();
   const DebouncingFreeText = useDebounce(freeText, 3000);
+  useEffect(() => {
+    dispatch(GetAllAuthorList());
+  }, []);
   useEffect(() => {
     dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
   }, [page, DebouncingFreeText]);
@@ -107,9 +115,9 @@ const Archive = () => {
                 <label>Author</label>
 
                 <Select
-                  options={ArchiveList?.archives?.map((key) => ({
-                    value: key.author,
-                    label: key.author,
+                  options={AuthorList?.map((key) => ({
+                    value: key,
+                    label: key,
                   }))}
                 />
               </div>
