@@ -3,7 +3,7 @@ module gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles
 go 1.20
 
 require (
-	code.sajari.com/docconv v1.3.5
+	code.sajari.com/docconv v1.3.8
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1

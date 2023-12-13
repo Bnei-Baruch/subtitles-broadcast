@@ -5,13 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"net/http"
 
+	"code.sajari.com/docconv"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+)
 
-	"code.sajari.com/docconv"
+var (
+	archiveDataCopyErrors = []error{}
 )
 
 const (
@@ -21,11 +26,15 @@ const (
 
 	KabbalahmediaFileSourceType = "archive"
 	UploadFileSourceType        = "upload"
+
+	DocType  = "application/msword"
+	DocxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	DocxPdf  = "application/pdf"
 )
 
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
-func archiveDataCopy(database *gorm.DB, languageCodes []string) {
+func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	// checking if slide table has data
 	var slideCount int64
 	if err := database.Table("slides").Count(&slideCount).Error; err != nil {
@@ -36,111 +45,89 @@ func archiveDataCopy(database *gorm.DB, languageCodes []string) {
 		log.Println("Importing archive data has already done before")
 		return
 	}
-	for _, languageCode := range languageCodes {
-		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
-		if err != nil {
-			log.Fatalf("Internal error: %s", err)
-		}
-		var sources ArchiveSources
 
-		err = json.NewDecoder(resp.Body).Decode(&sources)
-		if err != nil {
-			log.Fatalf("Internal error: %s", err)
-		}
-		resp.Body.Close()
-
-		// for _, source := range sources.Sources {
-		// 	for _, child1 := range source.Children {
-		// 		for _, child2 := range child1.Children {
-		//			sourceUid := child2.ID
-		// 		}
-		// 	}
-		// }
-		// - will use for all slides in the future
-
-		// Import/Migration function should be used once. Loads all sources, their content and splits them to slides.
-		// TODO: Currently will load only one source. Make it go over all sources.
-		sourceUid := sources.Sources[0].Children[0].Children[0].ID
-		contents, fileUid, err := getFileContent(sourceUid, languageCode)
-		if err != nil {
-			log.Fatalf("Internal error: %s", err)
-		}
-		tx := database.Debug().Begin()
-		if tx.Error != nil {
-			log.Fatalf("Internal error: %s", err)
-		}
-		newFile := File{
-			Type:      KabbalahmediaFileSourceType,
-			Language:  languageCode,
-			SourceUid: sourceUid,
-			FileUid:   fileUid,
-		}
-		if err := tx.Create(&newFile).Error; err != nil {
-			tx.Rollback()
-			log.Fatalf("Internal error: %s", err)
-		}
-		for idx, content := range contents {
-			if len(content) > 0 {
-				slide := Slide{
-					FileId:      newFile.ID,
-					Slide:       content,
-					OrderNumber: idx,
+	// Download file contents from source and file apis.
+	// Downloading contents from urls is quite a lot of work and made process slow.
+	// So get all file contents first. But contents order is important.
+	// The contents will be inserted into DB by order so go routines are applied to only here.
+	var wg sync.WaitGroup
+	contents := make([]*AchiveTempData, len(sourcePaths))
+	log.Printf("Importing %d sources is started", len(sourcePaths))
+	// will be used for all sources
+	//for idx, sourcePath := range sourcePaths {
+	for idx, sourcePath := range sourcePaths[0:3] {
+		wg.Add(1)
+		go func(idx int, sourcePath *SourcePath) {
+			defer wg.Done()
+			texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
+			log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
+			if len(texts) > 0 {
+				contents[idx] = &AchiveTempData{
+					Texts: texts,
+					File: &File{
+						Type:      KabbalahmediaFileSourceType,
+						Language:  sourcePath.Language,
+						SourceUid: sourcePath.SourceUid,
+						FileUid:   fileUid,
+					},
 				}
-				if err := tx.Create(&slide).Error; err != nil {
-					tx.Rollback()
-					log.Fatalf("Internal error: %s", err)
+			}
+		}(idx, sourcePath)
+		time.Sleep(time.Second / 30)
+	}
+	wg.Wait()
+
+	// Insert all slide data(including slide) into tables
+	tx := database.Debug().Begin()
+	if tx.Error != nil {
+		log.Fatalf("Internal error: %s", tx.Error)
+	}
+	for _, content := range contents {
+		if content != nil {
+			newFile := content.File
+			if err := tx.Create(newFile).Error; err != nil {
+				tx.Rollback()
+				log.Fatalf("Internal error: %s, file: %+v", err, newFile)
+			}
+			for idx, text := range content.Texts {
+				if len(text) > 0 {
+					slide := Slide{
+						FileUid:     newFile.FileUid,
+						Slide:       text,
+						OrderNumber: idx,
+					}
+					if err := tx.Create(&slide).Error; err != nil {
+						tx.Rollback()
+						log.Fatalf("Internal error: %s, slide: %+v", err, slide)
+					}
 				}
 			}
 		}
-		if err := tx.Commit().Error; err != nil {
-			log.Fatalf("Internal error: %s", err)
-		}
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Fatalf("Internal error: %s", err)
+	}
+
+	// All file url are not what we want
+	// like non text type file or non valid url or wrong file content
+	// Get all error and list it at the end.
+	for _, error := range archiveDataCopyErrors {
+		log.Println(error)
 	}
 }
 
 // Update source_paths table(to sync source data regularly)
-func updateSourcePath(database *gorm.DB, languageCodes []string) {
+func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	sourcePathsToCheck := [][]interface{}{}
 	sourcePathsToInsert := []*SourcePath{}
-	for _, languageCode := range languageCodes {
-		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
-		if err != nil {
-			log.Printf("Internal error: %s", err)
-			return
-		}
-		var sources ArchiveSources
-
-		err = json.NewDecoder(resp.Body).Decode(&sources)
-		if err != nil {
-			log.Printf("Internal error: %s", err)
-			return
-		}
-		resp.Body.Close()
-
-		// for _, source := range sources.Sources {
-		// 	for _, child1 := range source.Children {
-		// 		for _, child2 := range child1.Children {
-		//			sourceUid := child2.ID
-		// 		}
-		// 	}
-		// }
-		// - will use for all slides in the future
-
-		// Import/Migration function should be used once. Loads all sources, their content and splits them to slides.
-		// TODO: Currently will load only one source. Make it go over all sources.
-		sourceUid := sources.Sources[0].Children[0].Children[0].ID
-		sourcePath, err := getSourcePath(sourceUid, languageCode)
-		if err != nil {
-			log.Printf("Internal error: %s", err)
-			return
-		}
-		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{languageCode, sourceUid, sourcePath})
-		sourcePathsToInsert = append(sourcePathsToInsert, &SourcePath{Language: languageCode, SourceUid: sourceUid, Path: sourcePath})
+	for _, path := range sourcePaths {
+		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{path.Language, path.SourceUid, path.Path})
+		sourcePathsToInsert = append(sourcePathsToInsert, path)
 	}
 	// Compare sources in db with source from archive
 	// Get source list to be deleted from db(means sources are no more existed in archive)
 	sourcePathsToDelete := []*SourcePath{}
-	result := database.Debug().Where("(source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
+	result := database.Debug().Where("(language, source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
 	if result.RowsAffected == 0 {
 		log.Printf("No source path")
 	}
@@ -160,7 +147,8 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 	}
 	// Insert source list to db
 	for _, sourcePathToInsert := range sourcePathsToInsert {
-		err := database.Debug().First(&sourcePathToInsert).Error
+		sourcePath := SourcePath{}
+		err := database.Debug().Where("language = ? AND source_uid = ?", sourcePathToInsert.Language, sourcePathToInsert.SourceUid).First(&sourcePath).Error
 		if err != nil {
 			// insert only the ones not in db
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -170,6 +158,14 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 					log.Printf("Internal error: %s", err)
 					return
 				}
+			}
+			// if path has changed, update it in db
+		} else if sourcePath.Path != sourcePathToInsert.Path {
+			err := database.Debug().Exec("UPDATE source_paths SET path = ? WHERE id = ?", sourcePathToInsert.Path, sourcePath.ID).Error
+			if err != nil {
+				tx.Rollback()
+				log.Printf("Internal error: %s", err)
+				return
 			}
 		}
 	}
@@ -181,83 +177,114 @@ func updateSourcePath(database *gorm.DB, languageCodes []string) {
 }
 
 // Download the file, convert the file content to string and return it
-func getFileContent(sourceUid, language string) ([]string, string, error) {
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
+func getFileContent(sourceUid, language string) ([]string, string) {
+	fileResp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
 	if err != nil {
-		log.Printf("Internal error: %s", err)
-		return nil, "", err
+		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
+		return nil, ""
 	}
 	var files ArchiveFiles
-
-	err = json.NewDecoder(resp.Body).Decode(&files)
+	err = json.NewDecoder(fileResp.Body).Decode(&files)
 	if err != nil {
-		log.Printf("Internal error: %s", err)
-		return nil, "", err
+		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
+		return nil, ""
 	}
-	resp.Body.Close()
-
-	if len(files.ContentUnits) == 0 {
-		return nil, "", fmt.Errorf("no content units")
+	fileResp.Body.Close()
+	if files.Total == 0 {
+		return []string{}, ""
 	}
-
-	var fileUid string
-	for _, file := range files.ContentUnits[0].Files {
+	var fileUid, fileType string
+	// will be used for all files
+	//for _, contentUnit := range files.ContentUnits {
+	contentUnit := files.ContentUnits[0]
+	for _, file := range contentUnit.Files {
 		if file.Language == language {
+			if file.MimeType != DocType &&
+				file.MimeType != DocxType &&
+				file.MimeType != DocxPdf {
+				archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, fileType: %s. not text type", language, sourceUid, file.ID, file.MimeType))
+				log.Printf("File type is not a text, %s. language: %s, sourceUid: %s, fileUid: %s", file.MimeType, language, sourceUid, file.ID)
+				return []string{}, ""
+			}
 			fileUid = file.ID
+			fileType = file.MimeType
 			break
 		}
 	}
-
-	resp, err = http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
+	//}
+	if fileUid == "" {
+		return []string{}, ""
+	}
+	contentResp, err := http.Get(fmt.Sprintf(KabbalahmediaCdnUrl, fileUid))
 	if err != nil {
-		log.Printf("Internal error: %s", err)
-		return nil, "", err
+		log.Printf("Internal error: %s, sourceUid: %s, fileUid: %s", err, sourceUid, fileUid)
+		return []string{}, ""
 	}
 
-	defer resp.Body.Close()
-
+	defer contentResp.Body.Close()
 	// Check if the response status code is successful
-	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("received non-successful status code: %d", resp.StatusCode)
-		log.Println(err)
-		return nil, "", err
+	if contentResp.StatusCode != http.StatusOK {
+		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, file not found", language, sourceUid, fileUid))
+		log.Printf("Internal error: %s, language: %s, sourceUid: %s, fileUid: %s", fmt.Errorf("received non-successful status code: %d", contentResp.StatusCode), language, sourceUid, fileUid)
+		return []string{}, ""
 	}
 
-	res, _, err := docconv.ConvertDocx(resp.Body)
-	if err != nil {
-		log.Printf("Internal error: %s", err)
-		return nil, "", err
+	res := ""
+	if fileType == DocType {
+		res, _, err = docconv.ConvertDoc(contentResp.Body)
+	} else if fileType == DocxType {
+		res, _, err = docconv.ConvertDocx(contentResp.Body)
+	} else if fileType == DocxPdf {
+		res, _, err = docconv.ConvertPDF(contentResp.Body)
 	}
-	return strings.Split(strings.TrimSpace(res), "\n"), fileUid, nil
+	if err != nil {
+		archiveDataCopyErrors = append(archiveDataCopyErrors, fmt.Errorf("language: %s, sourceUid: %s, fileUid: %s, error: %s", language, sourceUid, fileUid, err))
+		log.Printf("Internal error: %s, language: %s, sourceUid: %s, fileUid: %s", err, language, sourceUid, fileUid)
+		return []string{}, ""
+	}
+
+	return strings.Split(strings.TrimSpace(res), "\n"), fileUid
+}
+
+func getSourcePathListByLanguages(languageCodes []string) ([]*SourcePath, error) {
+	sourcePaths := []*SourcePath{}
+	for _, languageCode := range languageCodes {
+		resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, languageCode))
+		if err != nil {
+			log.Printf("Internal error: %s", err)
+			return nil, err
+		}
+		var sources ArchiveSources
+
+		err = json.NewDecoder(resp.Body).Decode(&sources)
+		if err != nil {
+			log.Printf("Internal error: %s", err)
+			return nil, err
+		}
+		resp.Body.Close()
+		for _, source := range sources.Sources {
+			getSourcePath(&sourcePaths, source, languageCode, "")
+		}
+	}
+	return sourcePaths, nil
 }
 
 // Get proper data to make source path from sources url
-func getSourcePath(sourceUid, language string) (string, error) {
-	resp, err := http.Get(fmt.Sprintf(KabbalahmediaSourcesUrl, language))
-	if err != nil {
-		log.Fatalf("Internal error: %s", err)
+func getSourcePath(sourcePaths *[]*SourcePath, source *Source, language, path string) {
+	delimter := " / "
+	if path == "" {
+		delimter = ""
 	}
-	var data map[string][]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&data)
-	if err != nil {
-		log.Println("Error:", err)
-		return "", err
+	currentPath := path + delimter + source.Name
+	sourcePath := SourcePath{
+		SourceUid: source.ID,
+		Language:  language,
+		Path:      currentPath,
 	}
-	resp.Body.Close()
-	for _, source := range data["sources"] {
-		if source.(map[string]interface{})["children"] != nil {
-			for _, child1 := range source.(map[string]interface{})["children"].([]interface{}) {
-				if child1.(map[string]interface{})["children"] != nil {
-					for _, child2 := range child1.(map[string]interface{})["children"].([]interface{}) {
-						child2Data := child2.(map[string]interface{})
-						if child2Data["id"].(string) == sourceUid {
-							sourceData := source.(map[string]interface{})
-							return sourceData["full_name"].(string) + "(" + sourceData["name"].(string) + ") / " + child2Data["type"].(string) + " / " + child2Data["name"].(string), nil
-						}
-					}
-				}
-			}
+	*sourcePaths = append(*sourcePaths, &sourcePath)
+	if source.Children != nil {
+		for _, child := range source.Children {
+			getSourcePath(sourcePaths, child, language, currentPath)
 		}
 	}
-	return "", fmt.Errorf("no source path data")
 }

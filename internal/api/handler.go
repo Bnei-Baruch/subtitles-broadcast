@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -66,9 +67,10 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	contents, fileUid, err := getFileContent(req.SourceUid, req.Language)
-	if err != nil {
+	contents, fileUid := getFileContent(req.SourceUid, req.Language)
+	if len(contents) == 0 {
 		tx.Rollback()
+		err := fmt.Errorf("failed to get file %s content", fileUid)
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Getting slide content has failed"))
@@ -90,7 +92,7 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 	for idx, content := range contents {
 		if len(content) > 0 {
 			slide := Slide{
-				FileId:      newFile.ID,
+				FileUid:     newFile.FileUid,
 				Slide:       content,
 				OrderNumber: idx,
 			}
@@ -183,7 +185,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	query := h.Database.Debug().WithContext(ctx).
 		Table("slides").
 		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked, files.source_uid, files.language, source_paths.path || ' / ' || slides.id AS slide_source_path", userId).
-		Joins("INNER JOIN files ON slides.file_id = files.id").
+		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id").
 		Order("slides.id").Order("order_number")
@@ -296,8 +298,8 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Select("source_paths.path || ' / ' || slides.id AS slide_source_path").
 		Table("bookmarks").
 		Joins("INNER JOIN slides on bookmarks.slide_id = slides.id").
-		Joins("INNER JOIN files on slides.file_id = files.id").
-		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
+		Joins("INNER JOIN files on slides.file_uid = files.file_uid").
+		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
 		Where("bookmarks.user_id = ?", userId).Find(&userBookmarkList)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -341,7 +343,18 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
 	authorList := []string{}
-	result := h.Database.Debug().WithContext(ctx).Table("source_paths").Distinct("substring(path FROM 1 FOR position('(' IN path) - 1)").Pluck("substring(path FROM 1 FOR position('(' IN path) - 1)", &authorList)
+	result := h.Database.Debug().WithContext(ctx).Raw(`
+		SELECT DISTINCT 
+			TRIM(BOTH ' ' FROM
+			CASE 
+				WHEN POSITION('/' IN path) > 0 THEN SUBSTRING(path FROM 1 FOR POSITION('/' IN path) - 1)
+				ELSE path
+			END
+			) AS first_name
+		FROM source_paths
+		WHERE path IS NOT NULL
+		ORDER BY first_name
+	`).Scan(&authorList)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -402,7 +415,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 		err = h.Database.Debug().WithContext(ctx).
 // 			Select("source_paths.path || ' / ' || slides.id AS path").
 // 			Table("slides").
-// 			Joins("INNER JOIN files on slides.file_id = files.id").
+// 			Joins("INNER JOIN files on slides.file_uid = files.file_uid").
 // 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {

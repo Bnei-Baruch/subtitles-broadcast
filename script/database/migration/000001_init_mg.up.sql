@@ -3,22 +3,22 @@ CREATE TABLE IF NOT EXISTS source_paths (
   language VARCHAR(2),
   source_uid VARCHAR(50),
   path VARCHAR,
-  UNIQUE (language, source_uid, path)
+  UNIQUE (language, source_uid)
 );
 
 CREATE TABLE IF NOT EXISTS files (
   id SERIAL PRIMARY KEY,
-  type VARCHAR(10),                                                    -- Either "archive" or "upload"
+  type VARCHAR(10),               -- Either "archive" or "upload"
   language VARCHAR(2),
-  filename VARCHAR(50),                                                -- Filled only for "upload" file type
-  content BYTEA,                                                       -- Filled only for "upload" file type
+  filename VARCHAR(50),           -- Filled only for "upload" file type
+  content BYTEA,                  -- Filled only for "upload" file type
   source_uid VARCHAR(50),         -- Filled only for "archive" file type
-  file_uid VARCHAR(50)                                                 -- Filled only for "archive" file type
+  file_uid VARCHAR(50) UNIQUE     -- Filled only for "archive" file type
 );
 
 CREATE TABLE IF NOT EXISTS slides (
   id SERIAL PRIMARY KEY,
-  file_id INT REFERENCES files (id),
+  file_uid VARCHAR(50) REFERENCES files (file_uid),
   slide TEXT,
   order_number INT,
   created_at timestamp without time zone,
