@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -66,9 +67,10 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	contents, fileUid, err := getFileContent(req.SourceUid, req.Language)
-	if err != nil {
+	contents, fileUid := getFileContent(req.SourceUid, req.Language)
+	if len(contents) == 0 {
 		tx.Rollback()
+		err := fmt.Errorf("failed to get file %s content", fileUid)
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Getting slide content has failed"))
@@ -355,7 +357,18 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
 	authorList := []string{}
-	result := h.Database.Debug().WithContext(ctx).Table("source_paths").Distinct("substring(path FROM 1 FOR position('(' IN path) - 1)").Pluck("substring(path FROM 1 FOR position('(' IN path) - 1)", &authorList)
+	result := h.Database.Debug().WithContext(ctx).Raw(`
+		SELECT DISTINCT 
+			TRIM(BOTH ' ' FROM
+			CASE 
+				WHEN POSITION('/' IN path) > 0 THEN SUBSTRING(path FROM 1 FOR POSITION('/' IN path) - 1)
+				ELSE path
+			END
+			) AS first_name
+		FROM source_paths
+		WHERE path IS NOT NULL
+		ORDER BY first_name
+	`).Scan(&authorList)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,

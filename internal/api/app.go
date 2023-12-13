@@ -50,7 +50,6 @@ func init() {
 }
 
 func NewApp(sig chan os.Signal) *http.Server {
-
 	db, err := database.NewPostgres(conf.Postgres.Url)
 	if err != nil {
 		log.Fatalln(err)
@@ -59,9 +58,14 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
+	// will be used later
 	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
-	updateSourcePath(db, languageCodes)
-	archiveDataCopy(db, languageCodes)
+	sourcePaths, err := getSourcePathListByLanguages(languageCodes)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	updateSourcePath(db, sourcePaths)
+	archiveDataCopy(db, sourcePaths)
 
 	ticker := time.NewTicker(SourcePathUpdateTermHour * time.Hour)
 	go func() {
@@ -69,7 +73,11 @@ func NewApp(sig chan os.Signal) *http.Server {
 			select {
 			case <-ticker.C:
 				log.Println("Updating source path.")
-				updateSourcePath(db, languageCodes)
+				sourcePaths, err := getSourcePathListByLanguages(languageCodes)
+				if err != nil {
+					log.Println(err)
+				}
+				updateSourcePath(db, sourcePaths)
 			case <-sig:
 				log.Println("Stopping source path update routine.")
 				return
