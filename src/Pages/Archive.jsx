@@ -9,14 +9,10 @@ import {
   getAllAuthorList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getAllArchiveList,
-  AddToSubtitleList,
-} from "../Redux/ArchiveTab/ArchiveSlice";
+import { getAllArchiveList } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
 import Select from "react-select";
-import ReactPaginate from "react-paginate";
 import { useNavigate } from "react-router-dom";
 import Dropdown from "react-bootstrap/Dropdown";
 import useDebounce from "../Services/useDebounce";
@@ -25,11 +21,9 @@ import EditArcive from "./EditArchive";
 const Archive = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  console.log(process.env.REACT_API_URL, "LLLLLLLLLL");
   const ArchiveList = useSelector(getAllArchiveList);
   const AuthorList = useSelector(getAllAuthorList);
 
-  console.log(AuthorList, "AuthorList");
   // const [delete,setDelete]=useState('')
   const [page, setPage] = useState({
     page: 1,
@@ -66,7 +60,6 @@ const Archive = () => {
     }
   }, [finalConfirm, toggle]);
 
-  console.log(ArchiveList, "ArchiveList");
   const DelectConfirmationModal = useMemo(
     () => (
       <DeleteConfirmation
@@ -89,7 +82,6 @@ const Archive = () => {
     ),
     [confirmation]
   );
-  console.log(ArchiveList, "<<<<<<<");
   return (
     <>
       {DelectConfirmationModal}
@@ -98,7 +90,7 @@ const Archive = () => {
         <EditArcive />
       ) : (
         <div className="archiveBackground  ">
-          <div class="search-box">
+          <div className="search-box">
             <div className="d-flex m-2">
               <div className="form-group col-3">
                 <label>Free Text</label>
@@ -182,7 +174,7 @@ const Archive = () => {
                               // setDeleteId(key.ID);
                               // setConfirmation(true);
                             }}
-                            class="bi bi-bookmark-check-fill m-2"
+                            className="bi bi-bookmark-check-fill m-2"
                           />
                         ) : (
                           <i
@@ -194,7 +186,7 @@ const Archive = () => {
                               // setDeleteId(key.ID);
                               // setConfirmation(true);
                             }}
-                            class="bi bi-bookmark m-2"
+                            className="bi bi-bookmark m-2"
                           />
                         )}
 
@@ -203,13 +195,13 @@ const Archive = () => {
                             variant="Secondary"
                             id="dropdown-basic"
                           >
-                            <i class="bi bi-three-dots-vertical"></i>
+                            <i className="bi bi-three-dots-vertical"></i>
                           </Dropdown.Toggle>
 
                           <Dropdown.Menu>
                             <Dropdown.Item>
                               <i
-                                class="bi bi-pencil"
+                                className="bi bi-pencil"
                                 onClick={() => setEditSlide(key.ID)}
                               />
                             </Dropdown.Item>
@@ -219,7 +211,7 @@ const Archive = () => {
                                   setDeleteConfirmationPopup(true);
                                   setDeleteId(key.ID);
                                 }}
-                                class="bi bi-trash3 m-2"
+                                className="bi bi-trash3 m-2"
                               />
                             </Dropdown.Item>
                           </Dropdown.Menu>
@@ -262,25 +254,6 @@ const Archive = () => {
               />
             </div>
             <div className="blank"></div>
-            {/* 
-<ReactPaginate
-        breakLabel="..."
-        nextLabel="next >"
-        onPageChange={(e)=>setPage(e.selected)}
-        pageRangeDisplayed={5}
-        pageCount={ArchiveList?.pagination?.total_pages
-        }
-        previousLabel="< previous"
-        renderOnZeroPageCount={null}
-      /> */}
-            {/* <div className="">
-        <span>Rows per page:</span>
-        <select>
-            <option>10</option>
-            <option>10</option>
-            <option>10</option>
-        </select>
-    </div> */}
           </div>
         </div>
       )}

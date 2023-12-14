@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import UserService from "../Services/KeycloakServices";
 import "./PagesCSS/Subtitle.css";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   GetSubtitleData,
   getAllBookAddedByUser,
@@ -12,6 +12,7 @@ import {
   UserBookmarkList,
   getAllBookmarkList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
+import { useSelector } from "react-redux";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
@@ -28,13 +29,11 @@ const Subtitles = () => {
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     const fileId = JSON.parse(localStorage.getItem("fileids"));
-    console.log(fileId, "uuuuuuuuuuu");
     // for (let index = 0; index < fileId.length; index++) {
     //   const element = fileId[index];
     //   ///Pass file id and get all data
     // }
   }, []);
-  console.log(UserAddedList);
 
   return (
     <>
@@ -95,8 +94,8 @@ const Subtitles = () => {
                         key?.book_title == activatedTab
                           ? "active"
                           : activatedTab == "" && index == 0
-                          ? "active"
-                          : ""
+                            ? "active"
+                            : ""
                       } `}
                       id="home-tab"
                       onClick={() => {

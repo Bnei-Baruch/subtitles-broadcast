@@ -8,42 +8,42 @@ const EditArcive = () => {
           <h3 className="m-0">Edit Subtitle</h3>
           <div className="form-sec position-relative">
             <input
-              class="form-control input"
+              className="form-control input"
               type="search"
               placeholder="Search in the article..."
               aria-label="Search"
             />
             <button
               type="button"
-              class="btn btn-tr position-absolute end-0 top-0  mt-1"
+              className="btn btn-tr position-absolute end-0 top-0  mt-1"
             >
               {" "}
               <img width="22px" src="image/Vector.svg" />
             </button>
           </div>
         </div>
-        <div class="innerhead d-flex justify-content-between align-items-end mb-5">
-          <div class="input-box first">
-            <label class="w-100">Title</label>
+        <div className="innerhead d-flex justify-content-between align-items-end mb-5">
+          <div className="input-box first">
+            <label className="w-100">Title</label>
             <input
-              class=""
+              className=""
               type="text"
               placeholder="נכנסים להיכל המלך"
               aria-label="Search"
             />
           </div>
-          <div class="input-box sec">
-            <label class="w-100">Author</label>
-            <select class="select-new" aria-label="Default select example">
+          <div className="input-box sec">
+            <label className="w-100">Author</label>
+            <select className="select-new" aria-label="Default select example">
               <option selected>Open this select menu</option>
               <option value="1">One</option>
               <option value="2">Two</option>
               <option value="3">Three</option>
             </select>
           </div>
-          <div class="input-box sec">
-            <label class="w-100">Language</label>
-            <select class="select-new" aria-label="Default select example">
+          <div className="input-box sec">
+            <label className="w-100">Language</label>
+            <select className="select-new" aria-label="Default select example">
               <option selected>Open this select menu</option>
               <option value="1">One</option>
               <option value="2">Two</option>
@@ -51,11 +51,11 @@ const EditArcive = () => {
             </select>
           </div>
 
-          <div class="button-box group-new">
-            <button type="button" class="btn cancel">
+          <div className="button-box group-new">
+            <button type="button" className="btn cancel">
               Cancel
             </button>
-            <button type="button" class="btn save ">
+            <button type="button" className="btn save ">
               Save
             </button>
           </div>
@@ -74,7 +74,7 @@ const EditArcive = () => {
             <div className="box box2">%H נכנסים להיכל המלך %break</div>
           </div>
         </div>
-        <button type="button" class="btn btn-white">
+        <button type="button" className="btn btn-white">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"

@@ -6,8 +6,9 @@ import { useDispatch } from "react-redux";
 import ErrorLogin from "../Pages/Views/ErrorLogin";
 import LoadingScreen from "../Pages/Views/LoadingScreen";
 import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
+import { propTypes } from "react-bootstrap/esm/Image";
 
-const Auth = (props) => {
+const Auth = ({ children }) => {
   const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
@@ -18,7 +19,6 @@ const Auth = (props) => {
       url: "https://auth.2serv.eu/auth",
       clientId: "kolman-dev",
     });
-    console.log("TTTTTTTTTTTT", window.location);
     keycloak
       .init({
         onLoad: "login-required",
@@ -30,7 +30,6 @@ const Auth = (props) => {
           setAccess(true);
         }
         keycloak.loadUserProfile().then(function () {
-          console.log(keycloak, "JJJJJJJJ");
           const profile = {
             username: keycloak.profile.username,
             firstName: keycloak.profile.firstName,
@@ -54,7 +53,7 @@ const Auth = (props) => {
   if (auth.keycloak) {
     if (auth.authenticated) {
       if (access) {
-        return <>{props.children}</>;
+        return <>{children}</>;
       } else {
         return <div>User don't have Rights to view this application</div>;
       }
@@ -74,4 +73,7 @@ const Auth = (props) => {
   }
 };
 
+Auth.propTypes = {
+  children: propTypes.node, // PropTypes validation for children prop
+};
 export default Auth;

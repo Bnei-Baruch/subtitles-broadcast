@@ -7,7 +7,7 @@ const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
       <Modal show={show} onHide={handleClose}>
         <div className="modal-header text-center text-danger">
           <div className="icon-box col-12">
-            <i class="bi bi-exclamation-circle fs-1"></i>
+            <i className="bi bi-exclamation-circle fs-1"></i>
           </div>
         </div>
 

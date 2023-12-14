@@ -72,7 +72,6 @@ export const GetAllAuthor = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}/author`);
-    console.log(response, "archive data");
     return response.data;
   }
 );
@@ -80,7 +79,6 @@ export const GetAllBook = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}${API_URL.GetALL}`);
-    console.log(response, "archive data");
     return response.data;
   }
 );
@@ -88,7 +86,6 @@ export const GetAllTitle = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}${API_URL.GetALL}`);
-    console.log(response, "archive data");
     return response.data;
   }
 );
@@ -97,7 +94,6 @@ export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}bookmark/${data}`);
-    console.log(response, "archive data");
     thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     return response.data;
   }
@@ -106,7 +102,6 @@ export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}bookmark/${data}`);
-    console.log(response, "archive data");
     thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     thunkAPI.dispatch(UserBookmarkList());
     return response.data;

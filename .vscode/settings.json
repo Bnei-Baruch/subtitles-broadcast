@@ -40,9 +40,13 @@
   "[scss]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "editor.formatOnSave": true,
+ 
   "editor.fontFamily": "Comic Sans MS",
   "editor.fontVariations": false,
   "window.zoomLevel": 1,
-  "cSpell.userWords": ["fullcalendar"]
+  "cSpell.userWords": ["fullcalendar"],
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": true }, 
+"editor.formatOnSave": true, 
+"eslint.alwaysShowStatus": true, 
+"files.autoSave": "onFocusChange"
 }

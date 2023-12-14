@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
+const API = process.env.REACT_APP_API_BASE_URL;
 const initialState = {
   userBookmakedList: [],
   liveQusetionList: [],
@@ -18,9 +19,7 @@ const API_URL = {
 export const GetSubtitleData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    const response = await axios.get(
-      `${"http://140.238.249.19:8080/api/v1/"}${API_URL.GetALL}`
-    );
+    const response = await axios.get(`${API}${API_URL.GetALL}`);
     return response.data;
   }
 );
@@ -35,9 +34,7 @@ export const GetSlidesDataFromFileId = createAsyncThunk(
 export const RemoveSubtitleData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    const response = await axios.delete(
-      `${"http://140.238.249.19:8080/api/v1/"}${API_URL.GetALL}`
-    );
+    const response = await axios.delete(`${API}${API_URL.GetALL}`);
     return response.data;
   }
 );
