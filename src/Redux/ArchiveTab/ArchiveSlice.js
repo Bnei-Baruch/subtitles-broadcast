@@ -50,12 +50,10 @@ export const AddToSubtitleList = createAsyncThunk(
   }
 );
 export const DeleteArchive = createAsyncThunk(
-  `/${API_URL.Delete}`,
+  `DeleteArchive`,
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}${API_URL.Delete}/${data}`);
-    {
-      response.data.status == true ? toast.success() : toast.error();
-    }
+
     return response.data;
   }
 );
@@ -114,6 +112,14 @@ const ArchiveSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(GetAllArchiveData.fulfilled, (state, action) => {
       return { ...state, archiveList: action?.payload };
+    });
+    builder.addCase(DeleteArchive.rejected, (state, action) => {
+      toast.error("Something went wrong");
+      return state;
+    });
+    builder.addCase(DeleteArchive.fulfilled, (state, action) => {
+      toast.success("Successfully deleted");
+      return state;
     });
     builder.addCase(GetAllAuthor, (state, { payload }) => {
       return { ...state, authorList: payload };

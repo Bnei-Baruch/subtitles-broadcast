@@ -1,27 +1,24 @@
-import {configureStore, createSerializableStateInvariantMiddleware, createSlice} from '@reduxjs/toolkit'
-import {persistReducer} from 'redux-persist'
-import {combineReducers} from 'redux'
-import storage from 'redux-persist/lib/storage'
-import ArchiveSlice from './ArchiveTab/ArchiveSlice'
-import UserProfileSlice from './UserProfile/UserProfileSlice'
-import SubtitleSlice from './Subtitle/SubtitleSlice'
+import { configureStore } from "@reduxjs/toolkit";
+import { persistReducer } from "redux-persist";
+import { combineReducers } from "redux";
+import storage from "redux-persist/lib/storage";
+import ArchiveSlice from "./ArchiveTab/ArchiveSlice";
+import UserProfileSlice from "./UserProfile/UserProfileSlice";
+import SubtitleSlice from "./Subtitle/SubtitleSlice";
 
 const persistConfig = {
-    key: 'root',
-    storage,
-  }
+  key: "root",
+  storage,
+};
 
+const RootReducer = combineReducers({
+  ArchiveList: ArchiveSlice,
+  UserProfile: UserProfileSlice,
+  SubtitleData: SubtitleSlice,
+});
 
-const RootReducer=combineReducers({
-ArchiveList:ArchiveSlice,
-UserProfile:UserProfileSlice,
-SubtitleData:SubtitleSlice
-})
-
-
-const persistedReducer = persistReducer(persistConfig, RootReducer)
+const persistedReducer = persistReducer(persistConfig, RootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
-  
-})
+});

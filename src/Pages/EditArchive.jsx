@@ -18,7 +18,7 @@ const EditArcive = () => {
               className="btn btn-tr position-absolute end-0 top-0  mt-1"
             >
               {" "}
-              <img width="22px" src="image/Vector.svg" />
+              <img alt="vector" width="22px" src="image/Vector.svg" />
             </button>
           </div>
         </div>

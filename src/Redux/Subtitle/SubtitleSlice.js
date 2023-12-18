@@ -28,6 +28,7 @@ export const GetSlidesDataFromFileId = createAsyncThunk(
   "/GetSlidesDataFromFileId",
   async (data, thunkAPI) => {
     const response = await axios.get(`${process.env.REACT_API_URL}/${data}`);
+    return response.data;
   }
 );
 

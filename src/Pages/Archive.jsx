@@ -29,8 +29,9 @@ const Archive = () => {
     page: 1,
     limit: 10,
   });
+  const message = "";
   const [editSlide, setEditSlide] = useState("");
-  const [message, setMessage] = useState("");
+  // const [message, setMessage] = useState("");
   const [toggle, setToggle] = useState(false);
   const [freeText, setFreeText] = useState("");
   const [finalConfirm, setFinalConfirm] = useState(false);
@@ -41,10 +42,10 @@ const Archive = () => {
   const DebouncingFreeText = useDebounce(freeText, 3000);
   useEffect(() => {
     dispatch(GetAllAuthorList());
-  }, []);
+  }, [dispatch]);
   useEffect(() => {
     dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
-  }, [page, DebouncingFreeText]);
+  }, [page, DebouncingFreeText, dispatch, freeText]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -58,7 +59,7 @@ const Archive = () => {
       dispatch(BookmarkSlide(deleteId));
       setToggle(false);
     }
-  }, [finalConfirm, toggle]);
+  }, [finalConfirm, toggle, deleteId, dispatch]);
 
   const DelectConfirmationModal = useMemo(
     () => (
@@ -80,7 +81,7 @@ const Archive = () => {
         handleClose={() => setConfirmation(false)}
       />
     ),
-    [confirmation]
+    [confirmation, message]
   );
   return (
     <>
@@ -164,7 +165,7 @@ const Archive = () => {
                             className="bi bi-plus"
                           />
                         }
-                        {key.bookmarked == true ? (
+                        {key.bookmarked === true ? (
                           <i
                             onClick={() => {
                               dispatch(UnBookmarkSlide(key?.ID));
@@ -245,7 +246,7 @@ const Archive = () => {
                 className={`bi bi-chevron-left me-1  ${
                   ArchiveList?.pagination?.page === 1 && "disablecolor"
                 }`}
-                disabled={page.page == 1}
+                disabled={page.page === 1}
                 onClick={() => setPage({ ...page, page: page.page - 1 })}
               />
               <button

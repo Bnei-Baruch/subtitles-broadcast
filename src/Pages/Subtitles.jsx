@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import UserService from "../Services/KeycloakServices";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import {
@@ -24,11 +23,11 @@ const Subtitles = () => {
   useEffect(() => {
     dispatch(GetSubtitleData());
     dispatch(UserBookmarkList());
-  }, []);
+  }, [dispatch]);
 
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
-    const fileId = JSON.parse(localStorage.getItem("fileids"));
+    // const fileId = JSON.parse(localStorage.getItem("fileids"));
     // for (let index = 0; index < fileId.length; index++) {
     //   const element = fileId[index];
     //   ///Pass file id and get all data
@@ -77,7 +76,7 @@ const Subtitles = () => {
                 </button>
 
                 <button type="button" className="btn btn-tr">
-                  <img src="image/Vector.svg" />
+                  <img alt="vectors" src="image/Vector.svg" />
                 </button>
               </div>
             </div>
@@ -91,9 +90,9 @@ const Subtitles = () => {
                   <li className="nav-item" role="presentation">
                     <button
                       className={`nav-link  ${
-                        key?.book_title == activatedTab
+                        key?.book_title === activatedTab
                           ? "active"
-                          : activatedTab == "" && index == 0
+                          : activatedTab === "" && index === 0
                             ? "active"
                             : ""
                       } `}
@@ -135,8 +134,8 @@ const Subtitles = () => {
                   </div>
                   {UserAddedList?.map(
                     (item, index) =>
-                      activatedTab == "" &&
-                      index == 0 && (
+                      activatedTab === "" &&
+                      index === 0 && (
                         <BookContent
                           isLtr={isLtr}
                           key={index}
@@ -164,7 +163,7 @@ const Subtitles = () => {
                   </div>
                   {UserAddedList?.map(
                     (item, index) =>
-                      activatedTab == item?.book_title && (
+                      activatedTab === item?.book_title && (
                         <BookContent
                           isLtr={isLtr}
                           key={index}
@@ -214,14 +213,14 @@ const Subtitles = () => {
                       }
                       className="bi bi-trash"
                     />
-                    <a
+                    <span
                       className="text-truncate mx-3"
                       data-bs-toggle="tooltip"
                       data-bs-placement="top"
                       title={key}
                     >
                       {key}
-                    </a>
+                    </span>
                   </div>
                 );
               })}

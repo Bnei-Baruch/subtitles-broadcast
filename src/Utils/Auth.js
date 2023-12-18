@@ -6,7 +6,7 @@ import { useDispatch } from "react-redux";
 import ErrorLogin from "../Pages/Views/ErrorLogin";
 import LoadingScreen from "../Pages/Views/LoadingScreen";
 import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
-import { propTypes } from "react-bootstrap/esm/Image";
+import PropTypes from "prop-types";
 
 const Auth = ({ children }) => {
   const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
@@ -36,10 +36,12 @@ const Auth = ({ children }) => {
             lastName: keycloak.profile.lastName,
             email: keycloak.profile.email,
             token: keycloak.token,
+
             // TODO: Add gender to the response
             gender: "male",
           };
-          dispatch(StoreProfile({ keycloak, authenticated, profile }));
+          // profile.logout = keycloak.logout;
+          dispatch(StoreProfile({ profile }));
           localStorage.setItem("token", keycloak.token);
           setAuth({
             keycloak,
@@ -48,12 +50,12 @@ const Auth = ({ children }) => {
           });
         });
       });
-  }, []);
+  }, [dispatch]);
 
   if (auth.keycloak) {
     if (auth.authenticated) {
       if (access) {
-        return <>{children}</>;
+        return <>{children(auth)}</>;
       } else {
         return <div>User don't have Rights to view this application</div>;
       }
@@ -74,6 +76,6 @@ const Auth = ({ children }) => {
 };
 
 Auth.propTypes = {
-  children: propTypes.node, // PropTypes validation for children prop
+  children: PropTypes.func.isRequired, // PropTypes validation for children prop
 };
 export default Auth;

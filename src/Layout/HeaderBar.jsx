@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { Outlet } from "react-router-dom";
-import UserService from "../Services/KeycloakServices";
 import { useSelector } from "react-redux";
 
 const HeaderBar = () => {
-  const userProfile = useSelector((state) => state?.UserProfile?.userProfile);
-  const [selectedLang, setSelectedLang] = useState("en");
+  const userProfile = useSelector(
+    (state) => state?.UserProfile?.userProfile?.profile
+  );
+  // const [selectedLang, setSelectedLang] = useState("en");
 
   return (
     <>
@@ -26,33 +27,24 @@ const HeaderBar = () => {
                 aria-expanded="false"
               >
                 <img
+                  alt="button"
                   className=""
                   src="image/account-circle.svg"
                   id="dropdownMenuButton1"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 />
-                <span className="m-2">{userProfile?.profile?.firstName}</span>
+                <span className="m-2">{userProfile?.firstName}</span>
               </button>
               <ul className="dropdown-menu">
+                <li>Menu item</li>
+                <li>Menu item</li>
                 <li>
-                  <a className="dropdown-item" href="#">
-                    Menu item
-                  </a>
-                </li>
-                <li>
-                  <a className="dropdown-item" href="#">
-                    Menu item
-                  </a>
-                </li>
-                <li>
-                  <a
+                  <span
                     className="dropdown-item"
-                    onClick={() => userProfile?.keycloak?.logout()}
-                    href="#"
+                    onClick={() => userProfile?.logout()}
                   >
                     Logout
-                  </a>
+                  </span>
                 </li>
               </ul>
             </div>
@@ -61,33 +53,20 @@ const HeaderBar = () => {
                 className="btn btn-secondary dropdown-toggle"
                 type="button"
                 data-bs-toggle="dropdown"
-                aria-expanded="false"
               >
                 <img
+                  alt="button"
                   className=""
                   src="image/Globe.svg"
                   id="dropdownMenuButton1"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 />
                 <span className="m-2">EN</span>
               </button>
               <ul className="dropdown-menu">
-                <li>
-                  <a className="dropdown-item" href="#">
-                    Menu item
-                  </a>
-                </li>
-                <li>
-                  <a className="dropdown-item" href="#">
-                    Menu item
-                  </a>
-                </li>
-                <li>
-                  <a className="dropdown-item" href="#">
-                    Menu item
-                  </a>
-                </li>
+                <li>Menu item</li>
+                <li>Menu item</li>
+                <li>Menu item</li>
               </ul>
             </div>
           </div>
