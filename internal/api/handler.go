@@ -262,7 +262,7 @@ func (h *Handler) DeleteSlide(ctx *gin.Context) {
 func (h *Handler) GetSlidesByFile(ctx *gin.Context) {
 	fileUid := ctx.Param("file_uid")
 	slides := []*Slide{}
-	err := h.Database.Debug().WithContext(ctx).Where("file_uid = ?", fileUid).Find(&slides).Error
+	err := h.Database.Debug().WithContext(ctx).Table("slides").Where("file_uid = ?", fileUid).Find(&slides).Error
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,

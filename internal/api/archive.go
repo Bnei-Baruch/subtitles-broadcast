@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"net/http"
 
@@ -33,6 +32,8 @@ const (
 
 	DBTableSlides      = "slides"
 	DBTableSourcePaths = "source_paths"
+
+	ConcurrencyLimit = 250
 )
 
 // Get source data by language and insert downloaded data to slide table
@@ -53,16 +54,19 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	// So get all file contents first. But contents order is important.
 	// The contents will be inserted into DB by order so go routines are applied to only here.
 	var wg sync.WaitGroup
+	sem := make(chan struct{}, ConcurrencyLimit)
 	contents := make([]*AchiveTempData, len(sourcePaths))
 	log.Printf("Importing %d sources is started", len(sourcePaths))
-	// will be used for all sources
-	//for idx, sourcePath := range sourcePaths {
 	for idx, sourcePath := range sourcePaths {
 		// for testing only. 4 files for 4 languages
 		if sourcePath.SourceUid == "tswzgnWk" {
 			wg.Add(1)
+			sem <- struct{}{}
 			go func(idx int, sourcePath *SourcePath) {
-				defer wg.Done()
+				defer func() {
+					<-sem
+					wg.Done()
+				}()
 				texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
 				log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
 				if len(texts) > 0 {
@@ -77,11 +81,9 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 					}
 				}
 			}(idx, sourcePath)
-			time.Sleep(time.Second / 30)
 		}
 	}
 	wg.Wait()
-
 	// Insert all slide data(including slide) into tables
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
@@ -188,7 +190,7 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 	}
 	var fileUid, fileType string
 	// will be used for all files
-	// for _, contentUnit := range files.ContentUnits {
+	//for _, contentUnit := range files.ContentUnits {
 	contentUnit := files.ContentUnits[0]
 	for _, file := range contentUnit.Files {
 		if file.Language == language {
