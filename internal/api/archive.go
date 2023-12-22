@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"net/http"
 
@@ -33,6 +32,8 @@ const (
 
 	DBTableSlides      = "slides"
 	DBTableSourcePaths = "source_paths"
+
+	ConcurrencyLimit = 250
 )
 
 // Get source data by language and insert downloaded data to slide table
@@ -48,38 +49,41 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 		log.Println("Importing archive data has already done before")
 		return
 	}
-
 	// Download file contents from source and file apis.
 	// Downloading contents from urls is quite a lot of work and made process slow.
 	// So get all file contents first. But contents order is important.
 	// The contents will be inserted into DB by order so go routines are applied to only here.
 	var wg sync.WaitGroup
+	sem := make(chan struct{}, ConcurrencyLimit)
 	contents := make([]*AchiveTempData, len(sourcePaths))
 	log.Printf("Importing %d sources is started", len(sourcePaths))
-	// will be used for all sources
-	//for idx, sourcePath := range sourcePaths {
-	for idx, sourcePath := range sourcePaths[0:3] {
-		wg.Add(1)
-		go func(idx int, sourcePath *SourcePath) {
-			defer wg.Done()
-			texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
-			log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
-			if len(texts) > 0 {
-				contents[idx] = &AchiveTempData{
-					Texts: texts,
-					File: &File{
-						Type:      KabbalahmediaFileSourceType,
-						Language:  sourcePath.Language,
-						SourceUid: sourcePath.SourceUid,
-						FileUid:   fileUid,
-					},
+	for idx, sourcePath := range sourcePaths {
+		// for testing only. 4 files for 4 languages
+		if sourcePath.SourceUid == "tswzgnWk" {
+			wg.Add(1)
+			sem <- struct{}{}
+			go func(idx int, sourcePath *SourcePath) {
+				defer func() {
+					<-sem
+					wg.Done()
+				}()
+				texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
+				log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
+				if len(texts) > 0 {
+					contents[idx] = &AchiveTempData{
+						Texts: texts,
+						File: &File{
+							Type:      KabbalahmediaFileSourceType,
+							Language:  sourcePath.Language,
+							SourceUid: sourcePath.SourceUid,
+							FileUid:   fileUid,
+						},
+					}
 				}
-			}
-		}(idx, sourcePath)
-		time.Sleep(time.Second / 30)
+			}(idx, sourcePath)
+		}
 	}
 	wg.Wait()
-
 	// Insert all slide data(including slide) into tables
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
@@ -153,10 +157,10 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 		err := database.Debug().Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "language"}, {Name: "source_uid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"path"}),
-		}).Create(&sourcePathToInsert)
+		}).Create(&sourcePathToInsert).Error
 		if err != nil {
 			tx.Rollback()
-			log.Printf("Internal error: %s", err.Error)
+			log.Printf("Internal error: %s", err.Error())
 			return
 		}
 	}

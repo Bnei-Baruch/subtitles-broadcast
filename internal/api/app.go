@@ -58,12 +58,12 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	// will be used later
 	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
 	sourcePaths, err := getSourcePathListByLanguages(languageCodes)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	updateSourcePath(db, sourcePaths)
 	archiveDataCopy(db, sourcePaths)
 

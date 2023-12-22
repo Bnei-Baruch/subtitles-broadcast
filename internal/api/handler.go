@@ -181,7 +181,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
 	keyword := ctx.Query("keyword")
-	slides := []*Slide{}
+	slides := []*SlideDetail{}
 	query := h.Database.Debug().WithContext(ctx).
 		Table("slides").
 		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked, files.source_uid, files.language, source_paths.path || ' / ' || slides.id AS slide_source_path", userId).
@@ -211,8 +211,8 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			struct {
-				Pagination *Pagination `json:"pagination"`
-				Slides     []*Slide    `json:"slides"`
+				Pagination *Pagination    `json:"pagination"`
+				Slides     []*SlideDetail `json:"slides"`
 			}{
 				Pagination: &Pagination{
 					Limit:      listLimit,
@@ -259,6 +259,20 @@ func (h *Handler) DeleteSlide(ctx *gin.Context) {
 			"", "Deleting data has succeeded"))
 }
 
+func (h *Handler) GetSlidesByFile(ctx *gin.Context) {
+	fileUid := ctx.Param("file_uid")
+	slides := []*Slide{}
+	err := h.Database.Debug().WithContext(ctx).Table("slides").Where("file_uid = ?", fileUid).Find(&slides).Error
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true, slides, "", "Getting data has succeeded"))
+}
+
 func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	slideId := ctx.Param("slide_id")
@@ -297,9 +311,9 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	result := h.Database.Debug().WithContext(ctx).
 		Select("source_paths.path || ' / ' || slides.id AS slide_source_path").
 		Table("bookmarks").
-		Joins("INNER JOIN slides on bookmarks.slide_id = slides.id").
-		Joins("INNER JOIN files on slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
+		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
+		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
 		Where("bookmarks.user_id = ?", userId).Find(&userBookmarkList)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -416,7 +430,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // 			Select("source_paths.path || ' / ' || slides.id AS path").
 // 			Table("slides").
 // 			Joins("INNER JOIN files on slides.file_uid = files.file_uid").
-// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid").
+// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {
 // 				ctx.JSON(http.StatusInternalServerError,
