@@ -26,9 +26,10 @@ type File struct {
 }
 
 type Bookmark struct {
-	ID      uint   `json:"id"`
-	SlideId int    `json:"slide_id"`
-	UserId  string `json:"user_id"`
+	ID          uint   `json:"id"`
+	SlideId     int    `json:"slide_id"`
+	UserId      string `json:"user_id"`
+	OrderNumber int    `json:"order_number"`
 }
 
 type Slide struct {
