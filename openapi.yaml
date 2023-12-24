@@ -90,6 +90,14 @@ paths:
                           type: string
                           description: user id
                           example: d76322f7-ef67-402c-b151-14193e23a890
+                        order_number:
+                          type: integer
+                          description: bookmarked order number
+                          example: 1
+                        file_uid:
+                          type: string
+                          description: file uid the bookmarked slide belongs to
+                          example: vlbukUc2
         '401':
           description: Invalid request jwt token
         '400':

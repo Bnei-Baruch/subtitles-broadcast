@@ -30,6 +30,7 @@ type Bookmark struct {
 	SlideId     int    `json:"slide_id"`
 	UserId      string `json:"user_id"`
 	OrderNumber int    `json:"order_number"`
+	FileUid     string `json:"file_uid" gorm:"->"`
 }
 
 type Slide struct {

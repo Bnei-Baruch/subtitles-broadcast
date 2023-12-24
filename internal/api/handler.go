@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -283,18 +282,43 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
+	var result struct {
+		FileUid        string `json:"file_uid"`
+		MaxOrderNumber int    `json:"max_order_number"`
+	}
+	query := h.Database.Debug().WithContext(ctx).Raw(`
+		SELECT
+			s2.file_uid,
+			(SELECT MAX(order_number) FROM bookmarks WHERE user_id = ?) AS max_order_number
+		FROM slides AS s2
+		WHERE s2.id = ? AND NOT EXISTS (
+			SELECT 1
+			FROM bookmarks AS b
+			JOIN slides AS s1 ON b.slide_id = s1.id
+			WHERE s1.file_uid = s2.file_uid AND b.user_id = ?
+		)
+		LIMIT 1
+	`, userId, slideId, userId).Scan(&result)
+	if query.Error != nil {
+		log.Error(query.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, query.Error.Error(), "Adding bookmark has failed"))
+		return
+	}
+	if query.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "The bookmarked slide in the same file already exists", "The bookmarked slide in the same file already exists"))
+		return
+	}
 	bookmark := Bookmark{
-		SlideId: slideIdInt,
-		UserId:  userId.(string),
+		SlideId:     slideIdInt,
+		UserId:      userId.(string),
+		OrderNumber: result.MaxOrderNumber + 1,
+		FileUid:     result.FileUid,
 	}
 	err = h.Database.Debug().Create(&bookmark).Error
 	if err != nil {
 		log.Error(err)
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION {
-			ctx.JSON(http.StatusBadRequest,
-				getResponse(false, nil, err.Error(), "The same bookmark exists"))
-			return
-		}
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Adding bookmark has failed"))
 		return
