@@ -331,23 +331,28 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
-	userBookmarkList := []string{}
-	result := h.Database.Debug().WithContext(ctx).
-		Select("source_paths.path || ' / ' || slides.id AS slide_source_path").
+	result := []struct {
+		BookmarkPath string `json:"bookmark_path"`
+		FileUid      string `json:"file_uid"`
+	}{}
+	query := h.Database.Debug().WithContext(ctx).
+		Select("source_paths.path || ' / ' || slides.id AS bookmark_path, files.file_uid AS file_uid").
 		Table("bookmarks").
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
-		Where("bookmarks.user_id = ?", userId).Find(&userBookmarkList)
-	if result.Error != nil {
-		log.Error(result.Error)
+		Where("bookmarks.user_id = ?", userId).
+		Order("bookmarks.order_number").
+		Find(&result)
+	if query.Error != nil {
+		log.Error(query.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
+			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
 		return
 	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
-			userBookmarkList,
+			result,
 			"", "Getting data has succeeded"))
 }
 

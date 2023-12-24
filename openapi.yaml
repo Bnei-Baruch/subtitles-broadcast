@@ -35,9 +35,16 @@ paths:
                     data:
                       type: array
                       items:
-                        type: string
-                        description: bookmark path when request has been successful
-                        example: ["Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1", "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 2"]
+                        type: object
+                        properties:
+                          bookmark_path:
+                            type: string
+                            description: bookmark path
+                            example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1"
+                          file_uid:
+                            type: string
+                            description: file uid the slide in bookmark path belongs to 
+                            example: OzSCqHYF
         '401':
           description: Invalid request jwt token
         '404':
@@ -388,7 +395,7 @@ paths:
       operationId: getSlidesByFile
       parameters:
         - in: path
-          name: fileId
+          name: fileUid
           schema:
             type: integer
           required: true
