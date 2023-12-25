@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import Dropdown from "react-bootstrap/Dropdown";
 import useDebounce from "../Services/useDebounce";
 import EditArcive from "./EditArchive";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 
 const Archive = () => {
   const dispatch = useDispatch();
@@ -45,15 +46,12 @@ const Archive = () => {
   }, [dispatch]);
   useEffect(() => {
     dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
-  }, [page, DebouncingFreeText, dispatch, freeText]);
+  }, [page, DebouncingFreeText, dispatch]);
 
   useEffect(() => {
     if (finalConfirm === true) {
       dispatch(DeleteArchive(deleteId));
       setFinalConfirm(false);
-      // if (message?.split(" ")?.includes("delete")) {
-      //   alert("delete");
-      // }
     }
     if (toggle) {
       dispatch(BookmarkSlide(deleteId));
@@ -124,8 +122,7 @@ const Archive = () => {
                   <tr>
                     <th scope="col">Text</th>
                     <th scope="col">Author</th>
-                    {/* <th scope="col">Book</th>
-                <th scope="col">Title</th> */}
+
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
@@ -138,29 +135,30 @@ const Archive = () => {
 
                       <td>{key.slide_source_path?.split("/")?.[0]}</td>
 
-                      {/* <td>{key.book}</td>
-                  <td>{key.title}</td> */}
                       <td>
                         {
                           <i
                             onClick={() => {
-                              const fileIds = Array.isArray(
-                                JSON.parse(localStorage.getItem("fileids"))
-                              )
-                                ? JSON.parse(localStorage.getItem("fileids"))
-                                : [];
+                              dispatch(GetSubtitleData(key?.file_uid));
+                              //BELOW code is commented will use to store data in local storage in array
 
-                              const fileIdsArr = new Set([
-                                ...fileIds,
-                                key?.file_id,
-                              ]);
+                              // const fileIds = Array.isArray(
+                              //   JSON.parse(localStorage.getItem("fileids"))
+                              // )
+                              //   ? JSON.parse(localStorage.getItem("fileids"))
+                              //   : [];
 
-                              localStorage.setItem(
-                                "fileids",
-                                JSON.stringify(Array.from(fileIdsArr))
-                              );
+                              // const fileIdsArr = new Set([
+                              //   ...fileIds,
+                              //   key?.file_id,
+                              // ]);
 
-                              navigate("/subtitle");
+                              // localStorage.setItem(
+                              //   "fileids",
+                              //   JSON.stringify(Array.from(fileIdsArr))
+                              // );
+
+                              // navigate("/subtitle");
                             }}
                             className="bi bi-plus"
                           />
@@ -181,11 +179,6 @@ const Archive = () => {
                           <i
                             onClick={() => {
                               dispatch(BookmarkSlide(key?.ID));
-                              // setMessage(
-                              //   "Are you sure , you want to unbookmark this title"
-                              // );
-                              // setDeleteId(key.ID);
-                              // setConfirmation(true);
                             }}
                             className="bi bi-bookmark m-2"
                           />

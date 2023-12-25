@@ -159,7 +159,9 @@ table {
 
 .Edit h4 {
   color: rgba(0, 0, 0, 0.87);
-  font-feature-settings: "clig" off, "liga" off;
+  font-feature-settings:
+    "clig" off,
+    "liga" off;
   font-family: Nunito;
   font-size: 20px;
   font-style: normal;
@@ -170,7 +172,9 @@ table {
 }
 .Edit h6 {
   color: rgba(0, 0, 0, 0.87);
-  font-feature-settings: "clig" off, "liga" off;
+  font-feature-settings:
+    "clig" off,
+    "liga" off;
   font-family: Nunito;
   font-size: 16px;
   font-style: normal;
@@ -196,7 +200,9 @@ table {
 
 .Edit h2 {
   color: rgba(0, 0, 0, 0.87);
-  font-feature-settings: "clig" off, "liga" off;
+  font-feature-settings:
+    "clig" off,
+    "liga" off;
   font-family: Nunito;
   font-size: 16px;
   font-style: normal;

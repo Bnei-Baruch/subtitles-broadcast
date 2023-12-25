@@ -12,31 +12,42 @@ import {
   getAllBookmarkList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useSelector } from "react-redux";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import DraggableItem from "../Components/DraggableItem";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const GetAllBookmarkList = useSelector(getAllBookmarkList);
+  const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState("");
-
+  console.log(UserAddedList, "UserAddedList");
   useEffect(() => {
-    dispatch(GetSubtitleData());
     dispatch(UserBookmarkList());
   }, [dispatch]);
 
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
+    setItems(GetAllBookmarkList);
     // const fileId = JSON.parse(localStorage.getItem("fileids"));
     // for (let index = 0; index < fileId.length; index++) {
     //   const element = fileId[index];
     //   ///Pass file id and get all data
     // }
-  }, []);
+  }, [GetAllBookmarkList]);
+  const moveCard = (fromIndex, toIndex) => {
+    const updatedItems = [...items];
+    const [movedItem] = updatedItems.splice(fromIndex, 1);
+    updatedItems.splice(toIndex, 0, movedItem);
+    setItems(updatedItems);
+  };
 
+  console.log(GetAllBookmarkList, "GetAllBookmarkList");
   return (
     <>
-      <div className="body-content d-flex ">
+      <div className="body-content d-flex vh-auto">
         <div className="left-section">
           <div className="innerhead d-flex justify-content-between">
             <div
@@ -86,7 +97,7 @@ const Subtitles = () => {
             <div className="top-tab">
               <ul className="nav nav-tabs " id="myTab" role="tablist">
                 {/* List of All Book that user have added */}
-                {UserAddedList?.map((key, index) => (
+                {/* {UserAddedList?.map((key, index) => (
                   <li className="nav-item" role="presentation">
                     <button
                       className={`nav-link  ${
@@ -110,7 +121,7 @@ const Subtitles = () => {
                       }}
                     />
                   </li>
-                ))}
+                ))} */}
               </ul>
             </div>
 
@@ -122,45 +133,18 @@ const Subtitles = () => {
                 id="home"
                 role="tabpanel"
                 aria-labelledby="home-tab"
-                tabindex="0"
+                tabIndex="0"
               >
-                <div>
-                  <div
-                    className={`box-content ${
-                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                  >
-                    hbdffdbfdbhhfbdbhdfbhfbhjbh
-                  </div>
-                  {UserAddedList?.map(
-                    (item, index) =>
-                      activatedTab === "" &&
-                      index === 0 && (
-                        <BookContent
-                          isLtr={isLtr}
-                          key={index}
-                          bookTitle={item?.book_title}
-                          lastActivated={item.last_activated}
-                          contents={item?.contents}
-                        />
-                      )
-                  )}
+                <div className="vh-80">
+                  <BookContent
+                    isLtr={isLtr}
+                    // bookTitle={item?.slide}
+                    // lastActivated={item.slide}
+                    contents={UserAddedList}
+                  />
                 </div>
-                <div>
-                  <div
-                    className={`box-content ${
-                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                  >
-                    sdbcdsfbujb
-                  </div>
-                  <div
-                    className={`box-content ${
-                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                  >
-                    sdbcdsfbujbadsd333333333
-                  </div>
+
+                {/* <div>
                   {UserAddedList?.map(
                     (item, index) =>
                       activatedTab === item?.book_title && (
@@ -173,9 +157,12 @@ const Subtitles = () => {
                         />
                       )
                   )}
-                </div>
+                </div> */}
               </div>
             </div>
+            <button>Back</button>
+            <input />
+            <button>Next</button>
           </div>
         </div>
 
@@ -186,7 +173,7 @@ const Subtitles = () => {
                 <iframe
                   src="https://www.youtube.com/embed/zpOULjyy-n8?rel=0"
                   title="YouTube video"
-                  allowfullscreen
+                  allowFullScreen
                 ></iframe>
               </div>
             </div>
@@ -201,30 +188,20 @@ const Subtitles = () => {
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
-            <div className="">
-              {GetAllBookmarkList?.map((key) => {
-                return (
-                  <div className="d-flex justify-content-between">
-                    <i
-                      onClick={() =>
-                        dispatch(
-                          UnBookmarkSlide(key.split("/").at(-1).trim(""))
-                        )
-                      }
-                      className="bi bi-trash"
+            <DndProvider backend={HTML5Backend}>
+              <div className="">
+                {items?.length > 0 &&
+                  items.map((item, index) => (
+                    <DraggableItem
+                      key={item.id}
+                      id={item.id}
+                      text={item}
+                      index={index}
+                      moveCard={moveCard}
                     />
-                    <span
-                      className="text-truncate mx-3"
-                      data-bs-toggle="tooltip"
-                      data-bs-placement="top"
-                      title={key}
-                    >
-                      {key}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+              </div>
+            </DndProvider>
           </div>
 
           <div className="Questions whit-s">
