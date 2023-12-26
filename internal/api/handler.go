@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -59,7 +60,7 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 			getResponse(false, nil, "Invalid request data", "Getting data has failed"))
 		return
 	}
-	tx := h.Database.Debug().Begin()
+	tx := h.Database.Debug().WithContext(ctx).Begin()
 	if tx.Error != nil {
 		log.Error(tx.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -366,8 +367,17 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
 		return
 	}
-	result := h.Database.Debug().Where("slide_id = ? AND user_id = ?", slideIdInt, userId).Delete(&Bookmark{})
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	deletedBookmark := Bookmark{}
+	result := tx.Clauses(clause.Returning{}).Where("slide_id = ? AND user_id = ?", slideIdInt, userId).Delete(&deletedBookmark)
 	if result.Error != nil {
+		tx.Rollback()
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Deleting user bookmark data has failed"))
@@ -378,10 +388,33 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
 		return
 	}
+	err = updateRemainingBookmarkOrders(tx, deletedBookmark.OrderNumber)
+	if err != nil {
+		tx.Rollback()
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Updating remaining bookmark orders has failed"))
+		return
+	}
+	if err = tx.Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting user bookmark data has failed"))
+		return
+	}
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			nil,
 			"", "Deleting data has succeeded"))
+}
+
+func updateRemainingBookmarkOrders(tx *gorm.DB, previousBoomarkOrder int) error {
+	result := tx.
+		Exec("UPDATE bookmarks SET order_number=order_number-1 WHERE order_number > ?", previousBoomarkOrder)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
