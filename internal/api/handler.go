@@ -378,45 +378,82 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
+	var result *gorm.DB
 	if req.TargetOrderNumber == req.OrderNumber {
 		log.Error(tx.Error)
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "Order number and target order number must be different", "Order number and target order number must be different"))
 		return
 	} else if req.TargetOrderNumber < req.OrderNumber {
-		err = tx.
-			Exec(`UPDATE bookmarks 
-			      SET order_number=order_number+1 
-				  WHERE ? > order_number 
+		result = tx.
+			Exec(`UPDATE bookmarks
+				  SET order_number = order_number + 1
+				  WHERE EXISTS (
+					SELECT 1
+					FROM bookmarks
+					WHERE slide_id = ? AND order_number = ? AND user_id = ?
+				  ) 
+				  AND ? > order_number 
 				  AND order_number >= ?
 				  AND user_id = ?
 				  AND slide_id != ?`,
+				req.Bookmark.SlideId,
+				req.OrderNumber,
+				req.Bookmark.UserId,
 				req.OrderNumber,
 				req.TargetOrderNumber,
 				req.Bookmark.UserId,
-				req.Bookmark.SlideId).Error
+				req.Bookmark.SlideId)
 	} else if req.TargetOrderNumber > req.OrderNumber {
-		err = tx.
+		result = tx.
 			Exec(`UPDATE bookmarks 
-				  SET order_number=order_number-1 
-				  WHERE ? < order_number
+				  SET order_number = order_number-1 
+				  WHERE EXISTS (
+					SELECT 1
+					FROM bookmarks
+					WHERE slide_id = ? AND order_number = ? AND user_id = ?
+				  ) 
+				  AND ? < order_number
 				  AND order_number <= ?
 				  AND user_id = ?
 				  AND slide_id != ?`,
+				req.Bookmark.SlideId,
+				req.OrderNumber,
+				req.Bookmark.UserId,
 				req.OrderNumber,
 				req.TargetOrderNumber,
 				req.Bookmark.UserId,
-				req.Bookmark.SlideId).Error
+				req.Bookmark.SlideId)
 	}
-	if err != nil {
+	if result.Error != nil {
 		tx.Rollback()
-		log.Error(err)
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Updating remaining bookmark orders has failed"))
+			getResponse(false, nil, result.Error.Error(), "Updating remaining bookmark orders has failed"))
 		return
 	}
-	result := tx.
-		Exec("UPDATE bookmarks SET order_number=? WHERE slide_id = ? AND user_id = ?", req.TargetOrderNumber, req.SlideId, req.UserId)
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Not a valid bookmark order updating", "Not a valid bookmark order updating"))
+		return
+	}
+	result = tx.
+		Exec(`UPDATE bookmarks
+			  SET order_number = ?
+			  WHERE slide_id = ?
+			  AND user_id = ?
+			  AND ? > 0
+			  AND ? <=
+			  (SELECT COUNT(*)
+			  FROM bookmarks
+			  WHERE user_id = ?)`,
+			req.TargetOrderNumber,
+			req.SlideId,
+			req.UserId,
+			req.TargetOrderNumber,
+			req.TargetOrderNumber,
+			req.UserId)
 	if result.Error != nil {
 		tx.Rollback()
 		log.Error(result.Error)
@@ -427,7 +464,7 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 	if result.RowsAffected == 0 {
 		tx.Rollback()
 		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "No boomark order to update in the condition", "No boomark order to update in the condition"))
+			getResponse(false, nil, "Not a valid boomark order to update in the condition", "No a valid boomark order to update in the condition"))
 		return
 	}
 	if err = tx.Commit().Error; err != nil {
