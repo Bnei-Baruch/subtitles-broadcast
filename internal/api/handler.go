@@ -20,8 +20,6 @@ const (
 	responseDescription = "description"
 
 	defaultListLimit = 50
-
-	ERR_UNIQUE_VIOLATION = "23505"
 )
 
 type Handler struct {
@@ -111,41 +109,7 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			nil,
-			"", "Adding slide data has succeeded"))
-}
-
-func (h *Handler) UpdateSlide(ctx *gin.Context) {
-	req := struct {
-		SlideID int    `json:"slide_id"`
-		Slide   string `json:"slide"`
-	}{}
-	err := ctx.BindJSON(&req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Binding data has failed"))
-		return
-	}
-	result := h.Database.Debug().WithContext(ctx).
-		Exec("UPDATE slides SET slide=? WHERE id = ?", req.Slide, req.SlideID)
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "No slide to update in the condition", "No slide to update in the condition"))
-		return
-	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			nil,
-			"", "Updating data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded"))
 }
 
 // Get all slides with bookmarked info by user
@@ -166,8 +130,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	err := errors.Join(errPage, errLimit)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
 	if limit > 0 {
@@ -225,40 +188,6 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-func (h *Handler) DeleteSlide(ctx *gin.Context) {
-	slideId := ctx.Param("slide_id")
-	slideIdInt, err := strconv.Atoi(slideId)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
-		return
-	}
-	result := h.Database.Debug().Where("slide_id = ?", slideIdInt).Delete(&Bookmark{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting bookmark data related to the slide has failed"))
-		return
-	}
-	result = h.Database.Debug().Where("id = ?", slideIdInt).Delete(&Slide{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "No slide with the id", "No slide with the id"))
-		return
-	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			nil,
-			"", "Deleting data has succeeded"))
-}
-
 func (h *Handler) GetSlidesByFile(ctx *gin.Context) {
 	fileUid := ctx.Param("file_uid")
 	slides := []*Slide{}
@@ -269,8 +198,78 @@ func (h *Handler) GetSlidesByFile(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true, slides, "", "Getting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, slides, "", "Getting data has succeeded"))
+}
+
+func (h *Handler) UpdateSlide(ctx *gin.Context) {
+	req := struct {
+		SlideID int    `json:"slide_id"`
+		Slide   string `json:"slide"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	result := h.Database.Debug().WithContext(ctx).
+		Exec("UPDATE slides SET slide = ? WHERE id = ?", req.Slide, req.SlideID)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "No slide to update in the condition", "No slide to update in the condition"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
+}
+
+func (h *Handler) DeleteSlide(ctx *gin.Context) {
+	slideId := ctx.Param("slide_id")
+	slideIdInt, err := strconv.Atoi(slideId)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
+		return
+	}
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	if err := tx.Where("slide_id = ?", slideIdInt).Delete(&Bookmark{}).Error; err != nil {
+		tx.Rollback()
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting bookmark data related to the slide has failed"))
+		return
+	}
+	result := tx.Where("id = ?", slideIdInt).Delete(&Slide{})
+	if result.Error != nil {
+		tx.Rollback()
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "No slide with the id", "No slide with the id"))
+		return
+	}
+	if err = tx.Commit().Error; err != nil {
+		tx.Rollback()
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting slide data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) AddUserBookmark(ctx *gin.Context) {
@@ -279,8 +278,7 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 	slideIdInt, err := strconv.Atoi(slideId)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed"))
 		return
 	}
 	var result struct {
@@ -324,10 +322,7 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Adding bookmark has failed"))
 		return
 	}
-	ctx.JSON(http.StatusCreated,
-		getResponse(true,
-			bookmark,
-			"", "Adding data has succeeded"))
+	ctx.JSON(http.StatusCreated, getResponse(true, bookmark, "", "Adding data has succeeded"))
 }
 
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
@@ -351,10 +346,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			result,
-			"", "Getting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
 }
 
 func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
@@ -367,8 +359,7 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Binding data has failed"))
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
 		return
 	}
 	tx := h.Database.Debug().WithContext(ctx).Begin()
@@ -378,7 +369,20 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
+	// Update other related bookmark order
 	var result *gorm.DB
+	updateOtherRelatedBookmarkOrder :=
+		`UPDATE bookmarks
+	     SET order_number = order_number %s 1
+	     WHERE EXISTS (
+		    SELECT 1
+		 	FROM bookmarks
+		 	WHERE slide_id = ? AND order_number = ? AND user_id = ?
+	 	 ) 
+	 	 AND ? %s order_number 
+	 	 AND order_number %s ?
+	 	 AND user_id = ?
+	 	 AND slide_id != ?`
 	if req.TargetOrderNumber == req.OrderNumber {
 		log.Error(tx.Error)
 		ctx.JSON(http.StatusBadRequest,
@@ -386,17 +390,7 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 		return
 	} else if req.TargetOrderNumber < req.OrderNumber {
 		result = tx.
-			Exec(`UPDATE bookmarks
-				  SET order_number = order_number + 1
-				  WHERE EXISTS (
-					SELECT 1
-					FROM bookmarks
-					WHERE slide_id = ? AND order_number = ? AND user_id = ?
-				  ) 
-				  AND ? > order_number 
-				  AND order_number >= ?
-				  AND user_id = ?
-				  AND slide_id != ?`,
+			Exec(fmt.Sprintf(updateOtherRelatedBookmarkOrder, "+", ">", ">="),
 				req.Bookmark.SlideId,
 				req.OrderNumber,
 				req.Bookmark.UserId,
@@ -406,17 +400,7 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 				req.Bookmark.SlideId)
 	} else if req.TargetOrderNumber > req.OrderNumber {
 		result = tx.
-			Exec(`UPDATE bookmarks 
-				  SET order_number = order_number-1 
-				  WHERE EXISTS (
-					SELECT 1
-					FROM bookmarks
-					WHERE slide_id = ? AND order_number = ? AND user_id = ?
-				  ) 
-				  AND ? < order_number
-				  AND order_number <= ?
-				  AND user_id = ?
-				  AND slide_id != ?`,
+			Exec(fmt.Sprintf(updateOtherRelatedBookmarkOrder, "-", "<", "<="),
 				req.Bookmark.SlideId,
 				req.OrderNumber,
 				req.Bookmark.UserId,
@@ -438,6 +422,7 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, "Not a valid bookmark order updating", "Not a valid bookmark order updating"))
 		return
 	}
+	// Update the current bookmark order
 	result = tx.
 		Exec(`UPDATE bookmarks
 			  SET order_number = ?
@@ -473,10 +458,7 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Updating the current bookmark order has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			nil,
-			"", "Updating data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
 }
 
 func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
@@ -485,8 +467,7 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 	slideIdInt, err := strconv.Atoi(slideId)
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
 		return
 	}
 	tx := h.Database.Debug().WithContext(ctx).Begin()
@@ -525,10 +506,7 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Deleting user bookmark data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			nil,
-			"", "Deleting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
@@ -551,10 +529,7 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			authorList,
-			"", "Getting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, authorList, "", "Getting data has succeeded"))
 }
 
 // Unnecessary handler at this moment. If need, will be used

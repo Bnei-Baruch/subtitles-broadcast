@@ -69,7 +69,7 @@ paths:
               properties:
                 target_order_number:
                   type: integer
-                  description: target bookmark order number
+                  description: target bookmark order number to move
                   example: 1
                 slide_id:
                   type: integer

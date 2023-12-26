@@ -29,5 +29,11 @@ func NewPostgres(url string) (*gorm.DB, error) {
 	// Set the maximum number of open connections in the pool
 	sqlDB.SetMaxOpenConns(maxOpenConns)
 
+	// Verify the connection
+	if err := sqlDB.Ping(); err != nil {
+		_ = sqlDB.Close() // Close the database connection on failure
+		log.Fatal(err)
+	}
+
 	return client, nil
 }
