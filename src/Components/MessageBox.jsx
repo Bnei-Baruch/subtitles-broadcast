@@ -1,37 +1,39 @@
-import React from 'react'
-import { Button, Modal } from 'react-bootstrap'
+import React from "react";
+import { Button, Modal } from "react-bootstrap";
 
-const MessageBox = ({message,show,handleClose,setFinalConfirm}) => {
-    
+const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
   return (
     <>
-      <Modal
-      show={show}
-      onHide={handleClose}
-      >
+      <Modal show={show} onHide={handleClose}>
         <div className="modal-header text-center text-danger">
-            <div className="icon-box col-12">
-            <i class="bi bi-exclamation-circle fs-1"></i>
-            </div>
+          <div className="icon-box col-12">
+            <i className="bi bi-exclamation-circle fs-1"></i>
+          </div>
         </div>
 
+        <h2 className="text-center">{message}</h2>
 
-
-<h2 className='text-center'> 
-    {message}
-</h2>
-
-<div className="modal-footer justify-content-center">
-    <Button onClick={()=>setFinalConfirm(false)}>No</Button>
-    <Button onClick={()=>setFinalConfirm(true)}>Yes</Button>
-</div>
-
-
-
-
+        <div className="modal-footer justify-content-center">
+          <Button
+            onClick={() => {
+              setFinalConfirm(false);
+              handleClose();
+            }}
+          >
+            No
+          </Button>
+          <Button
+            onClick={() => {
+              setFinalConfirm(true);
+              handleClose();
+            }}
+          >
+            Yes
+          </Button>
+        </div>
       </Modal>
     </>
-  )
-}
+  );
+};
 
-export default MessageBox
+export default MessageBox;

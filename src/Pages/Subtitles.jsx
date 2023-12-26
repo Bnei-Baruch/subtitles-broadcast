@@ -1,23 +1,38 @@
 import React, { useEffect, useState } from "react";
-import UserService from "../Services/KeycloakServices";
 import "./PagesCSS/Subtitle.css";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   GetSubtitleData,
   getAllBookAddedByUser,
 } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
+import {
+  UnBookmarkSlide,
+  UserBookmarkList,
+  getAllBookmarkList,
+} from "../Redux/ArchiveTab/ArchiveSlice";
+import { useSelector } from "react-redux";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
-  const UserAddedList = useSelector(getAllBookAddedByUser) || [];
+  const UserAddedList = useSelector(getAllBookAddedByUser);
+  const GetAllBookmarkList = useSelector(getAllBookmarkList);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState("");
 
   useEffect(() => {
     dispatch(GetSubtitleData());
+    dispatch(UserBookmarkList());
+  }, [dispatch]);
+
+  //This useEffect will get all fileid from local storage and make api call
+  useEffect(() => {
+    // const fileId = JSON.parse(localStorage.getItem("fileids"));
+    // for (let index = 0; index < fileId.length; index++) {
+    //   const element = fileId[index];
+    //   ///Pass file id and get all data
+    // }
   }, []);
-  console.log(UserAddedList);
 
   return (
     <>
@@ -61,7 +76,7 @@ const Subtitles = () => {
                 </button>
 
                 <button type="button" className="btn btn-tr">
-                  <img src="image/Vector.svg" />
+                  <img alt="vectors" src="image/Vector.svg" />
                 </button>
               </div>
             </div>
@@ -75,11 +90,11 @@ const Subtitles = () => {
                   <li className="nav-item" role="presentation">
                     <button
                       className={`nav-link  ${
-                        key?.book_title == activatedTab
+                        key?.book_title === activatedTab
                           ? "active"
-                          : activatedTab == "" && index == 0
-                          ? "active"
-                          : ""
+                          : activatedTab === "" && index === 0
+                            ? "active"
+                            : ""
                       } `}
                       id="home-tab"
                       onClick={() => {
@@ -110,10 +125,17 @@ const Subtitles = () => {
                 tabindex="0"
               >
                 <div>
+                  <div
+                    className={`box-content ${
+                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    hbdffdbfdbhhfbdbhdfbhfbhjbh
+                  </div>
                   {UserAddedList?.map(
                     (item, index) =>
-                      activatedTab == "" &&
-                      index == 0 && (
+                      activatedTab === "" &&
+                      index === 0 && (
                         <BookContent
                           isLtr={isLtr}
                           key={index}
@@ -125,9 +147,23 @@ const Subtitles = () => {
                   )}
                 </div>
                 <div>
+                  <div
+                    className={`box-content ${
+                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    sdbcdsfbujb
+                  </div>
+                  <div
+                    className={`box-content ${
+                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    sdbcdsfbujbadsd333333333
+                  </div>
                   {UserAddedList?.map(
                     (item, index) =>
-                      activatedTab == item?.book_title && (
+                      activatedTab === item?.book_title && (
                         <BookContent
                           isLtr={isLtr}
                           key={index}
@@ -164,6 +200,30 @@ const Subtitles = () => {
           <div className="book-mark whit-s">
             <div className="top-head">
               <h3>Bookmarks</h3>
+            </div>
+            <div className="">
+              {GetAllBookmarkList?.map((key) => {
+                return (
+                  <div className="d-flex justify-content-between">
+                    <i
+                      onClick={() =>
+                        dispatch(
+                          UnBookmarkSlide(key.split("/").at(-1).trim(""))
+                        )
+                      }
+                      className="bi bi-trash"
+                    />
+                    <span
+                      className="text-truncate mx-3"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="top"
+                      title={key}
+                    >
+                      {key}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

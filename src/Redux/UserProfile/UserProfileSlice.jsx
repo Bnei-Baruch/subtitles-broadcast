@@ -1,31 +1,26 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
-import { toast } from "react-toastify";
-
-const API = "http://localhost:3001/"; 
+import { createSlice } from "@reduxjs/toolkit";
+//Below commented Code will use in future
+// const API = process.env.REACT_APP_API_BASE_URL;
 
 const initialState = {
   userProfile: [],
+  selectedLang: "en",
 };
-
-
-
 
 const UserProfileSlice = createSlice({
   name: "UserProfileSlice",
   initialState,
   reducers: {
-    StoreProfile:(state,{payload})=>{
-        
-return {...state,userProfile:payload}
-    }
+    StoreProfile: (state, { payload }) => {
+      return { ...state, userProfile: payload };
+    },
+    SelelectedLang: (state, { payload }) => {
+      return { ...state, selectedLang: payload };
+    },
   },
-  extraReducers: (builder) => {
-    
-  },
+  extraReducers: (builder) => {},
 });
 
-
-export const {StoreProfile} = UserProfileSlice.actions
+export const { StoreProfile, SelelectedLang } = UserProfileSlice.actions;
 
 export default UserProfileSlice.reducer;

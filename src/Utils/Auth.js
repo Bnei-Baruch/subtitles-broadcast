@@ -6,8 +6,9 @@ import { useDispatch } from "react-redux";
 import ErrorLogin from "../Pages/Views/ErrorLogin";
 import LoadingScreen from "../Pages/Views/LoadingScreen";
 import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
+import PropTypes from "prop-types";
 
-const Auth = (props) => {
+const Auth = ({ children }) => {
   const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
@@ -22,24 +23,25 @@ const Auth = (props) => {
       .init({
         onLoad: "login-required",
         checkLoginIframe: false,
-        redirectUri: window.location.origin + "/subtitle",
+        // redirectUri: window.location.origin,
       })
       .then((authenticated) => {
         if (keycloak.realmAccess.roles.includes("admin")) {
           setAccess(true);
         }
         keycloak.loadUserProfile().then(function () {
-          console.log(keycloak, "JJJJJJJJ");
           const profile = {
             username: keycloak.profile.username,
             firstName: keycloak.profile.firstName,
             lastName: keycloak.profile.lastName,
             email: keycloak.profile.email,
             token: keycloak.token,
+
             // TODO: Add gender to the response
             gender: "male",
           };
-          dispatch(StoreProfile({ keycloak, authenticated, profile }));
+          // profile.logout = keycloak.logout;
+          dispatch(StoreProfile({ profile }));
           localStorage.setItem("token", keycloak.token);
           setAuth({
             keycloak,
@@ -53,7 +55,7 @@ const Auth = (props) => {
   if (auth.keycloak) {
     if (auth.authenticated) {
       if (access) {
-        return <>{props.children}</>;
+        return <>{children(auth)}</>;
       } else {
         return <div>User don't have Rights to view this application</div>;
       }
@@ -73,4 +75,7 @@ const Auth = (props) => {
   }
 };
 
+Auth.propTypes = {
+  children: PropTypes.func.isRequired, // PropTypes validation for children prop
+};
 export default Auth;

@@ -1,52 +1,52 @@
 {
-    "workbench.colorTheme": "Default Dark+",
-    "emmet.includeLanguages": {
-        "\"javascript\"": "  \"javascriptreact\""
-    },
-    "editor.letterSpacing": 1.2,
+  "workbench.colorTheme": "Default Dark+",
+  "emmet.includeLanguages": {
+    "\"javascript\"": "  \"javascriptreact\""
+  },
+  "editor.letterSpacing": 1.2,
   "editor.lineHeight": 1.8,
-    "terminal.integrated.defaultProfile.windows": "Command Prompt",
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "workbench.iconTheme": "material-icon-theme",
-    "git.autofetch": true,
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "editor.accessibilitySupport": "on",
-    "audioCues.noInlayHints": "off",
-    "audioCues.lineHasInlineSuggestion": "off",
-    "audioCues.lineHasFoldedArea": "off",
-    "audioCues.lineHasError": "on",
-    "audioCues.lineHasBreakpoint": "off",
-    "audioCues.diffLineModified": "off",
-    "audioCues.diffLineInserted": "off",
-    "audioCues.diffLineDeleted": "off",
-    "audioCues.terminalQuickFix": "off",
-    "audioCues.taskFailed": "off",
-    "audioCues.taskCompleted": "off",
-    "audioCues.onDebugBreak": "off",
-    "audioCues.notebookCellCompleted": "off",
-    "audioCues.notebookCellFailed": "off",
-    "css.customData": [
-       
-    ],
-    "css.styleSheets": [
-        "\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css\""
-    ],
-    "[css]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[scss]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "editor.formatOnSave": true,
-    "editor.fontFamily": "Comic Sans MS",
-    "editor.fontVariations": false,
-    "window.zoomLevel": -1,
-    "cSpell.userWords": [
-        "fullcalendar"
-    ]
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "workbench.iconTheme": "material-icon-theme",
+  "git.autofetch": true,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "editor.accessibilitySupport": "on",
+  "audioCues.noInlayHints": "off",
+  "audioCues.lineHasInlineSuggestion": "off",
+  "audioCues.lineHasFoldedArea": "off",
+  "audioCues.lineHasError": "on",
+  "audioCues.lineHasBreakpoint": "off",
+  "audioCues.diffLineModified": "off",
+  "audioCues.diffLineInserted": "off",
+  "audioCues.diffLineDeleted": "off",
+  "audioCues.terminalQuickFix": "off",
+  "audioCues.taskFailed": "off",
+  "audioCues.taskCompleted": "off",
+  "audioCues.onDebugBreak": "off",
+  "audioCues.notebookCellCompleted": "off",
+  "audioCues.notebookCellFailed": "off",
+  "css.customData": [],
+  "css.styleSheets": [
+    "\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css\""
+  ],
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+ 
+  "editor.fontFamily": "Comic Sans MS",
+  "editor.fontVariations": false,
+  "window.zoomLevel": 1,
+  "cSpell.userWords": ["fullcalendar"],
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": true }, 
+"editor.formatOnSave": true, 
+"eslint.alwaysShowStatus": true, 
+"files.autoSave": "onFocusChange"
 }
