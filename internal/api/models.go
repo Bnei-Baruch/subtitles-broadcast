@@ -16,7 +16,7 @@ type Pagination struct {
 // api model
 
 type File struct {
-	ID        uint   `json:"id"`
+	ID        uint   `gorm:"primarykey"`
 	Type      string `json:"type"`
 	Language  string `json:"language"`
 	Filename  string `json:"filename"`
@@ -26,7 +26,7 @@ type File struct {
 }
 
 type Bookmark struct {
-	ID          uint   `json:"id"`
+	ID          uint   `gorm:"primarykey"`
 	SlideId     int    `json:"slide_id"`
 	UserId      string `json:"user_id"`
 	OrderNumber int    `json:"order_number"`
@@ -50,7 +50,7 @@ type SlideDetail struct {
 }
 
 type SourcePath struct {
-	ID        uint   `json:"id"`
+	ID        uint   `gorm:"primarykey"`
 	Language  string `json:"language"`
 	SourceUid string `json:"source_uid"`
 	Path      string `json:"path"`

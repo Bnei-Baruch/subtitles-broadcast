@@ -16,6 +16,7 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.POST("/bookmark/:slide_id", handler.AddUserBookmark)
 	v1.GET("/bookmark", handler.GetUserBookmarks)
+	v1.PATCH("/bookmark", handler.UpdateUserBookmark)
 	v1.DELETE("/bookmark/:slide_id", handler.DeleteUserBookmark)
 
 	v1.POST("/slide", handler.ImportSource)

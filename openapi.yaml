@@ -56,6 +56,57 @@ paths:
       security:
         - bearerAuth:
             - read:books
+    patch:
+      tags:
+        - bookmark
+      summary: Update a bookmark order
+      description: Update a bookmark order
+      operationId: UpdateUserBookmark
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                target_order_number:
+                  type: integer
+                  description: target bookmark order number
+                  example: 1
+                slide_id:
+                  type: integer
+                  description: current bookmarked slide numeric ID 
+                  example: 1
+                order_number:
+                  type: integer
+                  description: current bookmark order number
+                  example: 2
+        description: Update user current bookmark order
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '404':
+          description: Book content not found
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
   /bookmark/{slideId}:
     post:
       tags:
@@ -178,7 +229,7 @@ paths:
                   type: string 
                   description: language code
                   example: "en"
-        description: Created user object
+        description: Created user slide data
         required: true
       responses:
         '200':
@@ -318,7 +369,7 @@ paths:
                   type: string
                   description: slide to update
                   example: "Hello"
-        description: Created user object
+        description: Update user slide text
         required: true
       responses:
         '200':
