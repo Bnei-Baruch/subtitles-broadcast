@@ -6,11 +6,11 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 const (
@@ -188,19 +188,6 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-func (h *Handler) GetSlidesByFile(ctx *gin.Context) {
-	fileUid := ctx.Param("file_uid")
-	slides := []*Slide{}
-	err := h.Database.Debug().WithContext(ctx).Table("slides").Where("file_uid = ?", fileUid).Find(&slides).Error
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, slides, "", "Getting data has succeeded"))
-}
-
 func (h *Handler) UpdateSlide(ctx *gin.Context) {
 	req := struct {
 		SlideID int    `json:"slide_id"`
@@ -213,7 +200,7 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 		return
 	}
 	result := h.Database.Debug().WithContext(ctx).
-		Exec("UPDATE slides SET slide = ? WHERE id = ?", req.Slide, req.SlideID)
+		Exec("UPDATE slides SET slide = ?, updated_at = ? WHERE id = ?", req.Slide, time.Now(), req.SlideID)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -314,6 +301,8 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 		UserId:      userId.(string),
 		OrderNumber: result.MaxOrderNumber + 1,
 		FileUid:     result.FileUid,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	err = h.Database.Debug().Create(&bookmark).Error
 	if err != nil {
@@ -352,110 +341,32 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	req := struct {
-		TargetOrderNumber int `json:"target_order_number"`
-		Bookmark
+		BookmarkId  int `json:"bookmark_id"`
+		OrderNumber int `json:"order_number"`
 	}{}
-	req.Bookmark.UserId = userId.(string)
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	tx := h.Database.Debug().WithContext(ctx).Begin()
-	if tx.Error != nil {
-		log.Error(tx.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
-		return
-	}
-	// Update other related bookmark order
-	var result *gorm.DB
-	updateOtherRelatedBookmarkOrder :=
+	result := h.Database.Debug().WithContext(ctx).Exec(
 		`UPDATE bookmarks
-	     SET order_number = order_number %s 1
-	     WHERE EXISTS (
-		    SELECT 1
-		 	FROM bookmarks
-		 	WHERE slide_id = ? AND order_number = ? AND user_id = ?
-	 	 ) 
-	 	 AND ? %s order_number 
-	 	 AND order_number %s ?
-	 	 AND user_id = ?
-	 	 AND slide_id != ?`
-	if req.TargetOrderNumber == req.OrderNumber {
-		log.Error(tx.Error)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "Order number and target order number must be different", "Order number and target order number must be different"))
-		return
-	} else if req.TargetOrderNumber < req.OrderNumber {
-		result = tx.
-			Exec(fmt.Sprintf(updateOtherRelatedBookmarkOrder, "+", ">", ">="),
-				req.Bookmark.SlideId,
-				req.OrderNumber,
-				req.Bookmark.UserId,
-				req.OrderNumber,
-				req.TargetOrderNumber,
-				req.Bookmark.UserId,
-				req.Bookmark.SlideId)
-	} else if req.TargetOrderNumber > req.OrderNumber {
-		result = tx.
-			Exec(fmt.Sprintf(updateOtherRelatedBookmarkOrder, "-", "<", "<="),
-				req.Bookmark.SlideId,
-				req.OrderNumber,
-				req.Bookmark.UserId,
-				req.OrderNumber,
-				req.TargetOrderNumber,
-				req.Bookmark.UserId,
-				req.Bookmark.SlideId)
-	}
+	     SET order_number = ?,
+		 updated_at = ?
+	     WHERE id = ?
+		 AND user_id = ?`,
+		req.OrderNumber, time.Now(), req.BookmarkId, userId.(string),
+	)
 	if result.Error != nil {
-		tx.Rollback()
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Updating remaining bookmark orders has failed"))
 		return
 	}
 	if result.RowsAffected == 0 {
-		tx.Rollback()
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "Not a valid bookmark order updating", "Not a valid bookmark order updating"))
-		return
-	}
-	// Update the current bookmark order
-	result = tx.
-		Exec(`UPDATE bookmarks
-			  SET order_number = ?
-			  WHERE slide_id = ?
-			  AND user_id = ?
-			  AND ? > 0
-			  AND ? <=
-			  (SELECT COUNT(*)
-			  FROM bookmarks
-			  WHERE user_id = ?)`,
-			req.TargetOrderNumber,
-			req.SlideId,
-			req.UserId,
-			req.TargetOrderNumber,
-			req.TargetOrderNumber,
-			req.UserId)
-	if result.Error != nil {
-		tx.Rollback()
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Updating the current bookmark order has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "Not a valid boomark order to update in the condition", "No a valid boomark order to update in the condition"))
-		return
-	}
-	if err = tx.Commit().Error; err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Updating the current bookmark order has failed"))
 		return
 	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
@@ -463,24 +374,14 @@ func (h *Handler) UpdateUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
-	slideId := ctx.Param("slide_id")
-	slideIdInt, err := strconv.Atoi(slideId)
+	bookmarkIdInt, err := strconv.Atoi(ctx.Param("bookmark_id"))
 	if err != nil {
 		log.Error(err)
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Bookmark ID must be an integer"))
 		return
 	}
-	tx := h.Database.Debug().WithContext(ctx).Begin()
-	if tx.Error != nil {
-		log.Error(tx.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
-		return
-	}
-	deletedBookmark := Bookmark{}
-	result := tx.Clauses(clause.Returning{}).Where("slide_id = ? AND user_id = ?", slideIdInt, userId).Delete(&deletedBookmark)
+	result := h.Database.Debug().WithContext(ctx).Where("id = ? AND user_id = ?", bookmarkIdInt, userId).Delete(&Bookmark{})
 	if result.Error != nil {
-		tx.Rollback()
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Deleting user bookmark data has failed"))
@@ -489,21 +390,6 @@ func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
 	if result.RowsAffected == 0 {
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
-		return
-	}
-	err = tx.
-		Exec("UPDATE bookmarks SET order_number=order_number-1 WHERE order_number > ?", deletedBookmark.OrderNumber).Error
-	if err != nil {
-		tx.Rollback()
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Updating remaining bookmark orders has failed"))
-		return
-	}
-	if err = tx.Commit().Error; err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting user bookmark data has failed"))
 		return
 	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))

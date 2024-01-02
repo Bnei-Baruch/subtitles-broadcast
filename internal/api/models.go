@@ -26,11 +26,13 @@ type File struct {
 }
 
 type Bookmark struct {
-	ID          uint   `gorm:"primarykey"`
-	SlideId     int    `json:"slide_id"`
-	UserId      string `json:"user_id"`
-	OrderNumber int    `json:"order_number"`
-	FileUid     string `json:"file_uid" gorm:"->"`
+	ID          uint      `gorm:"primarykey"`
+	SlideId     int       `json:"slide_id"`
+	UserId      string    `json:"user_id"`
+	OrderNumber int       `json:"order_number"`
+	FileUid     string    `json:"file_uid" gorm:"->"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type Slide struct {

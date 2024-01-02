@@ -67,13 +67,9 @@ paths:
           application/json:
             schema:
               properties:
-                target_order_number:
+                bookmark_id:
                   type: integer
-                  description: target bookmark order number to move
-                  example: 1
-                slide_id:
-                  type: integer
-                  description: current bookmarked slide numeric ID 
+                  description: current bookmark numeric ID 
                   example: 1
                 order_number:
                   type: integer
@@ -170,6 +166,7 @@ paths:
         - bearerAuth:
             - write:bookmarks
             - read:bookmarks
+  /bookmark/{bookmarkId}:
     delete:
       tags:
         - bookmark
@@ -178,11 +175,11 @@ paths:
       operationId: deleteUserBookmark
       parameters:
         - in: path
-          name: slideId
+          name: bookmarkId
           schema:
             type: integer
           required: true
-          description: Numeric ID of the slide to delete
+          description: Numeric ID of the bookmark to delete
       responses:
         '200':
           description: Successful operation

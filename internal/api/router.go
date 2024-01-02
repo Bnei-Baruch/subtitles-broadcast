@@ -17,13 +17,12 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.POST("/bookmark/:slide_id", handler.AddUserBookmark)
 	v1.GET("/bookmark", handler.GetUserBookmarks)
 	v1.PATCH("/bookmark", handler.UpdateUserBookmark)
-	v1.DELETE("/bookmark/:slide_id", handler.DeleteUserBookmark)
+	v1.DELETE("/bookmark/:bookmark_id", handler.DeleteUserBookmark)
 
 	v1.POST("/slide", handler.ImportSource)
 	v1.GET("/slide", handler.GetSlides)
 	v1.PATCH("/slide", handler.UpdateSlide)
 	v1.DELETE("/slide/:slide_id", handler.DeleteSlide)
-	v1.GET("/file_slide/:file_uid", handler.GetSlidesByFile)
 
 	v1.GET("/author", handler.GetAuthors)
 
