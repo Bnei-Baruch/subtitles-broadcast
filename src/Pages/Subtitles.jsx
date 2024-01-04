@@ -232,6 +232,7 @@ const Subtitles = () => {
                       key={item.id}
                       id={item.id}
                       text={item?.bookmark_path}
+                      fileUid={item?.file_uid}
                       index={index}
                       moveCard={moveCard}
                     />

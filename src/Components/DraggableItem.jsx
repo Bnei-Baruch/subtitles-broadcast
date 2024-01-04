@@ -3,13 +3,16 @@ import React from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
-import { StoreFocusSlideId } from "../Redux/Subtitle/SubtitleSlice";
+import {
+  GetSubtitleData,
+  StoreFocusSlideId,
+} from "../Redux/Subtitle/SubtitleSlice";
 
 const ItemTypes = {
   CARD: "card",
 };
 
-const DraggableItem = ({ id, text, index, moveCard }) => {
+const DraggableItem = ({ id, text, index, moveCard, fileUid }) => {
   const dispatch = useDispatch();
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
@@ -27,6 +30,7 @@ const DraggableItem = ({ id, text, index, moveCard }) => {
   });
   const handleBookMarkClick = (e) => {
     dispatch(StoreFocusSlideId(14));
+    dispatch(GetSubtitleData(e));
   };
   return (
     <div
@@ -45,7 +49,7 @@ const DraggableItem = ({ id, text, index, moveCard }) => {
         data-bs-toggle="tooltip"
         data-bs-placement="top"
         title={text}
-        onClick={handleBookMarkClick}
+        onClick={() => handleBookMarkClick(fileUid)}
       >
         {text}
       </span>
