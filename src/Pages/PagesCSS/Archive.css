@@ -226,3 +226,6 @@ table {
   min-width: 50px;
   width: 50px;
 }
+.dropdown-toggle::after {
+  display: none !important;
+}

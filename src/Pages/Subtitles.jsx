@@ -27,7 +27,7 @@ const Subtitles = () => {
   useEffect(() => {
     dispatch(UserBookmarkList());
   }, [dispatch]);
-
+  useEffect(() => {}, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     setItems(GetAllBookmarkList);
@@ -69,7 +69,7 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               >
-                <div className="input-box">
+                {/* <div className="input-box">
                   <label className="w-100">Slide</label>
                   <input
                     className=""
@@ -77,7 +77,7 @@ const Subtitles = () => {
                     placeholder="Search"
                     aria-label="Search"
                   />
-                </div>
+                </div> */}
                 <button
                   type="button"
                   onClick={() => setIsLtr(!isLtr)}
@@ -160,9 +160,45 @@ const Subtitles = () => {
                 </div> */}
               </div>
             </div>
-            <button>Back</button>
-            <input />
-            <button>Next</button>
+            <button
+              disabled={+localStorage.getItem("activeSlideFileUid") == 0}
+              onClick={() => {
+                localStorage.setItem(
+                  "activeSlideFileUid",
+                  +localStorage.getItem("activeSlideFileUid") - 1
+                );
+                dispatch(
+                  GetSubtitleData(localStorage.getItem("activeFileUid"))
+                );
+              }}
+            >
+              Back
+            </button>
+            <input
+              type="number"
+              onChange={(e) => {
+                if (+e.target.value > 0) {
+                  localStorage.setItem("activeSlideFileUid", +e.target.value);
+                  dispatch(
+                    GetSubtitleData(localStorage.getItem("activeFileUid"))
+                  );
+                }
+              }}
+              placeholder="slide_ID"
+            />
+            <button
+              onClick={() => {
+                localStorage.setItem(
+                  "activeSlideFileUid",
+                  +localStorage.getItem("activeSlideFileUid") + 1
+                );
+                dispatch(
+                  GetSubtitleData(localStorage.getItem("activeFileUid"))
+                );
+              }}
+            >
+              Next
+            </button>
           </div>
         </div>
 
@@ -195,7 +231,7 @@ const Subtitles = () => {
                     <DraggableItem
                       key={item.id}
                       id={item.id}
-                      text={item}
+                      text={item?.bookmark_path}
                       index={index}
                       moveCard={moveCard}
                     />

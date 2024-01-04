@@ -136,37 +136,11 @@ const Archive = () => {
                       <td>{key.slide_source_path?.split("/")?.[0]}</td>
 
                       <td>
-                        {
-                          <i
-                            onClick={() => {
-                              dispatch(GetSubtitleData(key?.file_uid));
-                              //BELOW code is commented will use to store data in local storage in array
-
-                              // const fileIds = Array.isArray(
-                              //   JSON.parse(localStorage.getItem("fileids"))
-                              // )
-                              //   ? JSON.parse(localStorage.getItem("fileids"))
-                              //   : [];
-
-                              // const fileIdsArr = new Set([
-                              //   ...fileIds,
-                              //   key?.file_id,
-                              // ]);
-
-                              // localStorage.setItem(
-                              //   "fileids",
-                              //   JSON.stringify(Array.from(fileIdsArr))
-                              // );
-
-                              // navigate("/subtitle");
-                            }}
-                            className="bi bi-plus"
-                          />
-                        }
                         {key.bookmarked === true ? (
                           <i
                             onClick={() => {
                               dispatch(UnBookmarkSlide(key?.ID));
+                              //Below code will use in future
                               // setMessage(
                               //   "Are you sure , you want to bookmark this title"
                               // );
@@ -205,7 +179,7 @@ const Archive = () => {
                                   setDeleteConfirmationPopup(true);
                                   setDeleteId(key.ID);
                                 }}
-                                className="bi bi-trash3 m-2"
+                                className="bi bi-trash3 "
                               />
                             </Dropdown.Item>
                           </Dropdown.Menu>
@@ -232,7 +206,16 @@ const Archive = () => {
                 <option>10</option>
                 <option>20</option>
                 <option>30</option>
-              </select>
+              </select>{" "}
+              &nbsp; &nbsp; &nbsp;
+              <span>
+                {ArchiveList?.pagination?.page *
+                  ArchiveList?.pagination?.limit -
+                  9}
+                -
+                {ArchiveList?.pagination?.page * ArchiveList?.pagination?.limit}{" "}
+                of {ArchiveList?.pagination?.total_rows}
+              </span>
             </div>
             <div className="arrow">
               <button
