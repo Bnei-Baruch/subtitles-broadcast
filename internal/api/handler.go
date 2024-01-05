@@ -269,13 +269,10 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 		return
 	}
 	var result struct {
-		FileUid        string `json:"file_uid"`
-		MaxOrderNumber int    `json:"max_order_number"`
+		FileUid string `json:"file_uid"`
 	}
 	query := h.Database.Debug().WithContext(ctx).Raw(`
-		SELECT
-			s2.file_uid,
-			(SELECT MAX(order_number) FROM bookmarks WHERE user_id = ?) AS max_order_number
+		SELECT s2.file_uid
 		FROM slides AS s2
 		WHERE s2.id = ? AND NOT EXISTS (
 			SELECT 1
@@ -284,7 +281,7 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 			WHERE s1.file_uid = s2.file_uid AND b.user_id = ?
 		)
 		LIMIT 1
-	`, userId, slideId, userId).Scan(&result)
+	`, slideId, userId).Scan(&result)
 	if query.Error != nil {
 		log.Error(query.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -297,12 +294,11 @@ func (h *Handler) AddUserBookmark(ctx *gin.Context) {
 		return
 	}
 	bookmark := Bookmark{
-		SlideId:     slideIdInt,
-		UserId:      userId.(string),
-		OrderNumber: result.MaxOrderNumber + 1,
-		FileUid:     result.FileUid,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		SlideId:   slideIdInt,
+		UserId:    userId.(string),
+		FileUid:   result.FileUid,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 	err = h.Database.Debug().Create(&bookmark).Error
 	if err != nil {
