@@ -54,6 +54,7 @@ func SetConfig(profile string) error {
 
 	})
 	viper.WatchConfig()
+	log.Info("Configuration loaded successfully.")
 	return nil
 }
 

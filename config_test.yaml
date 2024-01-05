@@ -2,6 +2,4 @@ port: 8080
 log_level: debug
 postgres: 
   url: postgresql://postgres:1q2w3e4r@db:5432/postgres?sslmode=disable
-redis:
-  url: redis://default:1q2w3e4r@localhost:6379/0
   

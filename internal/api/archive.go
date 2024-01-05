@@ -266,11 +266,11 @@ func getSourcePathListByLanguages(languageCodes []string) ([]*SourcePath, error)
 
 // Get proper data to make source path from sources url
 func getSourcePath(sourcePaths *[]*SourcePath, source *Source, language, path string) {
-	delimter := " / "
+	delimiter := " / "
 	if path == "" {
-		delimter = ""
+		delimiter = ""
 	}
-	currentPath := path + delimter + source.Name
+	currentPath := path + delimiter + source.Name
 	sourcePath := SourcePath{
 		SourceUid: source.ID,
 		Language:  language,

@@ -1,8 +1,8 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -13,15 +13,17 @@ import (
 
 const (
 	//SUPER_ADMIN = "super admin"
-	SUPER_ADMIN = "mb_admin_users_finstats"
-	USER        = "user"
-	TRANSLATOR  = "translator"
+	SuperAdmin = "mb_admin_users_finstats"
+	User       = "user"
+	Translator = "translator"
+
+	BearerPrefix = "Bearer"
 )
 
 var userRoles = map[string]struct{}{
-	SUPER_ADMIN: {},
-	USER:        {},
-	TRANSLATOR:  {},
+	SuperAdmin: {},
+	User:       {},
+	Translator: {},
 }
 
 // var userRole string
@@ -40,26 +42,17 @@ func UserRoleHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if len(authHeader) == 0 {
-			err := fmt.Errorf("there is no authorization token")
-			log.Error(err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         err.Error(),
-				"description": "",
-			})
+			handleResponse(ctx, http.StatusUnauthorized, "there is no authorization token")
 			return
 		}
-		tokenString := authHeader[len("Bearer"):]
+		if !strings.HasPrefix(authHeader, BearerPrefix+" ") {
+			handleResponse(ctx, http.StatusUnauthorized, "Invalid authorization format")
+			return
+		}
+		tokenString := authHeader[len(BearerPrefix)+1:]
 		roles, err := auth.GetUserRole(tokenString)
 		if err != nil {
-			log.Error(err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         err.Error(),
-				"description": "",
-			})
+			handleResponse(ctx, http.StatusUnauthorized, err.Error())
 			return
 		}
 		isValidUser := false
@@ -71,13 +64,7 @@ func UserRoleHandler() gin.HandlerFunc {
 			}
 		}
 		if !isValidUser {
-			log.Info("The user is not authorized")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         "The user is not authorized",
-				"description": "",
-			})
+			handleResponse(ctx, http.StatusUnauthorized, "The user is not authorized")
 			return
 		}
 		ctx.Next()
@@ -88,26 +75,13 @@ func UserInfoHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if len(authHeader) == 0 {
-			err := fmt.Errorf("there is no authorization token")
-			log.Error(err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         err.Error(),
-				"description": "",
-			})
+			handleResponse(ctx, http.StatusUnauthorized, "there is no authorization token")
 			return
 		}
 		tokenString := authHeader[len("Bearer"):]
 		userInfo, err := auth.GetUserInfo(tokenString)
 		if err != nil {
-			log.Error(err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success":     true,
-				"code":        "",
-				"err":         err.Error(),
-				"description": "",
-			})
+			handleResponse(ctx, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx.Set("user_id", userInfo.Sub)
@@ -124,13 +98,7 @@ func HttpMethodChecker(router *gin.Engine) gin.HandlerFunc {
 		for _, r := range routes {
 			if r.Path == route {
 				if r.Method != method {
-					log.Info("Method Not Allowed")
-					ctx.AbortWithStatusJSON(http.StatusMethodNotAllowed, gin.H{
-						"success":     true,
-						"code":        "",
-						"err":         "Method Not Allowed",
-						"description": "",
-					})
+					handleResponse(ctx, http.StatusMethodNotAllowed, "Method Not Allowed")
 					return
 				}
 				break
@@ -139,4 +107,14 @@ func HttpMethodChecker(router *gin.Engine) gin.HandlerFunc {
 
 		ctx.Next()
 	}
+}
+
+func handleResponse(ctx *gin.Context, statusCode int, errMsg string) {
+	log.Error(errMsg)
+	ctx.AbortWithStatusJSON(statusCode, gin.H{
+		"success":     true,
+		"data":        "",
+		"err":         errMsg,
+		"description": "",
+	})
 }

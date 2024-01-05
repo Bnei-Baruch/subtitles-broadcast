@@ -3,22 +3,23 @@ FROM golang:1.20 AS base
 # RUN apt-get update && apt-get upgrade -y
 
 RUN mkdir /app
-
 ADD . /app
-
 WORKDIR /app
 
 RUN CGO_ENABLED=0 go build -o bssvr cmd/bssvr/main.go
 
 FROM alpine:latest
 
-COPY --from=base /app/bssvr /
+RUN mkdir /appication 
+WORKDIR /appication
 
-COPY . /
+COPY --from=base /app/bssvr .
+COPY --from=base /app/docker-compose.yml .
+COPY --from=base /app/docker-compose-teamcity.yml .
+COPY --from=base /app/config_test.yaml .
+COPY --from=base /app/script /appication/script
 
 #COPY ./.env /
-
-ENV BSSVR_PROFILE=test
 
 EXPOSE 8080
 
