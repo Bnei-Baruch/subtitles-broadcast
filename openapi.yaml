@@ -103,7 +103,6 @@ paths:
         - bearerAuth:
             - write:slides
             - read:slides
-  /bookmark:
     post:
       tags:
         - bookmark
