@@ -16,6 +16,13 @@ import (
 
 var (
 	archiveDataCopyErrors = []error{}
+	// for testing only. 16 files for 4 languages
+	sourceUidList = map[string]struct{}{
+		"tswzgnWk": {},
+		"1vCj4qN9": {},
+		"ALlyoveA": {},
+		"h3FdlLJY": {},
+	}
 )
 
 const (
@@ -30,7 +37,7 @@ const (
 	DocxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	DocxPdf  = "application/pdf"
 
-	DBTableSlides      = "slides"
+	DBTableFiles       = "files"
 	DBTableSourcePaths = "source_paths"
 
 	ConcurrencyLimit = 250
@@ -39,16 +46,21 @@ const (
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
 func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
-	// checking if slide table has data
-	var slideCount int64
-	if err := database.Table(DBTableSlides).Count(&slideCount).Error; err != nil {
+	// checking if file table has data
+	var uniqueFiles []File
+	if err := database.Table(DBTableFiles).Table("files").Distinct("source_uid").
+		Find(&uniqueFiles).Error; err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
-	// If so then does not import archive data for slides
-	if slideCount > 0 {
+	for _, uniqueFile := range uniqueFiles {
+		delete(sourceUidList, uniqueFile.SourceUid)
+	}
+	// And there is no new file to import then return
+	if len(sourceUidList) == 0 {
 		log.Println("Importing archive data has already done before")
 		return
 	}
+
 	// Download file contents from source and file apis.
 	// Downloading contents from urls is quite a lot of work and made process slow.
 	// So get all file contents first. But contents order is important.
@@ -58,8 +70,8 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	contents := make([]*AchiveTempData, len(sourcePaths))
 	log.Printf("Importing %d sources is started", len(sourcePaths))
 	for idx, sourcePath := range sourcePaths {
-		// for testing only. 4 files for 4 languages
-		if sourcePath.SourceUid == "tswzgnWk" {
+		// for testing only. 16 files for 4 languages
+		if _, ok := sourceUidList[sourcePath.SourceUid]; ok {
 			wg.Add(1)
 			sem <- struct{}{}
 			go func(idx int, sourcePath *SourcePath) {

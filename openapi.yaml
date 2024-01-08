@@ -103,20 +103,28 @@ paths:
         - bearerAuth:
             - write:slides
             - read:slides
-  /bookmark/{slideId}:
+  /bookmark:
     post:
       tags:
         - bookmark
-      summary: Add a slide id for the user bookmark path
-      description: Add a slide id for the user bookmark path
+      summary: Add or update a slide id for the user bookmark path
+      description: Add or update a slide id for the user bookmark path
       operationId: addUserBookmark
-      parameters:
-        - in: path
-          name: slideId
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of the slide to insert
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                slide_id:
+                  type: integer
+                  description: Numeric ID of the slide to insert
+                  example: 1
+                force:
+                  type: boolean
+                  description: Value for whether to force update
+                  example: true
+        description: Add or update user bookmark
+        required: true
       responses:
         '200':
           description: Successful operation
