@@ -25,8 +25,8 @@ const (
 	DBTableSlides    = "slides"
 	DBTableBookmarks = "bookmarks"
 
-	ERR_UNIQUE_VIOLATION_CODE = "23505"
-	ERR_RECORD_NOT_FOUND_MSG  = "record not found"
+	ERR_UNIQUE_VIOLATION_CODE      = "23505"
+	ERR_FOREIGN_KEY_VIOLATION_CODE = "23503"
 )
 
 type Handler struct {
@@ -316,6 +316,11 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 		err = h.Database.Debug().Create(&bookmark).Error
 		if err != nil {
 			log.Error(err)
+			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_FOREIGN_KEY_VIOLATION_CODE {
+				ctx.JSON(http.StatusBadRequest,
+					getResponse(false, nil, err.Error(), "Invalid bookmark data"))
+				return
+			}
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
 				ctx.JSON(http.StatusBadRequest,
 					getResponse(false, nil, err.Error(), "The bookmark with the same file exists"))
