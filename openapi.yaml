@@ -47,8 +47,6 @@ paths:
                             example: OzSCqHYF
         '401':
           description: Invalid request jwt token
-        '404':
-          description: User bookmark not found
         '405':
           description: Invalid http method
         '500':
@@ -56,72 +54,33 @@ paths:
       security:
         - bearerAuth:
             - read:books
-    patch:
-      tags:
-        - bookmark
-      summary: Update a bookmark order
-      description: Update a bookmark order
-      operationId: UpdateUserBookmark
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                bookmark_id:
-                  type: integer
-                  description: current bookmark numeric ID 
-                  example: 1
-                order_number:
-                  type: integer
-                  description: current bookmark order number
-                  example: 2
-        description: Update user current bookmark order
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BasicResponse'
-                  - type: object
-                    properties:
-                      data:
-                        example: null
-        '401':
-          description: Invalid request jwt token
-        '400':
-          description: Invalid request value
-        '404':
-          description: Book content not found
-        '405':
-          description: Validation http method
-        '500':
-          description: Internal error
-      security:
-        - bearerAuth:
-            - write:slides
-            - read:slides
     post:
       tags:
         - bookmark
       summary: Add or update a slide id for the user bookmark path
       description: Add or update a slide id for the user bookmark path
-      operationId: addUserBookmark
+      operationId: addOrUpdateUserBookmark
       requestBody:
         content:
           application/json:
             schema:
               properties:
+                file_uid:
+                  type: string
+                  description: Filed uid the slide will be bookmarked belongs to
+                  example: OzSCqHYF
                 slide_id:
                   type: integer
                   description: Numeric ID of the slide to insert
                   example: 1
-                force:
+                update:
                   type: boolean
-                  description: Value for whether to force update
+                  description: Value for whether to update or to create
                   example: true
+                order:
+                  type: integer
+                  description: Bookmark order number in the bookmark list
+                  example: 1
         description: Add or update user bookmark
         required: true
       responses:
@@ -155,6 +114,10 @@ paths:
                           type: string
                           description: file uid the bookmarked slide belongs to
                           example: vlbukUc2
+                        order_number:
+                          type: integer
+                          description: bookmark order number
+                          example: 1
                         created_at:
                           type: string
                           description: time the bookmarked added
@@ -167,8 +130,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content to bookmark not found
         '405':
           description: Validation http method
         '500':
@@ -207,8 +168,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: User bookmark not found
         '405':
           description: Validation http method
         '500':
@@ -255,8 +214,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content not found
         '405':
           description: Validation http method
         '500':
@@ -345,8 +302,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request query
-        '404':
-          description: content not found
         '405':
           description: Invalid http method
         '500':
@@ -395,8 +350,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content not found
         '405':
           description: Validation http method
         '500':
@@ -435,8 +388,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content not found
         '405':
           description: Validation http method
         '500':
@@ -479,8 +430,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request query
-        '404':
-          description: content not found
         '405':
           description: Invalid http method
         '500':
@@ -517,8 +466,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request query
-        '404':
-          description: content not found
         '405':
           description: Invalid http method
         '500':
