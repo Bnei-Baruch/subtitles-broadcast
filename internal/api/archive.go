@@ -145,18 +145,36 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	}
 	// Compare sources in db with source from archive
 	// Get source list to be deleted from db(means sources are no more existed in archive)
-	sourcePathsToDelete := []*SourcePath{}
-	result := database.Debug().Table(DBTableSourcePaths).Where("(language, source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
-	if result.RowsAffected == 0 {
-		log.Printf("No source path")
+	// There is the error(ERROR: stack depth limit exceeded (SQLSTATE 54001)))
+	// with all sourcePathsToCheck slice(more than 9000 rows)
+	// So split sourcePathsToCheck into 3 slices and check three times
+	sourcePathsToDelete1 := []*SourcePath{}
+	sourcePathsToDelete2 := []*SourcePath{}
+	sourcePathsToDelete3 := []*SourcePath{}
+	result := database.Debug().Table(DBTableSourcePaths).Where("id < 4001 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[:4000]).Find(&sourcePathsToDelete1)
+	if result.Error != nil {
+		log.Println(result.Error)
 	}
+	result = database.Debug().Table(DBTableSourcePaths).Where("id > 4000 AND id < 8001 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[4000:8000]).Find(&sourcePathsToDelete2)
+	if result.Error != nil {
+		log.Println(result.Error, len(sourcePathsToCheck))
+	}
+	result = database.Debug().Table(DBTableSourcePaths).Where("id > 8000 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[8000:]).Find(&sourcePathsToDelete3)
+	if result.Error != nil {
+		log.Println(result.Error, len(sourcePathsToCheck))
+	}
+	allSourcePathsToDelete := append(append(sourcePathsToDelete1, sourcePathsToDelete2...), sourcePathsToDelete3...)
+	if len(allSourcePathsToDelete) == 0 {
+		log.Println("No source path to delete")
+	}
+
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
 		log.Printf("Internal error: %s", tx.Error)
 		return
 	}
 	// Delete source list to be delete we get from above
-	for _, sourcePathToDelete := range sourcePathsToDelete {
+	for _, sourcePathToDelete := range allSourcePathsToDelete {
 		err := tx.Delete(&sourcePathToDelete).Error
 		if err != nil {
 			tx.Rollback()

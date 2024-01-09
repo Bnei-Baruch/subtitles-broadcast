@@ -25,7 +25,8 @@ const (
 	DBTableSlides    = "slides"
 	DBTableBookmarks = "bookmarks"
 
-	ERR_UNIQUE_VIOLATION = "23505"
+	ERR_UNIQUE_VIOLATION_CODE = "23505"
+	ERR_RECORD_NOT_FOUND_MSG  = "record not found"
 )
 
 type Handler struct {
@@ -209,13 +210,13 @@ func (h *Handler) UpdateSlide(ctx *gin.Context) {
 		Exec("UPDATE slides SET slide = ?, updated_at = ? WHERE id = ?", req.Slide, time.Now(), req.SlideID)
 	if result.Error != nil {
 		log.Error(result.Error)
+		if result.Error.Error() == gorm.ErrRecordNotFound.Error() {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, "No slide to update in the condition", "No slide to update in the condition"))
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "No slide to update in the condition", "No slide to update in the condition"))
 		return
 	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
@@ -293,13 +294,14 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			Select("*").
 			Where("file_uid = ? AND user_id = ?", req.FileUid, userId.(string)).
 			First(&bookmark)
-		if result.RowsAffected == 0 {
-			ctx.JSON(http.StatusBadRequest,
-				getResponse(false, nil, "No bookmarked slide to update", "No bookmarked slide to update"))
-			return
-		}
+
 		if result.Error != nil {
 			log.Error(result.Error)
+			if result.Error.Error() == gorm.ErrRecordNotFound.Error() {
+				ctx.JSON(http.StatusBadRequest,
+					getResponse(false, nil, "No bookmarked slide to update", "No bookmarked slide to update"))
+				return
+			}
 			ctx.JSON(http.StatusInternalServerError,
 				getResponse(false, nil, result.Error.Error(), "Updating bookmark has failed"))
 			return
@@ -314,7 +316,7 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 		err = h.Database.Debug().Create(&bookmark).Error
 		if err != nil {
 			log.Error(err)
-			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION {
+			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
 				ctx.JSON(http.StatusBadRequest,
 					getResponse(false, nil, err.Error(), "The bookmark with the same file exists"))
 				return
