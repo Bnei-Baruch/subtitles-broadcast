@@ -37,6 +37,10 @@ paths:
                       items:
                         type: object
                         properties:
+                          bookmark_id:
+                            type: integer
+                            description: bookmark id
+                            example: 1
                           bookmark_path:
                             type: string
                             description: bookmark path
