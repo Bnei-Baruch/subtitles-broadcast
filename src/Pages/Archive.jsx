@@ -139,7 +139,15 @@ const Archive = () => {
                         {key.bookmarked === true ? (
                           <i
                             onClick={() => {
-                              dispatch(UnBookmarkSlide(key?.ID));
+                              dispatch(
+                                BookmarkSlide({
+                                  file_uid: key?.file_uid,
+                                  slide_id: key?.ID,
+                                  update: true,
+                                  order: key?.order_number,
+                                })
+                              );
+                              // dispatch(UnBookmarkSlide(key?.ID));
                               //Below code will use in future
                               // setMessage(
                               //   "Are you sure , you want to bookmark this title"
@@ -152,7 +160,14 @@ const Archive = () => {
                         ) : (
                           <i
                             onClick={() => {
-                              dispatch(BookmarkSlide(key?.ID));
+                              dispatch(
+                                BookmarkSlide({
+                                  file_uid: key?.file_uid,
+                                  slide_id: key?.ID,
+                                  update: true,
+                                  order: key?.order_number,
+                                })
+                              );
                             }}
                             className="bi bi-bookmark m-2"
                           />

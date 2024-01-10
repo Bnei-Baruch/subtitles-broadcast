@@ -91,7 +91,7 @@ export const GetAllTitle = createAsyncThunk(
 export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
-    const response = await axios.post(`${API}bookmark/${data}`);
+    const response = await axios.post(`${API}bookmark`, data);
     thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     return response.data;
   }
