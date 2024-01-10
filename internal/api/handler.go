@@ -336,11 +336,12 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	result := []struct {
+		BookmarkId   uint   `json:"bookmark_id"`
 		BookmarkPath string `json:"bookmark_path"`
 		FileUid      string `json:"file_uid"`
 	}{}
 	query := h.Database.Debug().WithContext(ctx).
-		Select("source_paths.path || ' / ' || slides.id AS bookmark_path, files.file_uid AS file_uid").
+		Select("bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.id AS bookmark_path, files.file_uid AS file_uid").
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
