@@ -46,7 +46,7 @@ const (
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
 func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
-	// checking if file table has data
+	// TEMP USAGE: checking if file table has data (avoid to add duplicated file data from source)
 	var uniqueFiles []File
 	if err := database.Table(DBTableFiles).Table("files").Distinct("source_uid").
 		Find(&uniqueFiles).Error; err != nil {
@@ -147,23 +147,28 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	// Get source list to be deleted from db(means sources are no more existed in archive)
 	// There is the error(ERROR: stack depth limit exceeded (SQLSTATE 54001)))
 	// with all sourcePathsToCheck slice(more than 9000 rows)
-	// So split sourcePathsToCheck into 3 slices and check three times
+	// So split sourcePathsToCheck into 2 slices and check twice
 	sourcePathsToDelete1 := []*SourcePath{}
 	sourcePathsToDelete2 := []*SourcePath{}
-	sourcePathsToDelete3 := []*SourcePath{}
-	result := database.Debug().Table(DBTableSourcePaths).Where("id < 4001 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[:4000]).Find(&sourcePathsToDelete1)
-	if result.Error != nil {
-		log.Println(result.Error)
-	}
-	result = database.Debug().Table(DBTableSourcePaths).Where("id > 4000 AND id < 8001 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[4000:8000]).Find(&sourcePathsToDelete2)
-	if result.Error != nil {
-		log.Println(result.Error, len(sourcePathsToCheck))
-	}
-	result = database.Debug().Table(DBTableSourcePaths).Where("id > 8000 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[8000:]).Find(&sourcePathsToDelete3)
-	if result.Error != nil {
-		log.Println(result.Error, len(sourcePathsToCheck))
-	}
-	allSourcePathsToDelete := append(append(sourcePathsToDelete1, sourcePathsToDelete2...), sourcePathsToDelete3...)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		result := database.Debug().Table(DBTableSourcePaths).Where("id < 6001 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[:6000]).Find(&sourcePathsToDelete1)
+		if result.Error != nil {
+			log.Println(result.Error)
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		result := database.Debug().Table(DBTableSourcePaths).Where("id > 6000 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[6000:]).Find(&sourcePathsToDelete2)
+		if result.Error != nil {
+			log.Println(result.Error, len(sourcePathsToCheck))
+		}
+	}()
+	wg.Wait()
+	allSourcePathsToDelete := append(sourcePathsToDelete1, sourcePathsToDelete2...)
 	if len(allSourcePathsToDelete) == 0 {
 		log.Println("No source path to delete")
 	}
