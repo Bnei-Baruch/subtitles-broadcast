@@ -46,16 +46,20 @@ const (
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
 func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
-	// TEMP USAGE: checking if file table has data (avoid to add duplicated file data from source)
+	// Checking if file table has data (avoid to add duplicated file data from source)
 	var uniqueFiles []File
 	if err := database.Table(DBTableFiles).Table("files").Distinct("source_uid").
 		Find(&uniqueFiles).Error; err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
+	// Remove keys(source uid in file table) from source uid list to import
+	// The source uid in file table means all files related to source uid has imported
+	// No need import again
 	for _, uniqueFile := range uniqueFiles {
 		delete(sourceUidList, uniqueFile.SourceUid)
 	}
-	// And there is no new file to import then return
+	// And there is no new file to import then no need to do the rest of import process
+	// Just skip
 	if len(sourceUidList) == 0 {
 		log.Println("Importing archive data has already done before")
 		return
