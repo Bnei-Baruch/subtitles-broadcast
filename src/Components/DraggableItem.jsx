@@ -12,7 +12,15 @@ const ItemTypes = {
   CARD: "card",
 };
 
-const DraggableItem = ({ id, text, index, moveCard, fileUid }) => {
+const DraggableItem = ({
+  id,
+  text,
+  index,
+  moveCard,
+  fileUid,
+  bookmarkDelete,
+  setActivatedTab,
+}) => {
   const dispatch = useDispatch();
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
@@ -30,6 +38,9 @@ const DraggableItem = ({ id, text, index, moveCard, fileUid }) => {
   });
   const handleBookMarkClick = (e) => {
     dispatch(StoreFocusSlideId(14));
+
+    localStorage.setItem("activeSlideFileUid", +text?.split("/")?.at(-1));
+    setActivatedTab(+text?.split("/")?.at(-1));
     dispatch(GetSubtitleData(e));
   };
   return (
@@ -39,9 +50,7 @@ const DraggableItem = ({ id, text, index, moveCard, fileUid }) => {
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
     >
       <i
-        onClick={() =>
-          dispatch(UnBookmarkSlide(text.split("/").at(-1).trim("")))
-        }
+        onClick={() => dispatch(UnBookmarkSlide(bookmarkDelete))}
         className="bi bi-trash"
       />
       <span

@@ -232,6 +232,8 @@ const Subtitles = () => {
                     <DraggableItem
                       key={item.id}
                       id={item.id}
+                      setActivatedTab={setActivatedTab}
+                      bookmarkDelete={item.bookmark_id}
                       text={item?.bookmark_path}
                       fileUid={item?.file_uid}
                       index={index}
