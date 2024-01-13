@@ -1,23 +1,29 @@
 import React, { useEffect, useRef } from "react";
 
-const BookContent = ({ bookTitle, lastActivated, contents, isLtr }) => {
+const BookContent = ({
+  bookTitle,
+  lastActivated,
+  contents,
+  isLtr,
+  targetItemId,
+}) => {
   const focusSlides = useRef();
-  // useEffect(() => {
-  //   if (focusSlides.current) {
-  //     focusSlides.current.focus();
-  //   }
-  // }, []);
+  useEffect(() => {
+    focusSlides?.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [contents, targetItemId]);
   return (
     <>
-      {contents?.length > 0 &&
+      {contents?.slides?.length > 0 &&
         +localStorage.getItem("activeSlideFileUid") &&
-        contents.map((item, index) => (
+        contents?.slides?.map((item, index) => (
           <div
             ref={
-              +localStorage.getItem("activeSlideFileUid") ===
-                item.order_number && "activeSlide"
+              +localStorage.getItem("activeSlideFileUid") === item.order_number
                 ? focusSlides
-                : ""
+                : null
             }
             className={`box-content   ${
               isLtr ? "ChangeToLtr" : "ChangeToRtl"

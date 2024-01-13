@@ -91,9 +91,15 @@ export const GetAllTitle = createAsyncThunk(
 export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
-    const response = await axios.post(`${API}bookmark`, data);
-    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
-    return response.data;
+    try {
+      const response = await axios.post(`${API}bookmark`, data);
+      thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+      console.log(response, "KKKKKK");
+      return response.data;
+    } catch (error) {
+      console.log(error.response.data.description, "<<<<ffff");
+      return error.response.data.description; // This will be available as action.error.message
+    }
   }
 );
 export const UnBookmarkSlide = createAsyncThunk(
@@ -127,6 +133,11 @@ const ArchiveSlice = createSlice({
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
       return { ...state, bookmarkList: payload };
     });
+    builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
+      console.log(payload, ">>>>>>>>>>>");
+      return { ...state, bookmarkList: payload };
+    });
+
     builder.addCase(GetAllAuthorList.fulfilled, (state, { payload }) => {
       return { ...state, getAuthorList: payload };
     });

@@ -39,6 +39,12 @@ const Archive = () => {
   const [confirmation, setConfirmation] = useState(false);
   const [deleteId, setDeleteId] = useState();
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
+  const [bookmarkData, setBookmarkData] = useState({
+    file_uid: "",
+    slide_id: "",
+    update: "",
+    order: "",
+  });
   // const [bookmarkId, setBookmarkId] = useState();
   const DebouncingFreeText = useDebounce(freeText, 3000);
   useEffect(() => {
@@ -73,8 +79,10 @@ const Archive = () => {
   const ConfirmationMessage = useMemo(
     () => (
       <MessageBox
-        setFinalConfirm={setToggle}
-        message={message}
+        setFinalConfirm={() => {
+          dispatch(BookmarkSlide(bookmarkData));
+        }}
+        message={"Are you sure , you want to bookmark this File slide"}
         show={confirmation}
         handleClose={() => setConfirmation(false)}
       />
@@ -139,19 +147,17 @@ const Archive = () => {
                         {key.bookmarked === true ? (
                           <i
                             onClick={() => {
-                              dispatch(
-                                BookmarkSlide({
-                                  file_uid: key?.file_uid,
-                                  slide_id: key?.ID,
-                                  update: true,
-                                  order: key?.order_number,
-                                })
-                              );
+                              setConfirmation(true);
+                              setBookmarkData({
+                                file_uid: key?.file_uid,
+                                slide_id: key?.ID,
+                                update: true,
+                                order: key?.order_number,
+                              });
+
                               // dispatch(UnBookmarkSlide(key?.ID));
                               //Below code will use in future
-                              // setMessage(
-                              //   "Are you sure , you want to bookmark this title"
-                              // );
+
                               // setDeleteId(key.ID);
                               // setConfirmation(true);
                             }}
@@ -164,10 +170,25 @@ const Archive = () => {
                                 BookmarkSlide({
                                   file_uid: key?.file_uid,
                                   slide_id: key?.ID,
-                                  update: true,
+                                  update: false,
                                   order: key?.order_number,
                                 })
-                              );
+                              )
+                                .then((res) => {
+                                  if (
+                                    res.payload ===
+                                    "The bookmark with the same file exists"
+                                  ) {
+                                    setBookmarkData({
+                                      file_uid: key?.file_uid,
+                                      slide_id: key?.ID,
+                                      update: true,
+                                      order: key?.order_number,
+                                    });
+                                    setConfirmation(true);
+                                  }
+                                })
+                                .catch((err) => console.log(err, "LLLLLLL"));
                             }}
                             className="bi bi-bookmark m-2"
                           />

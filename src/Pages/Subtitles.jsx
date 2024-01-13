@@ -140,6 +140,7 @@ const Subtitles = () => {
                     isLtr={isLtr}
                     // bookTitle={item?.slide}
                     // lastActivated={item.slide}
+                    targetItemId={activatedTab}
                     contents={UserAddedList}
                   />
                 </div>
@@ -167,9 +168,7 @@ const Subtitles = () => {
                   "activeSlideFileUid",
                   +localStorage.getItem("activeSlideFileUid") - 1
                 );
-                dispatch(
-                  GetSubtitleData(localStorage.getItem("activeFileUid"))
-                );
+                setActivatedTab(activatedTab - 1);
               }}
             >
               Back
@@ -179,9 +178,13 @@ const Subtitles = () => {
               onChange={(e) => {
                 if (+e.target.value > 0) {
                   localStorage.setItem("activeSlideFileUid", +e.target.value);
-                  dispatch(
-                    GetSubtitleData(localStorage.getItem("activeFileUid"))
-                  );
+                  setActivatedTab(+e.target.value);
+                  // dispatch(
+                  //   GetSubtitleData(localStorage.getItem("activeFileUid"))
+                  // );
+                } else {
+                  localStorage.setItem("activeSlideFileUid", 1);
+                  setActivatedTab(1);
                 }
               }}
               placeholder="slide_ID"
@@ -192,9 +195,7 @@ const Subtitles = () => {
                   "activeSlideFileUid",
                   +localStorage.getItem("activeSlideFileUid") + 1
                 );
-                dispatch(
-                  GetSubtitleData(localStorage.getItem("activeFileUid"))
-                );
+                setActivatedTab(activatedTab + 1);
               }}
             >
               Next
