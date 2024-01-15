@@ -169,7 +169,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		query = query.Where("files.language = ?", language)
 	}
 	if len(keyword) > 0 {
-		query = query.Where("(slides.slide LIKE ? OR source_paths.path || ' / ' || slides.id LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
+		query = query.Where("(slides.slide LIKE ? OR COALESCE(source_paths.path || ' / ' || bookmarks.order_number, source_paths.path) LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 	}
 	result := query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides)
 	if result.Error != nil {
