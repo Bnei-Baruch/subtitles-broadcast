@@ -37,6 +37,14 @@ paths:
                       items:
                         type: object
                         properties:
+                          order:
+                            type: integer
+                            description: bookmark order
+                            example: 1
+                          slide_id:
+                            type: integer
+                            description: bookmarked slide id
+                            example: 1
                           bookmark_id:
                             type: integer
                             description: bookmark id
@@ -488,10 +496,10 @@ components:
           type: string
           description: source path including author name for slide
           example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 7"
-        bookmarked:
-          type: boolean
-          description: user's bookmark
-          example: true
+        bookmark_id:
+          type: integer
+          description: user's bookmark_id, no bookmark then null
+          example: 1
         slide:
           type: string
           description: slide

@@ -154,7 +154,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	slides := []*SlideDetail{}
 	query := h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
-		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN true ELSE false END AS bookmarked, files.source_uid, files.language, source_paths.path || ' / ' || slides.id AS slide_source_path", userId).
+		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, files.language, COALESCE(source_paths.path || ' / ' || bookmarks.order_number, source_paths.path) AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id").
@@ -336,12 +336,14 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	result := []struct {
+		Slide_Id     uint   `json:"slide_id"`
 		BookmarkId   uint   `json:"bookmark_id"`
 		BookmarkPath string `json:"bookmark_path"`
+		Order        int    `json:"order"`
 		FileUid      string `json:"file_uid"`
 	}{}
 	query := h.Database.Debug().WithContext(ctx).
-		Select("bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.id AS bookmark_path, files.file_uid AS file_uid").
+		Select("bookmarks.slide_id AS slide_id, bookmarks.order_number AS order, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || bookmarks.order_number AS bookmark_path, files.file_uid AS file_uid").
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").

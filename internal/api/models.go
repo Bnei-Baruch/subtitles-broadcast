@@ -47,7 +47,7 @@ type Slide struct {
 type SlideDetail struct {
 	Slide
 	SlideSourcePath string `json:"slide_source_path" gorm:"->"` // author/type/title/slide_id
-	Bookmarked      bool   `json:"bookmarked" gorm:"->"`
+	Bookmark_id     *uint  `json:"bookmark_id" gorm:"->"`
 	SourceUid       string `json:"source_uid" gorm:"->"`
 }
 
