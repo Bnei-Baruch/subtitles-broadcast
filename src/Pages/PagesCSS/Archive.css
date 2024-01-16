@@ -70,11 +70,14 @@
 }
 
 table {
-  display: block;
+  /* display: block;
   height: 500px;
-  overflow-y: scroll;
+  overflow-y: scroll; */
 }
 .disablecolor {
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
   color: #0000008a;
 }
 .Edit {
@@ -228,4 +231,15 @@ table {
 }
 .dropdown-toggle::after {
   display: none !important;
+}
+select {
+  border: none; /* Hide the border */
+  outline: none; /* Remove the default outline */
+  padding: 5px; /* Add padding to improve appearance */
+}
+
+.custom-pagination {
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
 }

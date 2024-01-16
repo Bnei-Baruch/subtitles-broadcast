@@ -37,10 +37,9 @@ const DraggableItem = ({
     },
   });
   const handleBookMarkClick = (e) => {
-    dispatch(StoreFocusSlideId(14));
-
+    alert(+text?.split("/")?.at(-1));
     localStorage.setItem("activeSlideFileUid", +text?.split("/")?.at(-1));
-    setActivatedTab(+text?.split("/")?.at(-1));
+    setActivatedTab(+text?.split("/")?.at(-1) + 1);
     dispatch(GetSubtitleData(e));
   };
   return (

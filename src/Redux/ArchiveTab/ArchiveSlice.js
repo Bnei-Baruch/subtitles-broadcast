@@ -91,13 +91,13 @@ export const GetAllTitle = createAsyncThunk(
 export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
+    console.log(data, "PPPPPPPPP");
     try {
       const response = await axios.post(`${API}bookmark`, data);
-      thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
-      console.log(response, "KKKKKK");
+      thunkAPI.dispatch(GetAllArchiveData({ language: "en", ...data.params }));
+
       return response.data;
     } catch (error) {
-      console.log(error.response.data.description, "<<<<ffff");
       return error.response.data.description; // This will be available as action.error.message
     }
   }

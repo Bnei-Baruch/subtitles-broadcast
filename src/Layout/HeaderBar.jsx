@@ -10,7 +10,7 @@ const HeaderBar = () => {
 
   return (
     <>
-      <div className="main-body vh-auto">
+      <div className="main-body">
         <div className="top-header d-flex justify-content-between">
           <input
             className="form-control me-2"

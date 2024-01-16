@@ -162,6 +162,7 @@ const Subtitles = () => {
               </div>
             </div>
             <button
+              className="cursor-pointer"
               disabled={+localStorage.getItem("activeSlideFileUid") == 0}
               onClick={() => {
                 localStorage.setItem(
@@ -174,6 +175,7 @@ const Subtitles = () => {
               Back
             </button>
             <input
+              value={activatedTab}
               type="number"
               onChange={(e) => {
                 if (+e.target.value > 0) {
@@ -183,13 +185,14 @@ const Subtitles = () => {
                   //   GetSubtitleData(localStorage.getItem("activeFileUid"))
                   // );
                 } else {
-                  localStorage.setItem("activeSlideFileUid", 1);
-                  setActivatedTab(1);
+                  localStorage.setItem("activeSlideFileUid", 0);
+                  setActivatedTab(0);
                 }
               }}
               placeholder="slide_ID"
             />
             <button
+              className="cursor-pointer"
               onClick={() => {
                 localStorage.setItem(
                   "activeSlideFileUid",

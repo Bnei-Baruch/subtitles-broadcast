@@ -80,7 +80,12 @@ const Archive = () => {
     () => (
       <MessageBox
         setFinalConfirm={() => {
-          dispatch(BookmarkSlide(bookmarkData));
+          dispatch(
+            BookmarkSlide({
+              ...bookmarkData,
+              params: { page: 1, limit: page.limit },
+            })
+          );
         }}
         message={"Are you sure , you want to bookmark this File slide"}
         show={confirmation}
@@ -130,7 +135,7 @@ const Archive = () => {
                   <tr>
                     <th scope="col">Text</th>
                     <th scope="col">Author</th>
-
+                    <th scope="col">Path</th>
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
@@ -142,9 +147,10 @@ const Archive = () => {
                       </th>
 
                       <td>{key.slide_source_path?.split("/")?.[0]}</td>
+                      <td>{key.slide_source_path}</td>
 
                       <td>
-                        {key.bookmarked === true ? (
+                        {key.bookmark_id !== null ? (
                           <i
                             onClick={() => {
                               setConfirmation(true);
@@ -172,6 +178,7 @@ const Archive = () => {
                                   slide_id: key?.ID,
                                   update: false,
                                   order: key?.order_number,
+                                  params: { page: 1, limit: page.limit },
                                 })
                               )
                                 .then((res) => {
@@ -226,7 +233,7 @@ const Archive = () => {
                 </tbody>
               </table>
             ) : (
-              <div className="card d-flex h-50%">
+              <div className="card d-flex h-auto">
                 <div>NO Data</div>
               </div>
             )}
@@ -254,16 +261,30 @@ const Archive = () => {
               </span>
             </div>
             <div className="arrow">
-              <button
+              <i
                 className={`bi bi-chevron-left me-1  ${
-                  ArchiveList?.pagination?.page === 1 && "disablecolor"
+                  ArchiveList?.pagination?.page === 1
+                    ? "disablecolor"
+                    : "custom-pagination"
                 }`}
-                disabled={page.page === 1}
-                onClick={() => setPage({ ...page, page: page.page - 1 })}
+                onClick={() => {
+                  page.page !== 1 && setPage({ ...page, page: page.page - 1 });
+                }}
               />
-              <button
-                className="bi bi-chevron-right ms-1"
-                onClick={() => setPage({ ...page, page: page.page + 1 })}
+              <i
+                className={`bi bi-chevron-right ms-1  ${
+                  ArchiveList?.pagination?.page *
+                    ArchiveList?.pagination?.limit >
+                  ArchiveList?.pagination?.total_rows
+                    ? "disablecolor"
+                    : "custom-pagination"
+                }`}
+                onClick={() => {
+                  ArchiveList?.pagination?.page *
+                    ArchiveList?.pagination?.limit <
+                    ArchiveList?.pagination?.total_rows &&
+                    setPage({ ...page, page: page.page + 1 });
+                }}
               />
             </div>
             <div className="blank"></div>

@@ -21,7 +21,7 @@ export const GetSubtitleData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}slide`, {
-      params: { "file _uid": data },
+      params: { file_uid: data },
     });
     return response.data;
   }

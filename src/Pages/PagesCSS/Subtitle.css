@@ -94,7 +94,7 @@
   border-radius: 0 !important;
 }
 
-body {
+/* body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   font-family: "Nunito", sans-serif;
@@ -110,7 +110,7 @@ main {
   max-height: 100vh;
   overflow-x: auto;
   overflow-y: hidden;
-}
+} */
 
 .dropdown-toggle {
   outline: 0;
@@ -166,6 +166,8 @@ main {
   z-index: 9;
 }
 .box-content {
+  display: flex;
+  flex-direction: column;
   font-family: "Roboto";
   font-style: normal;
   font-weight: 600;
@@ -175,12 +177,10 @@ main {
 
   text-align: right;
   letter-spacing: 0.0595px;
-
+  margin-bottom: 10px;
   color: #212121;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.25);
-  padding: 18px 18px 30px;
-  margin-bottom: 10px;
 }
 
 .top-tab .nav-tabs .nav-link {
@@ -302,4 +302,7 @@ main {
 
 .activeSlide {
   border: solid green 5px;
+}
+.cursor-pointer {
+  cursor: pointer;
 }
