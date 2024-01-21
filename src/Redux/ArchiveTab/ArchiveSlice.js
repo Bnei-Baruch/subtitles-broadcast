@@ -91,12 +91,30 @@ export const GetAllTitle = createAsyncThunk(
 export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
-    console.log(data, "PPPPPPPPP");
     try {
       const response = await axios.post(`${API}bookmark`, data);
       thunkAPI.dispatch(GetAllArchiveData({ language: "en", ...data.params }));
 
       return response.data;
+    } catch (error) {
+      return error.response.data.description; // This will be available as action.error.message
+    }
+  }
+);
+
+export const BookmarksSlide = createAsyncThunk(
+  "/BookmarksSlide",
+  async (data, thunkAPI) => {
+    try {
+      data?.forEach((key, index) => {
+        axios.post(`${API}bookmark`, {
+          file_uid: key?.file_uid,
+          slide_id: key?.slide_id,
+          update: true,
+          order: index,
+          params: { page: 1, limit: 10 },
+        });
+      });
     } catch (error) {
       return error.response.data.description; // This will be available as action.error.message
     }

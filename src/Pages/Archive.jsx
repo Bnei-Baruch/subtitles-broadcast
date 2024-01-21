@@ -47,6 +47,7 @@ const Archive = () => {
   });
   // const [bookmarkId, setBookmarkId] = useState();
   const DebouncingFreeText = useDebounce(freeText, 3000);
+
   useEffect(() => {
     dispatch(GetAllAuthorList());
   }, [dispatch]);
@@ -101,7 +102,7 @@ const Archive = () => {
       {editSlide ? (
         <EditArcive />
       ) : (
-        <div className="archiveBackground  ">
+        <div className="archiveBackground  bg-light Edit">
           <div className="search-box">
             <div className="d-flex m-2">
               <div className="form-group col-3">
@@ -115,7 +116,7 @@ const Archive = () => {
                 />
               </div>
 
-              <div className="form-group col-2">
+              {/* <div className="form-group col-2">
                 <label>Author</label>
 
                 <Select
@@ -124,7 +125,7 @@ const Archive = () => {
                     label: key,
                   }))}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -134,7 +135,7 @@ const Archive = () => {
                 <thead>
                   <tr>
                     <th scope="col">Text</th>
-                    <th scope="col">Author</th>
+                    {/* <th scope="col">Author</th> */}
                     <th scope="col">Path</th>
                     <th scope="col">Action</th>
                   </tr>
@@ -146,7 +147,7 @@ const Archive = () => {
                         <span className="truncate">{key.slide}</span>
                       </th>
 
-                      <td>{key.slide_source_path?.split("/")?.[0]}</td>
+                      {/* <td>{key.slide_source_path?.split("/")?.[0]}</td> */}
                       <td>{key.slide_source_path}</td>
 
                       <td>
@@ -177,7 +178,9 @@ const Archive = () => {
                                   file_uid: key?.file_uid,
                                   slide_id: key?.ID,
                                   update: false,
-                                  order: key?.order_number,
+                                  order: ArchiveList?.slides?.find(
+                                    (key) => key.bookmark_id !== null
+                                  )?.length,
                                   params: { page: 1, limit: page.limit },
                                 })
                               )
@@ -190,7 +193,10 @@ const Archive = () => {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.ID,
                                       update: true,
-                                      order: key?.order_number,
+                                      order:
+                                        ArchiveList?.slides?.find(
+                                          (key) => key.bookmark_id !== null
+                                        )?.length || 1,
                                     });
                                     setConfirmation(true);
                                   }

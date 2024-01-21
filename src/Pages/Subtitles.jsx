@@ -7,7 +7,8 @@ import {
 } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
-  UnBookmarkSlide,
+  BookmarkSlide,
+  BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
@@ -18,12 +19,40 @@ import DraggableItem from "../Components/DraggableItem";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
+  const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const GetAllBookmarkList = useSelector(getAllBookmarkList);
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const [activatedTab, setActivatedTab] = useState("");
-  console.log(UserAddedList, "UserAddedList");
+  const [activatedTab, setActivatedTab] = useState(activatedTabData);
+
+  const handleKeyPress = (event) => {
+    if (event.key === "n" || event.keyCode === 78) {
+      localStorage.setItem(
+        "activeSlideFileUid",
+        +localStorage.getItem("activeSlideFileUid") + 1
+      );
+
+      setActivatedTab(localStorage.getItem("activeSlideFileUid"));
+    }
+    if (event.key === "b" || event.keyCode === 66) {
+      localStorage.setItem(
+        "activeSlideFileUid",
+        +localStorage.getItem("activeSlideFileUid") - 1
+      );
+      setActivatedTab(localStorage.getItem("activeSlideFileUid"));
+    }
+  };
+
+  useEffect(() => {
+    // Add event listener when the component mounts
+    window.addEventListener("keydown", handleKeyPress);
+
+    // Remove event listener when the component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
   useEffect(() => {
     dispatch(UserBookmarkList());
   }, [dispatch]);
@@ -41,10 +70,23 @@ const Subtitles = () => {
     const updatedItems = [...items];
     const [movedItem] = updatedItems.splice(fromIndex, 1);
     updatedItems.splice(toIndex, 0, movedItem);
+    dispatch(BookmarksSlide(updatedItems));
+    console.log(updatedItems, "LLLLL");
+    // updatedItems?.forEach((key, index) => {
+    //   dispatch(
+    //     BookmarksSlide({
+    //       file_uid: key?.file_uid,
+    //       slide_id: key?.slide_id,
+    //       update: true,
+    //       order: index,
+    //       params: { page: 1, limit: 10 },
+    //     })
+    //   );
+    // });
+
     setItems(updatedItems);
   };
-
-  console.log(GetAllBookmarkList, "GetAllBookmarkList");
+  console.log(items);
   return (
     <>
       <div className="body-content d-flex vh-auto">
@@ -69,15 +111,6 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               >
-                {/* <div className="input-box">
-                  <label className="w-100">Slide</label>
-                  <input
-                    className=""
-                    type="text"
-                    placeholder="Search"
-                    aria-label="Search"
-                  />
-                </div> */}
                 <button
                   type="button"
                   onClick={() => setIsLtr(!isLtr)}
@@ -138,67 +171,60 @@ const Subtitles = () => {
                 <div className="vh-80">
                   <BookContent
                     isLtr={isLtr}
+                    setActivatedTab={setActivatedTab}
+                    activatedTab={activatedTab}
                     // bookTitle={item?.slide}
                     // lastActivated={item.slide}
                     targetItemId={activatedTab}
                     contents={UserAddedList}
                   />
                 </div>
-
-                {/* <div>
-                  {UserAddedList?.map(
-                    (item, index) =>
-                      activatedTab === item?.book_title && (
-                        <BookContent
-                          isLtr={isLtr}
-                          key={index}
-                          bookTitle={item?.book_title}
-                          lastActivated={item.last_activated}
-                          contents={item?.contents}
-                        />
-                      )
-                  )}
-                </div> */}
               </div>
             </div>
             <button
               className="cursor-pointer"
-              disabled={+localStorage.getItem("activeSlideFileUid") == 0}
+              disabled={activatedTab <= 1}
               onClick={() => {
+                setActivatedTab(activatedTab - 1);
                 localStorage.setItem(
                   "activeSlideFileUid",
                   +localStorage.getItem("activeSlideFileUid") - 1
                 );
-                setActivatedTab(activatedTab - 1);
               }}
             >
               Back
             </button>
             <input
+              onWheel={(e) => e.preventDefault()}
+              defaultValue={activatedTab}
               value={activatedTab}
-              type="number"
+              type="number" // Set the input type to "number" to enforce numeric input
               onChange={(e) => {
-                if (+e.target.value > 0) {
-                  localStorage.setItem("activeSlideFileUid", +e.target.value);
-                  setActivatedTab(+e.target.value);
-                  // dispatch(
-                  //   GetSubtitleData(localStorage.getItem("activeFileUid"))
-                  // );
+                const inputValue = +e.target.value;
+                const maxSlideIndex = +UserAddedList?.slides?.length;
+                if (inputValue > 0 && inputValue <= maxSlideIndex) {
+                  localStorage.setItem("activeSlideFileUid", inputValue);
+                  setActivatedTab(inputValue);
+                } else if (inputValue > maxSlideIndex) {
+                  // Handle the case when inputValue is greater than maxSlideIndex
+                  localStorage.setItem("activeSlideFileUid", maxSlideIndex + 1);
+                  setActivatedTab(maxSlideIndex + 1);
                 } else {
-                  localStorage.setItem("activeSlideFileUid", 0);
-                  setActivatedTab(0);
+                  localStorage.setItem("activeSlideFileUid", 1);
+                  setActivatedTab("");
                 }
               }}
               placeholder="slide_ID"
             />
+
             <button
               className="cursor-pointer"
               onClick={() => {
+                setActivatedTab(activatedTab + 1);
                 localStorage.setItem(
                   "activeSlideFileUid",
                   +localStorage.getItem("activeSlideFileUid") + 1
                 );
-                setActivatedTab(activatedTab + 1);
               }}
             >
               Next
@@ -231,7 +257,7 @@ const Subtitles = () => {
             <DndProvider backend={HTML5Backend}>
               <div className="">
                 {items?.length > 0 &&
-                  items.map((item, index) => (
+                  items?.map((item, index) => (
                     <DraggableItem
                       key={item.id}
                       id={item.id}

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
 
 const BookContent = ({
+  setActivatedTab,
+  activatedTab,
   bookTitle,
   lastActivated,
   contents,
@@ -14,23 +16,24 @@ const BookContent = ({
       block: "center",
     });
   }, [contents, targetItemId]);
-  console.log(contents, "contents");
+  console.log(activatedTab, "contents");
   return (
     <>
       {contents?.slides?.length > 0 &&
-        +localStorage.getItem("activeSlideFileUid") >= 0 &&
+        +activatedTab >= 0 &&
         contents?.slides?.map((item, index) => (
           <>
             <div
-              ref={
-                +localStorage.getItem("activeSlideFileUid") ===
-                item.order_number
-                  ? focusSlides
-                  : null
-              }
-              className={`box-content d-flex    ${
-                +localStorage.getItem("activeSlideFileUid") ===
-                  item.order_number && "activeSlide"
+              onClick={() => {
+                setActivatedTab(+item?.order_number + 1);
+                localStorage.setItem(
+                  "activeSlideFileUid",
+                  +item?.order_number + 1
+                );
+              }}
+              ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
+              className={`box-content d-flex  cursor-pointer  ${
+                +activatedTab === item.order_number + 1 && "activeSlide"
               }`}
             >
               <bdo
