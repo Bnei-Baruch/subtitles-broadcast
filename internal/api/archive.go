@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -140,51 +141,34 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 }
 
 // Update source_paths table(to sync source data regularly)
-func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
-	sourcePathsToCheck := [][]interface{}{}
+func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
+	currentSourcePaths := []*SourcePath{}
+	err := database.Debug().Table("source_paths").Scan(&currentSourcePaths).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("Internal error: %s", err)
+			return
+		}
+	}
+	sourcePathsToDelete := map[string]*SourcePath{}
+	for _, currentSourcePath := range currentSourcePaths {
+		sourcePathsToDelete[currentSourcePath.SourceUid] = currentSourcePath
+	}
 	sourcePathsToInsert := []*SourcePath{}
-	for _, path := range sourcePaths {
-		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{path.Language, path.SourceUid, path.Path})
-		sourcePathsToInsert = append(sourcePathsToInsert, path)
+	for _, newSourcePath := range newSourcePaths {
+		sourcePathsToInsert = append(sourcePathsToInsert, newSourcePath)
+		// Compare sources in db with source from archive
+		// Remain source list to be deleted from db(means sources are no more existed in archive)
+		delete(sourcePathsToDelete, newSourcePath.SourceUid)
 	}
-	// Compare sources in db with source from archive
-	// Get source list to be deleted from db(means sources are no more existed in archive)
-	// There is the error(ERROR: stack depth limit exceeded (SQLSTATE 54001)))
-	// with all sourcePathsToCheck slice(more than 9000 rows)
-	// So split sourcePathsToCheck into 2 slices and check twice
-	sourcePathsToDelete1 := []*SourcePath{}
-	sourcePathsToDelete2 := []*SourcePath{}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		result := database.Debug().Table(DBTableSourcePaths).Where("id < 6001 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[:6000]).Find(&sourcePathsToDelete1)
-		if result.Error != nil {
-			log.Println(result.Error)
-		}
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		result := database.Debug().Table(DBTableSourcePaths).Where("id > 6000 AND (language, source_uid, path) NOT IN (?)", sourcePathsToCheck[6000:]).Find(&sourcePathsToDelete2)
-		if result.Error != nil {
-			log.Println(result.Error, len(sourcePathsToCheck))
-		}
-	}()
-	wg.Wait()
-	allSourcePathsToDelete := append(sourcePathsToDelete1, sourcePathsToDelete2...)
-	if len(allSourcePathsToDelete) == 0 {
-		log.Println("No source path to delete")
-	}
-
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
 		log.Printf("Internal error: %s", tx.Error)
 		return
 	}
 	// Delete source list to be delete we get from above
-	for _, sourcePathToDelete := range allSourcePathsToDelete {
-		err := tx.Delete(&sourcePathToDelete).Error
+	for _, sourcePathToDelete := range sourcePathsToDelete {
+		err := tx.Where("id = ?", sourcePathToDelete.ID).Delete(sourcePathToDelete).Error
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Internal error: %s", err)
@@ -196,14 +180,14 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 		err := database.Debug().Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "language"}, {Name: "source_uid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"path"}),
-		}).Create(&sourcePathToInsert).Error
+		}).Create(sourcePathToInsert).Error
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Internal error: %s", err.Error())
 			return
 		}
 	}
-	err := tx.Commit().Error
+	err = tx.Commit().Error
 	if err != nil {
 		log.Printf("Internal error: %s", err)
 		return
