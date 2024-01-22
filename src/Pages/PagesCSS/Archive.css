@@ -70,11 +70,14 @@
 }
 
 table {
-  display: block;
+  /* display: block;
   height: 500px;
-  overflow-y: scroll;
+  overflow-y: scroll; */
 }
 .disablecolor {
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
   color: #0000008a;
 }
 .Edit {
@@ -159,7 +162,9 @@ table {
 
 .Edit h4 {
   color: rgba(0, 0, 0, 0.87);
-  font-feature-settings: "clig" off, "liga" off;
+  font-feature-settings:
+    "clig" off,
+    "liga" off;
   font-family: Nunito;
   font-size: 20px;
   font-style: normal;
@@ -170,7 +175,9 @@ table {
 }
 .Edit h6 {
   color: rgba(0, 0, 0, 0.87);
-  font-feature-settings: "clig" off, "liga" off;
+  font-feature-settings:
+    "clig" off,
+    "liga" off;
   font-family: Nunito;
   font-size: 16px;
   font-style: normal;
@@ -196,7 +203,9 @@ table {
 
 .Edit h2 {
   color: rgba(0, 0, 0, 0.87);
-  font-feature-settings: "clig" off, "liga" off;
+  font-feature-settings:
+    "clig" off,
+    "liga" off;
   font-family: Nunito;
   font-size: 16px;
   font-style: normal;
@@ -219,4 +228,18 @@ table {
 .table .dropdown-menu.show {
   min-width: 50px;
   width: 50px;
+}
+.dropdown-toggle::after {
+  display: none !important;
+}
+select {
+  border: none; /* Hide the border */
+  outline: none; /* Remove the default outline */
+  padding: 5px; /* Add padding to improve appearance */
+}
+
+.custom-pagination {
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
 }

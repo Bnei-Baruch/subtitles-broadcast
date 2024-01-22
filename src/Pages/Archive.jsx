@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import Dropdown from "react-bootstrap/Dropdown";
 import useDebounce from "../Services/useDebounce";
 import EditArcive from "./EditArchive";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 
 const Archive = () => {
   const dispatch = useDispatch();
@@ -38,22 +39,26 @@ const Archive = () => {
   const [confirmation, setConfirmation] = useState(false);
   const [deleteId, setDeleteId] = useState();
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
+  const [bookmarkData, setBookmarkData] = useState({
+    file_uid: "",
+    slide_id: "",
+    update: "",
+    order: "",
+  });
   // const [bookmarkId, setBookmarkId] = useState();
   const DebouncingFreeText = useDebounce(freeText, 3000);
+
   useEffect(() => {
     dispatch(GetAllAuthorList());
   }, [dispatch]);
   useEffect(() => {
     dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
-  }, [page, DebouncingFreeText, dispatch, freeText]);
+  }, [page, DebouncingFreeText, dispatch]);
 
   useEffect(() => {
     if (finalConfirm === true) {
       dispatch(DeleteArchive(deleteId));
       setFinalConfirm(false);
-      // if (message?.split(" ")?.includes("delete")) {
-      //   alert("delete");
-      // }
     }
     if (toggle) {
       dispatch(BookmarkSlide(deleteId));
@@ -75,8 +80,15 @@ const Archive = () => {
   const ConfirmationMessage = useMemo(
     () => (
       <MessageBox
-        setFinalConfirm={setToggle}
-        message={message}
+        setFinalConfirm={() => {
+          dispatch(
+            BookmarkSlide({
+              ...bookmarkData,
+              params: { page: 1, limit: page.limit },
+            })
+          );
+        }}
+        message={"Are you sure , you want to bookmark this File slide"}
         show={confirmation}
         handleClose={() => setConfirmation(false)}
       />
@@ -90,7 +102,7 @@ const Archive = () => {
       {editSlide ? (
         <EditArcive />
       ) : (
-        <div className="archiveBackground  ">
+        <div className="archiveBackground  bg-light Edit">
           <div className="search-box">
             <div className="d-flex m-2">
               <div className="form-group col-3">
@@ -104,7 +116,7 @@ const Archive = () => {
                 />
               </div>
 
-              <div className="form-group col-2">
+              {/* <div className="form-group col-2">
                 <label>Author</label>
 
                 <Select
@@ -113,7 +125,7 @@ const Archive = () => {
                     label: key,
                   }))}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -123,9 +135,8 @@ const Archive = () => {
                 <thead>
                   <tr>
                     <th scope="col">Text</th>
-                    <th scope="col">Author</th>
-                    {/* <th scope="col">Book</th>
-                <th scope="col">Title</th> */}
+                    {/* <th scope="col">Author</th> */}
+                    <th scope="col">Path</th>
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
@@ -136,42 +147,24 @@ const Archive = () => {
                         <span className="truncate">{key.slide}</span>
                       </th>
 
-                      <td>{key.slide_source_path?.split("/")?.[0]}</td>
+                      {/* <td>{key.slide_source_path?.split("/")?.[0]}</td> */}
+                      <td>{key.slide_source_path}</td>
 
-                      {/* <td>{key.book}</td>
-                  <td>{key.title}</td> */}
                       <td>
-                        {
+                        {key.bookmark_id !== null ? (
                           <i
                             onClick={() => {
-                              const fileIds = Array.isArray(
-                                JSON.parse(localStorage.getItem("fileids"))
-                              )
-                                ? JSON.parse(localStorage.getItem("fileids"))
-                                : [];
+                              setConfirmation(true);
+                              setBookmarkData({
+                                file_uid: key?.file_uid,
+                                slide_id: key?.ID,
+                                update: true,
+                                order: key?.order_number,
+                              });
 
-                              const fileIdsArr = new Set([
-                                ...fileIds,
-                                key?.file_id,
-                              ]);
+                              // dispatch(UnBookmarkSlide(key?.ID));
+                              //Below code will use in future
 
-                              localStorage.setItem(
-                                "fileids",
-                                JSON.stringify(Array.from(fileIdsArr))
-                              );
-
-                              navigate("/subtitle");
-                            }}
-                            className="bi bi-plus"
-                          />
-                        }
-                        {key.bookmarked === true ? (
-                          <i
-                            onClick={() => {
-                              dispatch(UnBookmarkSlide(key?.ID));
-                              // setMessage(
-                              //   "Are you sure , you want to bookmark this title"
-                              // );
                               // setDeleteId(key.ID);
                               // setConfirmation(true);
                             }}
@@ -180,12 +173,35 @@ const Archive = () => {
                         ) : (
                           <i
                             onClick={() => {
-                              dispatch(BookmarkSlide(key?.ID));
-                              // setMessage(
-                              //   "Are you sure , you want to unbookmark this title"
-                              // );
-                              // setDeleteId(key.ID);
-                              // setConfirmation(true);
+                              dispatch(
+                                BookmarkSlide({
+                                  file_uid: key?.file_uid,
+                                  slide_id: key?.ID,
+                                  update: false,
+                                  order: ArchiveList?.slides?.find(
+                                    (key) => key.bookmark_id !== null
+                                  )?.length,
+                                  params: { page: 1, limit: page.limit },
+                                })
+                              )
+                                .then((res) => {
+                                  if (
+                                    res.payload ===
+                                    "The bookmark with the same file exists"
+                                  ) {
+                                    setBookmarkData({
+                                      file_uid: key?.file_uid,
+                                      slide_id: key?.ID,
+                                      update: true,
+                                      order:
+                                        ArchiveList?.slides?.find(
+                                          (key) => key.bookmark_id !== null
+                                        )?.length || 1,
+                                    });
+                                    setConfirmation(true);
+                                  }
+                                })
+                                .catch((err) => console.log(err, "LLLLLLL"));
                             }}
                             className="bi bi-bookmark m-2"
                           />
@@ -212,7 +228,7 @@ const Archive = () => {
                                   setDeleteConfirmationPopup(true);
                                   setDeleteId(key.ID);
                                 }}
-                                className="bi bi-trash3 m-2"
+                                className="bi bi-trash3 "
                               />
                             </Dropdown.Item>
                           </Dropdown.Menu>
@@ -223,7 +239,7 @@ const Archive = () => {
                 </tbody>
               </table>
             ) : (
-              <div className="card d-flex h-50%">
+              <div className="card d-flex h-auto">
                 <div>NO Data</div>
               </div>
             )}
@@ -239,19 +255,42 @@ const Archive = () => {
                 <option>10</option>
                 <option>20</option>
                 <option>30</option>
-              </select>
+              </select>{" "}
+              &nbsp; &nbsp; &nbsp;
+              <span>
+                {ArchiveList?.pagination?.page *
+                  ArchiveList?.pagination?.limit -
+                  9}
+                -
+                {ArchiveList?.pagination?.page * ArchiveList?.pagination?.limit}{" "}
+                of {ArchiveList?.pagination?.total_rows}
+              </span>
             </div>
             <div className="arrow">
-              <button
+              <i
                 className={`bi bi-chevron-left me-1  ${
-                  ArchiveList?.pagination?.page === 1 && "disablecolor"
+                  ArchiveList?.pagination?.page === 1
+                    ? "disablecolor"
+                    : "custom-pagination"
                 }`}
-                disabled={page.page === 1}
-                onClick={() => setPage({ ...page, page: page.page - 1 })}
+                onClick={() => {
+                  page.page !== 1 && setPage({ ...page, page: page.page - 1 });
+                }}
               />
-              <button
-                className="bi bi-chevron-right ms-1"
-                onClick={() => setPage({ ...page, page: page.page + 1 })}
+              <i
+                className={`bi bi-chevron-right ms-1  ${
+                  ArchiveList?.pagination?.page *
+                    ArchiveList?.pagination?.limit >
+                  ArchiveList?.pagination?.total_rows
+                    ? "disablecolor"
+                    : "custom-pagination"
+                }`}
+                onClick={() => {
+                  ArchiveList?.pagination?.page *
+                    ArchiveList?.pagination?.limit <
+                    ArchiveList?.pagination?.total_rows &&
+                    setPage({ ...page, page: page.page + 1 });
+                }}
               />
             </div>
             <div className="blank"></div>

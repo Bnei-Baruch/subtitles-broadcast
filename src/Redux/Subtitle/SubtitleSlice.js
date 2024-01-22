@@ -6,6 +6,7 @@ const initialState = {
   userBookmakedList: [],
   liveQusetionList: [],
   contentList: [],
+  focusSlideId: {},
 };
 
 const API_URL = {
@@ -19,7 +20,9 @@ const API_URL = {
 export const GetSubtitleData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}${API_URL.GetALL}`);
+    const response = await axios.get(`${API}slide`, {
+      params: { file_uid: data },
+    });
     return response.data;
   }
 );
@@ -42,13 +45,18 @@ export const RemoveSubtitleData = createAsyncThunk(
 const SubtitleSlice = createSlice({
   name: "Subtitle",
   initialState,
-  reducers: {},
+  reducers: {
+    StoreFocusSlideId: (state, { payload }) => {
+      return { ...state, focusSlideId: payload };
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(GetSubtitleData.fulfilled, (state, action) => {
       return { ...state, contentList: action?.payload };
     });
   },
 });
+export const { StoreFocusSlideId } = SubtitleSlice.actions;
 
 export const getAllArchiveList = (state) =>
   state?.ArchiveList?.archiveList?.data;

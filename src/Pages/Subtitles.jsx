@@ -7,36 +7,89 @@ import {
 } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
-  UnBookmarkSlide,
+  BookmarkSlide,
+  BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useSelector } from "react-redux";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import DraggableItem from "../Components/DraggableItem";
 
 const Subtitles = () => {
   const dispatch = useDispatch();
+  const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const GetAllBookmarkList = useSelector(getAllBookmarkList);
+  const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const [activatedTab, setActivatedTab] = useState("");
+  const [activatedTab, setActivatedTab] = useState(activatedTabData);
+
+  const handleKeyPress = (event) => {
+    if (event.key === "n" || event.keyCode === 78) {
+      localStorage.setItem(
+        "activeSlideFileUid",
+        +localStorage.getItem("activeSlideFileUid") + 1
+      );
+
+      setActivatedTab(localStorage.getItem("activeSlideFileUid"));
+    }
+    if (event.key === "b" || event.keyCode === 66) {
+      localStorage.setItem(
+        "activeSlideFileUid",
+        +localStorage.getItem("activeSlideFileUid") - 1
+      );
+      setActivatedTab(localStorage.getItem("activeSlideFileUid"));
+    }
+  };
 
   useEffect(() => {
-    dispatch(GetSubtitleData());
+    // Add event listener when the component mounts
+    window.addEventListener("keydown", handleKeyPress);
+
+    // Remove event listener when the component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
+  useEffect(() => {
     dispatch(UserBookmarkList());
   }, [dispatch]);
-
+  useEffect(() => {}, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
+    setItems(GetAllBookmarkList);
     // const fileId = JSON.parse(localStorage.getItem("fileids"));
     // for (let index = 0; index < fileId.length; index++) {
     //   const element = fileId[index];
     //   ///Pass file id and get all data
     // }
-  }, []);
+  }, [GetAllBookmarkList]);
+  const moveCard = (fromIndex, toIndex) => {
+    const updatedItems = [...items];
+    const [movedItem] = updatedItems.splice(fromIndex, 1);
+    updatedItems.splice(toIndex, 0, movedItem);
+    dispatch(BookmarksSlide(updatedItems));
+    console.log(updatedItems, "LLLLL");
+    // updatedItems?.forEach((key, index) => {
+    //   dispatch(
+    //     BookmarksSlide({
+    //       file_uid: key?.file_uid,
+    //       slide_id: key?.slide_id,
+    //       update: true,
+    //       order: index,
+    //       params: { page: 1, limit: 10 },
+    //     })
+    //   );
+    // });
 
+    setItems(updatedItems);
+  };
+  console.log(items);
   return (
     <>
-      <div className="body-content d-flex ">
+      <div className="body-content d-flex vh-auto">
         <div className="left-section">
           <div className="innerhead d-flex justify-content-between">
             <div
@@ -58,15 +111,6 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               >
-                <div className="input-box">
-                  <label className="w-100">Slide</label>
-                  <input
-                    className=""
-                    type="text"
-                    placeholder="Search"
-                    aria-label="Search"
-                  />
-                </div>
                 <button
                   type="button"
                   onClick={() => setIsLtr(!isLtr)}
@@ -86,7 +130,7 @@ const Subtitles = () => {
             <div className="top-tab">
               <ul className="nav nav-tabs " id="myTab" role="tablist">
                 {/* List of All Book that user have added */}
-                {UserAddedList?.map((key, index) => (
+                {/* {UserAddedList?.map((key, index) => (
                   <li className="nav-item" role="presentation">
                     <button
                       className={`nav-link  ${
@@ -110,7 +154,7 @@ const Subtitles = () => {
                       }}
                     />
                   </li>
-                ))}
+                ))} */}
               </ul>
             </div>
 
@@ -122,60 +166,69 @@ const Subtitles = () => {
                 id="home"
                 role="tabpanel"
                 aria-labelledby="home-tab"
-                tabindex="0"
+                tabIndex="0"
               >
-                <div>
-                  <div
-                    className={`box-content ${
-                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                  >
-                    hbdffdbfdbhhfbdbhdfbhfbhjbh
-                  </div>
-                  {UserAddedList?.map(
-                    (item, index) =>
-                      activatedTab === "" &&
-                      index === 0 && (
-                        <BookContent
-                          isLtr={isLtr}
-                          key={index}
-                          bookTitle={item?.book_title}
-                          lastActivated={item.last_activated}
-                          contents={item?.contents}
-                        />
-                      )
-                  )}
-                </div>
-                <div>
-                  <div
-                    className={`box-content ${
-                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                  >
-                    sdbcdsfbujb
-                  </div>
-                  <div
-                    className={`box-content ${
-                      isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                  >
-                    sdbcdsfbujbadsd333333333
-                  </div>
-                  {UserAddedList?.map(
-                    (item, index) =>
-                      activatedTab === item?.book_title && (
-                        <BookContent
-                          isLtr={isLtr}
-                          key={index}
-                          bookTitle={item?.book_title}
-                          lastActivated={item.last_activated}
-                          contents={item?.contents}
-                        />
-                      )
-                  )}
+                <div className="vh-80">
+                  <BookContent
+                    isLtr={isLtr}
+                    setActivatedTab={setActivatedTab}
+                    activatedTab={activatedTab}
+                    // bookTitle={item?.slide}
+                    // lastActivated={item.slide}
+                    targetItemId={activatedTab}
+                    contents={UserAddedList}
+                  />
                 </div>
               </div>
             </div>
+            <button
+              className="cursor-pointer"
+              disabled={activatedTab <= 1}
+              onClick={() => {
+                setActivatedTab(activatedTab - 1);
+                localStorage.setItem(
+                  "activeSlideFileUid",
+                  +localStorage.getItem("activeSlideFileUid") - 1
+                );
+              }}
+            >
+              Back
+            </button>
+            <input
+              onWheel={(e) => e.preventDefault()}
+              defaultValue={activatedTab}
+              value={activatedTab}
+              type="number" // Set the input type to "number" to enforce numeric input
+              onChange={(e) => {
+                const inputValue = +e.target.value;
+                const maxSlideIndex = +UserAddedList?.slides?.length;
+                if (inputValue > 0 && inputValue <= maxSlideIndex) {
+                  localStorage.setItem("activeSlideFileUid", inputValue);
+                  setActivatedTab(inputValue);
+                } else if (inputValue > maxSlideIndex) {
+                  // Handle the case when inputValue is greater than maxSlideIndex
+                  localStorage.setItem("activeSlideFileUid", maxSlideIndex + 1);
+                  setActivatedTab(maxSlideIndex + 1);
+                } else {
+                  localStorage.setItem("activeSlideFileUid", 1);
+                  setActivatedTab("");
+                }
+              }}
+              placeholder="slide_ID"
+            />
+
+            <button
+              className="cursor-pointer"
+              onClick={() => {
+                setActivatedTab(activatedTab + 1);
+                localStorage.setItem(
+                  "activeSlideFileUid",
+                  +localStorage.getItem("activeSlideFileUid") + 1
+                );
+              }}
+            >
+              Next
+            </button>
           </div>
         </div>
 
@@ -186,7 +239,7 @@ const Subtitles = () => {
                 <iframe
                   src="https://www.youtube.com/embed/zpOULjyy-n8?rel=0"
                   title="YouTube video"
-                  allowfullscreen
+                  allowFullScreen
                 ></iframe>
               </div>
             </div>
@@ -201,30 +254,23 @@ const Subtitles = () => {
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
-            <div className="">
-              {GetAllBookmarkList?.map((key) => {
-                return (
-                  <div className="d-flex justify-content-between">
-                    <i
-                      onClick={() =>
-                        dispatch(
-                          UnBookmarkSlide(key.split("/").at(-1).trim(""))
-                        )
-                      }
-                      className="bi bi-trash"
+            <DndProvider backend={HTML5Backend}>
+              <div className="">
+                {items?.length > 0 &&
+                  items?.map((item, index) => (
+                    <DraggableItem
+                      key={item.id}
+                      id={item.id}
+                      setActivatedTab={setActivatedTab}
+                      bookmarkDelete={item.bookmark_id}
+                      text={item?.bookmark_path}
+                      fileUid={item?.file_uid}
+                      index={index}
+                      moveCard={moveCard}
                     />
-                    <span
-                      className="text-truncate mx-3"
-                      data-bs-toggle="tooltip"
-                      data-bs-placement="top"
-                      title={key}
-                    >
-                      {key}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+              </div>
+            </DndProvider>
           </div>
 
           <div className="Questions whit-s">

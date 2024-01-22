@@ -91,9 +91,33 @@ export const GetAllTitle = createAsyncThunk(
 export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
-    const response = await axios.post(`${API}bookmark/${data}`);
-    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
-    return response.data;
+    try {
+      const response = await axios.post(`${API}bookmark`, data);
+      thunkAPI.dispatch(GetAllArchiveData({ language: "en", ...data.params }));
+
+      return response.data;
+    } catch (error) {
+      return error.response.data.description; // This will be available as action.error.message
+    }
+  }
+);
+
+export const BookmarksSlide = createAsyncThunk(
+  "/BookmarksSlide",
+  async (data, thunkAPI) => {
+    try {
+      data?.forEach((key, index) => {
+        axios.post(`${API}bookmark`, {
+          file_uid: key?.file_uid,
+          slide_id: key?.slide_id,
+          update: true,
+          order: index,
+          params: { page: 1, limit: 10 },
+        });
+      });
+    } catch (error) {
+      return error.response.data.description; // This will be available as action.error.message
+    }
   }
 );
 export const UnBookmarkSlide = createAsyncThunk(
@@ -127,6 +151,11 @@ const ArchiveSlice = createSlice({
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
       return { ...state, bookmarkList: payload };
     });
+    builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
+      console.log(payload, ">>>>>>>>>>>");
+      return { ...state, bookmarkList: payload };
+    });
+
     builder.addCase(GetAllAuthorList.fulfilled, (state, { payload }) => {
       return { ...state, getAuthorList: payload };
     });

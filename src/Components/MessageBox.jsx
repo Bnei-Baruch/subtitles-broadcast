@@ -16,7 +16,6 @@ const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
         <div className="modal-footer justify-content-center">
           <Button
             onClick={() => {
-              setFinalConfirm(false);
               handleClose();
             }}
           >
@@ -24,7 +23,7 @@ const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
           </Button>
           <Button
             onClick={() => {
-              setFinalConfirm(true);
+              setFinalConfirm();
               handleClose();
             }}
           >
