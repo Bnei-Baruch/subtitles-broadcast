@@ -48,6 +48,7 @@ func getResponse(success bool, data interface{}, err, description string) gin.H 
 	}
 }
 
+/* not using
 func (h *Handler) ImportSource(ctx *gin.Context) {
 	req := struct {
 		SourceUid string `json:"source_uid"`
@@ -108,6 +109,49 @@ func (h *Handler) ImportSource(ctx *gin.Context) {
 					getResponse(false, nil, err.Error(), "Creating slide data has failed"))
 				return
 			}
+		}
+	}
+	if err = tx.Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded"))
+}
+*/
+
+func (h *Handler) AddSlides(ctx *gin.Context) {
+	reqs := []*struct {
+		FileUid     string `json:"file_uid"`
+		Slide       string `json:"slide"`
+		OrderNumber int    `json:"order_number"`
+	}{}
+	err := ctx.BindJSON(&reqs)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	for _, req := range reqs {
+		if err = tx.Create(&Slide{
+			FileUid:     req.FileUid,
+			Slide:       req.Slide,
+			OrderNumber: req.OrderNumber,
+		}).Error; err != nil {
+			tx.Rollback()
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Creating file data has failed"))
+			return
 		}
 	}
 	if err = tx.Commit().Error; err != nil {
@@ -195,39 +239,16 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			"", "Getting data has succeeded"))
 }
 
-func (h *Handler) UpdateSlide(ctx *gin.Context) {
-	req := struct {
-		SlideID int    `json:"slide_id"`
-		Slide   string `json:"slide"`
+func (h *Handler) UpdateSlides(ctx *gin.Context) {
+	reqs := []*struct {
+		SlideID     uint   `json:"slide_id"`
+		Slide       string `json:"slide"`
+		OrderNumber int    `json:"order_number"`
 	}{}
-	err := ctx.BindJSON(&req)
+	err := ctx.BindJSON(&reqs)
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
-		return
-	}
-	result := h.Database.Debug().WithContext(ctx).
-		Exec("UPDATE slides SET slide = ?, updated_at = ? WHERE id = ?", req.Slide, time.Now(), req.SlideID)
-	if result.Error != nil {
-		log.Error(result.Error)
-		if result.Error.Error() == gorm.ErrRecordNotFound.Error() {
-			ctx.JSON(http.StatusBadRequest,
-				getResponse(false, nil, "No slide to update in the condition", "No slide to update in the condition"))
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
-}
-
-func (h *Handler) DeleteSlide(ctx *gin.Context) {
-	slideId := ctx.Param("slide_id")
-	slideIdInt, err := strconv.Atoi(slideId)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Slide ID must be an integer"))
 		return
 	}
 	tx := h.Database.Debug().WithContext(ctx).Begin()
@@ -237,32 +258,87 @@ func (h *Handler) DeleteSlide(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	if err := tx.Where("slide_id = ?", slideIdInt).Delete(&Bookmark{}).Error; err != nil {
+	for _, req := range reqs {
+		result := tx.Table("slides").Model(&Slide{}).
+			Where("id = ?", req.SlideID).
+			Updates(Slide{
+				Slide:       req.Slide,
+				OrderNumber: req.OrderNumber,
+				UpdatedAt:   time.Now(),
+			})
+		if result.Error != nil {
+			tx.Rollback()
+			log.Error(result.Error)
+			ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
+			return
+		}
+		if result.RowsAffected == 0 {
+			tx.Rollback()
+			errMsg := fmt.Sprintf("No slide(id: %d) to update", req.SlideID)
+			ctx.JSON(http.StatusBadRequest, getResponse(false, nil, errMsg, errMsg))
+			return
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting bookmark data related to the slide has failed"))
+			getResponse(false, nil, err.Error(), "Updating slide data has failed"))
 		return
 	}
-	result := tx.Where("id = ?", slideIdInt).Delete(&Slide{})
-	if result.Error != nil {
-		tx.Rollback()
-		log.Error(result.Error)
+
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
+}
+
+func (h *Handler) DeleteSlides(ctx *gin.Context) {
+	req := struct {
+		SlideIds []uint `json:"slide_ids"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "No slide with the id", "No slide with the id"))
-		return
+	for _, slideId := range req.SlideIds {
+		if err := tx.Where("slide_id = ?", slideId).Delete(&Bookmark{}).Error; err != nil {
+			tx.Rollback()
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Deleting bookmark data related to the slide has failed"))
+			return
+		}
+		result := tx.Where("id = ?", slideId).Delete(&Slide{})
+		if result.Error != nil {
+			tx.Rollback()
+			log.Error(result.Error)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+			return
+		}
+		if result.RowsAffected == 0 {
+			tx.Rollback()
+			errMsg := fmt.Sprintf("No slide(id: %d) to delete", slideId)
+			ctx.JSON(http.StatusBadRequest, getResponse(false, nil, errMsg, errMsg))
+			return
+		}
 	}
-	if err = tx.Commit().Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Deleting slide data has failed"))
 		return
 	}
+
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
@@ -294,7 +370,6 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			Select("*").
 			Where("file_uid = ? AND user_id = ?", req.FileUid, userId.(string)).
 			First(&bookmark)
-
 		if result.Error != nil {
 			log.Error(result.Error)
 			if result.Error.Error() == gorm.ErrRecordNotFound.Error() {

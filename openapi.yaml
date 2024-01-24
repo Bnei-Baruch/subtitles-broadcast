@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Broadcast Subtitles Server API
   description: |-
@@ -199,15 +199,22 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                source_uid:
-                  type: string
-                  description: archive source uid
-                  example: "tswzgnWk"
-                langugae:
-                  type: string 
-                  description: language code
-                  example: "en"
+              type: array
+              items:
+                type: object
+                properties:
+                  file_uid:
+                    type: string
+                    description: archive file uid
+                    example: "OzSCqHYF"
+                  slide:
+                    type: string
+                    description: slide text
+                    example: "you must know that all that is said in The Book of Zohar"
+                  order_number:
+                    type: integer
+                    description: slide order number
+                    example: 1
         description: Created user slide data
         required: true
       responses:
@@ -331,19 +338,22 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                slide_id:
-                  type: integer
-                  description: slide id
-                  example: 1
-                langugae:
-                  type: string 
-                  description: language code
-                  example: "en"
-                slide:
-                  type: string
-                  description: slide to update
-                  example: "Hello"
+              type: array
+              items:
+                type: object
+                properties:
+                  slide_id:
+                    type: integer
+                    description: slide id to update
+                    example: 1
+                  slide:
+                    type: string
+                    description: slide text
+                    example: "you must know that all that is said in The Book of Zohar"
+                  order_number:
+                    type: integer
+                    description: slide order number
+                    example: 1
         description: Update user slide text
         required: true
       responses:
@@ -370,20 +380,21 @@ paths:
         - bearerAuth:
             - write:slides
             - read:slides
-  /slide/{slideId}:
     delete:
       tags:
         - slide
       summary: Delete a slide
       description: Delete a slide
       operationId: deleteSlide
-      parameters:
-        - in: path
-          name: slideId
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of the slide to delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                slide_ids:
+                  type: array
+                  description: slide ids to delete
+                  example: 1
       responses:
         '200':
           description: Successful operation
