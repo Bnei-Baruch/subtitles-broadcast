@@ -394,7 +394,7 @@ paths:
                 slide_ids:
                   type: array
                   description: slide ids to delete
-                  example: 1
+                  example: [1, 2, 3]
       responses:
         '200':
           description: Successful operation
