@@ -201,7 +201,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, files.language, source_paths.path || ' / ' || slides.order_number AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
-		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id").
+		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Order("slides.id").Order("order_number")
 	if len(sourceUid) > 0 {
 		query = query.Where("files.source_uid = ?", sourceUid)
