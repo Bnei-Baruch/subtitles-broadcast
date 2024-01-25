@@ -462,6 +462,14 @@ paths:
       summary: Get article titles and author names by query
       description: Get article titles and author names
       operationId: GetArticleTitlesAndAuthorsByQuery
+      parameters:
+        - name: query
+          in: query
+          description: search keyword
+          required: true
+          explode: true
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
