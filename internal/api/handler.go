@@ -213,7 +213,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		query = query.Where("files.language = ?", language)
 	}
 	if len(keyword) > 0 {
-		query = query.Where("(slides.slide LIKE ? OR COALESCE(source_paths.path || ' / ' || bookmarks.order_number, source_paths.path) LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
+		query = query.Where("(slides.slide LIKE ? OR source_paths.path || ' / ' || slides.order_number LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 	}
 	result := query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides)
 	if result.Error != nil {
@@ -479,6 +479,29 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, getResponse(true, authorList, "", "Getting data has succeeded"))
+}
+
+func (h *Handler) GetArticleTitlesAndAuthorsByQuery(ctx *gin.Context) {
+	query := ctx.Query("query")
+	titleAuthorList := []string{}
+	result := h.Database.Debug().WithContext(ctx).Raw(`
+		SELECT value
+		from
+		(SELECT split_part(path, ' / ', 1) AS value
+		FROM source_paths
+		UNION
+		SELECT split_part(path, ' / ', 3) AS value
+		FROM source_paths) as Title_author
+		WHERE Title_author.value LIKE ?
+		ORDER BY value
+	`, "%"+query+"%").Scan(&titleAuthorList)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, titleAuthorList, "", "Getting data has succeeded"))
 }
 
 // Unnecessary handler at this moment. If need, will be used

@@ -25,6 +25,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.DELETE("/slide", handler.DeleteSlides)
 
 	v1.GET("/author", handler.GetAuthors)
+	v1.GET("/auto_complete", handler.GetArticleTitlesAndAuthorsByQuery)
 
 	// Unnecessary handler at this moment. If need, will be used
 	// v1.GET("/source_name", handler.GetSourceName)
