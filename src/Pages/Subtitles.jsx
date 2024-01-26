@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
-import {
-  GetSubtitleData,
-  getAllBookAddedByUser,
-} from "../Redux/Subtitle/SubtitleSlice";
+import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
-  BookmarkSlide,
   BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
@@ -90,7 +86,7 @@ const Subtitles = () => {
   return (
     <>
       <div className="body-content d-flex vh-auto">
-        <div className="left-section">
+        <div className="left-section row">
           <div className="innerhead d-flex justify-content-between">
             <div
               className="btn-group"
@@ -181,9 +177,12 @@ const Subtitles = () => {
                 </div>
               </div>
             </div>
-            <button
-              className="cursor-pointer"
-              disabled={activatedTab <= 1}
+          </div>
+          <div className="d-flex">
+            <i
+              className={`bi bi-chevron-left me-1 cursor-pointer ${
+                activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+              }`}
               onClick={() => {
                 setActivatedTab(activatedTab - 1);
                 localStorage.setItem(
@@ -192,12 +191,14 @@ const Subtitles = () => {
                 );
               }}
             >
-              Back
-            </button>
+              Back{" "}
+            </i>
+
             <input
-              onWheel={(e) => e.preventDefault()}
+              className="no-border"
               defaultValue={activatedTab}
               value={activatedTab}
+              onWheel={(e) => e.target.blur()}
               type="number" // Set the input type to "number" to enforce numeric input
               onChange={(e) => {
                 const inputValue = +e.target.value;
@@ -216,9 +217,7 @@ const Subtitles = () => {
               }}
               placeholder="slide_ID"
             />
-
-            <button
-              className="cursor-pointer"
+            <span
               onClick={() => {
                 setActivatedTab(activatedTab + 1);
                 localStorage.setItem(
@@ -226,9 +225,17 @@ const Subtitles = () => {
                   +localStorage.getItem("activeSlideFileUid") + 1
                 );
               }}
+              className={` cursor-pointer ${
+                false ? "disablecolor" : "custom-pagination"
+              }`}
             >
-              Next
-            </button>
+              Next{" "}
+              <i
+                className={`bi bi-chevron-right  cursor-pointer  ${
+                  false ? "disablecolor" : "custom-pagination"
+                }`}
+              />
+            </span>
           </div>
         </div>
 

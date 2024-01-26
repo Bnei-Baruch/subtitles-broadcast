@@ -3,10 +3,7 @@ import React from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
-import {
-  GetSubtitleData,
-  StoreFocusSlideId,
-} from "../Redux/Subtitle/SubtitleSlice";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 
 const ItemTypes = {
   CARD: "card",
@@ -37,7 +34,6 @@ const DraggableItem = ({
     },
   });
   const handleBookMarkClick = (e) => {
-    alert(+text?.split("/")?.at(-1));
     localStorage.setItem("activeSlideFileUid", +text?.split("/")?.at(-1));
     setActivatedTab(+text?.split("/")?.at(-1) + 1);
     dispatch(GetSubtitleData(e));

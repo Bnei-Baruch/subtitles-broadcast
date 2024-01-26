@@ -11,7 +11,7 @@ const HeaderBar = () => {
   return (
     <>
       <div className="main-body">
-        <div className="top-header d-flex justify-content-between">
+        <div className="top-header d-flex justify-content-between ">
           <input
             className="form-control me-2"
             type="search"

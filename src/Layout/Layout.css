@@ -4,6 +4,7 @@ body {
 }
 .side-menu {
   display: inline-block;
+  position: fixed;
 }
 .admin-main {
   text-decoration: none;
@@ -37,6 +38,7 @@ body {
 }
 
 .top-header {
+  position: -webkit-sticky;
   padding: 13px;
   padding: 13px;
   background: #fff;
