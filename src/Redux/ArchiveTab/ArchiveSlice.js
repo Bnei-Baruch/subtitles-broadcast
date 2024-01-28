@@ -11,6 +11,8 @@ const initialState = {
   getBookList: [],
   getTitleList: [],
   bookmarkList: [],
+  autocomplete: [],
+  editSlideList: [],
 };
 const API_URL = {
   AddData: "selected-content",
@@ -57,7 +59,14 @@ export const DeleteArchive = createAsyncThunk(
     return response.data;
   }
 );
+export const ArchiveAutoComplete = createAsyncThunk(
+  `ArchiveAutoComplete`,
+  async (data, thunkAPI) => {
+    const response = await axios.get(`${API}auto_complete`, { params: data });
 
+    return response.data;
+  }
+);
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
@@ -129,10 +138,50 @@ export const UnBookmarkSlide = createAsyncThunk(
     return response.data;
   }
 );
+
+export const SlideListWithFildeUid = createAsyncThunk(
+  "/SlideListWithFildeUid",
+  async (data, thunkAPI) => {
+    console.log(data, "<<<<<<");
+    const response = await axios.get(`${API}slide`, { params: data });
+
+    return response.data;
+  }
+);
+
+export const addNewSlide = createAsyncThunk(
+  "addNewSlide",
+  async (data, thunkAPI) => {
+    const response = await axios.post(`${API}slide`, data);
+
+    return response.data;
+  }
+);
+
+export const deleteNewSlide = createAsyncThunk(
+  "deleteNewSlide",
+  async (data, thunkAPI) => {
+    const response = await axios.delete(`${API}slide`, { data });
+
+    return response.data;
+  }
+);
+export const updateNewSlide = createAsyncThunk(
+  "updateNewSlide",
+  async (data, thunkAPI) => {
+    const response = await axios.patch(`${API}slide`, data);
+
+    return response.data;
+  }
+);
 const ArchiveSlice = createSlice({
   name: "Archive",
   initialState,
-  reducers: {},
+  reducers: {
+    emptyAutoComplete: (state, { payload }) => {
+      return { ...state, autocomplete: [] };
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(GetAllArchiveData.fulfilled, (state, action) => {
       return { ...state, archiveList: action?.payload };
@@ -159,9 +208,20 @@ const ArchiveSlice = createSlice({
     builder.addCase(GetAllAuthorList.fulfilled, (state, { payload }) => {
       return { ...state, getAuthorList: payload };
     });
+    builder.addCase(ArchiveAutoComplete.fulfilled, (state, { payload }) => {
+      return { ...state, autocomplete: payload };
+    });
+    builder.addCase(SlideListWithFildeUid.fulfilled, (state, { payload }) => {
+      return { ...state, editSlideList: payload };
+    });
   },
 });
+export const { emptyAutoComplete } = ArchiveSlice.actions;
 
+export const getEditSlideList = (state) =>
+  state?.ArchiveList?.editSlideList?.data;
+export const getAutocompleteSuggetion = (state) =>
+  state?.ArchiveList?.autocomplete?.data;
 export const getAllArchiveList = (state) =>
   state?.ArchiveList?.archiveList?.data;
 

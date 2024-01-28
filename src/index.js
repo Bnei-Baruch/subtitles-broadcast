@@ -24,7 +24,7 @@ root.render(
       {(auth) => (
         <>
           <ToastContainer autoClose={2000} />
-          <App />
+          <App auth={auth} />
         </>
       )}
     </Auth>

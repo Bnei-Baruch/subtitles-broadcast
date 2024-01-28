@@ -5,11 +5,12 @@ import SideNavBar from "./Layout/SideNavBar";
 
 import MainRoutes from "./Routes/Routes";
 
-const App = () => (
+const App = ({ auth }) => (
   <BrowserRouter>
     <>
+      {console.log(auth?.keycloak, ">>>>>>>>>")}
       <SideNavBar />
-      <MainRoutes />
+      <MainRoutes logout={auth?.keycloak} />
     </>
   </BrowserRouter>
 );

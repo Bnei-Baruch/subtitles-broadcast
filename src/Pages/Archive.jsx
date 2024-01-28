@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
+  ArchiveAutoComplete,
   BookmarkSlide,
   DeleteArchive,
   GetAllArchiveData,
   GetAllAuthorList,
+  SlideListWithFildeUid,
   UnBookmarkSlide,
+  emptyAutoComplete,
   getAllAuthorList,
+  getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllArchiveList } from "../Redux/ArchiveTab/ArchiveSlice";
@@ -24,6 +28,9 @@ const Archive = () => {
   const navigate = useNavigate();
   const ArchiveList = useSelector(getAllArchiveList);
   const AuthorList = useSelector(getAllAuthorList);
+  const ActocompleteList = useSelector(getAutocompleteSuggetion);
+
+  console.log(ActocompleteList, "ActocompleteList");
 
   // const [delete,setDelete]=useState('')
   const [page, setPage] = useState({
@@ -39,6 +46,7 @@ const Archive = () => {
   const [confirmation, setConfirmation] = useState(false);
   const [deleteId, setDeleteId] = useState();
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
+  const [autoComplete, setAutoComplete] = useState(true);
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
     slide_id: "",
@@ -95,6 +103,21 @@ const Archive = () => {
     ),
     [confirmation, message]
   );
+
+  useEffect(() => {
+    // Dispatch the fetchAutoComplete action when the component mounts or when needed
+    freeText !== "" &&
+      autoComplete &&
+      dispatch(ArchiveAutoComplete({ query: freeText }));
+  }, [dispatch, freeText]);
+
+  const handleSuggestionClick = (suggestion) => {
+    setFreeText(suggestion);
+    setAutoComplete(false);
+
+    // Clear the suggestions when a suggestion is selected
+    dispatch(emptyAutoComplete());
+  };
   return (
     <>
       {DelectConfirmationModal}
@@ -105,15 +128,27 @@ const Archive = () => {
         <div className="archiveBackground  bg-light Edit">
           <div className="search-box">
             <div className="d-flex m-2">
-              <div className="form-group col-3">
+              <div className="form-group col-3 autoComplete">
                 <label>Free Text</label>
+
                 <input
+                  value={freeText}
                   onChange={(e) => {
                     setFreeText(e.target.value);
                   }}
                   type="text"
-                  className="form-control input "
+                  className="form-control input"
                 />
+                {/* <ul>
+                  {ActocompleteList?.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul> */}
               </div>
 
               {/* <div className="form-group col-2">
@@ -219,7 +254,15 @@ const Archive = () => {
                             <Dropdown.Item>
                               <i
                                 className="bi bi-pencil"
-                                onClick={() => setEditSlide(key.ID)}
+                                onClick={() => {
+                                  alert("JJJJJ");
+                                  dispatch(
+                                    SlideListWithFildeUid({
+                                      file_uid: key?.file_uid,
+                                    })
+                                  );
+                                  setEditSlide(key.ID);
+                                }}
                               />
                             </Dropdown.Item>
                             <Dropdown.Item>

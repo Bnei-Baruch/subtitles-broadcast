@@ -1,6 +1,75 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addNewSlide,
+  deleteNewSlide,
+  getEditSlideList,
+  updateNewSlide,
+} from "../Redux/ArchiveTab/ArchiveSlice";
 
 const EditArcive = () => {
+  const dispatch = useDispatch();
+  const slideList = useSelector(getEditSlideList);
+
+  const [slideListData, setSlideListData] = useState(slideList?.slides);
+  const [fontSize, setFontSize] = useState("2vw"); // Initial font size using viewport width unit
+  const [selected, setSelected] = useState(0);
+  const [deleted, setDeleted] = useState([]);
+  const [updateSlides, setUpdateSlides] = useState([]);
+  const [addSlides, setAddSlides] = useState([]);
+  console.log(slideList?.slides);
+  useEffect(() => {
+    setSlideListData(slideList?.slides);
+  }, [slideList]);
+  const containerWidth = 300; // Set your fixed width
+  const containerHeight = 150; // Set your fixed height
+
+  const handleSubmit = () => {
+    const addNewSlides = slideListData
+      ?.filter((key) => key?.addedNew)
+      ?.map(({ file_uid, slide, order_number }) => ({
+        file_uid,
+        slide,
+        order_number,
+      }));
+    const updateSlides = slideListData?.filter((key) => !key?.addedNew);
+    console.log(addNewSlides, "KKKKKKK");
+    dispatch(
+      deleteNewSlide({
+        slide_ids: deleted,
+      })
+    );
+    dispatch(addNewSlide(addNewSlides));
+    // dispatch(updateNewSlide(updateSlides));
+  };
+  // const [containerStyle, setContainerStyle] = useState({
+  //   width: containerWidth + "px",
+  //   height: containerHeight + "px",
+  //   fontSize: "16px", // Set your initial font size
+  // });
+
+  // const handleResize = () => {
+  //   const newWidth = Math.min(
+  //     window.innerWidth / slideList?.slides.length,
+  //     containerWidth
+  //   );
+  //   const newFontSize = Math.min(newWidth / 15, 24);
+  //   setContainerStyle({
+  //     width: newWidth + "px",
+  //     height: containerHeight + "px",
+  //     fontSize: newFontSize + "px",
+  //   });
+  // };
+
+  // useEffect(() => {
+  //   handleResize(); // Initial font size calculation
+
+  //   window.addEventListener("resize", handleResize);
+  //   return () => {
+  //     window.removeEventListener("resize", handleResize);
+  //   };
+  // }, []);
+  console.log(slideListData, "slideListData");
   return (
     <div className="archiveBackground bg-light Edit">
       <div className="card border-0">
@@ -55,84 +124,97 @@ const EditArcive = () => {
             <button type="button" className="btn cancel">
               Cancel
             </button>
-            <button type="button" className="btn save ">
+            <button onClick={handleSubmit} type="button" className="btn save ">
               Save
             </button>
           </div>
         </div>
       </div>
       <div className="container">
-        <div className="row">
-          <div className="col-md-6">
-            <h4>Edit view</h4>
-            <h6>Selected</h6>
-            <div className="box box2 selected">%H נכנסים להיכל המלך %break</div>
-          </div>
-          <div className="col-md-6">
-            <h4>Read-only view</h4>
-            <h6>&nbsp;</h6>
-            <div className="box box2">%H נכנסים להיכל המלך %break</div>
-          </div>
-        </div>
-        <button type="button" className="btn btn-white">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <g clip-path="url(#clip0_1767_4844)">
-              <path
-                d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"
-                fill="#6D6D6D"
-              />
-            </g>
-            <defs>
-              <clipPath id="clip0_1767_4844">
-                <rect width="24" height="24" fill="white" />
-              </clipPath>
-            </defs>
-          </svg>
-          Add new slide
-        </button>
-        <h2>next</h2>
-        <div className="row">
-          <div className="col-md-6">
-            <div className="box">
-              לכן ע"י השתוות הצורה, כמו שאמרו חז"ל, על הדבק במדותיו "מהו רחום אף
-              אתה רחום", ובזה האדם נכנס בהיכל המלך, וזוכה כל פעם לדבר עם המלך.
-              %S (הרב"ש. מאמר 21 "מהו, ענין טהרת אפר פרה, בעבודה" 1991) %break
+        {slideListData?.length > 0 &&
+          slideListData?.map((key, index) => (
+            <div className="row">
+              <div
+                className={`col-md-6 mb-2`}
+                onClick={() => {
+                  setSelected(index);
+                }}
+              >
+                <div
+                  className={`  adjustable-font box box2 ${
+                    index == selected && "activeSlide"
+                  }`}
+                >
+                  <textarea
+                    value={key?.slide}
+                    onChange={(e) => {
+                      //1) check object is new or having slideid if having slide_id, change slide data only and add to updata slide array, If it is new add in new slide array
+                      const cloneSlidedataArray = [...slideListData];
+                      cloneSlidedataArray?.splice(index, 1);
+                      cloneSlidedataArray?.splice(index, 0, {
+                        ...key,
+                        slide: e.target.value,
+                      });
+                      setSlideListData(cloneSlidedataArray);
+                    }}
+                    key={index}
+                    className="  "
+                    // style={containerStyle}
+                  />
+                  {index == selected && (
+                    <i
+                      onClick={() => {
+                        const cloneSlidedataArray = [...slideListData];
+                        cloneSlidedataArray?.splice(index, 1);
+                        setSlideListData(cloneSlidedataArray);
+                        setDeleted([...deleted, key?.ID]);
+                        //1) change selected slide
+                        //2) remove from main array which display entire slides
+                        //3) add to delete slide array list
+                      }}
+                      className="bi bi-trash3 delete-icon "
+                    />
+                  )}
+                  {index == selected && (
+                    <i
+                      onClick={() => {
+                        const cloneSlidedataArray = [...slideListData];
+                        cloneSlidedataArray.splice(index + 1, 0, {
+                          // slide_id: +key?.ID + 1,
+                          file_uid: key?.file_uid,
+                          slide: "",
+                          order_number: key?.order_number + 1,
+                          addedNew: true,
+                        });
+                        setSlideListData(cloneSlidedataArray);
+                        // setAddSlides([
+                        //   ...addSlides,
+                        //   {
+                        //     slide_id: key?.ID + 1,
+                        //     slide: "",
+                        //     order_number: key?.order_number + 1,
+                        //   },
+                        // ]);
+                        //1) change selected slide
+                        //2) remove from main array which display entire slides
+                        //3) add to delete slide array list
+                      }}
+                      className="bi bi-plus-circle add-icon "
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div
+                  key={index}
+                  className="box box2  adjustable-font"
+                  // style={containerStyle}
+                >
+                  {key?.slide}
+                </div>
+              </div>
             </div>
-            <div className="box">
-              לכן ע"י השתוות הצורה, כמו שאמרו חז"ל, על הדבק במדותיו "מהו רחום אף
-              אתה רחום", ובזה האדם נכנס בהיכל המלך, וזוכה כל פעם לדבר עם המלך.
-              %S (הרב"ש. מאמר 21 "מהו, ענין טהרת אפר פרה, בעבודה" 1991) %break
-            </div>
-            <div className="box">
-              לכן ע"י השתוות הצורה, כמו שאמרו חז"ל, על הדבק במדותיו "מהו רחום אף
-              אתה רחום", ובזה האדם נכנס בהיכל המלך, וזוכה כל פעם לדבר עם המלך.
-              %S (הרב"ש. מאמר 21 "מהו, ענין טהרת אפר פרה, בעבודה" 1991) %break
-            </div>
-          </div>
-          <div className="col-md-6">
-            <div className="box">
-              לכן ע"י השתוות הצורה, כמו שאמרו חז"ל, על הדבק במדותיו "מהו רחום אף
-              אתה רחום", ובזה האדם נכנס בהיכל המלך, וזוכה כל פעם לדבר עם המלך.
-              %S (הרב"ש. מאמר 21 "מהו, ענין טהרת אפר פרה, בעבודה" 1991) %break
-            </div>
-            <div className="box">
-              לכן ע"י השתוות הצורה, כמו שאמרו חז"ל, על הדבק במדותיו "מהו רחום אף
-              אתה רחום", ובזה האדם נכנס בהיכל המלך, וזוכה כל פעם לדבר עם המלך.
-              %S (הרב"ש. מאמר 21 "מהו, ענין טהרת אפר פרה, בעבודה" 1991) %break
-            </div>
-            <div className="box">
-              לכן ע"י השתוות הצורה, כמו שאמרו חז"ל, על הדבק במדותיו "מהו רחום אף
-              אתה רחום", ובזה האדם נכנס בהיכל המלך, וזוכה כל פעם לדבר עם המלך.
-              %S (הרב"ש. מאמר 21 "מהו, ענין טהרת אפר פרה, בעבודה" 1991) %break
-            </div>
-          </div>
-        </div>
+          ))}
       </div>
     </div>
   );

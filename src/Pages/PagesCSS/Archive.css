@@ -93,7 +93,7 @@ table {
   letter-spacing: 0.0595px;
   color: #212121;
   padding: 18px;
-  margin-bottom: 10px;
+
   border: 1px solid rgba(0, 0, 0, 0.25);
   background: #fff;
   height: 140px;
@@ -242,4 +242,90 @@ select {
   font-size: 24px;
   color: #333;
   font-weight: bold;
+}
+
+/* Styles for the dropdown container */
+.form-group.autoComplete {
+  position: relative;
+}
+
+/* Styles for the input */
+.form-group.autoComplete input {
+  width: 100%; /* Set input width to 100% of the container */
+  padding: 10px;
+}
+
+/* Styles for the dropdown list */
+.form-group.autoComplete ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1;
+  width: 100%; /* Set the dropdown width to 100% of the container */
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Styles for each list item in the dropdown */
+.form-group.autoComplete li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+/* Styles for the list items on hover */
+.form-group.autoComplete li:hover {
+  background-color: #f0f0f0;
+}
+
+.box {
+  position: relative;
+  height: 150px;
+  border: 1px solid #ccc;
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+}
+*/ .adjustable-font {
+  max-font-size: 24px;
+  transition: font-size 0.3s ease;
+}
+
+.delete-icon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: red;
+  padding: 0;
+}
+
+.add-icon {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: rgb(0, 0, 0);
+  padding: 0;
+  z-index: 90;
+}
+.box textarea {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border: none;
+  resize: none;
+  outline: none;
 }

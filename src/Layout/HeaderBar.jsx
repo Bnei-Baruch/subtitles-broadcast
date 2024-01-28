@@ -2,12 +2,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-const HeaderBar = () => {
-  const userProfile = useSelector(
-    (state) => state?.UserProfile?.userProfile?.profile
-  );
-  // const [selectedLang, setSelectedLang] = useState("en");
-
+const HeaderBar = ({ logout }) => {
   return (
     <>
       <div className="main-body">
@@ -34,15 +29,15 @@ const HeaderBar = () => {
                   id="dropdownMenuButton1"
                   data-bs-toggle="dropdown"
                 />
-                <span className="m-2">{userProfile?.firstName}</span>
+                <span className="m-2">{logout?.profile?.firstName}</span>
               </button>
               <ul className="dropdown-menu">
                 <li>Menu item</li>
                 <li>Menu item</li>
                 <li>
                   <span
-                    className="dropdown-item"
-                    onClick={() => userProfile?.logout()}
+                    className="dropdown-item cursor-pointer"
+                    onClick={() => logout?.logout()}
                   >
                     Logout
                   </span>

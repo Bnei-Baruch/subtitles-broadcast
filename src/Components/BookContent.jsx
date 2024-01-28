@@ -16,7 +16,6 @@ const BookContent = ({
       block: "center",
     });
   }, [contents, targetItemId]);
-  console.log(activatedTab, "contents");
   return (
     <>
       {contents?.slides?.length > 0 &&
