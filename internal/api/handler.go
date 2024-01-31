@@ -202,7 +202,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
-		Order("slides.id").Order("order_number")
+		Order("slides.file_uid").Order("order_number")
 	if len(sourceUid) > 0 {
 		query = query.Where("files.source_uid = ?", sourceUid)
 	}
