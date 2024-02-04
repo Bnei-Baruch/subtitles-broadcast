@@ -153,7 +153,7 @@ export const addNewSlide = createAsyncThunk(
   "addNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}slide`, data);
-
+    response.data.success && toast.success(response.data.description);
     return response.data;
   }
 );
@@ -170,7 +170,9 @@ export const updateNewSlide = createAsyncThunk(
   "updateNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.patch(`${API}slide`, data);
-
+    {
+      response.status && toast.success(response.data.message);
+    }
     return response.data;
   }
 );
@@ -201,7 +203,6 @@ const ArchiveSlice = createSlice({
       return { ...state, bookmarkList: payload };
     });
     builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
-      console.log(payload, ">>>>>>>>>>>");
       return { ...state, bookmarkList: payload };
     });
 

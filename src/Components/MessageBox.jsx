@@ -1,7 +1,13 @@
 import React from "react";
 import { Button, Modal } from "react-bootstrap";
 
-const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
+const MessageBox = ({
+  message,
+  show,
+  handleClose,
+  setFinalConfirm,
+  buttonName = ["No", "Yes"],
+}) => {
   return (
     <>
       <Modal show={show} onHide={handleClose}>
@@ -19,7 +25,7 @@ const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
               handleClose();
             }}
           >
-            No
+            {buttonName[0]}
           </Button>
           <Button
             onClick={() => {
@@ -27,7 +33,7 @@ const MessageBox = ({ message, show, handleClose, setFinalConfirm }) => {
               handleClose();
             }}
           >
-            Yes
+            {buttonName[1]}
           </Button>
         </div>
       </Modal>

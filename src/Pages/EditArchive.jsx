@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewSlide,
@@ -6,14 +6,16 @@ import {
   getEditSlideList,
   updateNewSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
+import MessageBox from "../Components/MessageBox";
 
-const EditArcive = () => {
+const EditArcive = ({ handleClose }) => {
   const dispatch = useDispatch();
   const slideList = useSelector(getEditSlideList);
 
   const [slideListData, setSlideListData] = useState(slideList?.slides);
   const [fontSize, setFontSize] = useState("2vw"); // Initial font size using viewport width unit
   const [selected, setSelected] = useState(0);
+  const [confirmation, setConfirmation] = useState(false);
   const [deleted, setDeleted] = useState([]);
   const [updateSlides, setUpdateSlides] = useState([]);
   const [addSlides, setAddSlides] = useState([]);
@@ -33,12 +35,13 @@ const EditArcive = () => {
         order_number,
       }));
     const updateSlides = slideListData?.filter((key) => !key?.addedNew);
-    console.log(addNewSlides, "KKKKKKK");
-    dispatch(
-      deleteNewSlide({
-        slide_ids: deleted,
-      })
-    );
+
+    deleted?.length > 0 &&
+      dispatch(
+        deleteNewSlide({
+          slide_ids: deleted,
+        })
+      );
     dispatch(addNewSlide(addNewSlides));
     // dispatch(updateNewSlide(updateSlides));
   };
@@ -69,154 +72,205 @@ const EditArcive = () => {
   //     window.removeEventListener("resize", handleResize);
   //   };
   // }, []);
-  console.log(slideListData, "slideListData");
+  const ConfirmationMessage = useMemo(
+    () => (
+      <MessageBox
+        setFinalConfirm={() => {
+          handleSubmit();
+        }}
+        buttonName={["Delete", "Save"]}
+        message={"You will not able to recover it"}
+        show={confirmation}
+        handleClose={() => {
+          setConfirmation(false);
+          handleClose();
+        }}
+      />
+    ),
+    [confirmation]
+  );
   return (
-    <div className="archiveBackground bg-light Edit">
-      <div className="card border-0">
-        <div className="top-row d-flex justify-content-between align-items-center mb-4">
-          <h3 className="m-0">Edit Subtitle</h3>
-          <div className="form-sec position-relative">
-            <input
-              className="form-control input"
-              type="search"
-              placeholder="Search in the article..."
-              aria-label="Search"
-            />
-            <button
-              type="button"
-              className="btn btn-tr position-absolute end-0 top-0  mt-1"
+    <>
+      {ConfirmationMessage}
+      <div className="archiveBackground bg-light Edit">
+        <div className="card border-0">
+          <span>
+            <i
+              onClick={handleClose}
+              className="bi bi-chevron-left me-1 cursor-pointer "
             >
-              {" "}
-              <img alt="vector" width="22px" src="image/Vector.svg" />
-            </button>
-          </div>
-        </div>
-        <div className="innerhead d-flex justify-content-between align-items-end mb-5">
-          <div className="input-box first">
-            <label className="w-100">Title</label>
-            <input
-              className=""
-              type="text"
-              placeholder="נכנסים להיכל המלך"
-              aria-label="Search"
-            />
-          </div>
-          <div className="input-box sec">
-            <label className="w-100">Author</label>
-            <select className="select-new" aria-label="Default select example">
-              <option selected>Open this select menu</option>
-              <option value="1">One</option>
-              <option value="2">Two</option>
-              <option value="3">Three</option>
-            </select>
-          </div>
-          <div className="input-box sec">
-            <label className="w-100">Language</label>
-            <select className="select-new" aria-label="Default select example">
-              <option selected>Open this select menu</option>
-              <option value="1">One</option>
-              <option value="2">Two</option>
-              <option value="3">Three</option>
-            </select>
-          </div>
-
-          <div className="button-box group-new">
-            <button type="button" className="btn cancel">
-              Cancel
-            </button>
-            <button onClick={handleSubmit} type="button" className="btn save ">
-              Save
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="container">
-        {slideListData?.length > 0 &&
-          slideListData?.map((key, index) => (
-            <div className="row">
-              <div
-                className={`col-md-6 mb-2`}
-                onClick={() => {
-                  setSelected(index);
-                }}
+              Back to all documents
+            </i>
+          </span>
+          <div className="top-row d-flex justify-content-between align-items-center mb-4">
+            <h3 className="m-0">Edit Subtitle</h3>
+            <div className="form-sec position-relative">
+              <input
+                className="form-control input"
+                type="search"
+                placeholder="Search in the article..."
+                aria-label="Search"
+              />
+              <button
+                type="button"
+                className="btn btn-tr position-absolute end-0 top-0  mt-1"
               >
+                {" "}
+                <img alt="vector" width="22px" src="image/Vector.svg" />
+              </button>
+            </div>
+          </div>
+          <div className="innerhead d-flex justify-content-between align-items-end mb-5">
+            <div className="input-box first">
+              <label className="w-100">Title</label>
+              <input
+                className=""
+                type="text"
+                placeholder="נכנסים להיכל המלך"
+                aria-label="Search"
+              />
+            </div>
+            <div className="input-box sec">
+              <label className="w-100">Author</label>
+              <select
+                className="select-new"
+                aria-label="Default select example"
+              >
+                <option selected>Open this select menu</option>
+                <option value="1">One</option>
+                <option value="2">Two</option>
+                <option value="3">Three</option>
+              </select>
+            </div>
+            <div className="input-box sec">
+              <label className="w-100">Language</label>
+              <select
+                className="select-new"
+                aria-label="Default select example"
+              >
+                <option selected>Open this select menu</option>
+                <option value="1">One</option>
+                <option value="2">Two</option>
+                <option value="3">Three</option>
+              </select>
+            </div>
+
+            <div className="button-box group-new">
+              <button
+                onClick={() => {
+                  if (
+                    deleted?.length > 0 ||
+                    addSlides?.length > 0 ||
+                    updateSlides?.length > 0
+                  ) {
+                    setConfirmation(true);
+                  } else {
+                    handleClose();
+                  }
+                }}
+                type="button"
+                className="btn cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                type="button"
+                className="btn save "
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="container">
+          {slideListData?.length > 0 &&
+            slideListData?.map((key, index) => (
+              <div className="row">
                 <div
-                  className={`  adjustable-font box box2 ${
-                    index == selected && "activeSlide"
-                  }`}
+                  className={`col-md-6 mb-2`}
+                  onClick={() => {
+                    setSelected(index);
+                  }}
                 >
-                  <textarea
-                    value={key?.slide}
-                    onChange={(e) => {
-                      //1) check object is new or having slideid if having slide_id, change slide data only and add to updata slide array, If it is new add in new slide array
-                      const cloneSlidedataArray = [...slideListData];
-                      cloneSlidedataArray?.splice(index, 1);
-                      cloneSlidedataArray?.splice(index, 0, {
-                        ...key,
-                        slide: e.target.value,
-                      });
-                      setSlideListData(cloneSlidedataArray);
-                    }}
-                    key={index}
-                    className="  "
-                    // style={containerStyle}
-                  />
-                  {index == selected && (
-                    <i
-                      onClick={() => {
+                  <div
+                    className={`  adjustable-font box box2 ${
+                      index == selected && "activeSlide"
+                    }`}
+                  >
+                    <textarea
+                      value={key?.slide}
+                      onChange={(e) => {
+                        //1) check object is new or having slideid if having slide_id, change slide data only and add to updata slide array, If it is new add in new slide array
                         const cloneSlidedataArray = [...slideListData];
                         cloneSlidedataArray?.splice(index, 1);
-                        setSlideListData(cloneSlidedataArray);
-                        setDeleted([...deleted, key?.ID]);
-                        //1) change selected slide
-                        //2) remove from main array which display entire slides
-                        //3) add to delete slide array list
-                      }}
-                      className="bi bi-trash3 delete-icon "
-                    />
-                  )}
-                  {index == selected && (
-                    <i
-                      onClick={() => {
-                        const cloneSlidedataArray = [...slideListData];
-                        cloneSlidedataArray.splice(index + 1, 0, {
-                          // slide_id: +key?.ID + 1,
-                          file_uid: key?.file_uid,
-                          slide: "",
-                          order_number: key?.order_number + 1,
-                          addedNew: true,
+                        cloneSlidedataArray?.splice(index, 0, {
+                          ...key,
+                          slide: e.target.value,
                         });
                         setSlideListData(cloneSlidedataArray);
-                        // setAddSlides([
-                        //   ...addSlides,
-                        //   {
-                        //     slide_id: key?.ID + 1,
-                        //     slide: "",
-                        //     order_number: key?.order_number + 1,
-                        //   },
-                        // ]);
-                        //1) change selected slide
-                        //2) remove from main array which display entire slides
-                        //3) add to delete slide array list
                       }}
-                      className="bi bi-plus-circle add-icon "
+                      key={index}
+                      className="  "
+                      // style={containerStyle}
                     />
-                  )}
+                    {index == selected && (
+                      <i
+                        onClick={() => {
+                          const cloneSlidedataArray = [...slideListData];
+                          cloneSlidedataArray?.splice(index, 1);
+                          setSlideListData(cloneSlidedataArray);
+                          setDeleted([...deleted, key?.ID]);
+                          //1) change selected slide
+                          //2) remove from main array which display entire slides
+                          //3) add to delete slide array list
+                        }}
+                        className="bi bi-trash3 delete-icon "
+                      />
+                    )}
+                    {index == selected && (
+                      <i
+                        onClick={() => {
+                          const cloneSlidedataArray = [...slideListData];
+                          cloneSlidedataArray.splice(index + 1, 0, {
+                            // slide_id: +key?.ID + 1,
+                            file_uid: key?.file_uid,
+                            slide: "",
+                            order_number: key?.order_number + 1,
+                            addedNew: true,
+                          });
+                          setSlideListData(cloneSlidedataArray);
+                          // setAddSlides([
+                          //   ...addSlides,
+                          //   {
+                          //     slide_id: key?.ID + 1,
+                          //     slide: "",
+                          //     order_number: key?.order_number + 1,
+                          //   },
+                          // ]);
+                          //1) change selected slide
+                          //2) remove from main array which display entire slides
+                          //3) add to delete slide array list
+                        }}
+                        className="bi bi-plus-circle add-icon "
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div
+                    key={index}
+                    className="box box2  adjustable-font"
+                    // style={containerStyle}
+                  >
+                    {key?.slide}
+                  </div>
                 </div>
               </div>
-              <div className="col-md-6">
-                <div
-                  key={index}
-                  className="box box2  adjustable-font"
-                  // style={containerStyle}
-                >
-                  {key?.slide}
-                </div>
-              </div>
-            </div>
-          ))}
+            ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

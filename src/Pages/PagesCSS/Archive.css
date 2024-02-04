@@ -213,11 +213,7 @@ table {
   line-height: 23.561px; /* 147.258% */
   letter-spacing: 0.058px;
 }
-.Edit .container {
-  max-height: 65vh;
-  overflow: hidden;
-  overflow-y: scroll;
-}
+
 .table td:last-child {
   width: 150px;
 }
@@ -328,4 +324,37 @@ select {
   border: none;
   resize: none;
   outline: none;
+}
+
+/* pagination css */
+/* TwoFlexBoxes.css */
+.flex-container {
+  display: flex;
+  align-items: center; /* Center vertically within the entire container */
+  margin: 0px 40px;
+}
+
+.flex-box-start {
+  /* No need for flex property, it will take the necessary space */
+}
+
+.flex-box-center {
+  flex: 1; /* Takes the remaining space, and centered within the container */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pagination-item {
+  cursor: pointer;
+  display: none;
+}
+
+.pagination-item.disabled {
+  opacity: 0.5; /* Adjust the opacity to visually indicate the disabled state */
+  color: #212121;
+  cursor: not-allowed;
+}
+.pagination {
+  margin: 0;
 }

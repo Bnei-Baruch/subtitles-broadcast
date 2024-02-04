@@ -1,18 +1,16 @@
 .rotate {
-    animation: rotation 10s infinite linear;
-  }
-  
-  @keyframes rotation {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(359deg);
-    }
-  }
+  animation: rotation 10s infinite linear;
+}
 
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
+}
 
-.loaderColor{
-    background-color:#232F3E;
-    
+.loaderColor {
+  background-color: #232f3e;
 }
