@@ -484,12 +484,14 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 // GetArticleTitlesAndAuthorsByQuery
 // Return article title and author name pairs by query
 // e.g.
+// If query is 'Baal HaSulam' and pathes are
 // Baal HaSulam / Prefaces / Foreword to The Book of Zohar
-// Baal HaSulam / Prefaces / Introduction to the Book of Zohar
+// Michael Laitman / Summaries of articles and letters of Baal HaSulam / Baal HaSulam. I will know the creator from within myself (modified)
+// Michael Laitman / Summaries of articles and letters of Baal HaSulam / Baal HaSulam. Letter 49 (modified)
 // returns
 // [Baal HaSulam,
-//  Foreword to The Book of Zohar,
-//  Introduction to the Book of Zohar]
+//  Baal HaSulam. I will know the creator from within myself (modified),
+//  Baal HaSulam. Letter 49 (modified)]
 
 func (h *Handler) GetArticleTitlesAndAuthorsByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
