@@ -16,8 +16,11 @@ import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
+import { GreenWindow } from "../Components/GreenWindow";
+import { GreenWindowButton } from "../Components/GreenWindowButton";
 
 const Subtitles = () => {
+  const [showGreenWindow, setShowGreenWindow] = useState(false);
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
@@ -56,7 +59,7 @@ const Subtitles = () => {
   useEffect(() => {
     dispatch(UserBookmarkList());
   }, [dispatch]);
-  useEffect(() => {}, [+localStorage.getItem("activeSlideFileUid")]);
+  useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     setItems(GetAllBookmarkList);
@@ -111,6 +114,10 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               >
+                <GreenWindowButton
+                  setShowGreenWindow={setShowGreenWindow}
+                  showGreenWindow={showGreenWindow}
+                />
                 <button
                   type="button"
                   onClick={() => setIsLtr(!isLtr)}
