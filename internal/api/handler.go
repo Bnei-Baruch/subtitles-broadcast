@@ -393,7 +393,7 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			log.Error(err)
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_FOREIGN_KEY_VIOLATION_CODE {
 				ctx.JSON(http.StatusBadRequest,
-					getResponse(false, nil, err.Error(), "Invalid bookmark data"))
+					getResponse(false, nil, err.Error(), "The file_uid must be a valid file_uid in files table"))
 				return
 			}
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
@@ -480,6 +480,16 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, getResponse(true, authorList, "", "Getting data has succeeded"))
 }
+
+// GetArticleTitlesAndAuthorsByQuery
+// Return article title and author name pairs by query
+// e.g.
+// Baal HaSulam / Prefaces / Foreword to The Book of Zohar
+// Baal HaSulam / Prefaces / Introduction to the Book of Zohar
+// returns
+// [Baal HaSulam,
+//  Foreword to The Book of Zohar,
+//  Introduction to the Book of Zohar]
 
 func (h *Handler) GetArticleTitlesAndAuthorsByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
