@@ -288,7 +288,7 @@ select {
   display: flex;
   flex-direction: column;
 }
-*/ .adjustable-font {
+.adjustable-font {
   max-font-size: 24px;
   transition: font-size 0.3s ease;
 }
