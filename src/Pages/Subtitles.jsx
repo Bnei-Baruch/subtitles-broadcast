@@ -117,6 +117,7 @@ const Subtitles = () => {
                 <GreenWindowButton
                   setShowGreenWindow={setShowGreenWindow}
                   showGreenWindow={showGreenWindow}
+                  isButtonDisabled={document.getElementsByClassName("activeSlide")}
                 />
                 <button
                   type="button"
