@@ -118,6 +118,9 @@ const Subtitles = () => {
                   setShowGreenWindow={setShowGreenWindow}
                   showGreenWindow={showGreenWindow}
                   isButtonDisabled={UserAddedList ? false : true}
+                  userAddedList={UserAddedList}
+                  activatedTabData={activatedTabData}
+                  isLtr={isLtr}
                 />
                 <button
                   type="button"

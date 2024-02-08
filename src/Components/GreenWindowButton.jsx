@@ -5,8 +5,12 @@ import { GreenWindow } from "../Components/GreenWindow";
 export const GreenWindowButton = ({
     showGreenWindow,
     setShowGreenWindow,
-    isButtonDisabled
+    isButtonDisabled,
+    userAddedList,
+    activatedTabData,
+    isLtr
 }) => {
+    isButtonDisabled = false; //For testing
     return (
         <>
             <button
@@ -28,11 +32,8 @@ export const GreenWindowButton = ({
                             Close
                         </button>
                     </div>
-                    <div className="slide-part-cont" style={styles.slidePartContainer}>
-                        זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
-                        ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
-                        היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
-                        שהקב"ה יעזור לו.
+                    <div className="slide-part-cont" style={getDirectionStyle(styles.slidePartContainer, isLtr)}>
+                        {getActivatedData(userAddedList, activatedTabData)}
                     </div>
                 </GreenWindow>
             }
@@ -58,6 +59,16 @@ function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonD
     }
 }
 
+function getDirectionStyle(srcStyles, isLtr) {
+    if (!isLtr) {
+        const cloneSrcStyles = { ...srcStyles };
+        cloneSrcStyles.direction = "ltr";
+        return cloneSrcStyles;
+    }
+
+    return srcStyles;
+}
+
 const styles = {
     greenPartContainer: {
         backgroundColor: "green",
@@ -73,12 +84,31 @@ const styles = {
         "text-align": "right",
         "letter-spacing": "0.0595px",
         "color": "#212121",
-        direction: "rtl",
+        direction: "ltr",
         padding: "10px 10px 10px 10px",
         // "margin-bottom": "10px"
     },
     cursorNotAllowed: {
         cursor: "not-allowed"
-    },
+    }
 };
 
+function getActivatedData(userAddedList, activatedTabData) {
+    if (!userAddedList) {
+        userAddedList = { slides: [{ slide: getSlideContextTest() }] }
+        activatedTabData = 0
+    }
+
+    if (userAddedList?.slides?.length > 0) {
+        return userAddedList?.slides[activatedTabData].slide
+    }
+}
+
+function getSlideContextTest() {
+    return <div>
+        זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
+        ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
+        היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
+        שהקב"ה יעזור לו.
+    </div>
+}
