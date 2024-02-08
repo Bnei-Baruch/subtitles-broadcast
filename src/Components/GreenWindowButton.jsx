@@ -10,21 +10,21 @@ export const GreenWindowButton = ({
     return (
         <>
             <button
-                //onClick={() => isButtonDisabled ? void (0) : setShowGreenWindow(!showGreenWindow)}
-                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}
-                className={getButtonClassName(showGreenWindow)}
-                title={isButtonDisabled ? "Please select a Bookmark and active slide" : ""}>
+                style={isButtonDisabled ? styles.cursorNotAllowed : {}}
+                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled)}
+                className={getButtonClassName(showGreenWindow, isButtonDisabled)}
+                title={isButtonDisabled ? "Please select a Bookmark" : ""} >
                 Open Green Screen
             </button>
             {
-                showGreenWindow &&
+                !isButtonDisabled && showGreenWindow &&
                 <GreenWindow
                     closeGreenWindowHandling={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}>
                     <div className="green-part-cont" style={styles.greenPartContainer}>
                         <h1>Green Screen:</h1>
                         <p>WIP</p>
                         <button
-                            onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)} >
+                            onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled)} >
                             Close
                         </button>
                     </div>
@@ -40,14 +40,22 @@ export const GreenWindowButton = ({
     );
 };
 
-function getButtonClassName(showGreenWindow) {
-    return showGreenWindow ?
+function getButtonClassName(showGreenWindow, isButtonDisabled) {
+    var className = showGreenWindow ?
         "btn btn-success" :
         "btn btn-tr fw-bold text-success";
+
+    if (isButtonDisabled) {
+        className += " opacity-50 cursor-na"
+    }
+
+    return className;
 }
 
-function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow) {
-    setShowGreenWindow(!showGreenWindow);
+function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled) {
+    if (!isButtonDisabled) {
+        setShowGreenWindow(!showGreenWindow);
+    }
 }
 
 const styles = {
@@ -68,6 +76,9 @@ const styles = {
         direction: "rtl",
         padding: "10px 10px 10px 10px",
         // "margin-bottom": "10px"
+    },
+    cursorNotAllowed: {
+        cursor: "not-allowed"
     },
 };
 
