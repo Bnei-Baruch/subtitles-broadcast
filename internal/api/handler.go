@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -205,6 +206,62 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		getResponse(true,
 			constructResponsePagination(page, listLimit, totalRows, slides),
 			"", "Getting data has succeeded"))
+}
+
+// constructSlideQuery constructs the slide query based on user, fileUID, and keyword
+func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}, fileUID, keyword string) *gorm.DB {
+	return h.Database.Debug().WithContext(ctx).
+		Table(DBTableSlides).
+		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, files.language, source_paths.path || ' / ' || slides.order_number AS slide_source_path", userId).
+		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
+		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
+		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
+		Order("slides.file_uid").Order("order_number")
+}
+
+// getPaginationParams extracts pagination parameters from the context
+func getPaginationParams(ctx *gin.Context) (int, int, int, error) {
+	var errPage, errLimit error
+	var offset, limit int
+	page := 1
+	listLimit := defaultListLimit
+	pageStr := ctx.Query("page")
+	if len(pageStr) > 0 {
+		page, errPage = strconv.Atoi(pageStr)
+	}
+	limitStr := ctx.Query("limit")
+	if len(limitStr) > 0 {
+		limit, errLimit = strconv.Atoi(limitStr)
+	}
+	err := errors.Join(errPage, errLimit)
+	if err != nil {
+		log.Error(err)
+		return 0, 0, 0, err
+	}
+	if limit > 0 {
+		listLimit = limit
+	}
+	if page > 1 {
+		offset = listLimit * (page - 1)
+	}
+
+	return page, listLimit, offset, nil
+}
+
+// constructResponsePagination constructs the pagination response
+func constructResponsePagination(page, listLimit int, totalRows int64, slides []*SlideDetail) interface{} {
+	return struct {
+		Pagination *Pagination    `json:"pagination"`
+		Slides     []*SlideDetail `json:"slides"`
+	}{
+		Pagination: &Pagination{
+			Limit:      listLimit,
+			Page:       page,
+			TotalRows:  totalRows,
+			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
+		},
+		Slides: slides,
+	}
 }
 
 func (h *Handler) UpdateSlides(ctx *gin.Context) {
@@ -484,60 +541,22 @@ func (h *Handler) GetArticleTitlesAndAuthorsByQuery(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, titleAuthorList, "", "Getting data has succeeded"))
 }
 
-// constructSlideQuery constructs the slide query based on user, fileUID, and keyword
-func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}, fileUID, keyword string) *gorm.DB {
-	return h.Database.Debug().WithContext(ctx).
-		Table(DBTableSlides).
-		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, files.language, source_paths.path || ' / ' || slides.order_number AS slide_source_path", userId).
-		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
-		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
-		Order("slides.file_uid").Order("order_number")
-}
-
-// getPaginationParams extracts pagination parameters from the context
-func getPaginationParams(ctx *gin.Context) (int, int, int, error) {
-	var errPage, errLimit error
-	var offset, limit int
-	page := 1
-	listLimit := defaultListLimit
-	pageStr := ctx.Query("page")
-	if len(pageStr) > 0 {
-		page, errPage = strconv.Atoi(pageStr)
-	}
-	limitStr := ctx.Query("limit")
-	if len(limitStr) > 0 {
-		limit, errLimit = strconv.Atoi(limitStr)
-	}
-	err := errors.Join(errPage, errLimit)
+func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
+	sourceUid := ctx.Query("source_uid")
+	files, err := getFiles(sourceUid)
 	if err != nil {
-		log.Error(err)
-		return 0, 0, 0, err
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
 	}
-	if limit > 0 {
-		listLimit = limit
+	languageList := []string{}
+	for _, contentUnit := range files.ContentUnits {
+		for _, file := range contentUnit.Files {
+			languageList = append(languageList, file.Language)
+		}
 	}
-	if page > 1 {
-		offset = listLimit * (page - 1)
-	}
-
-	return page, listLimit, offset, nil
-}
-
-// constructResponsePagination constructs the pagination response
-func constructResponsePagination(page, listLimit int, totalRows int64, slides []*SlideDetail) interface{} {
-	return struct {
-		Pagination *Pagination    `json:"pagination"`
-		Slides     []*SlideDetail `json:"slides"`
-	}{
-		Pagination: &Pagination{
-			Limit:      listLimit,
-			Page:       page,
-			TotalRows:  totalRows,
-			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
-		},
-		Slides: slides,
-	}
+	sort.Strings(languageList)
+	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
 }
 
 // Unnecessary handler at this moment. If need, will be used

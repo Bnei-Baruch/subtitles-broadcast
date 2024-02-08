@@ -577,6 +577,50 @@ paths:
       security:
         - bearerAuth:
             - read:authors
+  /source_language:
+    get:
+      tags:
+        - source_language
+      summary: Get all language list for a source
+      description: Get all language list for a source
+      operationId: GetLanguageListSourceSupports
+      parameters:
+        - name: source_uid
+          in: query
+          description: search keyword
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: all language list for a source
+                        example: "en"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
 components:
   schemas:
     Slide:

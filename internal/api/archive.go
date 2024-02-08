@@ -196,18 +196,11 @@ func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
 
 // Download the file, convert the file content to string and return it
 func getFileContent(sourceUid, language string) ([]string, string) {
-	fileResp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
+	files, err := getFiles(sourceUid)
 	if err != nil {
 		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
 		return nil, ""
 	}
-	var files ArchiveFiles
-	err = json.NewDecoder(fileResp.Body).Decode(&files)
-	if err != nil {
-		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
-		return nil, ""
-	}
-	fileResp.Body.Close()
 	if files.Total == 0 {
 		return []string{}, ""
 	}
@@ -262,6 +255,20 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 	}
 
 	return strings.Split(strings.TrimSpace(res), "\n"), fileUid
+}
+
+func getFiles(sourceUid string) (*ArchiveFiles, error) {
+	fileResp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
+	if err != nil {
+		return nil, err
+	}
+	var files ArchiveFiles
+	err = json.NewDecoder(fileResp.Body).Decode(&files)
+	if err != nil {
+		return nil, err
+	}
+	fileResp.Body.Close()
+	return &files, nil
 }
 
 func getSourcePathListByLanguages(languageCodes []string) ([]*SourcePath, error) {
