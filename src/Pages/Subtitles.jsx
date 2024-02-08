@@ -20,6 +20,7 @@ import { GreenWindow } from "../Components/GreenWindow";
 import { GreenWindowButton } from "../Components/GreenWindowButton";
 
 const Subtitles = () => {
+  const [mqttConnected, setMqttConnected] = useState(false);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -121,6 +122,8 @@ const Subtitles = () => {
                   userAddedList={UserAddedList}
                   activatedTabData={activatedTabData}
                   isLtr={isLtr}
+                  mqttConnected={mqttConnected}
+                  setMqttConnected={setMqttConnected}
                 />
                 <button
                   type="button"

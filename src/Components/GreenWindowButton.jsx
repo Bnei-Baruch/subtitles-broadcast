@@ -8,14 +8,18 @@ export const GreenWindowButton = ({
     isButtonDisabled,
     userAddedList,
     activatedTabData,
-    isLtr
+    isLtr,
+    mqttConnected,
+    setMqttConnected
 }) => {
-    isButtonDisabled = false; //For testing
+    // isButtonDisabled = false; //For testing
+    //Connect and push the slide content
+    publishSlideToMQTT(showGreenWindow, isButtonDisabled, mqttConnected, setMqttConnected);
     return (
         <>
             <button
                 style={isButtonDisabled ? styles.cursorNotAllowed : {}}
-                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled)}
+                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected)}
                 className={getButtonClassName(showGreenWindow, isButtonDisabled)}
                 title={isButtonDisabled ? "Please select a Bookmark" : ""} >
                 Open Green Screen
@@ -23,7 +27,7 @@ export const GreenWindowButton = ({
             {
                 !isButtonDisabled && showGreenWindow &&
                 <GreenWindow
-                    closeGreenWindowHandling={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}>
+                    closeWinUnloadingRef={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}>
                     <div className="green-part-cont" style={styles.greenPartContainer}>
                         <h1>Green Screen:</h1>
                         <p>WIP</p>
@@ -53,9 +57,10 @@ function getButtonClassName(showGreenWindow, isButtonDisabled) {
     return className;
 }
 
-function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled) {
+function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected) {
     if (!isButtonDisabled) {
         setShowGreenWindow(!showGreenWindow);
+        closeConnectionToMQTT(setMqttConnected);
     }
 }
 
@@ -111,4 +116,23 @@ function getSlideContextTest() {
         היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
         שהקב"ה יעזור לו.
     </div>
+}
+
+function openConnectionToMQTT(setMqttConnected) {
+    setMqttConnected(true);
+}
+
+function closeConnectionToMQTT(setMqttConnected) {
+    setMqttConnected(false);
+}
+
+function publishSlideToMQTT(showGreenWindow, isButtonDisabled, mqttConnected, setMqttConnected) {
+    if (isButtonDisabled && showGreenWindow && !mqttConnected) {
+        //Open Connection here
+        openConnectionToMQTT(setMqttConnected);
+    }
+    else {
+        //Send Message here
+        const temp = mqttConnected;
+    }
 }

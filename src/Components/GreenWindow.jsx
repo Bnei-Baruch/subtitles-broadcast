@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 //import { copyStyles } from "../Utils/copy-styles";
 
-export const GreenWindow = ({ children, closeGreenWindowHandling }) => {
+export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     const externalWindow = useRef(
         window.open("", "", "width=720,height=410,left=200,top=200")
     );
@@ -21,7 +21,7 @@ export const GreenWindow = ({ children, closeGreenWindowHandling }) => {
     //copyStyles(document, externalWindow.current.document);
 
     externalWindow.current.addEventListener("beforeunload", () => {
-        closeGreenWindowHandling();
+        closeWinUnloadingRef();
     });
 
     return ReactDOM.createPortal(children, containerEl);
