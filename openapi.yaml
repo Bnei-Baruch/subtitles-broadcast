@@ -391,6 +391,10 @@ paths:
           application/json:
             schema:
               properties:
+                force_delete_bookmarks:
+                  type: boolean
+                  description: mark to delete bookmakr refers to slide id
+                  example: true
                 slide_ids:
                   type: array
                   description: slide ids to delete
