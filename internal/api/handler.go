@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -283,26 +284,30 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
+	updateQuery := "UPDATE slides SET slide = reqs.slide, order_number = reqs.order_number, updated_at = ? "
+	WhereQuery := "WHERE id = reqs.slide_id"
+	ValuesQuery := []string{}
 	for _, req := range reqs {
-		result := tx.Table("slides").Model(&Slide{}).
-			Where("id = ?", req.SlideID).
-			Updates(Slide{
-				Slide:       req.Slide,
-				OrderNumber: req.OrderNumber,
-				UpdatedAt:   time.Now(),
-			})
-		if result.Error != nil {
-			tx.Rollback()
-			log.Error(result.Error)
-			ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
-			return
+		value := fmt.Sprintf("(%d, '%s', %d)", req.SlideID, req.Slide, req.OrderNumber)
+		ValuesQuery = append(ValuesQuery, value)
+	}
+	WithQuery := "WITH reqs(slide_id, slide, order_number) AS (VALUES" + strings.Join(ValuesQuery, ",") + ")"
+	query := WithQuery + updateQuery + "FROM reqs " + WhereQuery
+	result := tx.Exec(query, time.Now())
+	if result.Error != nil {
+		tx.Rollback()
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Updating slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		reqSlideIds := []string{}
+		for _, req := range reqs {
+			reqSlideIds = append(reqSlideIds, fmt.Sprintf("%d", req.SlideID))
 		}
-		if result.RowsAffected == 0 {
-			tx.Rollback()
-			errMsg := fmt.Sprintf("No slide(id: %d) to update", req.SlideID)
-			ctx.JSON(http.StatusBadRequest, getResponse(false, nil, errMsg, errMsg))
-			return
-		}
+		errMsg := fmt.Sprintf("No slide(id: %s) to update", reqSlideIds)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, errMsg, errMsg))
+		return
 	}
 
 	if err := tx.Commit().Error; err != nil {
