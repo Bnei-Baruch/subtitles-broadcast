@@ -523,27 +523,27 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 //  Baal HaSulam. I will know the creator from within myself (modified),
 //  Baal HaSulam. Letter 49 (modified)]
 
-func (h *Handler) GetArticleTitlesAndAuthorsByQuery(ctx *gin.Context) {
+func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
-	titleAuthorList := []string{}
+	sourceValueList := []string{}
 	result := h.Database.Debug().WithContext(ctx).Raw(`
-		SELECT value
-		from
-		(SELECT split_part(path, ' / ', 1) AS value
-		FROM source_paths
-		UNION
-		SELECT split_part(path, ' / ', 3) AS value
-		FROM source_paths) as Title_author
-		WHERE Title_author.value LIKE ?
-		ORDER BY value
-	`, "%"+query+"%").Scan(&titleAuthorList)
+		SELECT DISTINCT value
+		FROM (
+			SELECT
+				TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS value
+			FROM
+				source_paths
+		) AS source_values
+		WHERE value LIKE ?
+		ORDER BY value;
+	`, "%"+query+"%").Scan(&sourceValueList)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, getResponse(true, titleAuthorList, "", "Getting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, sourceValueList, "", "Getting data has succeeded"))
 }
 
 func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {

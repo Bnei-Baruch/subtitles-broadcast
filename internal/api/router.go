@@ -26,7 +26,7 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.GET("/file_slide", handler.GetSlides)
 	v1.GET("/author", handler.GetAuthors)
-	v1.GET("/auto_complete", handler.GetArticleTitlesAndAuthorsByQuery)
+	v1.GET("/auto_complete", handler.GetSourceValuesByQuery)
 	v1.GET("/source_language", handler.GetLanguageListSourceSupports)
 
 	// Unnecessary handler at this moment. If need, will be used
