@@ -323,7 +323,8 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 
 func (h *Handler) DeleteSlides(ctx *gin.Context) {
 	req := struct {
-		SlideIds []uint `json:"slide_ids"`
+		ForceDeleteBookmarks bool   `json:"force_delete_bookmarks"`
+		SlideIds             []uint `json:"slide_ids"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -338,29 +339,42 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	for _, slideId := range req.SlideIds {
-		if err := tx.Where("slide_id = ?", slideId).Delete(&Bookmark{}).Error; err != nil {
-			tx.Rollback()
-			log.Error(err)
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Deleting bookmark data related to the slide has failed"))
-			return
-		}
-		result := tx.Where("id = ?", slideId).Delete(&Slide{})
-		if result.Error != nil {
-			tx.Rollback()
-			log.Error(result.Error)
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
-			return
-		}
-		if result.RowsAffected == 0 {
-			tx.Rollback()
-			errMsg := fmt.Sprintf("No slide(id: %d) to delete", slideId)
-			ctx.JSON(http.StatusBadRequest, getResponse(false, nil, errMsg, errMsg))
-			return
-		}
+
+	var totalRows int64
+	result := tx.Table(DBTableSlides).
+		Joins("INNER JOIN bookmarks ON slides.id = bookmarks.slide_id").
+		Where("slides.id In (?)", req.SlideIds).Count(&totalRows)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+		return
 	}
+	if !req.ForceDeleteBookmarks && totalRows > 0 {
+		errMsg := "There are bookmarks refer to slide(id) in table to delete"
+		log.Error(errMsg)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, errMsg, "Deleting slide data has failed"))
+		return
+	}
+	result = tx.Where("id In (?)", req.SlideIds).Delete(&Slide{})
+	if result.Error != nil {
+		tx.Rollback()
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		reqSlideIds := []string{}
+		for _, slideId := range req.SlideIds {
+			reqSlideIds = append(reqSlideIds, fmt.Sprintf("%d", slideId))
+		}
+		errMsg := fmt.Sprintf("No slide(id: %s) to delete", reqSlideIds)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, errMsg, errMsg))
+		return
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		log.Error(err)
