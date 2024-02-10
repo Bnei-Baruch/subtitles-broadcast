@@ -19,7 +19,7 @@ const EditArcive = ({ handleClose }) => {
   const [deleted, setDeleted] = useState([]);
   const [updateSlides, setUpdateSlides] = useState([]);
   const [addSlides, setAddSlides] = useState([]);
-  console.log(slideList?.slides);
+
   useEffect(() => {
     setSlideListData(slideList?.slides);
   }, [slideList]);
@@ -28,13 +28,19 @@ const EditArcive = ({ handleClose }) => {
 
   const handleSubmit = () => {
     const addNewSlides = slideListData
-      ?.filter((key) => key?.addedNew)
+      ?.filter((key) => key?.addedNew == true)
       ?.map(({ file_uid, slide, order_number }) => ({
         file_uid,
         slide,
         order_number,
       }));
-    const updateSlides = slideListData?.filter((key) => !key?.addedNew);
+    const updateNewSlides = slideListData
+      ?.filter((key) => key?.updateSlide == true)
+      ?.map(({ ID, slide, order_number }) => ({
+        slide_id: ID,
+        slide,
+        order_number,
+      }));
 
     deleted?.length > 0 &&
       dispatch(
@@ -42,8 +48,8 @@ const EditArcive = ({ handleClose }) => {
           slide_ids: deleted,
         })
       );
-    dispatch(addNewSlide(addNewSlides));
-    // dispatch(updateNewSlide(updateSlides));
+    addNewSlides?.length > 0 && dispatch(addNewSlide(addNewSlides));
+    updateNewSlides?.length > 0 && dispatch(updateNewSlide(updateNewSlides));
   };
   // const [containerStyle, setContainerStyle] = useState({
   //   width: containerWidth + "px",
@@ -158,10 +164,24 @@ const EditArcive = ({ handleClose }) => {
             <div className="button-box group-new">
               <button
                 onClick={() => {
+                  const addNewSlides = slideListData
+                    ?.filter((key) => key?.addedNew == true)
+                    ?.map(({ file_uid, slide, order_number }) => ({
+                      file_uid,
+                      slide,
+                      order_number,
+                    }));
+                  const updateNewSlides = slideListData
+                    ?.filter((key) => key?.updateSlide == true)
+                    ?.map(({ ID, slide, order_number }) => ({
+                      slide_id: ID,
+                      slide,
+                      order_number,
+                    }));
                   if (
                     deleted?.length > 0 ||
-                    addSlides?.length > 0 ||
-                    updateSlides?.length > 0
+                    addNewSlides?.length > 0 ||
+                    updateNewSlides?.length > 0
                   ) {
                     setConfirmation(true);
                   } else {
@@ -203,15 +223,25 @@ const EditArcive = ({ handleClose }) => {
                       onChange={(e) => {
                         //1) check object is new or having slideid if having slide_id, change slide data only and add to updata slide array, If it is new add in new slide array
                         const cloneSlidedataArray = [...slideListData];
-                        cloneSlidedataArray?.splice(index, 1);
-                        cloneSlidedataArray?.splice(index, 0, {
-                          ...key,
-                          slide: e.target.value,
-                        });
-                        setSlideListData(cloneSlidedataArray);
+                        if (key.addedNew) {
+                          cloneSlidedataArray?.splice(index, 1);
+                          cloneSlidedataArray?.splice(index, 0, {
+                            ...key,
+                            slide: e.target.value,
+                          });
+                          setSlideListData(cloneSlidedataArray);
+                        } else {
+                          cloneSlidedataArray?.splice(index, 1);
+                          cloneSlidedataArray?.splice(index, 0, {
+                            ...key,
+                            slide: e.target.value,
+                            updateSlide: true,
+                          });
+                          setSlideListData(cloneSlidedataArray);
+                        }
                       }}
                       key={index}
-                      className="  "
+                      className=""
                       // style={containerStyle}
                     />
                     {index == selected && (

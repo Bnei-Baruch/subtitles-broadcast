@@ -12,7 +12,7 @@ const HeaderBar = ({ logout }) => {
             type="search"
             placeholder="Search"
             aria-label="Search"
-            style={{ visibility: "hidden" }}
+            // style={{ visibility: "hidden" }}
           />
           <div className="d-flex aligne-item-center">
             <div className="btn-group list-btn">

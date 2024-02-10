@@ -68,7 +68,7 @@ const Archive = () => {
   }, [dispatch]);
   useEffect(() => {
     dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
-  }, [page, DebouncingFreeText, dispatch]);
+  }, [page, DebouncingFreeText, dispatch, editSlide]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -156,7 +156,7 @@ const Archive = () => {
                   type="text"
                   className="form-control input"
                 />
-                {/* <ul>
+                <ul class="suggestions" id="suggestions">
                   {ActocompleteList?.map((suggestion, index) => (
                     <li
                       key={index}
@@ -165,7 +165,7 @@ const Archive = () => {
                       {suggestion}
                     </li>
                   ))}
-                </ul> */}
+                </ul>
               </div>
               <button
                 onClick={() => {

@@ -154,6 +154,7 @@ export const addNewSlide = createAsyncThunk(
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}slide`, data);
     response.data.success && toast.success(response.data.description);
+    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     return response.data;
   }
 );
@@ -162,7 +163,7 @@ export const deleteNewSlide = createAsyncThunk(
   "deleteNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}slide`, { data });
-
+    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     return response.data;
   }
 );
@@ -173,6 +174,7 @@ export const updateNewSlide = createAsyncThunk(
     {
       response.status && toast.success(response.data.message);
     }
+    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     return response.data;
   }
 );

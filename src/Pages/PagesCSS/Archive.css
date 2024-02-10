@@ -272,6 +272,9 @@ select {
 .form-group.autoComplete li {
   padding: 10px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Styles for the list items on hover */
@@ -330,15 +333,17 @@ select {
 /* TwoFlexBoxes.css */
 .flex-container {
   display: flex;
-  align-items: center;
+  align-items: center; /* Center vertically within the entire container */
   margin: 0px 40px;
 }
 
 .flex-box-start {
+  /* No need for flex property, it will take the necessary space */
 }
 
 .flex-box-center {
-  flex: 1;
+  flex: 1; /* Takes the remaining space, and centered within the container */
+  display: flex;
   justify-content: center;
   align-items: center;
 }
@@ -349,7 +354,7 @@ select {
 }
 
 .pagination-item.disabled {
-  opacity: 0.5;
+  opacity: 0.5; /* Adjust the opacity to visually indicate the disabled state */
   color: #212121;
   cursor: not-allowed;
 }
