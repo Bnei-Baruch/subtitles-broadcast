@@ -539,25 +539,36 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 
 func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
-	sourceValueList := []string{}
+	sourceValueSlideCountList := []struct {
+		SourceValue string `json:"source_value"`
+		SlideCount  int    `json:"slide_count"`
+	}{}
 	result := h.Database.Debug().WithContext(ctx).Raw(`
-		SELECT DISTINCT value
+		SELECT value AS source_value, COUNT(distinct slide) AS slide_count
 		FROM (
 			SELECT
-				TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS value
+				TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS value,
+				slide
 			FROM
 				source_paths
+			LEFT JOIN (
+				SELECT slide, source_paths.source_uid
+				FROM slides
+				INNER JOIN files ON slides.file_uid = files.file_uid
+				INNER JOIN source_paths ON files.source_uid = source_paths.source_uid
+			) AS t ON source_paths.source_uid = t.source_uid
 		) AS source_values
 		WHERE value LIKE ?
+		GROUP BY value
 		ORDER BY value;
-	`, "%"+query+"%").Scan(&sourceValueList)
+	`, "%"+query+"%").Scan(&sourceValueSlideCountList)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, getResponse(true, sourceValueList, "", "Getting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, sourceValueSlideCountList, "", "Getting data has succeeded"))
 }
 
 func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {

@@ -118,7 +118,7 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 					slide := Slide{
 						FileUid:     newFile.FileUid,
 						Slide:       text,
-						OrderNumber: idx,
+						OrderNumber: idx + 1,
 					}
 					if err := tx.Create(&slide).Error; err != nil {
 						tx.Rollback()

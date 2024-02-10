@@ -567,9 +567,16 @@ paths:
                     data:
                       type: array
                       items:
-                        type: string
-                        description: article titles and author names list includes query
-                        example: "Yehuda Leib Ha-Levi Ashlag"
+                        type: object
+                        properties:
+                            source_value:
+                              type: string
+                              description: source value list
+                              example: "Yehuda Leib Ha-Levi Ashlag"
+                            slide_count:
+                              type: integer
+                              description: the slide count that source value is refered
+                              example: 10
         '401':
           description: Invalid request jwt token
         '400':
