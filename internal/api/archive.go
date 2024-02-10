@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -16,6 +17,13 @@ import (
 
 var (
 	archiveDataCopyErrors = []error{}
+	// for testing only. 16 files for 4 languages
+	sourceUidList = map[string]struct{}{
+		"tswzgnWk": {},
+		"1vCj4qN9": {},
+		"ALlyoveA": {},
+		"h3FdlLJY": {},
+	}
 )
 
 const (
@@ -30,7 +38,7 @@ const (
 	DocxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	DocxPdf  = "application/pdf"
 
-	DBTableSlides      = "slides"
+	DBTableFiles       = "files"
 	DBTableSourcePaths = "source_paths"
 
 	ConcurrencyLimit = 250
@@ -39,16 +47,25 @@ const (
 // Get source data by language and insert downloaded data to slide table
 // (slide data initialization)
 func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
-	// checking if slide table has data
-	var slideCount int64
-	if err := database.Table(DBTableSlides).Count(&slideCount).Error; err != nil {
+	// Checking if file table has data (avoid to add duplicated file data from source)
+	var uniqueFiles []File
+	if err := database.Table(DBTableFiles).Table("files").Distinct("source_uid").
+		Find(&uniqueFiles).Error; err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
-	// If so then does not import archive data for slides
-	if slideCount > 0 {
+	// Remove keys(source uid in file table) from source uid list to import
+	// The source uid in file table means all files related to source uid has imported
+	// No need import again
+	for _, uniqueFile := range uniqueFiles {
+		delete(sourceUidList, uniqueFile.SourceUid)
+	}
+	// And there is no new file to import then no need to do the rest of import process
+	// Just skip
+	if len(sourceUidList) == 0 {
 		log.Println("Importing archive data has already done before")
 		return
 	}
+
 	// Download file contents from source and file apis.
 	// Downloading contents from urls is quite a lot of work and made process slow.
 	// So get all file contents first. But contents order is important.
@@ -58,8 +75,8 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	contents := make([]*AchiveTempData, len(sourcePaths))
 	log.Printf("Importing %d sources is started", len(sourcePaths))
 	for idx, sourcePath := range sourcePaths {
-		// for testing only. 4 files for 4 languages
-		if sourcePath.SourceUid == "tswzgnWk" {
+		// for testing only. 16 files for 4 languages
+		if _, ok := sourceUidList[sourcePath.SourceUid]; ok {
 			wg.Add(1)
 			sem <- struct{}{}
 			go func(idx int, sourcePath *SourcePath) {
@@ -124,19 +141,25 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 }
 
 // Update source_paths table(to sync source data regularly)
-func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
-	sourcePathsToCheck := [][]interface{}{}
-	sourcePathsToInsert := []*SourcePath{}
-	for _, path := range sourcePaths {
-		sourcePathsToCheck = append(sourcePathsToCheck, []interface{}{path.Language, path.SourceUid, path.Path})
-		sourcePathsToInsert = append(sourcePathsToInsert, path)
+func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
+	currentSourcePaths := []*SourcePath{}
+	err := database.Debug().Table("source_paths").Scan(&currentSourcePaths).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("Internal error: %s", err)
+			return
+		}
 	}
-	// Compare sources in db with source from archive
-	// Get source list to be deleted from db(means sources are no more existed in archive)
-	sourcePathsToDelete := []*SourcePath{}
-	result := database.Debug().Table(DBTableSourcePaths).Where("(language, source_uid, path) NOT IN (?)", sourcePathsToCheck).Find(&sourcePathsToDelete)
-	if result.RowsAffected == 0 {
-		log.Printf("No source path")
+	sourcePathsToDelete := map[string]*SourcePath{}
+	for _, currentSourcePath := range currentSourcePaths {
+		sourcePathsToDelete[currentSourcePath.SourceUid] = currentSourcePath
+	}
+	sourcePathsToInsert := []*SourcePath{}
+	for _, newSourcePath := range newSourcePaths {
+		sourcePathsToInsert = append(sourcePathsToInsert, newSourcePath)
+		// Compare sources in db with source from archive
+		// Remain source list to be deleted from db(means sources are no more existed in archive)
+		delete(sourcePathsToDelete, newSourcePath.SourceUid)
 	}
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
@@ -145,7 +168,7 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 	}
 	// Delete source list to be delete we get from above
 	for _, sourcePathToDelete := range sourcePathsToDelete {
-		err := tx.Delete(&sourcePathToDelete).Error
+		err := tx.Where("id = ?", sourcePathToDelete.ID).Delete(sourcePathToDelete).Error
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Internal error: %s", err)
@@ -157,14 +180,14 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 		err := database.Debug().Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "language"}, {Name: "source_uid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"path"}),
-		}).Create(&sourcePathToInsert).Error
+		}).Create(sourcePathToInsert).Error
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Internal error: %s", err.Error())
 			return
 		}
 	}
-	err := tx.Commit().Error
+	err = tx.Commit().Error
 	if err != nil {
 		log.Printf("Internal error: %s", err)
 		return
@@ -173,18 +196,11 @@ func updateSourcePath(database *gorm.DB, sourcePaths []*SourcePath) {
 
 // Download the file, convert the file content to string and return it
 func getFileContent(sourceUid, language string) ([]string, string) {
-	fileResp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
+	files, err := getFiles(sourceUid)
 	if err != nil {
 		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
 		return nil, ""
 	}
-	var files ArchiveFiles
-	err = json.NewDecoder(fileResp.Body).Decode(&files)
-	if err != nil {
-		log.Printf("Internal error: %s, sourceUid: %s", err, sourceUid)
-		return nil, ""
-	}
-	fileResp.Body.Close()
 	if files.Total == 0 {
 		return []string{}, ""
 	}
@@ -239,6 +255,20 @@ func getFileContent(sourceUid, language string) ([]string, string) {
 	}
 
 	return strings.Split(strings.TrimSpace(res), "\n"), fileUid
+}
+
+func getFiles(sourceUid string) (*ArchiveFiles, error) {
+	fileResp, err := http.Get(fmt.Sprintf(KabbalahmediaFilesUrl, sourceUid))
+	if err != nil {
+		return nil, err
+	}
+	var files ArchiveFiles
+	err = json.NewDecoder(fileResp.Body).Decode(&files)
+	if err != nil {
+		return nil, err
+	}
+	fileResp.Body.Close()
+	return &files, nil
 }
 
 func getSourcePathListByLanguages(languageCodes []string) ([]*SourcePath, error) {

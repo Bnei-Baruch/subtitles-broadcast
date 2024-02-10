@@ -14,17 +14,20 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1 := router.Group("/api/v1")
 
-	v1.POST("/bookmark/:slide_id", handler.AddUserBookmark)
+	v1.POST("/bookmark", handler.AddOrUpdateUserBookmark)
 	v1.GET("/bookmark", handler.GetUserBookmarks)
-	v1.PATCH("/bookmark", handler.UpdateUserBookmark)
 	v1.DELETE("/bookmark/:bookmark_id", handler.DeleteUserBookmark)
 
-	v1.POST("/slide", handler.ImportSource)
+	//v1.POST("/slide", handler.ImportSource)
+	v1.POST("/slide", handler.AddSlides)
 	v1.GET("/slide", handler.GetSlides)
-	v1.PATCH("/slide", handler.UpdateSlide)
-	v1.DELETE("/slide/:slide_id", handler.DeleteSlide)
+	v1.PATCH("/slide", handler.UpdateSlides)
+	v1.DELETE("/slide", handler.DeleteSlides)
 
+	v1.GET("/file_slide", handler.GetSlides)
 	v1.GET("/author", handler.GetAuthors)
+	v1.GET("/auto_complete", handler.GetSourceValuesByQuery)
+	v1.GET("/source_language", handler.GetLanguageListSourceSupports)
 
 	// Unnecessary handler at this moment. If need, will be used
 	// v1.GET("/source_name", handler.GetSourceName)

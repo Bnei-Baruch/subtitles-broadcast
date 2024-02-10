@@ -37,6 +37,18 @@ paths:
                       items:
                         type: object
                         properties:
+                          order:
+                            type: integer
+                            description: bookmark order
+                            example: 1
+                          slide_id:
+                            type: integer
+                            description: bookmarked slide id
+                            example: 1
+                          bookmark_id:
+                            type: integer
+                            description: bookmark id
+                            example: 1
                           bookmark_path:
                             type: string
                             description: bookmark path
@@ -47,8 +59,6 @@ paths:
                             example: OzSCqHYF
         '401':
           description: Invalid request jwt token
-        '404':
-          description: User bookmark not found
         '405':
           description: Invalid http method
         '500':
@@ -56,67 +66,35 @@ paths:
       security:
         - bearerAuth:
             - read:books
-    patch:
+    post:
       tags:
         - bookmark
-      summary: Update a bookmark order
-      description: Update a bookmark order
-      operationId: UpdateUserBookmark
+      summary: Add or update a slide id for the user bookmark path
+      description: Add or update a slide id for the user bookmark path
+      operationId: addOrUpdateUserBookmark
       requestBody:
         content:
           application/json:
             schema:
               properties:
-                bookmark_id:
+                file_uid:
+                  type: string
+                  description: Filed uid the slide will be bookmarked belongs to
+                  example: OzSCqHYF
+                slide_id:
                   type: integer
-                  description: current bookmark numeric ID 
+                  description: Numeric ID of the slide to insert
                   example: 1
-                order_number:
+                update:
+                  type: boolean
+                  description: Value for whether to update or to create
+                  example: true
+                order:
                   type: integer
-                  description: current bookmark order number
-                  example: 2
-        description: Update user current bookmark order
+                  description: Bookmark order number in the bookmark list
+                  example: 1
+        description: Add or update user bookmark
         required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BasicResponse'
-                  - type: object
-                    properties:
-                      data:
-                        example: null
-        '401':
-          description: Invalid request jwt token
-        '400':
-          description: Invalid request value
-        '404':
-          description: Book content not found
-        '405':
-          description: Validation http method
-        '500':
-          description: Internal error
-      security:
-        - bearerAuth:
-            - write:slides
-            - read:slides
-  /bookmark/{slideId}:
-    post:
-      tags:
-        - bookmark
-      summary: Add a slide id for the user bookmark path
-      description: Add a slide id for the user bookmark path
-      operationId: addUserBookmark
-      parameters:
-        - in: path
-          name: slideId
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of the slide to insert
       responses:
         '200':
           description: Successful operation
@@ -148,6 +126,10 @@ paths:
                           type: string
                           description: file uid the bookmarked slide belongs to
                           example: vlbukUc2
+                        order_number:
+                          type: integer
+                          description: bookmark order number
+                          example: 1
                         created_at:
                           type: string
                           description: time the bookmarked added
@@ -160,8 +142,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content to bookmark not found
         '405':
           description: Validation http method
         '500':
@@ -200,8 +180,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: User bookmark not found
         '405':
           description: Validation http method
         '500':
@@ -221,15 +199,22 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                source_uid:
-                  type: string
-                  description: archive source uid
-                  example: "tswzgnWk"
-                langugae:
-                  type: string 
-                  description: language code
-                  example: "en"
+              type: array
+              items:
+                type: object
+                properties:
+                  file_uid:
+                    type: string
+                    description: archive file uid
+                    example: "OzSCqHYF"
+                  slide:
+                    type: string
+                    description: slide text
+                    example: "you must know that all that is said in The Book of Zohar"
+                  order_number:
+                    type: integer
+                    description: slide order number
+                    example: 1
         description: Created user slide data
         required: true
       responses:
@@ -248,8 +233,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content not found
         '405':
           description: Validation http method
         '500':
@@ -338,8 +321,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request query
-        '404':
-          description: content not found
         '405':
           description: Invalid http method
         '500':
@@ -357,19 +338,22 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                slide_id:
-                  type: integer
-                  description: slide id
-                  example: 1
-                langugae:
-                  type: string 
-                  description: language code
-                  example: "en"
-                slide:
-                  type: string
-                  description: slide to update
-                  example: "Hello"
+              type: array
+              items:
+                type: object
+                properties:
+                  slide_id:
+                    type: integer
+                    description: slide id to update
+                    example: 1
+                  slide:
+                    type: string
+                    description: slide text
+                    example: "you must know that all that is said in The Book of Zohar"
+                  order_number:
+                    type: integer
+                    description: slide order number
+                    example: 1
         description: Update user slide text
         required: true
       responses:
@@ -388,8 +372,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content not found
         '405':
           description: Validation http method
         '500':
@@ -398,20 +380,25 @@ paths:
         - bearerAuth:
             - write:slides
             - read:slides
-  /slide/{slideId}:
     delete:
       tags:
         - slide
       summary: Delete a slide
       description: Delete a slide
       operationId: deleteSlide
-      parameters:
-        - in: path
-          name: slideId
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of the slide to delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                force_delete_bookmarks:
+                  type: boolean
+                  description: mark to delete bookmakr refers to slide id
+                  example: true
+                slide_ids:
+                  type: array
+                  description: slide ids to delete
+                  example: [1, 2, 3]
       responses:
         '200':
           description: Successful operation
@@ -428,8 +415,6 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request value
-        '404':
-          description: Book content not found
         '405':
           description: Validation http method
         '500':
@@ -438,20 +423,38 @@ paths:
         - bearerAuth:
             - read:slides
             - delete:slides
-  /file_slide/{fileUid}:
+  /file_slide:
     get:
       tags:
         - slide
-      summary: Get slides
-      description: Finds all slide by file id
-      operationId: getSlidesByFile
+      summary: Get slides for the file
+      description: Finds all slide for the file
+      operationId: getFileSlides
       parameters:
-        - in: path
-          name: fileUid
+        - name: page
+          in: query
+          description: page number
+          required: false
+          explode: true
           schema:
-            type: integer
-          required: true
-          description: Numeric ID of the file
+            type: string
+        - name: limit
+          in: query
+          description: page size
+          required: false
+          explode: true
+          schema:
+            type: string
+        - in: query
+          name: file_uid
+          schema:
+            type: string
+          description: archive file uid
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: the keyword to search slide includes
       responses:
         '200':
           description: successful operation
@@ -465,15 +468,32 @@ paths:
                     - data
                   properties:
                     data:
-                      type: array
-                      items:
-                        $ref: '#/components/schemas/Slide'
+                      type: object
+                      properties:
+                        pagination:
+                          type: object
+                          properties:
+                            limit:
+                              type: integer
+                              description: page size
+                              example: 10
+                            page:
+                              type: integer
+                              example: 1
+                            total_rows:
+                              type: integer
+                              example: 150
+                            total_pages:
+                              type: integer
+                              example: 15
+                        slides:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/SlideDetail'
         '401':
           description: Invalid request jwt token
         '400':
           description: Invalid request query
-        '404':
-          description: content not found
         '405':
           description: Invalid http method
         '500':
@@ -510,8 +530,94 @@ paths:
           description: Invalid request jwt token
         '400':
           description: Invalid request query
-        '404':
-          description: content not found
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /auto_complete:
+    get:
+      tags:
+        - auto_complete
+      summary: Get article titles and author names by query
+      description: Get article titles and author names
+      operationId: GetArticleTitlesAndAuthorsByQuery
+      parameters:
+        - name: query
+          in: query
+          description: search keyword
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: article titles and author names list includes query
+                        example: "Yehuda Leib Ha-Levi Ashlag"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /source_language:
+    get:
+      tags:
+        - source_language
+      summary: Get all language list for a source
+      description: Get all language list for a source
+      operationId: GetLanguageListSourceSupports
+      parameters:
+        - name: source_uid
+          in: query
+          description: search keyword
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: all language list for a source
+                        example: "en"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
         '405':
           description: Invalid http method
         '500':
@@ -571,10 +677,10 @@ components:
           type: string
           description: source path including author name for slide
           example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 7"
-        bookmarked:
-          type: boolean
-          description: user's bookmark
-          example: true
+        bookmark_id:
+          type: integer
+          description: user's bookmark_id, no bookmark then null
+          example: 1
         slide:
           type: string
           description: slide
