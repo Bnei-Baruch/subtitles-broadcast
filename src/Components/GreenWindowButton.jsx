@@ -67,7 +67,8 @@ function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonD
 function getDirectionStyle(srcStyles, isLtr) {
     if (!isLtr) {
         const cloneSrcStyles = { ...srcStyles };
-        cloneSrcStyles.direction = "ltr";
+        cloneSrcStyles.direction = "rtl";
+        cloneSrcStyles["text-align"] = "rigth";
         return cloneSrcStyles;
     }
 
@@ -86,12 +87,11 @@ const styles = {
         "font-weight": "600",
         "font-size": "25px",
         "line-height": "24px",
-        "text-align": "right",
         "letter-spacing": "0.0595px",
         "color": "#212121",
+        "text-align": "left",
         direction: "ltr",
         padding: "10px 10px 10px 10px",
-        // "margin-bottom": "10px"
     },
     cursorNotAllowed: {
         cursor: "not-allowed"
