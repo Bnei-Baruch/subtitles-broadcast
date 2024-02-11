@@ -99,24 +99,30 @@ const styles = {
 };
 
 function getActivatedData(userAddedList, activatedTabData) {
-    if (!userAddedList) {
-        userAddedList = { slides: [{ slide: getSlideContextTest() }] }
-        activatedTabData = 0
-    }
-
     if (userAddedList?.slides?.length > 0) {
-        return userAddedList?.slides[activatedTabData].slide
+        var activeSlideText;
+
+        for (let i = 0; i < userAddedList.slides.length; i++) {
+            const lupSlide = userAddedList.slides[i];
+
+            if (lupSlide.order_number == activatedTabData) {
+                activeSlideText = lupSlide.slide
+                break;
+            }
+        }
+
+        return activeSlideText
     }
 }
 
-function getSlideContextTest() {
-    return <div>
-        זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
-        ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
-        היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
-        שהקב"ה יעזור לו.
-    </div>
-}
+// function getSlideContextTest() {
+//     return <div>
+//         זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
+//         ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
+//         היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
+//         שהקב"ה יעזור לו.
+//     </div>
+// }
 
 function openConnectionToMQTT(setMqttConnected) {
     setMqttConnected(true);
