@@ -100,12 +100,13 @@ const styles = {
 
 function getActivatedData(userAddedList, activatedTabData) {
     if (userAddedList?.slides?.length > 0) {
-        var activeSlideText;
+        let activeSlideText;
+        const activeSlideOrderNum = activatedTabData - 1;
 
         for (let i = 0; i < userAddedList.slides.length; i++) {
             const lupSlide = userAddedList.slides[i];
 
-            if (lupSlide.order_number == activatedTabData) {
+            if (lupSlide.order_number == activeSlideOrderNum) {
                 activeSlideText = lupSlide.slide
                 break;
             }
