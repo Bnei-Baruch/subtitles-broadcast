@@ -20,7 +20,8 @@ import { GreenWindow } from "../Components/GreenWindow";
 import { GreenWindowButton } from "../Components/GreenWindowButton";
 
 const Subtitles = () => {
-  const [mqttConnected, setMqttConnected] = useState(false);
+  const [mqttMessage, setMqttMessage] = useState(null);
+  //const [mqttConnected, setMqttConnected] = useState(false);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -90,6 +91,9 @@ const Subtitles = () => {
 
     setItems(updatedItems);
   };
+
+  //determinePublish(UserAddedList, activatedTabData);
+
   console.log(items);
   return (
     <>
@@ -118,12 +122,12 @@ const Subtitles = () => {
                 <GreenWindowButton
                   setShowGreenWindow={setShowGreenWindow}
                   showGreenWindow={showGreenWindow}
-                  isButtonDisabled={UserAddedList ? false : true}
+                  isButtonDisabled={false} //{UserAddedList ? false : true}
                   userAddedList={UserAddedList}
                   activatedTabData={activatedTabData}
                   isLtr={isLtr}
-                  mqttConnected={mqttConnected}
-                  setMqttConnected={setMqttConnected}
+                  mqttMessage={mqttMessage}
+                  setMqttMessage={setMqttMessage}
                 />
                 <button
                   type="button"

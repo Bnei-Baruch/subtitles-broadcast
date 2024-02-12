@@ -1,49 +1,11 @@
 import React from "react";
 import { Button } from "react-bootstrap";
 import { GreenWindow } from "../Components/GreenWindow";
+import parse from 'html-react-parser';
+import mqtt from 'mqtt';
 
-export const GreenWindowButton = ({
-    showGreenWindow,
-    setShowGreenWindow,
-    isButtonDisabled,
-    userAddedList,
-    activatedTabData,
-    isLtr,
-    mqttConnected,
-    setMqttConnected
-}) => {
-    // isButtonDisabled = false; //For testing
-    //Connect and push the slide content
-    publishSlideToMQTT(showGreenWindow, isButtonDisabled, mqttConnected, setMqttConnected);
-    return (
-        <>
-            <button
-                style={isButtonDisabled ? styles.cursorNotAllowed : {}}
-                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected)}
-                className={getButtonClassName(showGreenWindow, isButtonDisabled)}
-                title={isButtonDisabled ? "Please select a Bookmark" : ""} >
-                Open Green Screen
-            </button>
-            {
-                !isButtonDisabled && showGreenWindow &&
-                <GreenWindow
-                    closeWinUnloadingRef={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}>
-                    <div className="green-part-cont" style={styles.greenPartContainer}>
-                        <h1>Green Screen:</h1>
-                        <p>WIP</p>
-                        <button
-                            onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled)} >
-                            Close
-                        </button>
-                    </div>
-                    <div className="slide-part-cont" style={getDirectionStyle(styles.slidePartContainer, isLtr)}>
-                        {getActivatedData(userAddedList, activatedTabData)}
-                    </div>
-                </GreenWindow>
-            }
-        </>
-    );
-};
+var mqttOptions = { protocol: 'wss', clientId: 'kab_subtitles_' + Math.random().toString(16).substring(2, 8) };
+var mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', mqttOptions);
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
     var className = showGreenWindow ?
@@ -58,10 +20,7 @@ function getButtonClassName(showGreenWindow, isButtonDisabled) {
 }
 
 function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected) {
-    if (!isButtonDisabled) {
-        setShowGreenWindow(!showGreenWindow);
-        closeConnectionToMQTT(setMqttConnected);
-    }
+    setShowGreenWindow(!showGreenWindow);
 }
 
 function getDirectionStyle(srcStyles, isLtr) {
@@ -98,52 +57,94 @@ const styles = {
     }
 };
 
-function getActivatedData(userAddedList, activatedTabData) {
-    if (userAddedList?.slides?.length > 0) {
-        let activeSlideText;
-        const activeSlideOrderNum = activatedTabData - 1;
+function parseMqttMessage(mqttMessage) {
+    if (mqttMessage) {
+        try {
+            let msgJson = JSON.parse(mqttMessage);
 
-        for (let i = 0; i < userAddedList.slides.length; i++) {
-            const lupSlide = userAddedList.slides[i];
-
-            if (lupSlide.order_number == activeSlideOrderNum) {
-                activeSlideText = lupSlide.slide
-                break;
+            if (msgJson.message) {
+                return parse(msgJson.message);
             }
+        } catch (e) {
+            //
         }
 
-        return activeSlideText
+        return mqttMessage;
     }
 }
 
-// function getSlideContextTest() {
-//     return <div>
-//         זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
-//         ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
-//         היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
-//         שהקב"ה יעזור לו.
-//     </div>
-// }
+export const GreenWindowButton = ({
+    showGreenWindow,
+    setShowGreenWindow,
+    isButtonDisabled,
+    userAddedList,
+    activatedTabData,
+    isLtr,
+    mqttConnected,
+    setMqttConnected,
+    mqttMessage,
+    setMqttMessage
+}) => {
+    mqttClient.subscribe('subtitles');
 
-function openConnectionToMQTT(setMqttConnected) {
-    if (setMqttConnected) {
-        setMqttConnected(true);
-    }
-}
+    mqttClient.on('message', function (topic, message) {
+        const note = message.toString();
+        setMqttMessage(note);
+        //console.log(note);
+        //client.end();
+    });
 
-function closeConnectionToMQTT(setMqttConnected) {
-    if (setMqttConnected) {
-        setMqttConnected(false);
+    const mqttPublish = (msgText) => {
+        if (showGreenWindow && mqttClient) {
+            mqttClient.publish('subtitles', msgText, { label: '0', value: 0 }, error => {
+                if (error) {
+                    console.log('Publish error: ', error);
+                }
+            });
+        }
     }
-}
 
-function publishSlideToMQTT(showGreenWindow, isButtonDisabled, mqttConnected, setMqttConnected) {
-    if (isButtonDisabled && showGreenWindow && !mqttConnected) {
-        //Open Connection here
-        openConnectionToMQTT(setMqttConnected);
+    const determinePublish = (userAddedList, activatedTabData) => {
+        if (userAddedList?.slides?.length > 0) {
+            let activeSlideText;
+            const activeSlideOrderNum = activatedTabData - 1;
+
+            for (let i = 0; i < userAddedList.slides.length; i++) {
+                const lupSlide = userAddedList.slides[i];
+
+                if (lupSlide.order_number == activeSlideOrderNum) {
+                    activeSlideText = lupSlide.slide;
+                    var jsonMsgStr = JSON.stringify({ message: activeSlideText });
+                    mqttPublish(jsonMsgStr)
+                    break;
+                }
+            }
+        }
     }
-    else {
-        //Send Message here
-        const temp = mqttConnected;
-    }
-}
+
+    determinePublish(userAddedList, activatedTabData);
+
+    return (
+        <>
+            <button
+                // style={isButtonDisabled ? styles.cursorNotAllowed : {}}
+                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected)}
+                className={getButtonClassName(showGreenWindow, isButtonDisabled)}
+            // title={isButtonDisabled ? "Please select a Bookmark" : ""} 
+            >
+                Open Green Screen
+            </button>
+            {
+                !isButtonDisabled && showGreenWindow &&
+                <GreenWindow
+                    closeWinUnloadingRef={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}>
+                    <div className="green-part-cont" style={styles.greenPartContainer}>
+                    </div>
+                    <div className="slide-part-cont" style={getDirectionStyle(styles.slidePartContainer, isLtr)}>
+                        {parseMqttMessage(mqttMessage)}
+                    </div>
+                </GreenWindow>
+            }
+        </>
+    );
+};

@@ -7,9 +7,14 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         window.open("", "", "width=720,height=410,left=200,top=200")
     );
 
-    const containerEl = document.createElement("div");
-    containerEl.classList.add("green-screen-cont");
-    containerEl.setAttribute("style", "height: 100%;");
+    let containerEl = externalWindow.current.document.getElementById("green_screen_cont");
+
+    if (!containerEl) {
+        containerEl = document.createElement("div");
+        containerEl.classList.add("green-screen-cont");
+        containerEl.setAttribute("style", "height: 100%;");
+        containerEl.setAttribute("id", "green_screen_cont");
+    }
 
     useEffect(() => {
         const currentWindow = externalWindow.current;
