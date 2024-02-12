@@ -126,11 +126,15 @@ function getActivatedData(userAddedList, activatedTabData) {
 // }
 
 function openConnectionToMQTT(setMqttConnected) {
-    setMqttConnected(true);
+    if (setMqttConnected) {
+        setMqttConnected(true);
+    }
 }
 
 function closeConnectionToMQTT(setMqttConnected) {
-    setMqttConnected(false);
+    if (setMqttConnected) {
+        setMqttConnected(false);
+    }
 }
 
 function publishSlideToMQTT(showGreenWindow, isButtonDisabled, mqttConnected, setMqttConnected) {
