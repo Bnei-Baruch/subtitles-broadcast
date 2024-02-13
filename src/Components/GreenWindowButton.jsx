@@ -4,8 +4,8 @@ import { GreenWindow } from "../Components/GreenWindow";
 import parse from 'html-react-parser';
 import mqtt from 'mqtt';
 
-var mqttOptions = { protocol: 'wss', clientId: 'kab_subtitles_' + Math.random().toString(16).substring(2, 8) };
-var mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', mqttOptions);
+const mqttOptions = { protocol: 'wss', clientId: 'kab_subtitles_' + Math.random().toString(16).substring(2, 8) };
+const mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', mqttOptions);
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
     var className = showGreenWindow ?
@@ -85,7 +85,10 @@ export const GreenWindowButton = ({
     mqttMessage,
     setMqttMessage
 }) => {
-    mqttClient.subscribe('subtitles');
+    const lang = "eng";
+    const brdcastProgramm = "morning_lesson";
+    const mqttTopic = "subtitles_" + lang + "_" + brdcastProgramm;
+    mqttClient.subscribe(mqttTopic);
 
     mqttClient.on('message', function (topic, message) {
         const note = message.toString();
@@ -96,7 +99,7 @@ export const GreenWindowButton = ({
 
     const mqttPublish = (msgText) => {
         if (showGreenWindow && mqttClient) {
-            mqttClient.publish('subtitles', msgText, { label: '0', value: 0 }, error => {
+            mqttClient.publish(mqttTopic, msgText, { label: '0', value: 0 }, error => {
                 if (error) {
                     console.log('Publish error: ', error);
                 }

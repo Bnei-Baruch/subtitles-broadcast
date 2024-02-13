@@ -3,8 +3,10 @@ import ReactDOM from "react-dom";
 //import { copyStyles } from "../Utils/copy-styles";
 
 export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
+    var popupFeatures = "popup=1,menubar=0,toolbar=0,location=0,resizable=0,scrollbars=0,status=0,width=720,height=410,left=200,top=200";
     const externalWindow = useRef(
-        window.open("", "", "width=720,height=410,left=200,top=200")
+        window.open("", "green_window",
+            popupFeatures)
     );
 
     let containerEl = externalWindow.current.document.getElementById("green_screen_cont");
