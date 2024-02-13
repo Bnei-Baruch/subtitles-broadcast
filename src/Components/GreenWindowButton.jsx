@@ -83,11 +83,11 @@ export const GreenWindowButton = ({
     mqttConnected,
     setMqttConnected,
     mqttMessage,
-    setMqttMessage
+    setMqttMessage,
+    broadcastProgramm,
+    broadcastLang
 }) => {
-    const lang = "eng";
-    const brdcastProgramm = "morning_lesson";
-    const mqttTopic = "subtitles_" + lang + "_" + brdcastProgramm;
+    const mqttTopic = "subtitles_" + broadcastLang + "_" + broadcastProgramm;
     mqttClient.subscribe(mqttTopic);
 
     mqttClient.on('message', function (topic, message) {

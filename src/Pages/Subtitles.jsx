@@ -18,11 +18,34 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
 import { GreenWindow } from "../Components/GreenWindow";
 import { GreenWindowButton } from "../Components/GreenWindowButton";
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
 
 const Subtitles = () => {
+  const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
+  { value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
+  { value: "brodcast_3", label: "Brodcast 3" }];
+
+  const broadcastLangArr = [{ value: "eng", label: "English" },
+  { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
+  { value: "fra", label: "France" }];
+
+  const dropDownChangeValue = (evt, setStateRef) => {
+    setStateRef({
+      value: evt.target.getAttribute("dataKey"),
+      label: evt.target.text
+    });
+  };
+
+  const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
+  const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
   //const [mqttConnected, setMqttConnected] = useState(false);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
+
+
+
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
@@ -119,28 +142,65 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               >
-                <GreenWindowButton
-                  setShowGreenWindow={setShowGreenWindow}
-                  showGreenWindow={showGreenWindow}
-                  isButtonDisabled={false} //{UserAddedList ? false : true}
-                  userAddedList={UserAddedList}
-                  activatedTabData={activatedTabData}
-                  isLtr={isLtr}
-                  mqttMessage={mqttMessage}
-                  setMqttMessage={setMqttMessage}
-                />
-                <button
-                  type="button"
-                  onClick={() => setIsLtr(!isLtr)}
-                  className="btn btn-tr"
-                >
-                  {isLtr ? "LTR" : "RTL"}
-                </button>
-
-                <button type="button" className="btn btn-tr">
-                  <img alt="vectors" src="image/Vector.svg" />
-                </button>
               </div>
+
+              <DropdownButton
+                key="Info" id="brodcast_programm" variant="info" className="btn-group"
+                title={broadcastProgramm.label} style={{ "margin": "0 10px 0 0", "width": "125px" }}>
+                {brodcastProgrammArr.map((item) => (
+                  <Dropdown.Item dataKey={item.value} eventKey={item.value}
+                    {...item.value === broadcastProgramm && { active: true }}
+                    onClick={(evt) => dropDownChangeValue(evt, setBroadcastProgramm)}>{item.label}</Dropdown.Item>
+                ),)}
+              </DropdownButton>
+
+              <DropdownButton
+                key="Info" id="brodcast_lang" variant="info" className="btn-group"
+                title={broadcastLang.label} style={{ "margin": "0 10px 0 0", "width": "100px" }}>
+                {broadcastLangArr.map((item) => (
+                  <Dropdown.Item dataKey={item.value} eventKey={item.value}
+                    {...item.value === broadcastLang && { active: true }}
+                    onClick={(evt) => dropDownChangeValue(evt, setBroadcastLang)}>{item.label}</Dropdown.Item>
+                ),)}
+
+              </DropdownButton>
+              <GreenWindowButton
+                setShowGreenWindow={setShowGreenWindow}
+                showGreenWindow={showGreenWindow}
+                isButtonDisabled={false} //{UserAddedList ? false : true}
+                userAddedList={UserAddedList}
+                activatedTabData={activatedTabData}
+                isLtr={isLtr}
+                mqttMessage={mqttMessage}
+                setMqttMessage={setMqttMessage}
+                broadcastProgramm
+                broadcastLang
+              />
+              <button
+                type="button"
+                onClick={() => setIsLtr(!isLtr)}
+                className="btn btn-tr"
+              >
+                {isLtr ? "LTR" : "RTL"}
+              </button>
+
+              <button type="button" className="btn btn-tr">
+                <img alt="vectors" src="image/Vector.svg" />
+              </button>
+
+              {/* <Dropdown variant="success" id="brodcast_programm">
+                  <Dropdown.Toggle id="dropdown-autoclose-outside">
+                    Brodcasting programm
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.Item value='morning_lesson' >Morning lesson</Dropdown.Item>
+                    <Dropdown.Item value='brodcast_1'>Brodcast 1</Dropdown.Item>
+                    <Dropdown.Item value='brodcast_2'>Brodcast 3</Dropdown.Item>
+                    <Dropdown.Item value='brodcast_3'>Brodcast 3</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown> */}
+
             </div>
           </div>
 
