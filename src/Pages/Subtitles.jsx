@@ -20,7 +20,7 @@ import { GreenWindow } from "../Components/GreenWindow";
 import { GreenWindowButton } from "../Components/GreenWindowButton";
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import DropdownButtonDef from "../Components/DropdownButtonDef"
 
 const Subtitles = () => {
   const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
@@ -143,27 +143,14 @@ const Subtitles = () => {
                 aria-label="Basic mixed styles example"
               >
               </div>
-
-              <DropdownButton
-                key="Info" id="brodcast_programm" variant="info" className="btn-group"
-                title={broadcastProgramm.label} style={{ "margin": "0 10px 0 0", "width": "125px" }}>
-                {brodcastProgrammArr.map((item) => (
-                  <Dropdown.Item dataKey={item.value} eventKey={item.value}
-                    {...item.value === broadcastProgramm && { active: true }}
-                    onClick={(evt) => dropDownChangeValue(evt, setBroadcastProgramm)}>{item.label}</Dropdown.Item>
-                ),)}
-              </DropdownButton>
-
-              <DropdownButton
-                key="Info" id="brodcast_lang" variant="info" className="btn-group"
-                title={broadcastLang.label} style={{ "margin": "0 10px 0 0", "width": "100px" }}>
-                {broadcastLangArr.map((item) => (
-                  <Dropdown.Item dataKey={item.value} eventKey={item.value}
-                    {...item.value === broadcastLang && { active: true }}
-                    onClick={(evt) => dropDownChangeValue(evt, setBroadcastLang)}>{item.label}</Dropdown.Item>
-                ),)}
-
-              </DropdownButton>
+              <DropdownButtonDef
+                id="brodcast_programm" data={brodcastProgrammArr}
+                currentValue={broadcastProgramm} setDataRef={setBroadcastProgramm}>
+              </DropdownButtonDef>
+              <DropdownButtonDef
+                id="brodcast_lang" data={broadcastLangArr} currentValue={broadcastLang}
+                setDataRef={setBroadcastLang} style={{ "width": "100px" }}>
+              </DropdownButtonDef>
               <GreenWindowButton
                 setShowGreenWindow={setShowGreenWindow}
                 showGreenWindow={showGreenWindow}
