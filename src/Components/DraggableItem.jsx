@@ -4,6 +4,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
+import { json } from "docker/src/languages";
 
 const ItemTypes = {
   CARD: "card",
@@ -34,13 +35,27 @@ const DraggableItem = ({
     },
   });
   const handleBookMarkClick = (e) => {
-    localStorage.setItem("activeSlideFileUid", +text?.split("/")?.at(-1));
-    setActivatedTab(+text?.split("/")?.at(-1) + 1);
+    const activeSlide =
+      JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
+
+    const findActiveSlideId = activeSlide.find((key) => key?.fileUid == e);
+    console.log(findActiveSlideId, "findActiveSlideId");
+    if (findActiveSlideId) {
+      setActivatedTab(findActiveSlideId?.activeSlide);
+    } else {
+      const newData = [
+        ...activeSlide,
+        { fileUid: e, activeSlide: +text?.split("/")?.at(-1) },
+      ];
+      localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
+      setActivatedTab(+text?.split("/")?.at(-1) + 1);
+    }
+
     dispatch(GetSubtitleData(e));
   };
   return (
     <div
-      className="d-flex justify-content-between"
+      className="d-flex justify-content-between cursor-pointer"
       ref={(node) => ref(drop(node))}
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
     >

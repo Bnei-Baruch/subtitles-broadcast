@@ -46,7 +46,7 @@ const Archive = () => {
   );
   const message = "";
   const [editSlide, setEditSlide] = useState("");
-  // const [message, setMessage] = useState("");
+
   const [toggle, setToggle] = useState(false);
   const [freeText, setFreeText] = useState("");
   const [finalConfirm, setFinalConfirm] = useState(false);
@@ -54,6 +54,7 @@ const Archive = () => {
   const [deleteId, setDeleteId] = useState();
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
   const [autoComplete, setAutoComplete] = useState(true);
+  const [showAutocompleteBox, setShowAutocompleteBox] = useState();
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
     slide_id: "",
@@ -67,12 +68,23 @@ const Archive = () => {
     dispatch(GetAllAuthorList());
   }, [dispatch]);
   useEffect(() => {
-    dispatch(GetAllArchiveData({ language: "en", ...page, keyword: freeText }));
+    dispatch(
+      GetAllArchiveData({
+        language: "en",
+        ...page,
+        page: page.page,
+        keyword: freeText,
+      })
+    );
   }, [page, DebouncingFreeText, dispatch, editSlide]);
 
   useEffect(() => {
     if (finalConfirm === true) {
-      dispatch(DeleteArchive(deleteId));
+      dispatch(
+        DeleteArchive({
+          slide_ids: [deleteId],
+        })
+      );
       setFinalConfirm(false);
     }
     if (toggle) {
@@ -139,6 +151,7 @@ const Archive = () => {
                 <label>Free Text</label>
 
                 <input
+                  onBlur={() => setShowAutocompleteBox(false)}
                   value={freeText}
                   onKeyDown={(e) => {
                     e.key === "Enter" &&
@@ -146,6 +159,7 @@ const Archive = () => {
                         GetAllArchiveData({
                           language: "en",
                           ...page,
+                          page: 1,
                           keyword: freeText,
                         })
                       );
@@ -156,16 +170,18 @@ const Archive = () => {
                   type="text"
                   className="form-control input"
                 />
-                <ul class="suggestions" id="suggestions">
-                  {ActocompleteList?.map((suggestion, index) => (
-                    <li
-                      key={index}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
+                {showAutocompleteBox && (
+                  <ul class="suggestions" id="suggestions">
+                    {ActocompleteList?.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion.source_value}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <button
                 onClick={() => {
@@ -173,13 +189,14 @@ const Archive = () => {
                     GetAllArchiveData({
                       language: "en",
                       ...page,
+                      page: 1,
                       keyword: freeText,
                     })
                   );
                 }}
                 className="search-button btn btn-primary"
               >
-                <Search size={20} /> {/* Adjust the size as needed */}
+                <Search size={20} />
               </button>
             </div>
           </div>
@@ -190,7 +207,6 @@ const Archive = () => {
                 <thead>
                   <tr>
                     <th scope="col">Text</th>
-                    {/* <th scope="col">Author</th> */}
                     <th scope="col">Path</th>
                     <th scope="col">Action</th>
                   </tr>

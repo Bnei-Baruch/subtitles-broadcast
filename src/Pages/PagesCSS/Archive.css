@@ -259,11 +259,10 @@ select {
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: 1;
-  width: 100%; /* Set the dropdown width to 100% of the container */
+  z-index: 1000;
   max-height: 150px;
   overflow-y: auto;
-  border: 1px solid #ccc;
+  border: 1px solid #000000;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

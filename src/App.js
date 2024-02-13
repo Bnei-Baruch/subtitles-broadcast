@@ -1,17 +1,21 @@
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
+import "./App.css";
 
 import SideNavBar from "./Layout/SideNavBar";
 
 import MainRoutes from "./Routes/Routes";
+import HeaderBar from "./Layout/HeaderBar";
 
 const App = ({ auth }) => (
   <BrowserRouter>
-    <>
-      {console.log(auth?.keycloak, ">>>>>>>>>")}
+    <div className="app">
       <SideNavBar />
-      <MainRoutes logout={auth?.keycloak} />
-    </>
+      <div style={{ backgroundColor: "#eeee" }} className="main-content">
+        <HeaderBar logout={auth?.keycloak} />
+        <MainRoutes logout={auth?.keycloak} />
+      </div>
+    </div>
   </BrowserRouter>
 );
 
