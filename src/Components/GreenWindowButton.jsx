@@ -4,8 +4,20 @@ import { GreenWindow } from "../Components/GreenWindow";
 import parse from 'html-react-parser';
 import mqtt from 'mqtt';
 
-const mqttOptions = { protocol: 'wss', clientId: 'kab_subtitles_' + Math.random().toString(16).substring(2, 8) };
-const mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', mqttOptions);
+const mqttClient = initMqttClient()
+
+function initMqttClient() {
+    const mqttUrl = process.env.REACT_APP_MQTT_URL;
+    const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
+    const mqttPort = process.env.REACT_APP_MQTT_PORT;
+    const mqttPath = process.env.REACT_APP_MQTT_PATH;
+    const mqttClientId = "kab_subtitles_" + Math.random().toString(16).substring(2, 8)
+    const mqttOptions = { protocol: mqttProtocol, clientId: mqttClientId };
+    const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
+    const mqttClient = mqtt.connect(mqttBrokerUrl, mqttOptions);
+
+    return mqttClient;
+}
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
     var className = showGreenWindow ?
