@@ -16,11 +16,9 @@ import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
-import { GreenWindow } from "../Components/GreenWindow";
-import { GreenWindowButton } from "../Components/GreenWindowButton";
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
+import GreenWindowButton from "../Components/GreenWindowButton";
 import DropdownButtonDef from "../Components/DropdownButtonDef"
+import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
 
 const Subtitles = () => {
   const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
@@ -31,20 +29,11 @@ const Subtitles = () => {
   { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
   { value: "fra", label: "France" }];
 
-  const dropDownChangeValue = (evt, setStateRef) => {
-    setStateRef({
-      value: evt.target.getAttribute("dataKey"),
-      label: evt.target.text
-    });
-  };
-
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
-  //const [mqttConnected, setMqttConnected] = useState(false);
+  const [mqttClient, setMqttClient] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
-
-
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -115,8 +104,6 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
-  //determinePublish(UserAddedList, activatedTabData);
-
   console.log(items);
   return (
     <>
@@ -151,6 +138,16 @@ const Subtitles = () => {
                 id="brodcast_lang" data={broadcastLangArr} currentValue={broadcastLang}
                 setDataRef={setBroadcastLang} style={{ "width": "100px" }}>
               </DropdownButtonDef>
+              <ActiveSlideMessaging
+                userAddedList={UserAddedList}
+                activatedTabData={activatedTabData}
+                mqttMessage={mqttMessage}
+                setMqttMessage={setMqttMessage}
+                broadcastProgrammCode={broadcastProgramm.value}
+                broadcastLangCode={broadcastLang.value}
+                mqttClientRef={mqttClient}
+                setMesServerConnectedRef={setMqttClient}
+              />
               <GreenWindowButton
                 setShowGreenWindow={setShowGreenWindow}
                 showGreenWindow={showGreenWindow}
@@ -160,8 +157,8 @@ const Subtitles = () => {
                 isLtr={isLtr}
                 mqttMessage={mqttMessage}
                 setMqttMessage={setMqttMessage}
-                broadcastProgramm
-                broadcastLang
+                broadcastProgramm={broadcastProgramm}
+                broadcastLang={broadcastLang}
               />
               <button
                 type="button"
