@@ -29,6 +29,7 @@ const Subtitles = () => {
   { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
   { value: "fra", label: "France" }];
 
+  const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -147,6 +148,9 @@ const Subtitles = () => {
                 broadcastLangCode={broadcastLang.value}
                 mqttClientRef={mqttClient}
                 setMesServerConnectedRef={setMqttClient}
+                setActivatedTab={setActivatedTab}
+                jobMqttMessage={jobMqttMessage}
+                setJobMqttMessage={setJobMqttMessage}
               />
               <GreenWindowButton
                 setShowGreenWindow={setShowGreenWindow}
