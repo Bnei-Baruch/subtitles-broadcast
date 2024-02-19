@@ -14,7 +14,7 @@ function getButtonClassName(showGreenWindow, isButtonDisabled) {
     return className;
 }
 
-function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected) {
+function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow) {
     setShowGreenWindow(!showGreenWindow);
 }
 
@@ -71,27 +71,19 @@ function parseMqttMessage(mqttMessage) {
 export const GreenWindowButton = ({
     showGreenWindow,
     setShowGreenWindow,
-    isButtonDisabled,
-    userAddedList,
-    activatedTabData,
     isLtr,
-    mqttConnected,
-    setMqttConnected,
-    mqttMessage,
-    setMqttMessage,
-    broadcastProgramm,
-    broadcastLang
+    mqttMessage
 }) => {
     return (
         <>
             <button
-                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow, isButtonDisabled, setMqttConnected)}
-                className={getButtonClassName(showGreenWindow, isButtonDisabled)}
+                onClick={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}
+                className={getButtonClassName(showGreenWindow)}
             >
                 Open Green Screen
             </button>
             {
-                !isButtonDisabled && showGreenWindow &&
+                showGreenWindow &&
                 <GreenWindow
                     closeWinUnloadingRef={() => closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)}>
                     <div className="green-part-cont" style={styles.greenPartContainer}>

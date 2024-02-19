@@ -153,16 +153,10 @@ const Subtitles = () => {
                 setJobMqttMessage={setJobMqttMessage}
               />
               <GreenWindowButton
-                setShowGreenWindow={setShowGreenWindow}
                 showGreenWindow={showGreenWindow}
-                isButtonDisabled={false} //{UserAddedList ? false : true}
-                userAddedList={UserAddedList}
-                activatedTabData={activatedTabData}
+                setShowGreenWindow={setShowGreenWindow}
                 isLtr={isLtr}
                 mqttMessage={mqttMessage}
-                setMqttMessage={setMqttMessage}
-                broadcastProgramm={broadcastProgramm}
-                broadcastLang={broadcastLang}
               />
               <button
                 type="button"

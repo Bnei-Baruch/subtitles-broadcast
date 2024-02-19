@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-//import { copyStyles } from "../Utils/copy-styles";
 
 export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     var popupFeatures = "popup=1,menubar=0,toolbar=0,location=0,resizable=0,scrollbars=0,status=0,width=720,height=410,left=200,top=200";
@@ -25,7 +24,6 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
 
     externalWindow.current.document.title = "Green screen window";
     externalWindow.current.document.body.appendChild(containerEl);
-    //copyStyles(document, externalWindow.current.document);
 
     externalWindow.current.addEventListener("beforeunload", () => {
         closeWinUnloadingRef();
