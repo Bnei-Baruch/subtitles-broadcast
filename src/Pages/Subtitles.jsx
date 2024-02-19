@@ -21,19 +21,18 @@ import DropdownButtonDef from "../Components/DropdownButtonDef"
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
 
 const Subtitles = () => {
+  ///TODO: Bring from the system  brodcast Programms, Languages, and init by authorization
   const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
   { value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
   { value: "brodcast_3", label: "Brodcast 3" }];
-
   const broadcastLangArr = [{ value: "eng", label: "English" },
   { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
   { value: "fra", label: "France" }];
-
-  const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
   const [mqttClient, setMqttClient] = useState(null);
+  const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
 
   const dispatch = useDispatch();
@@ -140,15 +139,15 @@ const Subtitles = () => {
                 setDataRef={setBroadcastLang} style={{ "width": "100px" }}>
               </DropdownButtonDef>
               <ActiveSlideMessaging
-                userAddedList={UserAddedList}
-                activatedTabData={activatedTabData}
-                mqttMessage={mqttMessage}
-                setMqttMessage={setMqttMessage}
                 broadcastProgrammCode={broadcastProgramm.value}
                 broadcastLangCode={broadcastLang.value}
-                mqttClientRef={mqttClient}
-                setMesServerConnectedRef={setMqttClient}
+                userAddedList={UserAddedList}
+                activatedTabData={activatedTabData}
                 setActivatedTab={setActivatedTab}
+                mqttClient={mqttClient}
+                setMqttClient={setMqttClient}
+                mqttMessage={mqttMessage}
+                setMqttMessage={setMqttMessage}
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
