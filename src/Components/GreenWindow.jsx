@@ -8,7 +8,7 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
             popupFeatures)
     );
 
-    let containerEl = externalWindow.current.document.getElementById("green_screen_cont");
+    let containerEl = externalWindow ? externalWindow.current.document.getElementById("green_screen_cont") : null;
 
     if (!containerEl) {
         containerEl = document.createElement("div");

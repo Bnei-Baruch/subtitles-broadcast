@@ -55,7 +55,11 @@ const styles = {
 function parseMqttMessage(mqttMessage) {
     if (mqttMessage) {
         try {
-            let msgJson = JSON.parse(mqttMessage);
+            let msgJson = mqttMessage;
+
+            if (typeof (mqttMessage) === "string") {
+                msgJson = JSON.parse(mqttMessage);
+            }
 
             if (msgJson.slide) {
                 return parse(msgJson.slide);

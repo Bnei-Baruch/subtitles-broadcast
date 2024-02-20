@@ -142,7 +142,7 @@ const Subtitles = () => {
                 broadcastProgrammCode={broadcastProgramm.value}
                 broadcastLangCode={broadcastLang.value}
                 userAddedList={UserAddedList}
-                activatedTabData={activatedTabData}
+                activatedTab={activatedTab}
                 setActivatedTab={setActivatedTab}
                 mqttClient={mqttClient}
                 setMqttClient={setMqttClient}
