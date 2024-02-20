@@ -27,7 +27,7 @@ const Subtitles = () => {
   { value: "brodcast_3", label: "Brodcast 3" }];
   const broadcastLangArr = [{ value: "eng", label: "English" },
   { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
-  { value: "fra", label: "France" }];
+  { value: "spa", label: "Spanish" }];
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
