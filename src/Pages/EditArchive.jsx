@@ -17,8 +17,6 @@ const EditArcive = ({ handleClose }) => {
   const [selected, setSelected] = useState(0);
   const [confirmation, setConfirmation] = useState(false);
   const [deleted, setDeleted] = useState([]);
-  const [updateSlides, setUpdateSlides] = useState([]);
-  const [addSlides, setAddSlides] = useState([]);
 
   useEffect(() => {
     setSlideListData(slideList?.slides);

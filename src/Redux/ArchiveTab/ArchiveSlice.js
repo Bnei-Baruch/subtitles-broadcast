@@ -54,7 +54,11 @@ export const AddToSubtitleList = createAsyncThunk(
 export const DeleteArchive = createAsyncThunk(
   `DeleteArchive`,
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}${API_URL.Delete}/${data}`);
+    const response = await axios.delete(`${API}${API_URL.Delete}`, {
+      data,
+    });
+
+    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
 
     return response.data;
   }
@@ -164,6 +168,7 @@ export const deleteNewSlide = createAsyncThunk(
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}slide`, { data });
     thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+    response.data.success && toast.success(response.data.description);
     return response.data;
   }
 );
@@ -171,9 +176,7 @@ export const updateNewSlide = createAsyncThunk(
   "updateNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.patch(`${API}slide`, data);
-    {
-      response.status && toast.success(response.data.message);
-    }
+    response.data.success && toast.success(response.data.description);
     thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
     return response.data;
   }

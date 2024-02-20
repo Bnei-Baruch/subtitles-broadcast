@@ -85,7 +85,7 @@ const Subtitles = () => {
   console.log(items);
   return (
     <>
-      <div className="body-content d-flex vh-auto">
+      <div className="body-content d-flex ">
         <div className="left-section row">
           <div className="innerhead d-flex justify-content-between">
             <div
@@ -127,30 +127,30 @@ const Subtitles = () => {
               <ul className="nav nav-tabs " id="myTab" role="tablist">
                 {/* List of All Book that user have added */}
                 {/* {UserAddedList?.map((key, index) => (
-                  <li className="nav-item" role="presentation">
-                    <button
-                      className={`nav-link  ${
-                        key?.book_title === activatedTab
-                          ? "active"
-                          : activatedTab === "" && index === 0
-                            ? "active"
-                            : ""
-                      } `}
-                      id="home-tab"
-                      onClick={() => {
-                        setActivatedTab(key?.book_title);
-                      }}
-                    >
-                      {key?.book_title}
-                    </button>
-                    <i
-                      className="bi bi-x"
-                      onChange={() => {
-                        dispatch();
-                      }}
-                    />
-                  </li>
-                ))} */}
+          <li className="nav-item" role="presentation">
+            <button
+              className={`nav-link  ${
+                key?.book_title === activatedTab
+                  ? "active"
+                  : activatedTab === "" && index === 0
+                    ? "active"
+                    : ""
+              } `}
+              id="home-tab"
+              onClick={() => {
+                setActivatedTab(key?.book_title);
+              }}
+            >
+              {key?.book_title}
+            </button>
+            <i
+              className="bi bi-x"
+              onChange={() => {
+                dispatch();
+              }}
+            />
+          </li>
+        ))} */}
               </ul>
             </div>
 
@@ -178,24 +178,37 @@ const Subtitles = () => {
               </div>
             </div>
           </div>
-          <div className="d-flex">
+          <div className="d-flex justify-content-center">
             <i
               className={`bi bi-chevron-left me-1 cursor-pointer ${
                 activatedTab <= 1 ? "disablecolor" : "custom-pagination"
               }`}
               onClick={() => {
-                setActivatedTab(activatedTab - 1);
+                const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                const activeSlide = JSON.parse(
+                  localStorage.getItem("activeSlideFileUid")
+                );
+
+                const newData = activeSlide.map((key) =>
+                  key.fileUid === file_uid
+                    ? {
+                        fileUid: file_uid,
+                        activeSlide: +key.activeSlide - 1,
+                      }
+                    : key
+                );
                 localStorage.setItem(
                   "activeSlideFileUid",
-                  +localStorage.getItem("activeSlideFileUid") - 1
+                  JSON.stringify(newData)
                 );
+                setActivatedTab(+activatedTab - 1);
               }}
             >
               Back{" "}
             </i>
 
             <input
-              className="no-border"
+              className="no-border text-center"
               defaultValue={activatedTab}
               value={activatedTab}
               onWheel={(e) => e.target.blur()}
@@ -219,11 +232,24 @@ const Subtitles = () => {
             />
             <span
               onClick={() => {
-                setActivatedTab(activatedTab + 1);
+                const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                const activeSlide = JSON.parse(
+                  localStorage.getItem("activeSlideFileUid")
+                );
+
+                const newData = activeSlide.map((key) =>
+                  key.fileUid === file_uid
+                    ? {
+                        fileUid: file_uid,
+                        activeSlide: +key.activeSlide + 1,
+                      }
+                    : key
+                );
                 localStorage.setItem(
                   "activeSlideFileUid",
-                  +localStorage.getItem("activeSlideFileUid") + 1
+                  JSON.stringify(newData)
                 );
+                setActivatedTab(+activatedTab + 1);
               }}
               className={` cursor-pointer ${
                 false ? "disablecolor" : "custom-pagination"

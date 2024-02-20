@@ -43,7 +43,7 @@
  
   "editor.fontFamily": "Comic Sans MS",
   "editor.fontVariations": false,
-  "window.zoomLevel": 1,
+  "window.zoomLevel": 0,
   "cSpell.userWords": ["fullcalendar"],
   "editor.codeActionsOnSave": { "source.fixAll.eslint": true }, 
 "editor.formatOnSave": true, 

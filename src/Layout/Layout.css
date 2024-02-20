@@ -2,10 +2,7 @@
 body {
   background: #eeeeee;
 }
-.side-menu {
-  display: inline-block;
-  position: fixed;
-}
+
 .admin-main {
   text-decoration: none;
   color: #fff;
@@ -16,6 +13,11 @@ body {
   /* identical to box height */
 
   color: #ffffff;
+}
+.side-menu {
+  min-height: 100vh; /* Set minimum height to viewport height */
+  overflow-y: auto;
+  background-color: #232f3e;
 }
 .side-menu .admin-main span {
   font-size: 12px;
@@ -45,7 +47,6 @@ body {
 }
 .body-content {
   background: #eeeeee;
-  padding: 20px 0 0 20px;
 }
 
 .body-content .left-section {
