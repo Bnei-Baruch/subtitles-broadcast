@@ -132,11 +132,15 @@ const Subtitles = () => {
               </div>
               <DropdownButtonDef
                 id="brodcast_programm" data={brodcastProgrammArr}
-                currentValue={broadcastProgramm} setDataRef={setBroadcastProgramm}>
+                currentValue={broadcastProgramm} setDataRef={setBroadcastProgramm}
+                style={{ position: "fixed", top: "15px", right: "220px", "z-index": "1000" }}
+              >
               </DropdownButtonDef>
               <DropdownButtonDef
                 id="brodcast_lang" data={broadcastLangArr} currentValue={broadcastLang}
-                setDataRef={setBroadcastLang} style={{ "width": "100px" }}>
+                setDataRef={setBroadcastLang}
+                style={{ "width": "100px", position: "fixed", top: "15px", right: "360px", "z-index": "1000" }}
+              >
               </DropdownButtonDef>
               <ActiveSlideMessaging
                 broadcastProgrammCode={broadcastProgramm.value}
