@@ -49,27 +49,6 @@ const HeaderBar = () => {
                 </li>
               </ul>
             </div>
-            <div className="btn-group list-btn">
-              <button
-                className="btn btn-secondary dropdown-toggle"
-                type="button"
-                data-bs-toggle="dropdown"
-              >
-                <img
-                  alt="button"
-                  className=""
-                  src="image/Globe.svg"
-                  id="dropdownMenuButton1"
-                  data-bs-toggle="dropdown"
-                />
-                <span className="m-2">EN</span>
-              </button>
-              <ul className="dropdown-menu">
-                <li>Menu item</li>
-                <li>Menu item</li>
-                <li>Menu item</li>
-              </ul>
-            </div>
           </div>
         </div>
         <Outlet />

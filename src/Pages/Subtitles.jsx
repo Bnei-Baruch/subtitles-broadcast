@@ -17,8 +17,8 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
 import GreenWindowButton from "../Components/GreenWindowButton";
-import DropdownButtonDef from "../Components/DropdownButtonDef"
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
+import BroadcastSettings from "../Components/BroadcastSettings"
 
 const Subtitles = () => {
   ///TODO: Bring from the system  brodcast Programms, Languages, and init by authorization
@@ -34,6 +34,8 @@ const Subtitles = () => {
   const [mqttClient, setMqttClient] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
+  const isShowBroadcastSettings = sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
+  const [showBroadcastSettings, setShowBroadcastSettings] = useState(isShowBroadcastSettings);
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -130,18 +132,17 @@ const Subtitles = () => {
                 aria-label="Basic mixed styles example"
               >
               </div>
-              <DropdownButtonDef
-                id="brodcast_programm" data={brodcastProgrammArr}
-                currentValue={broadcastProgramm} setDataRef={setBroadcastProgramm}
-                style={{ position: "fixed", top: "15px", right: "220px", "z-index": "1000" }}
+              <BroadcastSettings
+                showBroadcastSettings={showBroadcastSettings}
+                setShowBroadcastSettings={setShowBroadcastSettings}
+                broadcastProgramm={broadcastProgramm}
+                setBroadcastProgramm={setBroadcastProgramm}
+                broadcastLang={broadcastLang}
+                setBroadcastLang={setBroadcastLang}
+                brodcastProgrammArr={brodcastProgrammArr}
+                broadcastLangArr={broadcastLangArr}
               >
-              </DropdownButtonDef>
-              <DropdownButtonDef
-                id="brodcast_lang" data={broadcastLangArr} currentValue={broadcastLang}
-                setDataRef={setBroadcastLang}
-                style={{ "width": "100px", position: "fixed", top: "15px", right: "360px", "z-index": "1000" }}
-              >
-              </DropdownButtonDef>
+              </BroadcastSettings>
               <ActiveSlideMessaging
                 broadcastProgrammCode={broadcastProgramm.value}
                 broadcastLangCode={broadcastLang.value}

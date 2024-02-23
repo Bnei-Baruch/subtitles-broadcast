@@ -34,7 +34,8 @@ export function DropdownButtonDef({
   style,
   className,
   variant,
-  key
+  key,
+  disabled
 }) {
   let defId = useId();
 
@@ -46,15 +47,18 @@ export function DropdownButtonDef({
       className={className ? className : "btn-group"}
       title={currentValue.label}
       style={buttonStyle(styles.default, style)}
+      disabled={disabled}
     >
-      {data.map(
-        (item) =>
-        (
-          <Dropdown.Item data-key={item.value} eventKey={item.value}
-            {...item.value === currentValue.value && { active: true }}
-            onClick={(evt) => dropDownChangeValue(evt, setDataRef)}>{item.label}</Dropdown.Item>
-        ),)}
-    </DropdownButton>
+      {
+        data.map(
+          (item) =>
+          (
+            <Dropdown.Item data-key={item.value} eventKey={item.value}
+              {...item.value === currentValue.value && { active: true }}
+              onClick={(evt) => dropDownChangeValue(evt, setDataRef)}>{item.label}</Dropdown.Item>
+          ),)
+      }
+    </DropdownButton >
   );
 };
 
