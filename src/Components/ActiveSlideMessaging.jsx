@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from 'react';
 import mqtt from 'mqtt';
 
 let mqttClientId;
@@ -42,7 +42,7 @@ function findActiveSlide(userAddedList, activeSlideOrderNum) {
     for (let i = 0; i < userAddedList.slides.length; i++) {
         const lupSlide = userAddedList.slides[i];
 
-        if (lupSlide.order_number == activeSlideOrderNum) {
+        if (lupSlide.order_number === activeSlideOrderNum) {
             retSlide = lupSlide;
             break;
         }
@@ -81,7 +81,7 @@ function subscribeMqttMessage(mqttClient, setJobMqttMessage) {
             const messageStr = message.toString();
             const jobMessageJson = parseMqttMessage(messageStr);
 
-            if (jobMessageJson.clientId != mqttClientId) {
+            if (jobMessageJson.clientId !== mqttClientId) {
                 setJobMqttMessage(jobMessageJson);
             }
         });
@@ -117,7 +117,7 @@ const determinePublcJobMsg = (userAddedList, activatedTab, setActivatedTab,
             }
         }
         else {
-            if (!mqttMessageJson || mqttMessageJson.order_number != jobMqttMessage.order_number) {
+            if (!mqttMessageJson || mqttMessageJson.order_number !== jobMqttMessage.order_number) {
                 isPublc = true;
             }
         }
@@ -142,7 +142,7 @@ const determinePublishActiveSlide = (userAddedList, activatedTab,
 
     if (userAddedList) {
         if ((!mqttMessageJson
-            || (mqttMessageJson.order_number != activeSlideOrderNum
+            || (mqttMessageJson.order_number !== activeSlideOrderNum
                 && (!jobMessageJson ||
                     jobMessageJson.order_number !== activeSlideOrderNum)))) {
             const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
@@ -181,13 +181,12 @@ export function ActiveSlideMessaging({
     userAddedList,
     activatedTab,
     setActivatedTab,
-    mqttClient,
-    setMqttClient,
     mqttMessage,
     setMqttMessage,
     jobMqttMessage,
     setJobMqttMessage
 }) {
+    const [mqttClient, setMqttClient] = useState(null);
 
     initMqttClient(broadcastProgrammCode, broadcastLangCode,
         mqttClient, setMqttClient, setJobMqttMessage);

@@ -31,7 +31,6 @@ const Subtitles = () => {
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
-  const [mqttClient, setMqttClient] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const isShowBroadcastSettings = sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
@@ -149,8 +148,6 @@ const Subtitles = () => {
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
                 setActivatedTab={setActivatedTab}
-                mqttClient={mqttClient}
-                setMqttClient={setMqttClient}
                 mqttMessage={mqttMessage}
                 setMqttMessage={setMqttMessage}
                 jobMqttMessage={jobMqttMessage}
