@@ -52,7 +52,7 @@ export function DropdownButtonDef({
         data.map(
           (item) =>
           (
-            <Dropdown.Item data-key={item.value} eventKey={item.value}
+            <Dropdown.Item key={item.value} eventKey={item.value}
               {...item.value === currentValue.value && { active: true }}
               onClick={(evt) => dropDownChangeValue(evt, setDataRef)}>{item.label}</Dropdown.Item>
           ),)

@@ -14,33 +14,33 @@ const styles = {
         position: "fixed",
         top: "13px",
         right: "160px",
-        "width": "370px",
-        "text-align": "left"
+        width: "370px",
+        textAlign: "left"
     },
     row: {
         height: "50px"
     },
     label: {
-        "margin-top": "6px"
+        marginTop: "6px"
     },
     dropDown: {
         width: "160px",
         border: "1px solid grey"
     },
     icon: {
-        "margin-left": "3px"
+        marginLeft: "3px"
     },
     labelMain: {
-        "margin-right": "3px"
+        marginRight: "3px"
     },
     labelMainVal: {
-        "margin-right": "25px",
-        "font-weight": "bold",
-        "font-size": "16px",
+        marginRight: "25px",
+        fontWeight: "bold",
+        fontSize: "16px",
     },
     labelMainLast: {
-        "font-weight": "bold",
-        "font-size": "16px"
+        fontWeight: "bold",
+        fontSize: "16px"
     }
 };
 
@@ -92,7 +92,7 @@ export function BroadcastSettings({
                         <Row style={styles.row}>
                             <Col xs={leftColSize} md={leftColSize}>
                                 <label style={styles.label}>Language:</label>
-                                <i class="bi bi-exclamation-circle"
+                                <i className="bi bi-exclamation-circle"
                                     style={styles.icon}
                                     title="The subtitle language is defined by user's role. Please ask admin to change it."
                                 ></i>
