@@ -107,7 +107,7 @@ export const BookmarkSlide = createAsyncThunk(
     try {
       const response = await axios.post(`${API}bookmark`, data);
       thunkAPI.dispatch(GetAllArchiveData({ language: "en", ...data.params }));
-      thunkAPI.dispatch(getAllBookmarkList());
+      thunkAPI.dispatch(UserBookmarkList());
       return response.data;
     } catch (error) {
       return error.response.data.description; // This will be available as action.error.message
