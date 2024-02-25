@@ -7,6 +7,7 @@ import {
   BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
+  BookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
@@ -67,22 +68,10 @@ const Subtitles = () => {
     const [movedItem] = updatedItems.splice(fromIndex, 1);
     updatedItems.splice(toIndex, 0, movedItem);
     dispatch(BookmarksSlide(updatedItems));
-    console.log(updatedItems, "LLLLL");
-    // updatedItems?.forEach((key, index) => {
-    //   dispatch(
-    //     BookmarksSlide({
-    //       file_uid: key?.file_uid,
-    //       slide_id: key?.slide_id,
-    //       update: true,
-    //       order: index,
-    //       params: { page: 1, limit: 10 },
-    //     })
-    //   );
-    // });
 
     setItems(updatedItems);
   };
-  console.log(items);
+
   return (
     <>
       <div className="body-content d-flex ">
@@ -188,6 +177,21 @@ const Subtitles = () => {
                 const activeSlide = JSON.parse(
                   localStorage.getItem("activeSlideFileUid")
                 );
+                const SlideOrderID = activeSlide?.find(
+                  (key) => key?.fileUid == file_uid
+                );
+                const slideID = UserAddedList?.slides?.find(
+                  (key) => key?.order_number == +SlideOrderID?.activeSlide
+                );
+
+                dispatch(
+                  BookmarkSlide({
+                    file_uid: file_uid,
+                    slide_id: slideID?.ID,
+                    update: true,
+                    order: SlideOrderID?.activeSlide,
+                  })
+                );
 
                 const newData = activeSlide.map((key) =>
                   key.fileUid === file_uid
@@ -236,7 +240,22 @@ const Subtitles = () => {
                 const activeSlide = JSON.parse(
                   localStorage.getItem("activeSlideFileUid")
                 );
+                const SlideOrderID = activeSlide?.find(
+                  (key) => key?.fileUid == file_uid
+                );
 
+                const slideID = UserAddedList?.slides?.find(
+                  (key) => key?.order_number == +SlideOrderID?.activeSlide
+                );
+
+                dispatch(
+                  BookmarkSlide({
+                    file_uid: file_uid,
+                    slide_id: slideID?.ID,
+                    update: true,
+                    order: SlideOrderID?.activeSlide,
+                  })
+                );
                 const newData = activeSlide.map((key) =>
                   key.fileUid === file_uid
                     ? {

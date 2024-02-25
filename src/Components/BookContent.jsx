@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from "react";
+import { useDispatch } from "react-redux";
+import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 
 const BookContent = ({
   setActivatedTab,
@@ -9,6 +11,7 @@ const BookContent = ({
   isLtr,
   targetItemId,
 }) => {
+  const dispatch = useDispatch();
   const focusSlides = useRef();
   useEffect(() => {
     focusSlides?.current?.scrollIntoView({
@@ -26,6 +29,14 @@ const BookContent = ({
               onClick={() => {
                 const activeSlide =
                   JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
+                dispatch(
+                  BookmarkSlide({
+                    file_uid: item.file_uid,
+                    slide_id: item.ID,
+                    update: true,
+                    order: +item.order_number,
+                  })
+                );
                 const newData = activeSlide.map((key) =>
                   key.fileUid === item.file_uid
                     ? {
