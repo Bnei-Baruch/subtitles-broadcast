@@ -317,3 +317,16 @@ input::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+.dropdown-toggle{
+  text-align: left !important;
+}
+.dropdown-toggle:before {
+  float: right;
+  border-bottom: 0;
+  border-left: 0.3em solid #0000;
+  border-right: 0.3em solid #0000;
+  border-top: 0.3em solid;
+  content: "";
+  margin-top: 10px;
+}

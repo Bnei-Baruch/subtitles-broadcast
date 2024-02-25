@@ -12,8 +12,8 @@ const rightColSize = 8;
 const styles = {
     buttonPrimary: {
         position: "fixed",
-        top: "15px",
-        right: "220px",
+        top: "13px",
+        right: "160px",
         "width": "370px",
         "text-align": "left"
     },
@@ -24,7 +24,8 @@ const styles = {
         "margin-top": "6px"
     },
     dropDown: {
-        width: "150px"
+        width: "160px",
+        border: "1px solid grey"
     },
     icon: {
         "margin-left": "3px"
@@ -35,7 +36,7 @@ const styles = {
     labelMainVal: {
         "margin-right": "25px",
         "font-weight": "bold",
-        "font-size": "16px"
+        "font-size": "16px",
     },
     labelMainLast: {
         "font-weight": "bold",
@@ -62,7 +63,7 @@ export function BroadcastSettings({
 
     return (
         <>
-            <Button variant="info" onClick={handleShow} style={styles.buttonPrimary}>
+            <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
                 <label style={styles.labelMain}>Chanel: </label>
                 <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
 
@@ -84,7 +85,7 @@ export function BroadcastSettings({
                                 <DropdownButtonDef
                                     id="brodcast_programm" data={brodcastProgrammArr}
                                     currentValue={broadcastProgramm} setDataRef={setBroadcastProgramm}
-                                    style={styles.dropDown}>
+                                    style={styles.dropDown} variant="light">
                                 </DropdownButtonDef>
                             </Col>
                         </Row>
@@ -100,7 +101,7 @@ export function BroadcastSettings({
                                 <DropdownButtonDef
                                     id="brodcast_lang" data={broadcastLangArr} currentValue={broadcastLang}
                                     setDataRef={setBroadcastLang}
-                                    style={styles.dropDown}
+                                    style={styles.dropDown} variant="light"
                                     disabled={true}
                                 >
                                 </DropdownButtonDef>
