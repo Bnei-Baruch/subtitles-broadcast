@@ -37,20 +37,24 @@ const DraggableItem = ({
   const handleBookMarkClick = (e) => {
     const activeSlide =
       JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
-
-    const findActiveSlideId = activeSlide.find((key) => key?.fileUid == e);
-    console.log(findActiveSlideId, "findActiveSlideId");
-    if (findActiveSlideId) {
-      setActivatedTab(findActiveSlideId?.activeSlide);
+    console.log(activeSlide, "activeSlide");
+    if (Array.isArray(activeSlide)) {
+      const findActiveSlideId = activeSlide?.find((key) => key?.fileUid == e);
+      if (findActiveSlideId) {
+        setActivatedTab(findActiveSlideId?.activeSlide);
+      } else {
+        const newData = [
+          ...activeSlide,
+          { fileUid: e, activeSlide: +text?.split("/")?.at(-1) },
+        ];
+        localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
+        setActivatedTab(+text?.split("/")?.at(-1) + 1);
+      }
     } else {
-      const newData = [
-        ...activeSlide,
-        { fileUid: e, activeSlide: +text?.split("/")?.at(-1) },
-      ];
+      const newData = [{ fileUid: e, activeSlide: +text?.split("/")?.at(-1) }];
       localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
       setActivatedTab(+text?.split("/")?.at(-1) + 1);
     }
-
     dispatch(GetSubtitleData(e));
   };
   return (

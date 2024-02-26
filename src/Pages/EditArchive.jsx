@@ -39,7 +39,6 @@ const EditArcive = ({ handleClose }) => {
         slide,
         order_number,
       }));
-
     deleted?.length > 0 &&
       dispatch(
         deleteNewSlide({
@@ -48,7 +47,9 @@ const EditArcive = ({ handleClose }) => {
       );
     addNewSlides?.length > 0 && dispatch(addNewSlide(addNewSlides));
     updateNewSlides?.length > 0 && dispatch(updateNewSlide(updateNewSlides));
+    setDeleted([]);
   };
+
   // const [containerStyle, setContainerStyle] = useState({
   //   width: containerWidth + "px",
   //   height: containerHeight + "px",
@@ -93,6 +94,7 @@ const EditArcive = ({ handleClose }) => {
     ),
     [confirmation]
   );
+
   return (
     <>
       {ConfirmationMessage}
@@ -248,7 +250,10 @@ const EditArcive = ({ handleClose }) => {
                           const cloneSlidedataArray = [...slideListData];
                           cloneSlidedataArray?.splice(index, 1);
                           setSlideListData(cloneSlidedataArray);
-                          setDeleted([...deleted, key?.ID]);
+                          if (key?.ID) {
+                            setDeleted([...deleted, key?.ID]);
+                          }
+
                           //1) change selected slide
                           //2) remove from main array which display entire slides
                           //3) add to delete slide array list
