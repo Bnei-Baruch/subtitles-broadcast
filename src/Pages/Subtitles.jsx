@@ -28,7 +28,9 @@ const Subtitles = () => {
   const broadcastLangArr = [{ value: "eng", label: "English" },
   { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
   { value: "spa", label: "Spanish" }];
-  const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
+  const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
+  const bcLangObj = findBroadcastLang(broadcastLangArr, bcLanglocalStorageVal);
+  const [broadcastProgramm, setBroadcastProgramm] = useState(bcLangObj);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
@@ -352,5 +354,15 @@ const Subtitles = () => {
     </>
   );
 };
+
+function findBroadcastLang(sourceLangArr, langCode) {
+  sourceLangArr.forEach(function (langObj) {
+    if (langObj.value === langCode) {
+      return langObj;
+    }
+  });
+
+  return sourceLangArr[0];
+}
 
 export default Subtitles;
