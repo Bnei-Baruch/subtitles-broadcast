@@ -25,9 +25,9 @@ const Subtitles = () => {
   const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
   { value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
   { value: "brodcast_3", label: "Brodcast 3" }];
-  const broadcastLangArr = [{ value: "eng", label: "English" },
+  const broadcastLangArr = [{ value: "en", label: "English" },
   { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
-  { value: "spa", label: "Spanish" }];
+  { value: "es", label: "Spanish" }];
   const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
   const bcLangObj = findBroadcastLang(broadcastLangArr, bcLanglocalStorageVal);
   const [broadcastProgramm, setBroadcastProgramm] = useState(bcLangObj);

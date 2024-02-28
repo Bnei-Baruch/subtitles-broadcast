@@ -83,9 +83,10 @@ Auth.propTypes = {
 
 function parseBroadcastLanguage(keycloak){
   if (keycloak && keycloak.realmAccess && keycloak.realmAccess.roles){  
+    const broadCastLangRex = new RegExp("subtitles_language_(?<language>.*)"); 
+    
     for (let index = 0; index < keycloak.realmAccess.roles.length; index++) {
       const role =  keycloak.realmAccess.roles[index]; 
-      const broadCastLangRex = new RegExp("subtitles_language_(?<language>.*)"); 
       const bcLangMatchRes =   role.match(broadCastLangRex)  ;
       
       if (bcLangMatchRes && bcLangMatchRes.groups && bcLangMatchRes.groups.language){
