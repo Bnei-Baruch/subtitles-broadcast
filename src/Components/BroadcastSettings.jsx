@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
@@ -12,10 +12,13 @@ const rightColSize = 8;
 const styles = {
     buttonPrimary: {
         position: "fixed",
-        top: "13px",
+        top: "18px",
         right: "160px",
-        width: "370px",
-        textAlign: "left"
+        width: "330px",
+        textAlign: "left",
+        backgroundColor: "transparent",
+        transition: "none",
+        border: "none"
     },
     row: {
         height: "50px"
@@ -31,7 +34,8 @@ const styles = {
         marginLeft: "3px"
     },
     labelMain: {
-        marginRight: "3px"
+        marginRight: "3px",
+        cursor: "pointer"
     },
     labelMainVal: {
         marginRight: "25px",
@@ -63,7 +67,7 @@ export function BroadcastSettings({
 
     return (
         <>
-            <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
+            <Button variant="light" onClick={handleShow} style={styles.buttonPrimary} >
                 <label style={styles.labelMain}>Chanel: </label>
                 <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
 

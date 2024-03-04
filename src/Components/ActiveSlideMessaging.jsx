@@ -108,7 +108,6 @@ const determinePublcJobMsg = (userAddedList, activatedTab, setActivatedTab,
 
                 if (activeSlide.source_uid === jobMqttMessage.source_uid) {
                     if (activeSlide.order_number !== jobMqttMessage.order_number) {
-                        localStorage.setItem("activeSlideFileUid", jobMqttMessage.order_number + 1);
                         setActivatedTab(jobMqttMessage.order_number + 1);
                         isPublc = true;
                     }

@@ -323,9 +323,11 @@ input[type="number"] {
   background: none;
   border-bottom: 1px solid #000;
 }
+
 dropdown-toggle{
   text-align: left !important;
 }
+
 .dropdown-toggle:before {
   float: right;
   border-bottom: 0;
