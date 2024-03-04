@@ -360,3 +360,7 @@ select {
 .pagination {
   margin: 0;
 }
+
+.bookmarkedrow {
+  background-color: grey;
+}

@@ -1,8 +1,8 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import HeaderBar from "../Layout/HeaderBar";
 import Subtitles from "../Pages/Subtitles";
 import Archive from "../Pages/Archive";
+import NewSlides from "../Pages/NewSlides";
 
 const MainRoutes = ({ logout }) => {
   return (
@@ -14,6 +14,7 @@ const MainRoutes = ({ logout }) => {
         <Route index element={<Navigate to={"/subtitle"} />} />
         <Route path="/subtitle" element={<Subtitles />} />
         <Route path="/archive" element={<Archive />} />
+        <Route path="/new" element={<NewSlides />} />
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}
         {/* <Route path="login" element={<PublicRoutes />}>

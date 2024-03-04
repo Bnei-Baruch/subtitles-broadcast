@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   ArchiveAutoComplete,
@@ -7,28 +7,25 @@ import {
   getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
-import Archive from "../Pages/Archive";
 
 const HeaderBar = ({ logout }) => {
   const dispatch = useDispatch();
   const param = useLocation();
-  const ActocompleteList = useSelector(getAutocompleteSuggetion);
-  const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
+  const localPagination = JSON.parse(localStorage.getItem("pagination"));
   const [freeText, setFreeText] = useState("");
   const DebouncingFreeText = useDebounce(freeText, 500);
   useEffect(() => {
-    if (param.pathname == "/archive") {
+    if (param.pathname === "/archive") {
       dispatch(
         GetAllArchiveData({
           language: "en",
-          limit: 10,
-          page: 1,
+          limit: localPagination?.limit || 10,
+          page: localPagination?.page || 1,
           keyword: freeText,
         })
       );
     }
-    dispatch(ArchiveAutoComplete({ query: freeText }));
-  }, [DebouncingFreeText]);
+  }, [DebouncingFreeText, dispatch]);
 
   return (
     <>
@@ -36,37 +33,22 @@ const HeaderBar = ({ logout }) => {
         <div className="form-group col-3 autoComplete">
           <input
             placeholder="Search"
-            onBlur={() => setShowAutocompleteBox(false)}
             value={freeText}
             onKeyDown={(e) => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllArchiveData({
                     language: "en",
-
                     keyword: freeText,
                   })
                 );
             }}
             onChange={(e) => {
-              setShowAutocompleteBox(true);
               setFreeText(e.target.value);
             }}
             type="text"
             className="form-control input"
           />
-          {showAutocompleteBox && (
-            <ul class="suggestions" id="suggestions">
-              {ActocompleteList?.map((suggestion, index) => (
-                <li
-                // key={index}
-                // onClick={() => handleSuggestionClick(suggestion)}
-                >
-                  {suggestion.source_value}
-                </li>
-              ))}
-            </ul>
-          )}
 
           <div></div>
         </div>
@@ -88,8 +70,6 @@ const HeaderBar = ({ logout }) => {
               <span className="m-2">{logout?.profile?.firstName}</span>
             </button>
             <ul className="dropdown-menu">
-              <li>Menu item</li>
-              <li>Menu item</li>
               <li>
                 <span
                   className="dropdown-item cursor-pointer"
