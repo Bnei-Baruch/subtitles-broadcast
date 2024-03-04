@@ -2,12 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
   ArchiveAutoComplete,
-  BookmarkSlide,
+  BookmarkSlideFromArchivePage,
   DeleteArchive,
   GetAllArchiveData,
   GetAllAuthorList,
   SlideListWithFildeUid,
-  UnBookmarkSlide,
   emptyAutoComplete,
   getAllAuthorList,
   getAutocompleteSuggetion,
@@ -31,8 +30,6 @@ const Archive = () => {
   const ArchiveList = useSelector(getAllArchiveList);
   const AuthorList = useSelector(getAllAuthorList);
   const ActocompleteList = useSelector(getAutocompleteSuggetion);
-
-  console.log(ActocompleteList, "ActocompleteList");
 
   // const [delete,setDelete]=useState('')
   const [page, setPage] = useState({
@@ -88,7 +85,7 @@ const Archive = () => {
       setFinalConfirm(false);
     }
     if (toggle) {
-      dispatch(BookmarkSlide(deleteId));
+      dispatch(BookmarkSlideFromArchivePage(deleteId));
       setToggle(false);
     }
   }, [finalConfirm, toggle, deleteId, dispatch]);
@@ -109,7 +106,7 @@ const Archive = () => {
       <MessageBox
         setFinalConfirm={() => {
           dispatch(
-            BookmarkSlide({
+            BookmarkSlideFromArchivePage({
               ...bookmarkData,
               params: { page: 1, limit: page.limit },
             })
@@ -232,12 +229,6 @@ const Archive = () => {
                                 update: true,
                                 order: key?.order_number,
                               });
-
-                              // dispatch(UnBookmarkSlide(key?.ID));
-                              //Below code will use in future
-
-                              // setDeleteId(key.ID);
-                              // setConfirmation(true);
                             }}
                             className="bi bi-bookmark-check-fill m-2"
                           />
@@ -245,7 +236,7 @@ const Archive = () => {
                           <i
                             onClick={() => {
                               dispatch(
-                                BookmarkSlide({
+                                BookmarkSlideFromArchivePage({
                                   file_uid: key?.file_uid,
                                   slide_id: key?.ID,
                                   update: false,
@@ -254,25 +245,23 @@ const Archive = () => {
                                   )?.length,
                                   params: { page: 1, limit: page.limit },
                                 })
-                              )
-                                .then((res) => {
-                                  if (
-                                    res.payload ===
-                                    "The bookmark with the same file exists"
-                                  ) {
-                                    setBookmarkData({
-                                      file_uid: key?.file_uid,
-                                      slide_id: key?.ID,
-                                      update: true,
-                                      order:
-                                        ArchiveList?.slides?.find(
-                                          (key) => key.bookmark_id !== null
-                                        )?.length || 1,
-                                    });
-                                    setConfirmation(true);
-                                  }
-                                })
-                                .catch((err) => console.log(err, "LLLLLLL"));
+                              ).then((res) => {
+                                if (
+                                  res.payload ===
+                                  "The bookmark with the same file exists"
+                                ) {
+                                  setBookmarkData({
+                                    file_uid: key?.file_uid,
+                                    slide_id: key?.ID,
+                                    update: true,
+                                    order:
+                                      ArchiveList?.slides?.find(
+                                        (key) => key.bookmark_id !== null
+                                      )?.length || 1,
+                                  });
+                                  setConfirmation(true);
+                                }
+                              });
                             }}
                             className="bi bi-bookmark m-2"
                           />

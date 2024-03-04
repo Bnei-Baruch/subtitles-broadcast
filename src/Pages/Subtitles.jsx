@@ -158,8 +158,6 @@ const Subtitles = () => {
                     isLtr={isLtr}
                     setActivatedTab={setActivatedTab}
                     activatedTab={activatedTab}
-                    // bookTitle={item?.slide}
-                    // lastActivated={item.slide}
                     targetItemId={activatedTab}
                     contents={UserAddedList}
                   />
@@ -316,6 +314,7 @@ const Subtitles = () => {
                       setActivatedTab={setActivatedTab}
                       bookmarkDelete={item.bookmark_id}
                       text={item?.bookmark_path}
+                      slideID={item?.slide_id}
                       fileUid={item?.file_uid}
                       index={index}
                       moveCard={moveCard}

@@ -132,11 +132,7 @@ const EditArcive = ({ handleClose }) => {
     ),
     [forceDeleteConfirm]
   );
-  console.log(
-    deleted,
-    "cbshdvbhsbfvhsbfkhvbdsfhjbvdhjfbjhsdabhjsadbhsajhbdbhj",
-    force_delete_bookmarks
-  );
+
   return (
     <>
       {ForceDeleteBookmark}

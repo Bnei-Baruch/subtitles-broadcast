@@ -106,6 +106,18 @@ export const BookmarkSlide = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await axios.post(`${API}bookmark`, data);
+      thunkAPI.dispatch(UserBookmarkList());
+      return response.data;
+    } catch (error) {
+      return error.response.data.description; // This will be available as action.error.message
+    }
+  }
+);
+export const BookmarkSlideFromArchivePage = createAsyncThunk(
+  "/BookmarkSlideFromArchivePage",
+  async (data, thunkAPI) => {
+    try {
+      const response = await axios.post(`${API}bookmark`, data);
       thunkAPI.dispatch(GetAllArchiveData({ language: "en", ...data.params }));
       thunkAPI.dispatch(UserBookmarkList());
       return response.data;
@@ -114,7 +126,6 @@ export const BookmarkSlide = createAsyncThunk(
     }
   }
 );
-
 export const BookmarksSlide = createAsyncThunk(
   "/BookmarksSlide",
   async (data, thunkAPI) => {

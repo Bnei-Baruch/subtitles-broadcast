@@ -13,7 +13,6 @@ const HeaderBar = ({ logout }) => {
   const dispatch = useDispatch();
   const param = useLocation();
   const ActocompleteList = useSelector(getAutocompleteSuggetion);
-  console.log(param, "<<<<<<<<");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const [freeText, setFreeText] = useState("");
   const DebouncingFreeText = useDebounce(freeText, 500);

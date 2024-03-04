@@ -5,8 +5,7 @@ import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 const BookContent = ({
   setActivatedTab,
   activatedTab,
-  bookTitle,
-  lastActivated,
+
   contents,
   isLtr,
   targetItemId,

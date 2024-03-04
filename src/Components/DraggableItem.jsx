@@ -4,7 +4,6 @@ import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
-import { json } from "docker/src/languages";
 
 const ItemTypes = {
   CARD: "card",
@@ -14,6 +13,7 @@ const DraggableItem = ({
   id,
   text,
   index,
+  slideID,
   moveCard,
   fileUid,
   bookmarkDelete,
@@ -37,7 +37,6 @@ const DraggableItem = ({
   const handleBookMarkClick = (e) => {
     const activeSlide =
       JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
-    console.log(activeSlide, "activeSlide");
     if (Array.isArray(activeSlide)) {
       const findActiveSlideId = activeSlide?.find((key) => key?.fileUid == e);
       if (findActiveSlideId) {
