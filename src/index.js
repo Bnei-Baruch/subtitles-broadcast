@@ -9,6 +9,7 @@ import { store } from "./Redux/Store";
 import { Provider } from "react-redux";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
 axios.interceptors.request.use(function (config) {
@@ -20,11 +21,11 @@ axios.interceptors.request.use(function (config) {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <Provider store={store}>
+    <ToastContainer autoClose={2000} />
     <Auth>
       {(auth) => (
         <>
-          <ToastContainer autoClose={2000} />
-          <App />
+          <App auth={auth} />
         </>
       )}
     </Auth>

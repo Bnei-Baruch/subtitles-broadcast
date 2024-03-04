@@ -160,7 +160,6 @@ main {
   overflow-y: auto;
 }
 .top-tab {
-  margin-top: 25px;
   box-shadow: 0px 1px 5px rgb(0 0 0 / 12%);
   position: relative;
   z-index: 9;
@@ -318,7 +317,13 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-.dropdown-toggle{
+.no-border {
+  border: none;
+  outline: none;
+  background: none;
+  border-bottom: 1px solid #000;
+}
+dropdown-toggle{
   text-align: left !important;
 }
 .dropdown-toggle:before {

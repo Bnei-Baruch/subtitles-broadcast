@@ -68,12 +68,6 @@ const Auth = ({ children }) => {
         </>
       );
     }
-  } else {
-    return (
-      <div>
-        <LoadingScreen />
-      </div>
-    );
   }
 };
 

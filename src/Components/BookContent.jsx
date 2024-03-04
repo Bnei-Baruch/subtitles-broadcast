@@ -1,14 +1,16 @@
 import React, { useEffect, useRef } from "react";
+import { useDispatch } from "react-redux";
+import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 
 const BookContent = ({
   setActivatedTab,
   activatedTab,
-  bookTitle,
-  lastActivated,
+
   contents,
   isLtr,
   targetItemId,
 }) => {
+  const dispatch = useDispatch();
   const focusSlides = useRef();
   useEffect(() => {
     focusSlides?.current?.scrollIntoView({
@@ -16,7 +18,6 @@ const BookContent = ({
       block: "center",
     });
   }, [contents, targetItemId]);
-  console.log(activatedTab, "contents");
   return (
     <>
       {contents?.slides?.length > 0 &&
@@ -25,11 +26,29 @@ const BookContent = ({
           <>
             <div
               onClick={() => {
-                setActivatedTab(+item?.order_number + 1);
+                const activeSlide =
+                  JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
+                dispatch(
+                  BookmarkSlide({
+                    file_uid: item.file_uid,
+                    slide_id: item.ID,
+                    update: true,
+                    order: +item.order_number,
+                  })
+                );
+                const newData = activeSlide.map((key) =>
+                  key.fileUid === item.file_uid
+                    ? {
+                        fileUid: item.file_uid,
+                        activeSlide: +item.order_number + 1,
+                      }
+                    : key
+                );
                 localStorage.setItem(
                   "activeSlideFileUid",
-                  +item?.order_number + 1
+                  JSON.stringify(newData)
                 );
+                setActivatedTab(+item?.order_number + 1);
               }}
               ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
               className={`box-content d-flex  cursor-pointer  ${

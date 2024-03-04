@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
-import {
-  GetSubtitleData,
-  getAllBookAddedByUser,
-} from "../Redux/Subtitle/SubtitleSlice";
+import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
-  BookmarkSlide,
   BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
+  BookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
@@ -79,7 +76,7 @@ const Subtitles = () => {
   useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
-    setItems(GetAllBookmarkList);
+    GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
     // const fileId = JSON.parse(localStorage.getItem("fileids"));
     // for (let index = 0; index < fileId.length; index++) {
     //   const element = fileId[index];
@@ -91,27 +88,14 @@ const Subtitles = () => {
     const [movedItem] = updatedItems.splice(fromIndex, 1);
     updatedItems.splice(toIndex, 0, movedItem);
     dispatch(BookmarksSlide(updatedItems));
-    console.log(updatedItems, "LLLLL");
-    // updatedItems?.forEach((key, index) => {
-    //   dispatch(
-    //     BookmarksSlide({
-    //       file_uid: key?.file_uid,
-    //       slide_id: key?.slide_id,
-    //       update: true,
-    //       order: index,
-    //       params: { page: 1, limit: 10 },
-    //     })
-    //   );
-    // });
 
     setItems(updatedItems);
   };
 
-  console.log(items);
   return (
     <>
-      <div className="body-content d-flex vh-auto">
-        <div className="left-section">
+      <div className="body-content d-flex ">
+        <div className="left-section row">
           <div className="innerhead d-flex justify-content-between">
             <div
               className="btn-group"
@@ -194,30 +178,30 @@ const Subtitles = () => {
               <ul className="nav nav-tabs " id="myTab" role="tablist">
                 {/* List of All Book that user have added */}
                 {/* {UserAddedList?.map((key, index) => (
-                  <li className="nav-item" role="presentation">
-                    <button
-                      className={`nav-link  ${
-                        key?.book_title === activatedTab
-                          ? "active"
-                          : activatedTab === "" && index === 0
-                            ? "active"
-                            : ""
-                      } `}
-                      id="home-tab"
-                      onClick={() => {
-                        setActivatedTab(key?.book_title);
-                      }}
-                    >
-                      {key?.book_title}
-                    </button>
-                    <i
-                      className="bi bi-x"
-                      onChange={() => {
-                        dispatch();
-                      }}
-                    />
-                  </li>
-                ))} */}
+          <li className="nav-item" role="presentation">
+            <button
+              className={`nav-link  ${
+                key?.book_title === activatedTab
+                  ? "active"
+                  : activatedTab === "" && index === 0
+                    ? "active"
+                    : ""
+              } `}
+              id="home-tab"
+              onClick={() => {
+                setActivatedTab(key?.book_title);
+              }}
+            >
+              {key?.book_title}
+            </button>
+            <i
+              className="bi bi-x"
+              onChange={() => {
+                dispatch();
+              }}
+            />
+          </li>
+        ))} */}
               </ul>
             </div>
 
@@ -236,31 +220,61 @@ const Subtitles = () => {
                     isLtr={isLtr}
                     setActivatedTab={setActivatedTab}
                     activatedTab={activatedTab}
-                    // bookTitle={item?.slide}
-                    // lastActivated={item.slide}
                     targetItemId={activatedTab}
                     contents={UserAddedList}
                   />
                 </div>
               </div>
             </div>
-            <button
-              className="cursor-pointer"
-              disabled={activatedTab <= 1}
+          </div>
+          <div className="d-flex justify-content-center">
+            <i
+              className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+                }`}
               onClick={() => {
-                setActivatedTab(activatedTab - 1);
+                const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                const activeSlide = JSON.parse(
+                  localStorage.getItem("activeSlideFileUid")
+                );
+                const SlideOrderID = activeSlide?.find(
+                  (key) => key?.fileUid == file_uid
+                );
+                const slideID = UserAddedList?.slides?.find(
+                  (key) => key?.order_number == +SlideOrderID?.activeSlide
+                );
+
+                dispatch(
+                  BookmarkSlide({
+                    file_uid: file_uid,
+                    slide_id: slideID?.ID,
+                    update: true,
+                    order: SlideOrderID?.activeSlide,
+                  })
+                );
+
+                const newData = activeSlide.map((key) =>
+                  key.fileUid === file_uid
+                    ? {
+                      fileUid: file_uid,
+                      activeSlide: +key.activeSlide - 1,
+                    }
+                    : key
+                );
                 localStorage.setItem(
                   "activeSlideFileUid",
-                  +localStorage.getItem("activeSlideFileUid") - 1
+                  JSON.stringify(newData)
                 );
+                setActivatedTab(+activatedTab - 1);
               }}
             >
-              Back
-            </button>
+              Back{" "}
+            </i>
+
             <input
-              onWheel={(e) => e.preventDefault()}
+              className="no-border text-center"
               defaultValue={activatedTab}
               value={activatedTab}
+              onWheel={(e) => e.target.blur()}
               type="number" // Set the input type to "number" to enforce numeric input
               onChange={(e) => {
                 const inputValue = +e.target.value;
@@ -279,19 +293,51 @@ const Subtitles = () => {
               }}
               placeholder="slide_ID"
             />
-
-            <button
-              className="cursor-pointer"
+            <span
               onClick={() => {
-                setActivatedTab(activatedTab + 1);
+                const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                const activeSlide = JSON.parse(
+                  localStorage.getItem("activeSlideFileUid")
+                );
+                const SlideOrderID = activeSlide?.find(
+                  (key) => key?.fileUid == file_uid
+                );
+
+                const slideID = UserAddedList?.slides?.find(
+                  (key) => key?.order_number == +SlideOrderID?.activeSlide
+                );
+
+                dispatch(
+                  BookmarkSlide({
+                    file_uid: file_uid,
+                    slide_id: slideID?.ID,
+                    update: true,
+                    order: SlideOrderID?.activeSlide,
+                  })
+                );
+                const newData = activeSlide.map((key) =>
+                  key.fileUid === file_uid
+                    ? {
+                      fileUid: file_uid,
+                      activeSlide: +key.activeSlide + 1,
+                    }
+                    : key
+                );
                 localStorage.setItem(
                   "activeSlideFileUid",
-                  +localStorage.getItem("activeSlideFileUid") + 1
+                  JSON.stringify(newData)
                 );
+                setActivatedTab(+activatedTab + 1);
               }}
+              className={` cursor-pointer ${false ? "disablecolor" : "custom-pagination"
+                }`}
             >
-              Next
-            </button>
+              Next{" "}
+              <i
+                className={`bi bi-chevron-right  cursor-pointer  ${false ? "disablecolor" : "custom-pagination"
+                  }`}
+              />
+            </span>
           </div>
         </div>
 
@@ -327,6 +373,7 @@ const Subtitles = () => {
                       setActivatedTab={setActivatedTab}
                       bookmarkDelete={item.bookmark_id}
                       text={item?.bookmark_path}
+                      slideID={item?.slide_id}
                       fileUid={item?.file_uid}
                       index={index}
                       moveCard={moveCard}
