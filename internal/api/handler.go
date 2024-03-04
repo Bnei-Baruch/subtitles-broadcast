@@ -179,7 +179,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	language := ctx.Query("language")
 	keyword := ctx.Query("keyword")
 	slides := []*SlideDetail{}
-	query := h.constructSlideQuery(ctx, userId, fileUid, keyword)
+	query := h.constructSlideQuery(ctx, userId)
 	if len(sourceUid) > 0 {
 		query = query.Where("files.source_uid = ?", sourceUid)
 	}
@@ -210,7 +210,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 }
 
 // constructSlideQuery constructs the slide query based on user, fileUID, and keyword
-func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}, fileUID, keyword string) *gorm.DB {
+func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
 	return h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
 		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, files.language, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
@@ -284,16 +284,29 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	updateQuery := "UPDATE slides SET slide = reqs.slide, order_number = reqs.order_number, updated_at = ? "
-	WhereQuery := "WHERE id = reqs.slide_id"
-	ValuesQuery := []string{}
+	updateQuery := "UPDATE slides AS s SET slide = r.slide, order_number = r.order_number, updated_at = ? "
+	whereQuery := "WHERE s.id = r.slide_id"
+	valuesQuery := []string{}
+	placeholders := []interface{}{}
+
 	for _, req := range reqs {
-		value := fmt.Sprintf("(%d, '%s', %d)", req.SlideID, req.Slide, req.OrderNumber)
-		ValuesQuery = append(ValuesQuery, value)
+		// Use a placeholder for req.Slide and escape any special characters
+		value := fmt.Sprintf("(%d, ?, %d)", req.SlideID, req.OrderNumber)
+		valuesQuery = append(valuesQuery, value)
+
+		// Append Slide value to placeholders
+		placeholders = append(placeholders, req.Slide)
 	}
-	WithQuery := "WITH reqs(slide_id, slide, order_number) AS (VALUES" + strings.Join(ValuesQuery, ",") + ")"
-	query := WithQuery + updateQuery + "FROM reqs " + WhereQuery
-	result := tx.Exec(query, time.Now())
+
+	withQuery := "WITH reqs(slide_id, slide, order_number) AS (VALUES " + strings.Join(valuesQuery, ", ") + ") "
+	query := withQuery + updateQuery + "FROM reqs AS r " + whereQuery
+
+	// Append the timestamp placeholder to the placeholders slice
+	placeholders = append(placeholders, time.Now())
+
+	// Execute the SQL query
+	result := tx.Exec(query, placeholders...)
+
 	if result.Error != nil {
 		tx.Rollback()
 		log.Error(result.Error)
