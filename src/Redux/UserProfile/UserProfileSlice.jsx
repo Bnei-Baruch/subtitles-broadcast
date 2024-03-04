@@ -18,6 +18,7 @@ const UserProfileSlice = createSlice({
       return { ...state, selectedLang: payload };
     },
   },
+
   extraReducers: (builder) => {},
 });
 

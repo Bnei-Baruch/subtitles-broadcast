@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import "./Layout.css";
 
-const SideNavBar = () => (
+const SideNavBar = ({ logout }) => (
   <>
     <div className="side-menu">
       <div
