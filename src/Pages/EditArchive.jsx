@@ -13,41 +13,55 @@ const EditArcive = ({ handleClose }) => {
   const slideList = useSelector(getEditSlideList);
 
   const [slideListData, setSlideListData] = useState(slideList?.slides);
-  const [fontSize, setFontSize] = useState("2vw"); // Initial font size using viewport width unit
   const [selected, setSelected] = useState(0);
   const [confirmation, setConfirmation] = useState(false);
+  const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
+  const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
 
   useEffect(() => {
     setSlideListData(slideList?.slides);
-  }, [slideList]);
-  const containerWidth = 300; // Set your fixed width
-  const containerHeight = 150; // Set your fixed height
+  }, [slideList?.slides]);
 
   const handleSubmit = () => {
-    const addNewSlides = slideListData
-      ?.filter((key) => key?.addedNew == true)
-      ?.map(({ file_uid, slide, order_number }) => ({
-        file_uid,
-        slide,
-        order_number,
-      }));
-    const updateNewSlides = slideListData
-      ?.filter((key) => key?.updateSlide == true)
-      ?.map(({ ID, slide, order_number }) => ({
-        slide_id: ID,
-        slide,
-        order_number,
-      }));
-    deleted?.length > 0 &&
+    if (deleted?.length > 0 && force_delete_bookmarks) {
       dispatch(
         deleteNewSlide({
+          force_delete_bookmarks: force_delete_bookmarks,
           slide_ids: deleted,
         })
       );
-    addNewSlides?.length > 0 && dispatch(addNewSlide(addNewSlides));
-    updateNewSlides?.length > 0 && dispatch(updateNewSlide(updateNewSlides));
+    } else {
+      deleted?.length > 0 &&
+        dispatch(
+          deleteNewSlide({
+            slide_ids: deleted,
+          })
+        );
+    }
+    const updateSlideList = slideListData?.map(
+      ({ ID, slide, order_number }, index) => ({
+        slide_id: ID,
+        slide,
+        order_number: index,
+      })
+    );
+
+    const addNewSlideList = updateSlideList
+      ?.filter((key) => key?.slide_id == undefined)
+      ?.map(({ slide, order_number }) => ({
+        slide,
+        order_number,
+        file_uid: slideListData[0]?.file_uid,
+      }));
+    if (addNewSlideList?.length > 0) {
+      dispatch(addNewSlide(addNewSlideList));
+    }
+    if (updateSlideList?.length > 0) {
+      dispatch(updateNewSlide(updateSlideList));
+    }
     setDeleted([]);
+    handleClose();
   };
 
   // const [containerStyle, setContainerStyle] = useState({
@@ -95,8 +109,37 @@ const EditArcive = ({ handleClose }) => {
     [confirmation]
   );
 
+  const ForceDeleteBookmark = useMemo(
+    () => (
+      <MessageBox
+        setFinalConfirm={() => {
+          const findIDFORDelete = slideListData[forceDeleteConfirm]?.ID;
+          const cloneSlidedataArray = [...slideListData];
+          cloneSlidedataArray?.splice(forceDeleteConfirm, 1);
+          setSlideListData(cloneSlidedataArray);
+          setForce_delete_bookmarks(true);
+          setDeleted([...deleted, findIDFORDelete]);
+        }}
+        buttonName={["On", "Yes"]}
+        message={"You want to delete bookmarked slide "}
+        show={forceDeleteConfirm != null}
+        handleClose={() => {
+          // deleted?.pop();
+          // setDeleted(deleted);
+          setForceDeleteConfirm(null);
+        }}
+      />
+    ),
+    [forceDeleteConfirm]
+  );
+  console.log(
+    deleted,
+    "cbshdvbhsbfvhsbfkhvbdsfhjbvdhjfbjhsdabhjsadbhsajhbdbhj",
+    force_delete_bookmarks
+  );
   return (
     <>
+      {ForceDeleteBookmark}
       {ConfirmationMessage}
       <div className="archiveBackground bg-light Edit">
         <div className="card border-0">
@@ -247,16 +290,16 @@ const EditArcive = ({ handleClose }) => {
                     {index == selected && (
                       <i
                         onClick={() => {
-                          const cloneSlidedataArray = [...slideListData];
-                          cloneSlidedataArray?.splice(index, 1);
-                          setSlideListData(cloneSlidedataArray);
-                          if (key?.ID) {
-                            setDeleted([...deleted, key?.ID]);
+                          if (key.bookmark_id !== null && key?.ID) {
+                            setForceDeleteConfirm(index);
+                          } else {
+                            const cloneSlidedataArray = [...slideListData];
+                            cloneSlidedataArray?.splice(index, 1);
+                            setSlideListData(cloneSlidedataArray);
+                            if (key?.ID) {
+                              setDeleted([...deleted, key?.ID]);
+                            }
                           }
-
-                          //1) change selected slide
-                          //2) remove from main array which display entire slides
-                          //3) add to delete slide array list
                         }}
                         className="bi bi-trash3 delete-icon "
                       />

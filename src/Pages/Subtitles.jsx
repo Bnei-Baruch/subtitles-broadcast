@@ -56,7 +56,7 @@ const Subtitles = () => {
   useEffect(() => {}, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
-    setItems(GetAllBookmarkList);
+    GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
     // const fileId = JSON.parse(localStorage.getItem("fileids"));
     // for (let index = 0; index < fileId.length; index++) {
     //   const element = fileId[index];

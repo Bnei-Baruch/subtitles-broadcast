@@ -69,7 +69,12 @@ const Archive = () => {
   }, [dispatch]);
   useEffect(() => {
     dispatch(
-      GetAllArchiveData({ language: "en", ...page, page: 1, keyword: freeText })
+      GetAllArchiveData({
+        language: "en",
+        ...page,
+        page: page.page,
+        keyword: freeText,
+      })
     );
   }, [page, DebouncingFreeText, dispatch, editSlide]);
 

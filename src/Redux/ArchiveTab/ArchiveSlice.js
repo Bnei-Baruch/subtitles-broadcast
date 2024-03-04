@@ -146,7 +146,6 @@ export const UnBookmarkSlide = createAsyncThunk(
 export const SlideListWithFildeUid = createAsyncThunk(
   "/SlideListWithFildeUid",
   async (data, thunkAPI) => {
-    console.log(data, "<<<<<<");
     const response = await axios.get(`${API}slide`, { params: data });
 
     return response.data;
