@@ -27,7 +27,7 @@ const Subtitles = () => {
   { value: "es", label: "Spanish" }];
   const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
   const bcLangObj = findBroadcastLang(broadcastLangArr, bcLanglocalStorageVal);
-  const [broadcastProgramm, setBroadcastProgramm] = useState(bcLangObj);
+  const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
   const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
