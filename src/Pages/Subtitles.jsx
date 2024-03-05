@@ -18,7 +18,6 @@ import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
 import BroadcastSettings from "../Components/BroadcastSettings"
 
 const Subtitles = () => {
-  ///TODO: Bring from the system  brodcast Programms, Languages, and init by authorization
   const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
   { value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
   { value: "brodcast_3", label: "Brodcast 3" }];
@@ -28,7 +27,7 @@ const Subtitles = () => {
   const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
   const bcLangObj = findBroadcastLang(broadcastLangArr, bcLanglocalStorageVal);
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
-  const [broadcastLang, setBroadcastLang] = useState(broadcastLangArr[0]);
+  const [broadcastLang, setBroadcastLang] = useState(bcLangObj);
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
@@ -403,13 +402,15 @@ const Subtitles = () => {
 };
 
 function findBroadcastLang(sourceLangArr, langCode) {
+  var retVal = sourceLangArr[0];
+
   sourceLangArr.forEach(function (langObj) {
     if (langObj.value === langCode) {
-      return langObj;
+      retVal = langObj;
     }
   });
 
-  return sourceLangArr[0];
+  return retVal;
 }
 
 export default Subtitles;
