@@ -14,7 +14,7 @@ const styles = {
         position: "fixed",
         top: "18px",
         right: "160px",
-        width: "330px",
+        width: "370px",
         textAlign: "left",
         backgroundColor: "transparent",
         transition: "none",
@@ -41,10 +41,14 @@ const styles = {
         marginRight: "25px",
         fontWeight: "bold",
         fontSize: "16px",
+        width: "125px",
+        display: "inline-block"
     },
     labelMainLast: {
         fontWeight: "bold",
-        fontSize: "16px"
+        fontSize: "16px",
+        width: "65px",
+        display: "inline-block"
     }
 };
 
