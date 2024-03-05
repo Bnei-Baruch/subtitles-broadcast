@@ -17,22 +17,30 @@ import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
 import BroadcastSettings from "../Components/BroadcastSettings"
 
+const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
+{ value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
+{ value: "brodcast_3", label: "Brodcast 3" }];
+const broadcastLangArr = [{ value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
+{ value: "en", label: "English" }, { value: "es", label: "Spanish" }];
+const broadcastLangMapObj = {
+  he: broadcastLangArr[0], ru: broadcastLangArr[1],
+  en: broadcastLangArr[2], es: broadcastLangArr[3]
+};
+
 const Subtitles = () => {
-  const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
-  { value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
-  { value: "brodcast_3", label: "Brodcast 3" }];
-  const broadcastLangArr = [{ value: "en", label: "English" },
-  { value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
-  { value: "es", label: "Spanish" }];
   const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
-  const bcLangObj = findBroadcastLang(broadcastLangArr, bcLanglocalStorageVal);
   const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
-  const [broadcastLang, setBroadcastLang] = useState(bcLangObj);
+  const [broadcastLang, setBroadcastLang] = useState(() => {
+    const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal] ?
+      broadcastLangMapObj[bcLanglocalStorageVal] : broadcastLangArr[0];
+    return bcLangObj;
+  });
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
-  const isShowBroadcastSettings = sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
-  const [showBroadcastSettings, setShowBroadcastSettings] = useState(isShowBroadcastSettings);
+  const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
+    return sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
+  });
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -400,17 +408,5 @@ const Subtitles = () => {
     </>
   );
 };
-
-function findBroadcastLang(sourceLangArr, langCode) {
-  var retVal = sourceLangArr[0];
-
-  sourceLangArr.forEach(function (langObj) {
-    if (langObj.value === langCode) {
-      retVal = langObj;
-    }
-  });
-
-  return retVal;
-}
 
 export default Subtitles;
