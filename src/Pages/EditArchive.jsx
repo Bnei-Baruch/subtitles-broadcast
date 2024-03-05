@@ -7,6 +7,7 @@ import {
   updateNewSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
+import ReactMarkdown from 'react-markdown';
 
 const EditArcive = ({ handleClose }) => {
   const dispatch = useDispatch();
@@ -253,9 +254,8 @@ const EditArcive = ({ handleClose }) => {
                   }}
                 >
                   <div
-                    className={`  adjustable-font box box2 ${
-                      index == selected && "activeSlide"
-                    }`}
+                    className={`  adjustable-font box box2 ${index == selected && "activeSlide"
+                      }`}
                   >
                     <textarea
                       value={key?.slide}
@@ -281,7 +281,7 @@ const EditArcive = ({ handleClose }) => {
                       }}
                       key={index}
                       className=""
-                      // style={containerStyle}
+                    // style={containerStyle}
                     />
                     {index == selected && (
                       <i
@@ -333,9 +333,9 @@ const EditArcive = ({ handleClose }) => {
                   <div
                     key={index}
                     className="box box2  adjustable-font"
-                    // style={containerStyle}
+                  // style={containerStyle}
                   >
-                    {key?.slide}
+                    <ReactMarkdown>{key?.slide}</ReactMarkdown>
                   </div>
                 </div>
               </div>
