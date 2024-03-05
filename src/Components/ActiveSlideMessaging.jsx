@@ -22,7 +22,7 @@ function parseMqttMessage(mqttMessage) {
 
 const mqttPublish = (msgText, mqttClient, setMqttMessage) => {
     if (mqttClient && mqttTopic) {
-        mqttClient.publish(mqttTopic, msgText, { label: '0', value: 0 }, error => {
+        mqttClient.publish(mqttTopic, msgText, { label: '0', value: 0, retain: true }, error => {
             if (error) {
                 console.log("Publish error:", error);
             }
