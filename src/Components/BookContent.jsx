@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
+import { Slide } from "./Slide";
+//import { debounce } from "lodash";
 
 const BookContent = ({
   setActivatedTab,
@@ -12,6 +14,24 @@ const BookContent = ({
 }) => {
   const dispatch = useDispatch();
   const focusSlides = useRef();
+  /*const handleResize = () => {
+    // Logic to handle window resize
+    console.log(window.innerWidth, window.innerHeight);
+    const updateElementStyles = () => {
+      const elementsWithActiveSlideClass = document.getElementsByClassName('box-content');
+      for (let i = 0; i < elementsWithActiveSlideClass.length; i++) {
+        elementsWithActiveSlideClass[i].style.transform = `scale(0.5)`;
+        elementsWithActiveSlideClass[i].style.transformOrigin = 'top left';
+      }
+    };
+    updateElementStyles();
+  };*/
+  /*useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);*/
   useEffect(() => {
     focusSlides?.current?.scrollIntoView({
       behavior: "smooth",
@@ -39,9 +59,9 @@ const BookContent = ({
                 const newData = activeSlide.map((key) =>
                   key.fileUid === item.file_uid
                     ? {
-                        fileUid: item.file_uid,
-                        activeSlide: +item.order_number + 1,
-                      }
+                      fileUid: item.file_uid,
+                      activeSlide: +item.order_number + 1,
+                    }
                     : key
                 );
                 localStorage.setItem(
@@ -51,17 +71,16 @@ const BookContent = ({
                 setActivatedTab(+item?.order_number + 1);
               }}
               ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${
-                +activatedTab === item.order_number + 1 && "activeSlide"
-              }`}
+              className={`box-content d-flex cursor-pointer ${+activatedTab === item.order_number + 1 && "activeSlide"
+                }`}
             >
               <bdo
-                className={`p-3 ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}
+                className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
                 dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
               >
-                {item?.slide}{" "}
+								<Slide content={item?.slide} isLtr={isLtr}></Slide>
               </bdo>
-              <span className="my-1 mx-3 text-start">
+              <span className="order-number">
                 {+item?.order_number + 1}
               </span>
             </div>

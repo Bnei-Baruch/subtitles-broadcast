@@ -7,7 +7,7 @@ import {
   updateNewSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
-import ReactMarkdown from 'react-markdown';
+import { Slide } from "../Components/Slide";
 
 const EditArcive = ({ handleClose }) => {
   const dispatch = useDispatch();
@@ -335,7 +335,7 @@ const EditArcive = ({ handleClose }) => {
                     className="box box2  adjustable-font"
                   // style={containerStyle}
                   >
-                    <ReactMarkdown>{key?.slide}</ReactMarkdown>
+                    <Slide content={key?.slide} isLtr={true} />
                   </div>
                 </div>
               </div>
