@@ -1,12 +1,12 @@
-import { React, useId } from 'react';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
+import { React, useId } from "react";
+import Dropdown from "react-bootstrap/Dropdown";
+import DropdownButton from "react-bootstrap/DropdownButton";
 
 const styles = {
   default: {
     margin: "0 10px 0 0",
-    width: "125px"
-  }
+    width: "125px",
+  },
 };
 
 function buttonStyle(srcStyles, additionalStyle) {
@@ -21,7 +21,7 @@ function buttonStyle(srcStyles, additionalStyle) {
 const dropDownChangeValue = (evt, setStateRef) => {
   setStateRef({
     value: evt.target.getAttribute("data-key"),
-    label: evt.target.text
+    label: evt.target.text,
   });
 };
 
@@ -34,7 +34,7 @@ export function DropdownButtonDef({
   className,
   variant,
   key,
-  disabled
+  disabled,
 }) {
   let defId = useId();
 
@@ -48,18 +48,18 @@ export function DropdownButtonDef({
       style={buttonStyle(styles.default, style)}
       disabled={disabled}
     >
-      {
-        data.map(
-          (item) =>
-          (
-            <Dropdown.Item key={item.value} eventKey={item.value}
-              {...item.value === currentValue.value && { active: true }}
-              onClick={(evt) => dropDownChangeValue(evt, setDataRef)}>{item.label}</Dropdown.Item>
-          ),)
-      }
-    </DropdownButton >
+      {data.map((item) => (
+        <Dropdown.Item
+          key={item.value}
+          eventKey={item.value}
+          {...(item.value === currentValue.value && { active: true })}
+          onClick={(evt) => dropDownChangeValue(evt, setDataRef)}
+        >
+          {item.label}
+        </Dropdown.Item>
+      ))}
+    </DropdownButton>
   );
-};
+}
 
 export default DropdownButtonDef;
-
