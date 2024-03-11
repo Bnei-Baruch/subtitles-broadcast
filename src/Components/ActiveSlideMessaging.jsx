@@ -97,7 +97,7 @@ function subscribeMqttMessage(mqttClient, setJobMqttMessage) {
   }
 }
 
-const determinePublcJobMsg = (
+const determinePublicJobMsg = (
   userAddedList,
   activatedTab,
   setActivatedTab,
@@ -106,7 +106,7 @@ const determinePublcJobMsg = (
   jobMqttMessage,
   setJobMqttMessage
 ) => {
-  let isPublc = false;
+  let isPublic = false;
 
   if (jobMqttMessage) {
     const activeSlideOrderNum = activatedTab - 1;
@@ -125,7 +125,7 @@ const determinePublcJobMsg = (
         if (activeSlide.source_uid === jobMqttMessage.source_uid) {
           if (activeSlide.order_number !== jobMqttMessage.order_number) {
             setActivatedTab(jobMqttMessage.order_number + 1);
-            isPublc = true;
+            isPublic = true;
           }
         }
         // }
@@ -135,19 +135,17 @@ const determinePublcJobMsg = (
         !mqttMessageJson ||
         mqttMessageJson.order_number !== jobMqttMessage.order_number
       ) {
-        isPublc = true;
+        isPublic = true;
       }
     }
 
-    if (isPublc) {
+    if (isPublic) {
       const cloneJobMsgJson = { ...jobMessageJson };
-      //cloneJobMsgJson.isParsed = true;
-      //setJobMqttMessage(cloneJobMsgJson);
       setMqttMessage(cloneJobMsgJson);
     }
   }
 
-  return isPublc;
+  return isPublic;
 };
 
 const determinePublishActiveSlide = (
@@ -204,7 +202,7 @@ const determinePublish = (
   jobMqttMessage,
   setJobMqttMessage
 ) => {
-  let isPublished = determinePublcJobMsg(
+  let isPublished = determinePublicJobMsg(
     userAddedList,
     activatedTab,
     setActivatedTab,
