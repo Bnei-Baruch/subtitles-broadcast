@@ -13,8 +13,35 @@ import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
+import GreenWindowButton from "../Components/GreenWindowButton";
+import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
+import BroadcastSettings from "../Components/BroadcastSettings"
+
+const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
+{ value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
+{ value: "brodcast_3", label: "Brodcast 3" }];
+const broadcastLangArr = [{ value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
+{ value: "en", label: "English" }, { value: "es", label: "Spanish" }];
+const broadcastLangMapObj = {
+  he: broadcastLangArr[0], ru: broadcastLangArr[1],
+  en: broadcastLangArr[2], es: broadcastLangArr[3]
+};
 
 const Subtitles = () => {
+  const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
+  const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
+  const [broadcastLang, setBroadcastLang] = useState(() => {
+    const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal] ?
+      broadcastLangMapObj[bcLanglocalStorageVal] : broadcastLangArr[0];
+    return bcLangObj;
+  });
+  const [mqttMessage, setMqttMessage] = useState(null);
+  const [jobMqttMessage, setJobMqttMessage] = useState(null);
+  const [showGreenWindow, setShowGreenWindow] = useState(false);
+  const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
+    return sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
+  });
+
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
@@ -53,7 +80,7 @@ const Subtitles = () => {
   useEffect(() => {
     dispatch(UserBookmarkList());
   }, [dispatch]);
-  useEffect(() => {}, [+localStorage.getItem("activeSlideFileUid")]);
+  useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
@@ -96,18 +123,60 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               >
-                <button
-                  type="button"
-                  onClick={() => setIsLtr(!isLtr)}
-                  className="btn btn-tr"
-                >
-                  {isLtr ? "LTR" : "RTL"}
-                </button>
-
-                <button type="button" className="btn btn-tr">
-                  <img alt="vectors" src="image/Vector.svg" />
-                </button>
               </div>
+              <BroadcastSettings
+                showBroadcastSettings={showBroadcastSettings}
+                setShowBroadcastSettings={setShowBroadcastSettings}
+                broadcastProgramm={broadcastProgramm}
+                setBroadcastProgramm={setBroadcastProgramm}
+                broadcastLang={broadcastLang}
+                setBroadcastLang={setBroadcastLang}
+                brodcastProgrammArr={brodcastProgrammArr}
+                broadcastLangArr={broadcastLangArr}
+              >
+              </BroadcastSettings>
+              <ActiveSlideMessaging
+                broadcastProgrammCode={broadcastProgramm.value}
+                broadcastLangCode={broadcastLang.value}
+                userAddedList={UserAddedList}
+                activatedTab={activatedTab}
+                setActivatedTab={setActivatedTab}
+                mqttMessage={mqttMessage}
+                setMqttMessage={setMqttMessage}
+                jobMqttMessage={jobMqttMessage}
+                setJobMqttMessage={setJobMqttMessage}
+              />
+              <GreenWindowButton
+                showGreenWindow={showGreenWindow}
+                setShowGreenWindow={setShowGreenWindow}
+                isLtr={isLtr}
+                mqttMessage={mqttMessage}
+              />
+              <button
+                type="button"
+                onClick={() => setIsLtr(!isLtr)}
+                className="btn btn-tr"
+              >
+                {isLtr ? "LTR" : "RTL"}
+              </button>
+
+              <button type="button" className="btn btn-tr">
+                <img alt="vectors" src="image/Vector.svg" />
+              </button>
+
+              {/* <Dropdown variant="success" id="brodcast_programm">
+                  <Dropdown.Toggle id="dropdown-autoclose-outside">
+                    Brodcasting programm
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.Item value='morning_lesson' >Morning lesson</Dropdown.Item>
+                    <Dropdown.Item value='brodcast_1'>Brodcast 1</Dropdown.Item>
+                    <Dropdown.Item value='brodcast_2'>Brodcast 3</Dropdown.Item>
+                    <Dropdown.Item value='brodcast_3'>Brodcast 3</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown> */}
+
             </div>
           </div>
 
@@ -167,9 +236,8 @@ const Subtitles = () => {
           </div>
           <div className="d-flex justify-content-center">
             <i
-              className={`bi bi-chevron-left me-1 cursor-pointer ${
-                activatedTab <= 1 ? "disablecolor" : "custom-pagination"
-              }`}
+              className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+                }`}
               onClick={() => {
                 const file_uid = UserAddedList?.slides?.[0]?.file_uid;
                 const activeSlide = JSON.parse(
@@ -194,9 +262,9 @@ const Subtitles = () => {
                 const newData = activeSlide.map((key) =>
                   key.fileUid === file_uid
                     ? {
-                        fileUid: file_uid,
-                        activeSlide: +key.activeSlide - 1,
-                      }
+                      fileUid: file_uid,
+                      activeSlide: +key.activeSlide - 1,
+                    }
                     : key
                 );
                 localStorage.setItem(
@@ -257,9 +325,9 @@ const Subtitles = () => {
                 const newData = activeSlide.map((key) =>
                   key.fileUid === file_uid
                     ? {
-                        fileUid: file_uid,
-                        activeSlide: +key.activeSlide + 1,
-                      }
+                      fileUid: file_uid,
+                      activeSlide: +key.activeSlide + 1,
+                    }
                     : key
                 );
                 localStorage.setItem(
@@ -268,15 +336,13 @@ const Subtitles = () => {
                 );
                 setActivatedTab(+activatedTab + 1);
               }}
-              className={` cursor-pointer ${
-                false ? "disablecolor" : "custom-pagination"
-              }`}
+              className={` cursor-pointer ${false ? "disablecolor" : "custom-pagination"
+                }`}
             >
               Next{" "}
               <i
-                className={`bi bi-chevron-right  cursor-pointer  ${
-                  false ? "disablecolor" : "custom-pagination"
-                }`}
+                className={`bi bi-chevron-right  cursor-pointer  ${false ? "disablecolor" : "custom-pagination"
+                  }`}
               />
             </span>
           </div>
