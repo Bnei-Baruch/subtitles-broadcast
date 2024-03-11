@@ -12,8 +12,8 @@ function parseMqttMessage(mqttMessage) {
 
         return msgJson;
       }
-    } catch (e) {
-      //
+    } catch (err) {
+      console.log(err);
     }
 
     return mqttMessage;
@@ -32,7 +32,7 @@ const mqttPublish = (msgText, mqttClient, setMqttMessage) => {
         } else {
           setMqttMessage(msgText);
         }
-      },
+      }
     );
   } else {
     console.error("Can't publish Active slide, the  mqttClient is not defined");
@@ -59,7 +59,7 @@ function initMqttClient(
   broadcastLangCode,
   mqttClient,
   setMqttClient,
-  setJobMqttMessage,
+  setJobMqttMessage
 ) {
   if (!mqttClient) {
     mqttClientId =
@@ -104,7 +104,7 @@ const determinePublcJobMsg = (
   mqttMessage,
   setMqttMessage,
   jobMqttMessage,
-  setJobMqttMessage,
+  setJobMqttMessage
 ) => {
   let isPublc = false;
 
@@ -157,7 +157,7 @@ const determinePublishActiveSlide = (
   mqttMessage,
   setMqttMessage,
   jobMqttMessage,
-  setJobMqttMessage,
+  setJobMqttMessage
 ) => {
   const mqttMessageJson = parseMqttMessage(mqttMessage);
   const activeSlideOrderNum = activatedTab - 1;
@@ -202,7 +202,7 @@ const determinePublish = (
   mqttMessage,
   setMqttMessage,
   jobMqttMessage,
-  setJobMqttMessage,
+  setJobMqttMessage
 ) => {
   let isPublished = determinePublcJobMsg(
     userAddedList,
@@ -211,7 +211,7 @@ const determinePublish = (
     mqttMessage,
     setMqttMessage,
     jobMqttMessage,
-    setJobMqttMessage,
+    setJobMqttMessage
   );
 
   if (!isPublished) {
@@ -222,7 +222,7 @@ const determinePublish = (
       mqttMessage,
       setMqttMessage,
       jobMqttMessage,
-      setJobMqttMessage,
+      setJobMqttMessage
     );
   }
 };
@@ -245,7 +245,7 @@ export function ActiveSlideMessaging({
     broadcastLangCode,
     mqttClient,
     setMqttClient,
-    setJobMqttMessage,
+    setJobMqttMessage
   );
 
   determinePublish(
@@ -256,7 +256,7 @@ export function ActiveSlideMessaging({
     mqttMessage,
     setMqttMessage,
     jobMqttMessage,
-    setJobMqttMessage,
+    setJobMqttMessage
   );
 
   return <div style={{ display: "none" }}></div>;
