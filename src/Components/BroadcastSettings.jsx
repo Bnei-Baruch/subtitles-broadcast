@@ -6,7 +6,7 @@ import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import DropdownButtonDef from "../Components/DropdownButtonDef";
 
-const leftColSize = 3;
+const leftColSize = 4;
 const rightColSize = 8;
 
 const styles = {
@@ -78,7 +78,11 @@ export function BroadcastSettings({
         <span style={styles.labelMainLast}>{broadcastLang.label}</span>
       </Button>
 
-      <Modal show={showBroadcastSettings} onHide={handleClose}>
+      <Modal
+        dialogClassName="broadcast-settings-dialog"
+        show={showBroadcastSettings}
+        onHide={handleClose}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Broadcasting Settings</Modal.Title>
         </Modal.Header>
