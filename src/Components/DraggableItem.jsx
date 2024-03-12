@@ -13,7 +13,7 @@ const DraggableItem = ({
   id,
   text,
   index,
-  slideID,
+
   moveCard,
   fileUid,
   bookmarkDelete,
@@ -34,26 +34,31 @@ const DraggableItem = ({
       }
     },
   });
+  // const handleBookMarkClick = (e) => {
+  //   const activeSlide =
+  //     JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
+  //   if (Array.isArray(activeSlide)) {
+  //     const findActiveSlideId = activeSlide?.find((key) => key?.fileUid == e);
+  //     if (findActiveSlideId) {
+  //       setActivatedTab(findActiveSlideId?.activeSlide);
+  //     } else {
+  //       const newData = [
+  //         ...activeSlide,
+  //         { fileUid: e, activeSlide: +text?.split("/")?.at(-1) },
+  //       ];
+  //       localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
+  //       setActivatedTab(+text?.split("/")?.at(-1) + 1);
+  //     }
+  //   } else {
+  //     const newData = [{ fileUid: e, activeSlide: +text?.split("/")?.at(-1) }];
+  //     localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
+  //     setActivatedTab(+text?.split("/")?.at(-1) + 1);
+  //   }
+  //   dispatch(GetSubtitleData(e));
+  // };
+
   const handleBookMarkClick = (e) => {
-    const activeSlide =
-      JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
-    if (Array.isArray(activeSlide)) {
-      const findActiveSlideId = activeSlide?.find((key) => key?.fileUid == e);
-      if (findActiveSlideId) {
-        setActivatedTab(findActiveSlideId?.activeSlide);
-      } else {
-        const newData = [
-          ...activeSlide,
-          { fileUid: e, activeSlide: +text?.split("/")?.at(-1) },
-        ];
-        localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
-        setActivatedTab(+text?.split("/")?.at(-1) + 1);
-      }
-    } else {
-      const newData = [{ fileUid: e, activeSlide: +text?.split("/")?.at(-1) }];
-      localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
-      setActivatedTab(+text?.split("/")?.at(-1) + 1);
-    }
+    setActivatedTab(+text?.split("/")?.at(-1));
     dispatch(GetSubtitleData(e));
   };
   return (

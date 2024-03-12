@@ -4,14 +4,7 @@ import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { Slide } from "./Slide";
 //import { debounce } from "lodash";
 
-const BookContent = ({
-  setActivatedTab,
-  activatedTab,
-
-  contents,
-  isLtr,
-  targetItemId,
-}) => {
+const BookContent = ({ setActivatedTab, activatedTab, contents, isLtr }) => {
   const dispatch = useDispatch();
   const focusSlides = useRef();
   /*const handleResize = () => {
@@ -37,7 +30,7 @@ const BookContent = ({
       behavior: "smooth",
       block: "center",
     });
-  }, [contents, targetItemId]);
+  }, [contents, activatedTab]);
   return (
     <>
       {contents?.slides?.length > 0 &&
@@ -46,16 +39,16 @@ const BookContent = ({
           <>
             <div
               onClick={() => {
-                const activeSlide =
-                  JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
+                setActivatedTab(+item?.order_number);
                 dispatch(
                   BookmarkSlide({
                     file_uid: item.file_uid,
                     slide_id: item.ID,
                     update: true,
-                    order: +item.order_number,
                   })
                 );
+                const activeSlide =
+                  JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
                 const newData = activeSlide.map((key) =>
                   key.fileUid === item.file_uid
                     ? {

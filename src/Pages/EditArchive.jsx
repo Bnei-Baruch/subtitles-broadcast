@@ -25,21 +25,17 @@ const EditArcive = ({ handleClose }) => {
   }, [slideList?.slides]);
 
   const handleSubmit = () => {
-    if (deleted?.length > 0 && force_delete_bookmarks) {
-      dispatch(
-        deleteNewSlide({
-          force_delete_bookmarks: force_delete_bookmarks,
-          slide_ids: deleted,
-        })
-      );
-    } else {
-      deleted?.length > 0 &&
-        dispatch(
-          deleteNewSlide({
-            slide_ids: deleted,
-          })
-        );
+    const shouldDelete = deleted?.length > 0;
+    const shouldForceDelete = shouldDelete && force_delete_bookmarks;
+
+    if (shouldDelete) {
+      const deleteParams = {
+        force_delete_bookmarks: shouldForceDelete,
+        slide_ids: deleted,
+      };
+      dispatch(deleteNewSlide(deleteParams));
     }
+
     const updateSlideList = slideListData?.map(
       ({ ID, slide, order_number }, index) => ({
         slide_id: ID,
@@ -49,49 +45,25 @@ const EditArcive = ({ handleClose }) => {
     );
 
     const addNewSlideList = updateSlideList
-      ?.filter((key) => key?.slide_id == undefined)
+      ?.filter(({ slide_id }) => slide_id === undefined)
       ?.map(({ slide, order_number }) => ({
         slide,
         order_number,
         file_uid: slideListData[0]?.file_uid,
       }));
+
     if (addNewSlideList?.length > 0) {
       dispatch(addNewSlide(addNewSlideList));
     }
+
     if (updateSlideList?.length > 0) {
       dispatch(updateNewSlide(updateSlideList));
     }
+
     setDeleted([]);
     handleClose();
   };
 
-  // const [containerStyle, setContainerStyle] = useState({
-  //   width: containerWidth + "px",
-  //   height: containerHeight + "px",
-  //   fontSize: "16px", // Set your initial font size
-  // });
-
-  // const handleResize = () => {
-  //   const newWidth = Math.min(
-  //     window.innerWidth / slideList?.slides.length,
-  //     containerWidth
-  //   );
-  //   const newFontSize = Math.min(newWidth / 15, 24);
-  //   setContainerStyle({
-  //     width: newWidth + "px",
-  //     height: containerHeight + "px",
-  //     fontSize: newFontSize + "px",
-  //   });
-  // };
-
-  // useEffect(() => {
-  //   handleResize(); // Initial font size calculation
-
-  //   window.addEventListener("resize", handleResize);
-  //   return () => {
-  //     window.removeEventListener("resize", handleResize);
-  //   };
-  // }, []);
   const ConfirmationMessage = useMemo(
     () => (
       <MessageBox
@@ -254,8 +226,7 @@ const EditArcive = ({ handleClose }) => {
                   }}
                 >
                   <div
-                    className={`  adjustable-font box box2 ${index == selected && "activeSlide"
-                      }`}
+                    className={`adjustable-font box box2 ${index == selected && "activeSlide"}`}
                   >
                     <textarea
                       value={key?.slide}

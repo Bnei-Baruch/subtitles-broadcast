@@ -8,27 +8,21 @@ import {
   GetAllAuthorList,
   SlideListWithFildeUid,
   emptyAutoComplete,
-  getAllAuthorList,
   getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllArchiveList } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
-import Select from "react-select";
-import { useNavigate } from "react-router-dom";
 import Dropdown from "react-bootstrap/Dropdown";
 import useDebounce from "../Services/useDebounce";
 import EditArcive from "./EditArchive";
 import { Search } from "react-bootstrap-icons";
-import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import ReactPaginate from "react-paginate";
 
 const Archive = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const ArchiveList = useSelector(getAllArchiveList);
-  const AuthorList = useSelector(getAllAuthorList);
   const ActocompleteList = useSelector(getAutocompleteSuggetion);
 
   // const [delete,setDelete]=useState('')
@@ -45,13 +39,10 @@ const Archive = () => {
   const [editSlide, setEditSlide] = useState("");
 
   const [toggle, setToggle] = useState(false);
-  const [freeText, setFreeText] = useState("");
   const [finalConfirm, setFinalConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
   const [deleteId, setDeleteId] = useState();
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
-  const [autoComplete, setAutoComplete] = useState(true);
-  const [showAutocompleteBox, setShowAutocompleteBox] = useState();
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
     slide_id: "",
@@ -59,21 +50,20 @@ const Archive = () => {
     order: "",
   });
   // const [bookmarkId, setBookmarkId] = useState();
-  const DebouncingFreeText = useDebounce(freeText, 500);
+  const localPagination = JSON.parse(localStorage.getItem("pagination"));
 
   useEffect(() => {
-    dispatch(GetAllAuthorList());
-  }, [dispatch]);
-  useEffect(() => {
+    if (localPagination) {
+      setPage(localPagination);
+    }
     dispatch(
       GetAllArchiveData({
         language: "en",
-        ...page,
         page: page.page,
-        keyword: freeText,
+        limit: page.limit,
       })
     );
-  }, [page, DebouncingFreeText, dispatch, editSlide]);
+  }, [page.page, page.limit]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -108,7 +98,7 @@ const Archive = () => {
           dispatch(
             BookmarkSlideFromArchivePage({
               ...bookmarkData,
-              params: { page: 1, limit: page.limit },
+              params: { page: page.page, limit: page.limit },
             })
           );
         }}
@@ -120,20 +110,6 @@ const Archive = () => {
     [confirmation, message]
   );
 
-  useEffect(() => {
-    // Dispatch the fetchAutoComplete action when the component mounts or when needed
-    freeText !== "" &&
-      autoComplete &&
-      dispatch(ArchiveAutoComplete({ query: freeText }));
-  }, [dispatch, freeText]);
-
-  const handleSuggestionClick = (suggestion) => {
-    setFreeText(suggestion);
-    setAutoComplete(false);
-
-    // Clear the suggestions when a suggestion is selected
-    dispatch(emptyAutoComplete());
-  };
   return (
     <>
       {DelectConfirmationModal}
@@ -142,62 +118,6 @@ const Archive = () => {
         <EditArcive handleClose={() => setEditSlide(false)} />
       ) : (
         <div className="archiveBackground  bg-light Edit">
-          <div className="search-box">
-            <div className="d-flex m-2">
-              <div className="form-group col-3 autoComplete">
-                <label>Free Text</label>
-
-                <input
-                  onBlur={() => setShowAutocompleteBox(false)}
-                  value={freeText}
-                  onKeyDown={(e) => {
-                    e.key === "Enter" &&
-                      dispatch(
-                        GetAllArchiveData({
-                          language: "en",
-                          ...page,
-                          page: 1,
-                          keyword: freeText,
-                        })
-                      );
-                  }}
-                  onChange={(e) => {
-                    setFreeText(e.target.value);
-                  }}
-                  type="text"
-                  className="form-control input"
-                />
-                {showAutocompleteBox && (
-                  <ul class="suggestions" id="suggestions">
-                    {ActocompleteList?.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                      >
-                        {suggestion.source_value}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  dispatch(
-                    GetAllArchiveData({
-                      language: "en",
-                      ...page,
-                      page: 1,
-                      keyword: freeText,
-                    })
-                  );
-                }}
-                className="search-button btn btn-primary"
-              >
-                <Search size={20} />
-              </button>
-            </div>
-          </div>
-
           <div className="card">
             {ArchiveList ? (
               <table className="table">
@@ -210,7 +130,12 @@ const Archive = () => {
                 </thead>
                 <tbody>
                   {ArchiveList?.slides?.map((key) => (
-                    <tr key={key.ID}>
+                    <tr
+                      key={key.ID}
+                      className={`${
+                        key.bookmark_id !== null && "bookmarkedrow"
+                      }`}
+                    >
                       <th scope="row" className="textwidth">
                         <span className="truncate">{key.slide}</span>
                       </th>
@@ -227,7 +152,6 @@ const Archive = () => {
                                 file_uid: key?.file_uid,
                                 slide_id: key?.ID,
                                 update: true,
-                                order: key?.order_number,
                               });
                             }}
                             className="bi bi-bookmark-check-fill m-2"
@@ -243,7 +167,10 @@ const Archive = () => {
                                   order: ArchiveList?.slides?.find(
                                     (key) => key.bookmark_id !== null
                                   )?.length,
-                                  params: { page: 1, limit: page.limit },
+                                  params: {
+                                    page: page.page,
+                                    limit: page.limit,
+                                  },
                                 })
                               ).then((res) => {
                                 if (
@@ -254,10 +181,6 @@ const Archive = () => {
                                     file_uid: key?.file_uid,
                                     slide_id: key?.ID,
                                     update: true,
-                                    order:
-                                      ArchiveList?.slides?.find(
-                                        (key) => key.bookmark_id !== null
-                                      )?.length || 1,
                                   });
                                   setConfirmation(true);
                                 }
@@ -314,13 +237,22 @@ const Archive = () => {
           <div className="flex-container">
             <div
               className="flex-box-start"
-              onChange={(e) => setPage({ page: 1, limit: e.target.value })}
+              onChange={(e) => {
+                localStorage.setItem(
+                  "pagination",
+                  JSON.stringify({ page: page.page, limit: e.target.value })
+                );
+                setPage({ page: 1, limit: e.target.value });
+              }}
             >
               <span>Row per page:</span>
-              <select className="ms-2">
-                <option>10</option>
-                <option>20</option>
-                <option>30</option>
+              <select
+                value={localPagination?.limit || page.limit}
+                className="ms-2"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
               </select>{" "}
               &nbsp; &nbsp; &nbsp;
               <span>{`${startIndex}-${endIndex} of ${ArchiveList?.pagination?.total_rows} `}</span>
@@ -334,6 +266,10 @@ const Archive = () => {
                   const selectedPage = e.selected + 1;
                   if (selectedPage <= ArchiveList?.pagination?.total_pages) {
                     setPage({ ...page, page: selectedPage });
+                    localStorage.setItem(
+                      "pagination",
+                      JSON.stringify({ page: selectedPage, limit: page.limit })
+                    );
                   }
                 }}
                 forcePage={page.page - 1}

@@ -52,19 +52,10 @@ const Subtitles = () => {
 
   const handleKeyPress = (event) => {
     if (event.key === "n" || event.keyCode === 78) {
-      localStorage.setItem(
-        "activeSlideFileUid",
-        +localStorage.getItem("activeSlideFileUid") + 1
-      );
-
-      setActivatedTab(localStorage.getItem("activeSlideFileUid"));
+      setActivatedTab(+activatedTab + 1);
     }
     if (event.key === "b" || event.keyCode === 66) {
-      localStorage.setItem(
-        "activeSlideFileUid",
-        +localStorage.getItem("activeSlideFileUid") - 1
-      );
-      setActivatedTab(localStorage.getItem("activeSlideFileUid"));
+      setActivatedTab(+activatedTab - 1);
     }
   };
 
@@ -80,15 +71,10 @@ const Subtitles = () => {
   useEffect(() => {
     dispatch(UserBookmarkList());
   }, [dispatch]);
-  useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
+  // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
-    // const fileId = JSON.parse(localStorage.getItem("fileids"));
-    // for (let index = 0; index < fileId.length; index++) {
-    //   const element = fileId[index];
-    //   ///Pass file id and get all data
-    // }
   }, [GetAllBookmarkList]);
   const moveCard = (fromIndex, toIndex) => {
     const updatedItems = [...items];
@@ -182,39 +168,10 @@ const Subtitles = () => {
 
           <div className="tab-sec">
             <div className="top-tab">
-              <ul className="nav nav-tabs " id="myTab" role="tablist">
-                {/* List of All Book that user have added */}
-                {/* {UserAddedList?.map((key, index) => (
-          <li className="nav-item" role="presentation">
-            <button
-              className={`nav-link  ${
-                key?.book_title === activatedTab
-                  ? "active"
-                  : activatedTab === "" && index === 0
-                    ? "active"
-                    : ""
-              } `}
-              id="home-tab"
-              onClick={() => {
-                setActivatedTab(key?.book_title);
-              }}
-            >
-              {key?.book_title}
-            </button>
-            <i
-              className="bi bi-x"
-              onChange={() => {
-                dispatch();
-              }}
-            />
-          </li>
-        ))} */}
-              </ul>
+              <ul className="nav nav-tabs " id="myTab" role="tablist"></ul>
             </div>
 
             <div className="tab-content overflow-y-auto">
-              {/* Here according to book that user select  data will get display  */}
-
               <div
                 className="tab-pane active"
                 id="home"
@@ -240,26 +197,17 @@ const Subtitles = () => {
                 }`}
               onClick={() => {
                 const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-                const activeSlide = JSON.parse(
-                  localStorage.getItem("activeSlideFileUid")
-                );
-                const SlideOrderID = activeSlide?.find(
-                  (key) => key?.fileUid == file_uid
-                );
                 const slideID = UserAddedList?.slides?.find(
-                  (key) => key?.order_number == +SlideOrderID?.activeSlide
+                  (key) => key?.order_number == +activatedTab
                 );
-
                 dispatch(
                   BookmarkSlide({
                     file_uid: file_uid,
                     slide_id: slideID?.ID,
                     update: true,
-                    order: SlideOrderID?.activeSlide,
                   })
                 );
-
-                const newData = activeSlide.map((key) =>
+                /*const newData = activeSlide.map((key) =>
                   key.fileUid === file_uid
                     ? {
                       fileUid: file_uid,
@@ -270,7 +218,7 @@ const Subtitles = () => {
                 localStorage.setItem(
                   "activeSlideFileUid",
                   JSON.stringify(newData)
-                );
+                );*/
                 setActivatedTab(+activatedTab - 1);
               }}
             >
@@ -303,26 +251,18 @@ const Subtitles = () => {
             <span
               onClick={() => {
                 const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-                const activeSlide = JSON.parse(
-                  localStorage.getItem("activeSlideFileUid")
-                );
-                const SlideOrderID = activeSlide?.find(
-                  (key) => key?.fileUid == file_uid
-                );
-
+                setActivatedTab(+activatedTab + 1);
                 const slideID = UserAddedList?.slides?.find(
-                  (key) => key?.order_number == +SlideOrderID?.activeSlide
+                  (key) => key?.order_number == +activatedTab
                 );
-
                 dispatch(
                   BookmarkSlide({
                     file_uid: file_uid,
                     slide_id: slideID?.ID,
                     update: true,
-                    order: SlideOrderID?.activeSlide,
                   })
                 );
-                const newData = activeSlide.map((key) =>
+                /*const newData = activeSlide.map((key) =>
                   key.fileUid === file_uid
                     ? {
                       fileUid: file_uid,
@@ -333,7 +273,7 @@ const Subtitles = () => {
                 localStorage.setItem(
                   "activeSlideFileUid",
                   JSON.stringify(newData)
-                );
+                );*/
                 setActivatedTab(+activatedTab + 1);
               }}
               className={` cursor-pointer ${false ? "disablecolor" : "custom-pagination"
@@ -380,7 +320,6 @@ const Subtitles = () => {
                       setActivatedTab={setActivatedTab}
                       bookmarkDelete={item.bookmark_id}
                       text={item?.bookmark_path}
-                      slideID={item?.slide_id}
                       fileUid={item?.file_uid}
                       index={index}
                       moveCard={moveCard}

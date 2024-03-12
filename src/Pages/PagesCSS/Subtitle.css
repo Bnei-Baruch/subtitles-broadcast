@@ -191,6 +191,7 @@ main {
 .slide-container {
   width: 100%;
 }
+
 .slide-content {
   position: absolute;
 
@@ -209,6 +210,9 @@ main {
 
   ol {
     padding-left: 4rem;
+  }
+
+  p {
   }
 }
 
