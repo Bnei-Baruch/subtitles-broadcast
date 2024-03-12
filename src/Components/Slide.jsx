@@ -1,13 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import markdownit from 'markdown-it'
 
-export const Slide = ({content, isLtr}) => {
+export const Slide = ({content, isLtr, parentElement}) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const md = markdownit();
 
   const handleResize = () => {
-    const scale = outerRef.current.clientWidth / 1920;
+    const width = parentElement
+      ? parentElement.clientWidth
+      : outerRef.current.clientWidth;
+    const scale = width / 1920;
     slideRef.current.style.transform = `scale(${scale})`;
     slideRef.current.style.transformOrigin = 'top left';
 		outerRef.current.style.height = `${scale * 310}px`;
