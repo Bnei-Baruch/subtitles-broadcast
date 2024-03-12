@@ -14,8 +14,9 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
 import GreenWindowButton from "../Components/GreenWindowButton";
-import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
-import BroadcastSettings from "../Components/BroadcastSettings"
+import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
+import BroadcastSettings from "../Components/BroadcastSettings";
+import GreenSlide from "../Components/GreenSlide";
 
 const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
 { value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
@@ -290,21 +291,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <div className="video">
-              <div className="ratio ratio-16x9">
-                <iframe
-                  src="https://www.youtube.com/embed/zpOULjyy-n8?rel=0"
-                  title="YouTube video"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </div>
-            <div className="box">
-              זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
-              ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
-              היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
-              שהקב"ה יעזור לו.
-            </div>
+          <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
