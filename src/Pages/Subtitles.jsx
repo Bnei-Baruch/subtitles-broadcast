@@ -316,19 +316,10 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s">
+          {/* <div className="Questions whit-s">
             <div className="top-head d-flex justify-content-between">
-              <h3>Questions</h3>
-              <div className="input-box">
-                <input
-                  className=""
-                  type="text"
-                  placeholder="Search"
-                  aria-label="Search"
-                />
-              </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </>
