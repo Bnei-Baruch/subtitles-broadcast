@@ -96,6 +96,7 @@ export function BroadcastSettings({ props }) {
   const handleClose = () => {
     sessionStorage.setItem("isBroadcastSettingsShown", true);
     setShowBroadcastSettings(false);
+    localStorage.setItem("subtitleLanguage", broadcastLang.label);
   };
   const handleShow = () => setShowBroadcastSettings(true);
 
