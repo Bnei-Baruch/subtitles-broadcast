@@ -18,29 +18,42 @@ import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import BroadcastSettings from "../Components/BroadcastSettings";
 import GreenSlide from "../Components/GreenSlide";
 
-const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
-{ value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
-{ value: "brodcast_3", label: "Brodcast 3" }];
-const broadcastLangArr = [{ value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
-{ value: "en", label: "English" }, { value: "es", label: "Spanish" }];
-const broadcastLangMapObj = {
-  he: broadcastLangArr[0], ru: broadcastLangArr[1],
-  en: broadcastLangArr[2], es: broadcastLangArr[3]
-};
+const brodcastProgrammArr = [
+  { value: "morning_lesson", label: "Morning lesson" },
+  { value: "brodcast_1", label: "Brodcast 1" },
+  { value: "brodcast_2", label: "Brodcast 2" },
+  { value: "brodcast_3", label: "Brodcast 3" },
+];
+const broadcastLangArr = [
+  { value: "he", label: "Hebrew" },
+  { value: "ru", label: "Russian" },
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+];
+const broadcastLangMapObj = {};
+
+broadcastLangArr.forEach((broadcastLangObj) => {
+  broadcastLangMapObj[broadcastLangObj.value] = broadcastLangObj;
+});
 
 const Subtitles = () => {
   const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
-  const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
+  const [broadcastProgramm, setBroadcastProgramm] = useState(
+    brodcastProgrammArr[0]
+  );
   const [broadcastLang, setBroadcastLang] = useState(() => {
-    const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal] ?
-      broadcastLangMapObj[bcLanglocalStorageVal] : broadcastLangArr[0];
+    const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
+      ? broadcastLangMapObj[bcLanglocalStorageVal]
+      : broadcastLangArr[0];
     return bcLangObj;
   });
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
-    return sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
+    return sessionStorage.getItem("isBroadcastSettingsShown") === "true"
+      ? false
+      : true;
   });
 
   const dispatch = useDispatch();
@@ -109,8 +122,7 @@ const Subtitles = () => {
                 className="btn-group"
                 role="group"
                 aria-label="Basic mixed styles example"
-              >
-              </div>
+              ></div>
               <BroadcastSettings
                 showBroadcastSettings={showBroadcastSettings}
                 setShowBroadcastSettings={setShowBroadcastSettings}
@@ -120,8 +132,7 @@ const Subtitles = () => {
                 setBroadcastLang={setBroadcastLang}
                 brodcastProgrammArr={brodcastProgrammArr}
                 broadcastLangArr={broadcastLangArr}
-              >
-              </BroadcastSettings>
+              ></BroadcastSettings>
               <ActiveSlideMessaging
                 broadcastProgrammCode={broadcastProgramm.value}
                 broadcastLangCode={broadcastLang.value}
@@ -163,7 +174,6 @@ const Subtitles = () => {
                     <Dropdown.Item value='brodcast_3'>Brodcast 3</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown> */}
-
             </div>
           </div>
 
@@ -194,8 +204,9 @@ const Subtitles = () => {
           </div>
           <div className="d-flex justify-content-center">
             <i
-              className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
-                }`}
+              className={`bi bi-chevron-left me-1 cursor-pointer ${
+                activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+              }`}
               onClick={() => {
                 const file_uid = UserAddedList?.slides?.[0]?.file_uid;
                 const slideID = UserAddedList?.slides?.find(
@@ -277,13 +288,15 @@ const Subtitles = () => {
                 );*/
                 setActivatedTab(+activatedTab + 1);
               }}
-              className={` cursor-pointer ${false ? "disablecolor" : "custom-pagination"
-                }`}
+              className={` cursor-pointer ${
+                false ? "disablecolor" : "custom-pagination"
+              }`}
             >
               Next{" "}
               <i
-                className={`bi bi-chevron-right  cursor-pointer  ${false ? "disablecolor" : "custom-pagination"
-                  }`}
+                className={`bi bi-chevron-right  cursor-pointer  ${
+                  false ? "disablecolor" : "custom-pagination"
+                }`}
               />
             </span>
           </div>
@@ -291,7 +304,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-          <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
+            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
