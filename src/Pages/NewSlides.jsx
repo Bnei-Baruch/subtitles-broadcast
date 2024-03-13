@@ -4,9 +4,17 @@ import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
 
 const NewSlides = () => {
+  const languages = {
+    'English': 'en',
+    'Spanish': 'es',
+    'Hebrew': 'he',
+    'Russian': 'ru'
+  };
+  const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+
   const [tagList, setTagList] = useState([]);
-  //const [updateTagList, setUpdateTagList] = useState([]);
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [updateTagList, setUpdateTagList] = useState([]);
+  const [contentSource, setContentSource] = useState('');
 
   const [activeButton, setActiveButton] = useState("button1");
 
@@ -16,15 +24,49 @@ const NewSlides = () => {
   };
 
   const handleInputChange = (e) => {
-    setSourceUrl(e.target.value);
+    setContentSource(e.target.value);
   };
 
+  const AddSlides = (slideList) => {
+    //console.log(slideList);
+  }
+
   const loadSlides = () => {
-    const docUrl = `${sourceUrl}`;
+    let sourceUrl = `${contentSource}`;
     const parser = new DOMParser();
     const fetchData = async () => {
       try {
-        const response = await fetch(docUrl);
+        // get fileuid from source
+        if (urlRegex.test(sourceUrl) && sourceUrl.includes("kabbalahmedia.info/backend/content_units")) {
+          const url = new URL(sourceUrl);
+          const params = new URLSearchParams(url.search);
+          if (!params.has("id")) {
+            throw new Error(`Fetch failed from source url misses id query`);
+          }
+        } else {
+          sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${contentSource}&with_files=true`;
+        }
+        const sourceResponse = await fetch(sourceUrl);
+        if (sourceResponse.status !== 200) {
+          throw new Error(`Fetch failed with status ${sourceResponse.status}`);
+        }
+        const sourceData = await sourceResponse.json();
+        let fileUid;
+        if (sourceData.hasOwnProperty('content_units')) {
+          const contentUnits = sourceData['content_units'];
+          contentUnits.forEach(contentUnit => {
+            if (contentUnit.hasOwnProperty('files')) {
+              const files = contentUnit['files'];
+              files.forEach(file => {
+                if (languages[localStorage.getItem("subtitleLanguage")] == file['language']) {
+                  fileUid = file['id']
+                }
+              });
+            }
+          });
+        }
+        // get contents from fileuid
+        const response = await fetch(`https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`);
         if (response.status !== 200) {
           throw new Error(`Fetch failed with status ${response.status}`);
         }
@@ -142,16 +184,17 @@ const NewSlides = () => {
         <>
           <div className="row m-4">
             <label>Language</label>
-            <p>English</p>
+            <p>{localStorage.getItem("subtitleLanguage")}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
 
-              <input className="form-control" type="type" value={sourceUrl} onChange={handleInputChange} />
+              <input className="form-control" type="type" value={contentSource} onChange={handleInputChange} />
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Add</button>
+            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Source Load</button>
             <div>
-              <SlideSplit tags={tagList} visible={true} />
+              <SlideSplit tags={tagList} visible={true} updateSplitTags={setUpdateTagList} />
             </div>
+            <button className="btn btn-primary btn-sm col-3 m-4" onClick={AddSlides(updateTagList)}>Source Add</button>
           </div>
         </>
       )}

@@ -6,10 +6,10 @@ import markdownit from 'markdown-it';
 const SlideSplit = ({
   tags,
   visible,
-//  updateSplitTags
+  updateSplitTags
 }) => {
   const index = useRef(0);
-  //const slideTags = useRef([]);
+  const slideTags = useRef([]);
   const desiredContainerHeight = 310;
   const divIdPrefix = "slide";
   const divRefs = useRef([]);
@@ -93,18 +93,16 @@ const SlideSplit = ({
 
     // Initial creation of divs
     if (tags && tags.length > 0) {
-      console.log(tags.length);
-      console.log(tags);
       createNewDiv(tags);
     }
     // set splited slide tags
-    // divRefs.current.forEach((div, idx) => {
-    //     if (!Array.isArray(slideTags.current[idx])) {
-    //       slideTags.current[idx] = [];
-    //     }
-    //     slideTags.current[idx].push(div.innerHTML);
-    // });
-    // updateSplitTags(slideTags.current);
+    divRefs.current.forEach((div, idx) => {
+        if (!Array.isArray(slideTags.current[idx])) {
+          slideTags.current[idx] = [];
+        }
+        slideTags.current[idx].push(div.innerHTML);
+    });
+    updateSplitTags(slideTags.current);
     // remove rendered divs
     // if (divRefs.current.length > 1) {
     //   divRefs.current.forEach(div => {
