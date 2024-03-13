@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -163,6 +164,75 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded"))
+}
+
+func (h *Handler) AddCustomSlides(ctx *gin.Context) {
+	req := struct {
+		FileName  string   `json:"file_name,omitempty"`
+		Languages []string `json:"languages"`
+		SourceUid string   `json:"source_uid,omitempty"`
+		FileUid   string   `json:"file_uid,omitempty"`
+		Slides    []string `json:"slides"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	fileData := &File{
+		Type:      UploadFileSourceType,
+		Languages: pq.StringArray(req.Languages),
+	}
+	if len(req.FileName) > 0 {
+		fileData.Filename = req.FileName
+	}
+	if len(req.SourceUid) > 0 {
+		fileData.SourceUid = req.SourceUid
+	}
+	if len(req.FileUid) > 0 {
+		fileData.FileUid = req.FileUid
+	}
+	if err = tx.Table(DBTableFiles).Create(fileData).Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Creating file data has failed"))
+		return
+	}
+
+	for _, slide := range req.Slides {
+		slideData := Slide{
+			Slide:     slide,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if len(req.FileUid) > 0 {
+			slideData.FileUid = req.FileUid
+		}
+		if err = tx.Create(&slideData).Error; err != nil {
+			tx.Rollback()
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Creating slide data has failed"))
+			return
+		}
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding custom slide data has succeeded"))
 }
 
 // Get all slides with bookmarked info by user
@@ -600,6 +670,19 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	}
 	sort.Strings(languageList)
 	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
+}
+
+func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
+	var result []string
+	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
+		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
+	if query.Error != nil {
+		log.Error(query.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
 }
 
 // Unnecessary handler at this moment. If need, will be used
