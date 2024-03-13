@@ -372,9 +372,9 @@ dropdown-toggle {
   margin-top: 10px;
 }
 
-.broadcast-settings-dialog {
+.modal-dialog.broadcast-settings-dialog {
   width: 400px;
-  max-width: none;
+  max-width: 400px;
   top: 20%;
   left: -1%;
 }
