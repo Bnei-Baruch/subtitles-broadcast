@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { GreenWindow } from "../Components/GreenWindow";
 import { Slide } from "./Slide";
 
@@ -61,12 +61,8 @@ function parseMqttMessage(mqttMessage) {
   return mqttMessage;
 }
 
-export const GreenWindowButton = ({
-  showGreenWindow,
-  setShowGreenWindow,
-  isLtr,
-  mqttMessage,
-}) => {
+export const GreenWindowButton = ({ isLtr, mqttMessage }) => {
+  const [showGreenWindow, setShowGreenWindow] = useState(false);
   const elementRef = useRef(null);
   const publishedSlide = parseMqttMessage(mqttMessage);
 

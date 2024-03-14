@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import AppContext from "../AppContext";
 import mqtt from "mqtt";
 
 let mqttClientId;
@@ -74,12 +75,12 @@ function initMqttClient(
 
     mqttClient = mqtt.connect(mqttBrokerUrl, mqttOptions);
 
-    mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
-    mqttClient.subscribe(mqttTopic);
-
     setMqttClient(mqttClient);
     subscribeMqttMessage(mqttClient, setJobMqttMessage);
   }
+
+  mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
+  mqttClient.subscribe(mqttTopic);
 
   return mqttClient;
 }
@@ -226,8 +227,6 @@ const determinePublish = (
 };
 
 export function ActiveSlideMessaging({
-  broadcastProgrammCode,
-  broadcastLangCode,
   userAddedList,
   activatedTab,
   setActivatedTab,
@@ -237,6 +236,9 @@ export function ActiveSlideMessaging({
   setJobMqttMessage,
 }) {
   const [mqttClient, setMqttClient] = useState(null);
+  const appContextlData = useContext(AppContext);
+  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
+  const broadcastLangCode = appContextlData.broadcastLang.value;
 
   initMqttClient(
     broadcastProgrammCode,

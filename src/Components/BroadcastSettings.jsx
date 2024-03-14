@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
@@ -12,14 +12,12 @@ const rightColSize = 8;
 
 const styles = {
   buttonPrimary: {
-    position: "fixed",
-    top: "18px",
-    right: "160px",
     width: "370px",
     textAlign: "left",
     backgroundColor: "transparent",
     transition: "none",
     border: "none",
+    paddingTop: "3px",
   },
   row: {
     height: "50px",
@@ -66,37 +64,34 @@ const broadcastLangArr = [
   { value: "en", label: "English" },
   { value: "es", label: "Spanish" },
 ];
-const broadcastLangMapObj = {
-  he: broadcastLangArr[0],
-  ru: broadcastLangArr[1],
-  en: broadcastLangArr[2],
-  es: broadcastLangArr[3],
-};
 
+const broadcastLangMapObj = {};
 broadcastLangArr.forEach((broadcastLangObj) => {
   broadcastLangMapObj[broadcastLangObj.value] = broadcastLangObj;
 });
 
-export function BroadcastSettings({
-  showBroadcastSettings,
-  setShowBroadcastSettings,
-}) {
+export function BroadcastSettings({ props }) {
   const appContextlData = useContext(AppContext);
+  const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
+    return sessionStorage.getItem("isBroadcastSettingsShown") === "true"
+      ? false
+      : true;
+  });
 
-  const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
+  if (!appContextlData.broadcastProgramm) {
+    appContextlData.setBroadcastProgramm(brodcastProgrammArr[0]);
+    appContextlData.broadcastProgramm = brodcastProgrammArr[0];
+  }
 
-  const [broadcastProgramm, setBroadcastProgramm] = useState(
-    brodcastProgrammArr[0]
-  );
-  appContextlData.setBroadcastProgramm(brodcastProgrammArr[0]);
-
-  const [broadcastLang, setBroadcastLang] = useState(() => {
+  if (!appContextlData.broadcastLang) {
+    const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
     const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
       ? broadcastLangMapObj[bcLanglocalStorageVal]
       : broadcastLangArr[0];
-    return bcLangObj;
-  });
-  appContextlData.setBroadcastLang(broadcastLang);
+
+    appContextlData.broadcastLang = bcLangObj.value;
+    appContextlData.setBroadcastLang(bcLangObj);
+  }
 
   const handleClose = () => {
     sessionStorage.setItem("isBroadcastSettingsShown", true);
@@ -104,24 +99,18 @@ export function BroadcastSettings({
   };
   const handleShow = () => setShowBroadcastSettings(true);
 
-  function setProgram(itemObj) {
-    setBroadcastProgramm(itemObj);
-    appContextlData.setBroadcastProgramm(itemObj);
-  }
-
-  function setLang(itemObj) {
-    setBroadcastLang(itemObj);
-    appContextlData.setBroadcastLang(itemObj);
-  }
-
   return (
     <>
       <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
         <label style={styles.labelMain}>Chanel: </label>
-        <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
+        <span style={styles.labelMainVal}>
+          {appContextlData.broadcastProgramm.label}
+        </span>
 
         <label style={styles.labelMain}>Language: </label>
-        <span style={styles.labelMainLast}>{broadcastLang.label}</span>
+        <span style={styles.labelMainLast}>
+          {appContextlData.broadcastLang.label}
+        </span>
       </Button>
 
       <Modal
@@ -142,8 +131,8 @@ export function BroadcastSettings({
                 <DropdownButtonDef
                   id="brodcast_programm"
                   data={brodcastProgrammArr}
-                  currentValue={broadcastProgramm}
-                  setDataRef={setProgram}
+                  currentValue={appContextlData.broadcastProgramm}
+                  setDataRef={appContextlData.setBroadcastProgramm}
                   style={styles.dropDown}
                   variant="light"
                 ></DropdownButtonDef>
@@ -162,11 +151,11 @@ export function BroadcastSettings({
                 <DropdownButtonDef
                   id="brodcast_lang"
                   data={broadcastLangArr}
-                  currentValue={broadcastLang}
-                  setDataRef={setLang}
+                  currentValue={appContextlData.broadcastLang}
+                  setDataRef={appContextlData.setBroadcastLang}
                   style={styles.dropDown}
                   variant="light"
-                  disabled={true}
+                  disabled={false}
                 ></DropdownButtonDef>
               </Col>
             </Row>

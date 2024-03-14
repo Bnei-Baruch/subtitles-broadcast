@@ -15,46 +15,11 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-import BroadcastSettings from "../Components/BroadcastSettings";
 import GreenSlide from "../Components/GreenSlide";
 
-const brodcastProgrammArr = [
-  { value: "morning_lesson", label: "Morning lesson" },
-  { value: "brodcast_1", label: "Brodcast 1" },
-  { value: "brodcast_2", label: "Brodcast 2" },
-  { value: "brodcast_3", label: "Brodcast 3" },
-];
-const broadcastLangArr = [
-  { value: "he", label: "Hebrew" },
-  { value: "ru", label: "Russian" },
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-];
-const broadcastLangMapObj = {};
-
-broadcastLangArr.forEach((broadcastLangObj) => {
-  broadcastLangMapObj[broadcastLangObj.value] = broadcastLangObj;
-});
-
 const Subtitles = () => {
-  const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
-  const [broadcastProgramm, setBroadcastProgramm] = useState(
-    brodcastProgrammArr[0]
-  );
-  const [broadcastLang, setBroadcastLang] = useState(() => {
-    const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
-      ? broadcastLangMapObj[bcLanglocalStorageVal]
-      : broadcastLangArr[0];
-    return bcLangObj;
-  });
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
-  const [showGreenWindow, setShowGreenWindow] = useState(false);
-  const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
-    return sessionStorage.getItem("isBroadcastSettingsShown") === "true"
-      ? false
-      : true;
-  });
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -123,19 +88,7 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              <BroadcastSettings
-                showBroadcastSettings={showBroadcastSettings}
-                setShowBroadcastSettings={setShowBroadcastSettings}
-                broadcastProgramm={broadcastProgramm}
-                setBroadcastProgramm={setBroadcastProgramm}
-                broadcastLang={broadcastLang}
-                setBroadcastLang={setBroadcastLang}
-                brodcastProgrammArr={brodcastProgrammArr}
-                broadcastLangArr={broadcastLangArr}
-              ></BroadcastSettings>
               <ActiveSlideMessaging
-                broadcastProgrammCode={broadcastProgramm.value}
-                broadcastLangCode={broadcastLang.value}
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
                 setActivatedTab={setActivatedTab}
@@ -144,12 +97,7 @@ const Subtitles = () => {
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
-              <GreenWindowButton
-                showGreenWindow={showGreenWindow}
-                setShowGreenWindow={setShowGreenWindow}
-                isLtr={isLtr}
-                mqttMessage={mqttMessage}
-              />
+              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
               <button
                 type="button"
                 onClick={() => setIsLtr(!isLtr)}
