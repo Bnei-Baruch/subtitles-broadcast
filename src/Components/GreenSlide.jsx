@@ -18,7 +18,7 @@ export const GreenSlide = ({ isLtr, mqttMessage }) => {
   const publishedSlide = parseMqttMessage(mqttMessage);
 
   return (
-    <div>
+    <div style={{ outline: "1px solid rgb(204, 204, 204)" }}>
       <div className="green-part-cont" style={styles.greenPartContainer}></div>
       <div className="slide-part-cont" style={styles.slidePartContainer}>
         {publishedSlide && (
