@@ -155,7 +155,7 @@ export function BroadcastSettings({ props }) {
                   setDataRef={appContextlData.setBroadcastLang}
                   style={styles.dropDown}
                   variant="light"
-                  disabled={false}
+                  disabled={true}
                 ></DropdownButtonDef>
               </Col>
             </Row>
