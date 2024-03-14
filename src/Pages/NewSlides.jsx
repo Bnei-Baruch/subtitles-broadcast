@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
-import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
+import { GetSlideLanguages, SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import { useDispatch } from "react-redux";
 
 const NewSlides = () => {
@@ -18,10 +18,37 @@ const NewSlides = () => {
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState('');
+  const [slideLanguageOptions, setSlideLanguageOptions] = useState([]);
   //const [fileUid, setFileUid] = useState('');
   //const [sourceUid, setSourceUid] = useState('');
-
   const [activeButton, setActiveButton] = useState("button1");
+  const [isChecked, setIsChecked] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await dispatch(GetSlideLanguages());
+        setSlideLanguageOptions(response.payload.data);
+      } catch (error) {
+        throw new Error(`Error fetching slide languages`, error);
+      }
+    };
+
+    fetchData();
+  }, [dispatch]);
+
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleCheckboxChange = (e) => {
+    setIsChecked(e.target.checked);
+  };
+
+  const getKeyByValue = (object, value) => {
+    return Object.keys(object).find(key => object[key] === value);
+  };
 
   const handleClick = (button) => {
     setActiveButton(button);
@@ -32,15 +59,39 @@ const NewSlides = () => {
     setContentSource(e.target.value);
   };
 
-  const AddSlides = (slideList) => {
-    dispatch(
-      SetCustomSlideBySource({
-        languages: languages[[localStorage.getItem("subtitleLanguage")]],
+  const handleUpload = () => {
+    // Perform upload logic with selectedFile
+    if (selectedFile) {
+      console.log("Uploading file:", selectedFile);
+      // Example: Upload file using fetch or axios
+      // const formData = new FormData();
+      // formData.append('file', selectedFile);
+      // fetch('upload-url', {
+      //   method: 'POST',
+      //   body: formData
+      // })
+      //   .then(response => response.json())
+      //   .then(data => console.log('Upload successful:', data))
+      //   .catch(error => console.error('Error uploading file:', error));
+    } else {
+      console.log("No file selected.");
+    }
+  };
+
+  const AddSlides = async (slideList) => {
+    try {
+      const response = await dispatch(SetCustomSlideBySource({
         // source_uid: sourceUid,
         // file_uid: fileUid,
+        languages: languages[localStorage.getItem("subtitleLanguage")],
         slides: slideList,
-      })
-    );
+      }));
+      if (response.payload.success) {
+        alert(response.payload.description);
+      }
+    } catch (error) {
+      throw new Error(`Error adding custom slides`, error);
+    }
   }
 
   const loadSlides = () => {
@@ -148,20 +199,24 @@ const NewSlides = () => {
             <div className="input-box col-3 ">
               <label className="w-100">Multilingual</label>
               <label class="custom-checkbox">
-                <input type="checkbox" />
+                <input type="checkbox"
+                  checked={isChecked}
+                  onChange={handleCheckboxChange} />
                 <span class="checkmark"></span>
               </label>
             </div>
             <div className="input-box col-7">
               <label>Languages</label>
-
               <Select
                 isMulti
-                options={[
-                  { label: "dfgdf1", value: "shbsdchh1" },
-                  { label: "dfgdf2", value: "shbsdchh2" },
-                  { label: "dfgdf3", value: "shbsdchh3" },
-                ]}
+                options={
+                  isChecked
+                    ? slideLanguageOptions.map(slideLanguage => ({
+                      label: getKeyByValue(languages, slideLanguage),
+                      value: slideLanguage
+                    }))
+                    : [{ label: localStorage.getItem("subtitleLanguage"), value: languages[localStorage.getItem("subtitleLanguage")] }] // Add this option when isChecked is false
+                }
               />
             </div>
           </div>
@@ -172,8 +227,9 @@ const NewSlides = () => {
           </div>
 
           <div className="row m-4">
-            <button type="button" class="btn btn-light rounded-pill col-4">
-              <i class="bi bi-plus-lg mr-2"></i> Upload File
+            <input type="file" onChange={handleFileChange} />
+            <button class="btn btn-light rounded-pill col-4"
+              onClick={handleUpload}>Upload File
             </button>
             <div className="file-upload-preview col-7">
               <div className="d-flex justify-content-between">
@@ -193,7 +249,6 @@ const NewSlides = () => {
               </div>
             </div>
           </div>
-          <button className="btn btn-primary btn-sm col-3 m-4">Add</button>
         </>
       ) : (
         <>
