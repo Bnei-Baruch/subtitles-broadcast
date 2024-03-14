@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
-import { SetSlideLanguages } from "../Redux/NewSlide/NewSlide";
+import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import { useDispatch } from "react-redux";
 
 const NewSlides = () => {
