@@ -116,14 +116,18 @@ const determinePublicJobMsg = (
 
     if (userAddedList) {
       if (
-        mqttMessageJson.order_number !== jobMessageJson.order_number &&
-        (!jobMqttMessage ||
-          jobMqttMessage.order_number !== mqttMessageJson.order_number)
+        !mqttMessageJson ||
+        (mqttMessageJson.order_number !== jobMessageJson.order_number &&
+          (!jobMqttMessage ||
+            jobMqttMessage.order_number !== mqttMessageJson.order_number))
       ) {
         //if (userAddedList) {
         const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
 
-        if (activeSlide.source_uid === jobMqttMessage.source_uid) {
+        if (
+          activeSlide &&
+          activeSlide.source_uid === jobMqttMessage.source_uid
+        ) {
           if (activeSlide.order_number !== jobMqttMessage.order_number) {
             setActivatedTab(jobMqttMessage.order_number + 1);
             isPublic = true;
