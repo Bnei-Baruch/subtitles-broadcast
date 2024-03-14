@@ -1,14 +1,14 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
 const API_URL = {
-  SetSlideLanguage: "slide_language",
+  SetCustomSlideBySource: "custom_slide_by_source",
 };
 
 export const SetCustomSlideBySource = createAsyncThunk(
-  `/${API_URL.SetSlideLanguage}`,
+  `/${API_URL.SetCustomSlideBySource}`,
   async (data, thunkAPI) => {
     const requestBody = {
         // Your request body data here
