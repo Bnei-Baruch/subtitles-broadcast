@@ -7,7 +7,7 @@ const API_URL = {
   SetSlideLanguage: "slide_language",
 };
 
-export const SetSlideLanguages = createAsyncThunk(
+export const SetCustomSlideBySource = createAsyncThunk(
   `/${API_URL.SetSlideLanguage}`,
   async (data, thunkAPI) => {
     const requestBody = {

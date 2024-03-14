@@ -34,7 +34,7 @@ const NewSlides = () => {
 
   const AddSlides = (slideList) => {
     dispatch(
-      SetSlideLanguages({
+      SetCustomSlideBySource({
         languages: languages[[localStorage.getItem("subtitleLanguage")]],
         // source_uid: sourceUid,
         // file_uid: fileUid,
