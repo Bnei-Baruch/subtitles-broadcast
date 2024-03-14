@@ -79,12 +79,16 @@ const SlideSplit = ({
           currentContent.current = currentTag.current.textContent;
           currentTag.current.textContent += nextTag.current.word;
           currentDiv.innerHTML = md.render(currentTag.current.textContent)
+          if (tags.length == 0 && currentTag.current.textContent.length > 0) {
+            slideTags.current = [...slideTags.current, currentTag.current.textContent];
+          }
         } else {
           // If the height limit is reached, create a new div
           currentTag.current.textContent = currentContent.current;
           let slideContentArrary = currentTag.current.textContent.split("\n\n");
           previousParagraphStartsWithIntent.current = slideContentArrary[slideContentArrary.length - 1];;
           currentDiv.innerHTML = md.render(currentTag.current.textContent)
+          slideTags.current = [...slideTags.current, currentTag.current.textContent];
           tags.unshift(nextTag.current);
           createNewDiv(tags);
         }
@@ -96,12 +100,12 @@ const SlideSplit = ({
       createNewDiv(tags);
     }
     // set splited slide tags
-    divRefs.current.forEach((div, idx) => {
-        if (!Array.isArray(slideTags.current[idx])) {
-          slideTags.current[idx] = [];
-        }
-        slideTags.current[idx].push(div.innerHTML);
-    });
+    // divRefs.current.forEach((div, idx) => {
+    //     if (!Array.isArray(slideTags.current[idx])) {
+    //       slideTags.current[idx] = [];
+    //     }
+    //     slideTags.current[idx].push(div.innerHTML);
+    // });
     updateSplitTags(slideTags.current);
     // remove rendered divs
     // if (divRefs.current.length > 1) {

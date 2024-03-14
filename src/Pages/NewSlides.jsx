@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
+import { SetSlideLanguages } from "../Redux/NewSlide/NewSlide";
+import { useDispatch } from "react-redux";
 
 const NewSlides = () => {
+  const dispatch = useDispatch();
   const languages = {
     'English': 'en',
     'Spanish': 'es',
@@ -15,6 +18,8 @@ const NewSlides = () => {
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState('');
+  //const [fileUid, setFileUid] = useState('');
+  //const [sourceUid, setSourceUid] = useState('');
 
   const [activeButton, setActiveButton] = useState("button1");
 
@@ -28,7 +33,14 @@ const NewSlides = () => {
   };
 
   const AddSlides = (slideList) => {
-    //console.log(slideList);
+    dispatch(
+      SetSlideLanguages({
+        languages: languages[[localStorage.getItem("subtitleLanguage")]],
+        // source_uid: sourceUid,
+        // file_uid: fileUid,
+        slides: slideList,
+      })
+    );
   }
 
   const loadSlides = () => {
@@ -43,8 +55,10 @@ const NewSlides = () => {
           if (!params.has("id")) {
             throw new Error(`Fetch failed from source url misses id query`);
           }
+          //setSourceUid(params.get("id"));
         } else {
           sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${contentSource}&with_files=true`;
+          //setSourceUid(contentSource);
         }
         const sourceResponse = await fetch(sourceUrl);
         if (sourceResponse.status !== 200) {
@@ -58,13 +72,14 @@ const NewSlides = () => {
             if (contentUnit.hasOwnProperty('files')) {
               const files = contentUnit['files'];
               files.forEach(file => {
-                if (languages[localStorage.getItem("subtitleLanguage")] == file['language']) {
+                if (languages[localStorage.getItem("subtitleLanguage")] === file['language']) {
                   fileUid = file['id']
                 }
               });
             }
           });
         }
+        //setFileUid(fileUid);
         // get contents from fileuid
         const response = await fetch(`https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`);
         if (response.status !== 200) {
@@ -190,11 +205,11 @@ const NewSlides = () => {
 
               <input className="form-control" type="type" value={contentSource} onChange={handleInputChange} />
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Source Load</button>
+            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Load Source</button>
             <div>
               <SlideSplit tags={tagList} visible={true} updateSplitTags={setUpdateTagList} />
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={AddSlides(updateTagList)}>Source Add</button>
+            <button className="btn btn-primary btn-sm col-3 m-4" onClick={() => AddSlides(updateTagList)}>Add Source</button>
           </div>
         </>
       )}
