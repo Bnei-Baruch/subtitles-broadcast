@@ -210,7 +210,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 
 	for _, slide := range req.Slides {
 		slideData := Slide{
-			Slide:     slide,
+			Slide:     strings.ReplaceAll(slide, "\n", "\\n"),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
