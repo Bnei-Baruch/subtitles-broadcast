@@ -170,8 +170,8 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	req := struct {
 		FileName  string   `json:"file_name,omitempty"`
 		Languages []string `json:"languages"`
-		SourceUid string   `json:"source_uid,omitempty"`
-		FileUid   string   `json:"file_uid,omitempty"`
+		SourceUid string   `json:"source_uid"`
+		FileUid   string   `json:"file_uid"`
 		Slides    []string `json:"slides"`
 	}{}
 	err := ctx.BindJSON(&req)
@@ -191,15 +191,11 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	fileData := &File{
 		Type:      UploadFileSourceType,
 		Languages: pq.StringArray(req.Languages),
+		SourceUid: req.SourceUid,
+		FileUid:   req.FileUid,
 	}
 	if len(req.FileName) > 0 {
 		fileData.Filename = req.FileName
-	}
-	if len(req.SourceUid) > 0 {
-		fileData.SourceUid = req.SourceUid
-	}
-	if len(req.FileUid) > 0 {
-		fileData.FileUid = req.FileUid
 	}
 	if err = tx.Table(DBTableFiles).Create(fileData).Error; err != nil {
 		log.Error(err)
