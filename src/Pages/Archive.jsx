@@ -132,9 +132,8 @@ const Archive = () => {
                   {ArchiveList?.slides?.map((key) => (
                     <tr
                       key={key.ID}
-                      className={`${
-                        key.bookmark_id !== null && "bookmarkedrow"
-                      }`}
+                      className={`${key.bookmark_id !== null && "bookmarkedrow"
+                        }`}
                     >
                       <th scope="row" className="textwidth">
                         <span className="truncate">{key.slide}</span>
