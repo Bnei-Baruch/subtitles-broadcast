@@ -4,23 +4,25 @@ import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
 import { GetSlideLanguages, SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import { useDispatch } from "react-redux";
+import { useNavigate } from 'react-router-dom';
 
 const NewSlides = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
   const languages = {
     'English': 'en',
     'Spanish': 'es',
     'Hebrew': 'he',
     'Russian': 'ru'
   };
-  const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
 
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState('');
   const [slideLanguageOptions, setSlideLanguageOptions] = useState([]);
-  //const [fileUid, setFileUid] = useState('');
-  //const [sourceUid, setSourceUid] = useState('');
+  const [fileUid, setFileUid] = useState('');
+  const [sourceUid, setSourceUid] = useState('');
   const [activeButton, setActiveButton] = useState("button1");
   const [isChecked, setIsChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -37,6 +39,30 @@ const NewSlides = () => {
 
     fetchData();
   }, [dispatch]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await dispatch(SetCustomSlideBySource({
+          source_uid: sourceUid,
+          file_uid: fileUid,
+          languages: languages[localStorage.getItem("subtitleLanguage")],
+          slides: updateTagList
+        }));
+        if (response.payload.success) {
+          setUpdateTagList([]);
+          alert(response.payload.description);
+          navigate('/archive');
+        }
+      } catch (error) {
+        throw new Error(`Error adding custom slide languages`, error);
+      }
+    };
+
+    if (updateTagList.length > 0) {
+      fetchData();
+    }
+  }, [updateTagList]);
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -78,22 +104,6 @@ const NewSlides = () => {
     }
   };
 
-  const AddSlides = async (slideList) => {
-    try {
-      const response = await dispatch(SetCustomSlideBySource({
-        // source_uid: sourceUid,
-        // file_uid: fileUid,
-        languages: languages[localStorage.getItem("subtitleLanguage")],
-        slides: slideList,
-      }));
-      if (response.payload.success) {
-        alert(response.payload.description);
-      }
-    } catch (error) {
-      throw new Error(`Error adding custom slides`, error);
-    }
-  }
-
   const loadSlides = () => {
     let sourceUrl = `${contentSource}`;
     const parser = new DOMParser();
@@ -106,10 +116,10 @@ const NewSlides = () => {
           if (!params.has("id")) {
             throw new Error(`Fetch failed from source url misses id query`);
           }
-          //setSourceUid(params.get("id"));
+          setSourceUid("upload_" + params.get("id"));
         } else {
           sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${contentSource}&with_files=true`;
-          //setSourceUid(contentSource);
+          setSourceUid("upload_" + contentSource);
         }
         const sourceResponse = await fetch(sourceUrl);
         if (sourceResponse.status !== 200) {
@@ -130,7 +140,7 @@ const NewSlides = () => {
             }
           });
         }
-        //setFileUid(fileUid);
+        setFileUid("upload_" + fileUid);
         // get contents from fileuid
         const response = await fetch(`https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`);
         if (response.status !== 200) {
@@ -260,11 +270,10 @@ const NewSlides = () => {
 
               <input className="form-control" type="type" value={contentSource} onChange={handleInputChange} />
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Load Source</button>
+            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Add Source</button>
             <div>
-              <SlideSplit tags={tagList} visible={true} updateSplitTags={setUpdateTagList} />
+              <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} />
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={() => AddSlides(updateTagList)}>Add Source</button>
           </div>
         </>
       )}

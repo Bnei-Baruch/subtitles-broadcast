@@ -17,10 +17,10 @@ const SlideSplit = ({
   const nextTag = useRef(null);
   const currentContent = useRef('');
   const previousParagraphStartsWithIntent = useRef('');
-  const md = markdownit({html:true});
-  const regex = /^[\d+)|\d+.|*]/;
-
+  
   useEffect(() => {
+    const md = markdownit({html:true});
+    const regex = /^[\d+)|\d+.|*]/;
     const createNewDiv = tagList => {
       const newDiv = document.createElement('div');
       newDiv.className = divIdPrefix + ' slide-content';
@@ -38,13 +38,13 @@ const SlideSplit = ({
       nextTag.current = tagList.shift();
       currentTag.current = document.createElement(nextTag.current.tagName);
       currentContent.current = currentTag.current.textContent;
-      if (nextTag.current.tagName == "H1") {
+      if (nextTag.current.tagName === "H1") {
         nextTag.current.word = "# " + nextTag.current.word
       } else {
         // If the starting word continues the previous indented content then put indent
         var first = nextTag.current.word.charAt(0);
         if (regex.test(previousParagraphStartsWithIntent.current)) {
-            if (first === first.toLowerCase() && first !== first.toUpperCase() || previousParagraphStartsWithIntent.current.slice(-1) != "."){
+            if ((first === first.toLowerCase() && first !== first.toUpperCase()) || previousParagraphStartsWithIntent.current.slice(-1) !== "."){
                 nextTag.current.word = "<ul>" + nextTag.current.word;
             }
         }
@@ -72,14 +72,14 @@ const SlideSplit = ({
               currentTag.current.textContent += "</ul>";
             }
             currentTag.current.textContent += "\n\n";
-            if (nextTag.current.tagName == "H1") {
+            if (nextTag.current.tagName === "H1") {
               nextTag.current.word = "# " + nextTag.current.word
             }   
           }
           currentContent.current = currentTag.current.textContent;
           currentTag.current.textContent += nextTag.current.word;
           currentDiv.innerHTML = md.render(currentTag.current.textContent)
-          if (tags.length == 0 && currentTag.current.textContent.length > 0) {
+          if (tags.length === 0 && currentTag.current.textContent.length > 0) {
             slideTags.current = [...slideTags.current, currentTag.current.textContent];
           }
         } else {
@@ -108,12 +108,12 @@ const SlideSplit = ({
     // });
     updateSplitTags(slideTags.current);
     // remove rendered divs
-    // if (divRefs.current.length > 1) {
-    //   divRefs.current.forEach(div => {
-    //     div.remove();
-    //   });
-    // }
-  }, [tags, visible]); //updateSplitTags]);
+    if (divRefs.current.length > 1) {
+      divRefs.current.forEach(div => {
+        div.remove();
+      });
+    }
+  }, [tags, visible, updateSplitTags]);
   return tags ? /*#__PURE__*/_jsx("div", {
     ref: el => divRefs.current[0] = el
   }) : null;
