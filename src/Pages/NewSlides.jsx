@@ -25,7 +25,12 @@ const NewSlides = () => {
   const [sourceUid, setSourceUid] = useState('');
   const [activeButton, setActiveButton] = useState("button1");
   const [isChecked, setIsChecked] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState('');
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    setProgress(0);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,14 +48,17 @@ const NewSlides = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await dispatch(SetCustomSlideBySource({
+        // add name and update langauges
+        let request = {
           source_uid: sourceUid,
           file_uid: fileUid,
           languages: languages[localStorage.getItem("subtitleLanguage")],
           slides: updateTagList
-        }));
+        }
+        const response = await dispatch(SetCustomSlideBySource(request));
         if (response.payload.success) {
           setUpdateTagList([]);
+          setProgress(100);
           alert(response.payload.description);
           navigate('/archive');
         }
@@ -65,7 +73,7 @@ const NewSlides = () => {
   }, [updateTagList]);
 
   const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+    setSelectedFile(event.target.files[0].name);
   };
 
   const handleCheckboxChange = (e) => {
@@ -86,27 +94,72 @@ const NewSlides = () => {
   };
 
   const handleUpload = () => {
+    const fetchData = async (fileUid) => {
+      try {
+        const response = await fetch(`https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`);
+        if (response.status !== 200) {
+          throw new Error(`Fetch failed with status ${response.status}`);
+        }
+        const contentData = await response.text();
+        await loadSlides(contentData);
+        setProgress(50);
+      } catch (error) {
+        console.error('Error fetching or parsing data:', error.message);
+      }
+    };
+
     // Perform upload logic with selectedFile
+    let sourceUid = "tswzgnWk";
+    let fileUid = "OzSCqHYF";
+    setSourceUid("upload_" + sourceUid);
+    setFileUid("upload_" + fileUid);
     if (selectedFile) {
-      console.log("Uploading file:", selectedFile);
-      // Example: Upload file using fetch or axios
-      // const formData = new FormData();
-      // formData.append('file', selectedFile);
-      // fetch('upload-url', {
-      //   method: 'POST',
-      //   body: formData
-      // })
-      //   .then(response => response.json())
-      //   .then(data => console.log('Upload successful:', data))
-      //   .catch(error => console.error('Error uploading file:', error));
+      // const reader = new FileReader();
+
+      // reader.onload = (event) => {
+      //   const fileContents = event.target.result;
+      //   // Do something with the file contents
+      //   console.log('File contents:', fileContents);
+      // };
+
+      // // Read the file as text
+      // reader.readAsText(selectedFile);
+      fetchData(fileUid);
     } else {
-      console.log("No file selected.");
+      console.error('No file selected');
     }
   };
 
-  const loadSlides = () => {
-    let sourceUrl = `${contentSource}`;
+  const loadSlides = async (sourceData) => {
     const parser = new DOMParser();
+    const doc = parser.parseFromString(sourceData, 'text/html');
+    // Extract text content from tags, for example, from all paragraphs
+    const contentElements = doc.querySelectorAll('h1,p');
+    const paragraphArray = Array.from(contentElements).map(element => ({
+      tag: element.tagName,
+      content: element.outerHTML,
+    }));;
+    let tags = [];
+    paragraphArray.forEach(elementInfo => {
+      const tagName = elementInfo.tag;
+      const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
+      wordArray.forEach((word, index) => {
+        const elementObject = {
+          paragraphStart: false,
+          tagName: tagName,
+          word: word,
+        };
+        if (index === 0) {
+          elementObject.paragraphStart = true;
+        }
+        tags.push(elementObject);
+      });
+    });
+    setTagList(tags);
+  };
+
+  const loadSource = () => {
+    let sourceUrl = `${contentSource}`;
     const fetchData = async () => {
       try {
         // get fileuid from source
@@ -146,31 +199,8 @@ const NewSlides = () => {
         if (response.status !== 200) {
           throw new Error(`Fetch failed with status ${response.status}`);
         }
-        const data = await response.text();
-        const doc = parser.parseFromString(data, 'text/html');
-        // Extract text content from tags, for example, from all paragraphs
-        const contentElements = doc.querySelectorAll('h1,p');
-        const paragraphArray = Array.from(contentElements).map(element => ({
-          tag: element.tagName,
-          content: element.outerHTML,
-        }));;
-        let tags = [];
-        paragraphArray.forEach(elementInfo => {
-          const tagName = elementInfo.tag;
-          const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
-          wordArray.forEach((word, index) => {
-            const elementObject = {
-              paragraphStart: false,
-              tagName: tagName,
-              word: word,
-            };
-            if (index === 0) {
-              elementObject.paragraphStart = true;
-            }
-            tags.push(elementObject);
-          });
-        });
-        setTagList(tags);
+        const contentData = await response.text();
+        await loadSlides(contentData);
       } catch (error) {
         console.error('Error fetching or parsing data:', error.message);
       }
@@ -243,7 +273,7 @@ const NewSlides = () => {
             </button>
             <div className="file-upload-preview col-7">
               <div className="d-flex justify-content-between">
-                <span className=""> File Name: XYZ</span>
+                <span className=""> File Name: {selectedFile}</span>
                 <i className="bi bi-x" />
               </div>
               <div class="progress">
@@ -251,11 +281,14 @@ const NewSlides = () => {
                   class="progress-bar"
                   role="progressbar"
                   aria-label="Basic example"
-                  style={{ width: "50%" }}
+                  style={{ width: `${progress}%` }}
                   aria-valuenow="50"
                   aria-valuemin="0"
                   aria-valuemax="100"
                 ></div>
+                <div>
+                  <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} />
+                </div>
               </div>
             </div>
           </div>
@@ -270,7 +303,7 @@ const NewSlides = () => {
 
               <input className="form-control" type="type" value={contentSource} onChange={handleInputChange} />
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Add Source</button>
+            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSource}>Add Source</button>
             <div>
               <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} />
             </div>
