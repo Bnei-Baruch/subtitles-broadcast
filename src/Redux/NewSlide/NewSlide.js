@@ -11,15 +11,34 @@ const API_URL = {
 export const SetCustomSlideBySource = createAsyncThunk(
   `/${API_URL.SetCustomSlideBySource}`,
   async (data, thunkAPI) => {
-      const requestBody = {
+    let requestBody;
+    let languages;
+    if (data.languages.length > 1) {
+      languages = data.languages
+    } else {
+      languages = [data.languages]
+    }
+
+    if (data.name.length > 0) {
+      requestBody = {
         // Your request body data here
-        languages: [data.languages],
+        file_name: data.name,
+        languages: languages,
         source_uid: data.source_uid,
         file_uid: data.file_uid,
         slides: data.slides
         };
-      const response = await axios.post(`${API}custom_slide`, requestBody);
-      return response.data;
+    } else {
+      requestBody = {
+        // Your request body data here
+        languages: languages,
+        source_uid: data.source_uid,
+        file_uid: data.file_uid,
+        slides: data.slides
+        };
+    }
+    const response = await axios.post(`${API}custom_slide`, requestBody);
+    return response.data;
   }
 );
 

@@ -47,24 +47,39 @@ const NewSlides = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        // add name and update langauges
-        let request = {
+      //try {
+      // add name and update langauges
+      let request;
+      let defaultLanguage = languages[localStorage.getItem("subtitleLanguage")];
+      if (document.getElementById('upload_name') && document.getElementById('upload_name').value.length > 0) {
+        request = {
+          name: document.getElementById('upload_name').value,
           source_uid: sourceUid,
           file_uid: fileUid,
-          languages: languages[localStorage.getItem("subtitleLanguage")],
+          languages: defaultLanguage,
           slides: updateTagList
         }
-        const response = await dispatch(SetCustomSlideBySource(request));
-        if (response.payload.success) {
-          setUpdateTagList([]);
-          setProgress(100);
-          alert(response.payload.description);
-          navigate('/archive');
+      } else {
+        request = {
+          source_uid: sourceUid,
+          file_uid: fileUid,
+          languages: defaultLanguage,
+          slides: updateTagList
         }
-      } catch (error) {
-        throw new Error(`Error adding custom slide languages`, error);
       }
+      if (document.getElementById('languageSelect') && slideLanguageOptions.length > 0) {
+        request.languages = slideLanguageOptions;
+      }
+      const response = await dispatch(SetCustomSlideBySource(request));
+      if (response.payload.success) {
+        setUpdateTagList([]);
+        setProgress(100);
+        alert(response.payload.description);
+        navigate('/archive');
+      }
+      //} catch (error) {
+      //throw new Error(`Error adding custom slide languages`, error);
+      //}
     };
 
     if (updateTagList.length > 0) {
@@ -248,6 +263,7 @@ const NewSlides = () => {
             <div className="input-box col-7">
               <label>Languages</label>
               <Select
+                id="languageSelect"
                 isMulti
                 options={
                   isChecked
@@ -262,8 +278,7 @@ const NewSlides = () => {
           </div>
           <div className="input-box ">
             <label className="w-100">Name</label>
-
-            <input className="form-control" type="type" />
+            <input className="form-control" type="type" id="upload_name" />
           </div>
 
           <div className="row m-4">
