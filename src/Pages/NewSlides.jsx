@@ -49,23 +49,15 @@ const NewSlides = () => {
     const fetchData = async () => {
       //try {
       // add name and update langauges
-      let request;
-      let defaultLanguage = languages[localStorage.getItem("subtitleLanguage")];
+      let request = {
+        name: "KabbalahMedia",
+        source_uid: sourceUid,
+        file_uid: fileUid,
+        languages: languages[localStorage.getItem("subtitleLanguage")],
+        slides: updateTagList
+      }
       if (document.getElementById('upload_name') && document.getElementById('upload_name').value.length > 0) {
-        request = {
-          name: document.getElementById('upload_name').value,
-          source_uid: sourceUid,
-          file_uid: fileUid,
-          languages: defaultLanguage,
-          slides: updateTagList
-        }
-      } else {
-        request = {
-          source_uid: sourceUid,
-          file_uid: fileUid,
-          languages: defaultLanguage,
-          slides: updateTagList
-        }
+        request.name = document.getElementById('upload_name').value;
       }
       if (document.getElementById('languageSelect') && slideLanguageOptions.length > 0) {
         request.languages = slideLanguageOptions;
@@ -73,13 +65,20 @@ const NewSlides = () => {
       const response = await dispatch(SetCustomSlideBySource(request));
       if (response.payload.success) {
         setUpdateTagList([]);
-        setProgress(100);
-        alert(response.payload.description);
-        navigate('/archive');
+        if (activeButton === "button1") {
+          setProgress(100);
+          setTimeout(() => {
+            alert(response.payload.description);
+            navigate('/archive');
+          }, 600);
+        } else {
+          alert(response.payload.description);
+          navigate('/archive');
+        }
       }
-      //} catch (error) {
-      //throw new Error(`Error adding custom slide languages`, error);
-      //}
+      // } catch (error) {
+      //   throw new Error(`Error adding custom slide languages`, error);
+      // }
     };
 
     if (updateTagList.length > 0) {
@@ -291,9 +290,9 @@ const NewSlides = () => {
                 <span className=""> File Name: {selectedFile}</span>
                 <i className="bi bi-x" />
               </div>
-              <div class="progress">
+              <div className="progress">
                 <div
-                  class="progress-bar"
+                  className="progress-bar"
                   role="progressbar"
                   aria-label="Basic example"
                   style={{ width: `${progress}%` }}
