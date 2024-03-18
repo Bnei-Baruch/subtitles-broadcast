@@ -51,6 +51,13 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     [fullscreen] .full-screen-btn svg:nth-child(2) {
         display: inline-block;
     }
+    .slide-container{
+      height:  100%;    
+    }
+    .slide-content{
+      #aspect-ratio : 16/2.99;
+      height:  100%; 
+    }
       `)
     );
     bodyElm.appendChild(styleElm);
