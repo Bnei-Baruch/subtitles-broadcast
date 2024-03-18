@@ -26,7 +26,7 @@ const HeaderBar = ({ logout }) => {
         })
       );
     }
-  }, [DebouncingFreeText, dispatch]);
+  }, [DebouncingFreeText, dispatch, freeText, param.pathname]);
 
   return (
     <>
@@ -81,6 +81,22 @@ const HeaderBar = ({ logout }) => {
                 </span>
               </li>
             </ul>
+          </div>
+          <div className="btn-group list-btn">
+            <button
+              className="btn btn-secondary dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+            >
+              <img
+                alt="button"
+                className=""
+                src="image/Globe.svg"
+                id="dropdownMenuButton1"
+                data-bs-toggle="dropdown"
+              />
+              <span className="m-2">EN</span>
+            </button>
           </div>
         </div>
       </div>
