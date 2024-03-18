@@ -47,7 +47,6 @@ const NewSlides = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      //try {
       // add name and update langauges
       let request = {
         name: "KabbalahMedia",
@@ -62,23 +61,38 @@ const NewSlides = () => {
       if (document.getElementById('languageSelect') && slideLanguageOptions.length > 0) {
         request.languages = slideLanguageOptions;
       }
-      const response = await dispatch(SetCustomSlideBySource(request));
-      if (response.payload.success) {
-        setUpdateTagList([]);
-        if (activeButton === "button1") {
-          setProgress(100);
-          setTimeout(() => {
-            alert(response.payload.description);
-            navigate('/archive');
-          }, 600);
-        } else {
-          alert(response.payload.description);
-          navigate('/archive');
-        }
+      if (activeButton === "button1") {
+        setTimeout(() => {
+          setProgress(75);
+        }, 600);
       }
-      // } catch (error) {
-      //   throw new Error(`Error adding custom slide languages`, error);
-      // }
+      const responsePromise = new Promise((resolve, reject) => {
+        try {
+          const response = dispatch(SetCustomSlideBySource(request));
+          resolve(response);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      responsePromise.then(result => {
+        if (result.payload.success) {
+          setUpdateTagList([]);
+          if (activeButton === "button1") {
+            setTimeout(() => {
+              setProgress(100);
+            }, 600);
+            setTimeout(() => {
+              alert(result.payload.description);
+              navigate('/archive');
+            }, 1500);
+          } else {
+            alert(result.payload.description);
+            navigate('/archive');
+          }
+        }
+      }).catch(error => {
+        console.error("Error occurred:", error); // Handle any errors during promise execution
+      });
     };
 
     if (updateTagList.length > 0) {
@@ -116,7 +130,6 @@ const NewSlides = () => {
         }
         const contentData = await response.text();
         await loadSlides(contentData);
-        setProgress(50);
       } catch (error) {
         console.error('Error fetching or parsing data:', error.message);
       }
@@ -153,23 +166,26 @@ const NewSlides = () => {
       tag: element.tagName,
       content: element.outerHTML,
     }));;
-    let tags = [];
-    paragraphArray.forEach(elementInfo => {
-      const tagName = elementInfo.tag;
-      const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
-      wordArray.forEach((word, index) => {
-        const elementObject = {
-          paragraphStart: false,
-          tagName: tagName,
-          word: word,
-        };
-        if (index === 0) {
-          elementObject.paragraphStart = true;
-        }
-        tags.push(elementObject);
+    setProgress(25);
+    setTimeout(() => {
+      let tags = [];
+      paragraphArray.forEach(elementInfo => {
+        const tagName = elementInfo.tag;
+        const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
+        wordArray.forEach((word, index) => {
+          const elementObject = {
+            paragraphStart: false,
+            tagName: tagName,
+            word: word,
+          };
+          if (index === 0) {
+            elementObject.paragraphStart = true;
+          }
+          tags.push(elementObject);
+        });
       });
-    });
-    setTagList(tags);
+      setTagList(tags);
+    }, 600);
   };
 
   const loadSource = () => {
@@ -252,11 +268,11 @@ const NewSlides = () => {
           <div className="row m-4">
             <div className="input-box col-3 ">
               <label className="w-100">Multilingual</label>
-              <label class="custom-checkbox">
+              <label className="custom-checkbox">
                 <input type="checkbox"
                   checked={isChecked}
                   onChange={handleCheckboxChange} />
-                <span class="checkmark"></span>
+                <span className="checkmark"></span>
               </label>
             </div>
             <div className="input-box col-7">
@@ -282,13 +298,12 @@ const NewSlides = () => {
 
           <div className="row m-4">
             <input type="file" onChange={handleFileChange} />
-            <button class="btn btn-light rounded-pill col-4"
+            <button className="btn btn-light rounded-pill col-4"
               onClick={handleUpload}>Upload File
             </button>
             <div className="file-upload-preview col-7">
               <div className="d-flex justify-content-between">
                 <span className=""> File Name: {selectedFile}</span>
-                <i className="bi bi-x" />
               </div>
               <div className="progress">
                 <div
