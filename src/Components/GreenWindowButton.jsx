@@ -20,21 +20,15 @@ function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow) {
 
 const styles = {
   mainContainer: {
-    height: "calc(90%)",
+    height: "100%",
   },
   greenPartContainer: {
     backgroundColor: "green",
-    height: "65%",
+    height: "70%",
   },
   slidePartContainer: {
-    height: "35%",
-    "font-family": "Roboto",
-    "font-style": "normal",
-    "font-weight": "normal",
-    "font-size": "25px",
-    "line-height": "24px",
-    "letter-spacing": "0.0595px",
-    padding: "0px 0px 0px 0px",
+    height: "30%",
+    padding: "0",
   },
   cursorNotAllowed: {
     cursor: "not-allowed",

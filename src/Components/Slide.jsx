@@ -7,10 +7,7 @@ export const Slide = ({content, isLtr, parentElement}) => {
   const md = markdownit();
 
   const handleResize = () => {
-    const width = parentElement
-      ? parentElement.clientWidth
-      : outerRef.current.clientWidth;
-    const scale = width / 1920;
+    const scale = outerRef.current.clientWidth / 1920;
     slideRef.current.style.transform = `scale(${scale})`;
     slideRef.current.style.transformOrigin = 'top left';
 		outerRef.current.style.height = `${scale * 310}px`;

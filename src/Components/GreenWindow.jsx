@@ -20,8 +20,10 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     styleElm.appendChild(
       document.createTextNode(`
     body{
+      overflow: hidden;
+      box-sizing: border-box;
       margin: 0;
-      //aspect-ratio : 16/9;
+      aspect-ratio : 16/9;
     }
     .full-screen-btn{
       position: absolute;
@@ -52,11 +54,37 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         display: inline-block;
     }
     .slide-container{
-      height:  100%;    
+      //height:  100%; 
     }
     .slide-content{
-      #aspect-ratio : 16/2.99;
       height:  100%; 
+      position: absolute;
+      overflow: hidden;
+      font-family: "Roboto";
+      font-size: 60px;
+      line-height: 60px;
+      width: 1860px;
+      height: 270px;
+      padding: 30px;
+      vertical-align: top;
+    }
+    h1 {
+      font-size: 100px;
+      line-height: 100px;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    p {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    ol {
+      padding-left: 4rem;
+    }
+    dl, ol, ul {
+      margin-top: 0;
+      margin-bottom: 1rem;
     }
       `)
     );
@@ -80,12 +108,36 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
     </svg>
     `;
-    //newButton.textContent = "Full screen";
     containerEl.appendChild(newButton);
 
-    var s = externalWindow.current.document.createElement("script");
-    s.type = "text/javascript";
-    var code = `    
+    var scriptObj = externalWindow.current.document.createElement("script");
+    scriptObj.type = "text/javascript";
+    scriptObj.setAttribute("defer", "true");
+    var code = ` 
+    let isLoaded = false;
+
+    window.onload = function(){ 
+      const slideContentCol = document.getElementsByClassName("slide-content");
+      const slideContentElm = slideContentCol[0];      
+      slideContentElm.style.letterSpacing = "2.6px";
+   }
+
+    window.addEventListener("resize", function(event){      
+      if (!isLoaded){  
+        isLoaded = true;
+      }
+
+      if (isLoaded){
+        const width = document.body.clientWidth; 
+        const scaleVal = width / 1920;
+        console.log("scale: " + scaleVal);
+        
+        const slideContentCol = document.getElementsByClassName("slide-content");
+        const slideContentElm = slideContentCol[0];
+        slideContentElm.style.transform = transform = "scale(" + scaleVal +")";
+      }
+    });
+
       document.getElementById("full_screen").addEventListener("click", function() {
         var elem = document.getElementsByTagName("html")[0];
         console.log(elem);
@@ -117,11 +169,11 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       });
     `;
     try {
-      s.appendChild(document.createTextNode(code));
-      containerEl.appendChild(s);
+      scriptObj.appendChild(document.createTextNode(code));
+      containerEl.appendChild(scriptObj);
     } catch (e) {
-      s.text = code;
-      containerEl.appendChild(s);
+      scriptObj.text = code;
+      containerEl.appendChild(scriptObj);
     }
   }
 
