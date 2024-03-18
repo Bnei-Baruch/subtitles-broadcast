@@ -20,7 +20,7 @@ function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow) {
 
 const styles = {
   mainContainer: {
-    height: "365px",
+    height: "calc(90%)",
   },
   greenPartContainer: {
     backgroundColor: "green",
