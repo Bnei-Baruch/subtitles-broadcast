@@ -545,7 +545,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.language)").
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.languages)").
 		Where("bookmarks.user_id = ?", userId).
 		Order("bookmarks.order_number").
 		Find(&result)
@@ -730,7 +730,7 @@ func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
 // 			Select("source_paths.path || ' / ' || slides.id AS path").
 // 			Table("slides").
 // 			Joins("INNER JOIN files on slides.file_uid = files.file_uid").
-// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
+// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.languages)").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {
 // 				ctx.JSON(http.StatusInternalServerError,
