@@ -2,8 +2,12 @@ import { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 
 export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
-  var popupFeatures =
-    "popup=1,menubar=0,toolbar=0,location=0,resizable=0,scrollbars=0,status=0,width=720,height=410,left=200,top=200";
+  let isGreenWinFullScreen = /true/i.test(
+    localStorage.getItem("greenWindowFullScreenMode")
+  );
+  const popupFeatures = isGreenWinFullScreen
+    ? "fullscreen=yes,menubar=0,toolbar=0,location=0,resizable=0,scrollbars=0,status=0"
+    : "fullscreen=yes,popup=1,menubar=0,toolbar=0,location=0,resizable=0,scrollbars=0,status=0,width=720,height=410,left=200,top=200";
   const externalWindow = useRef(window.open("", "green_window", popupFeatures));
 
   let containerEl = externalWindow
@@ -117,12 +121,68 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     let isLoaded = false;
 
     window.onload = function(){ 
+      let greenWindowFullScreenMode = localStorage.getItem("greenWindowFullScreenMode");
       const slideContentCol = document.getElementsByClassName("slide-content");
       const slideContentElm = slideContentCol[0];      
       slideContentElm.style.letterSpacing = "2.6px";
+      
+      //if ((/true/i).test(greenWindowFullScreenMode)){
+        //setTimeout(function(){
+          //fullScreenMode();
+        //}, 1);
+      //}
    }
 
-    window.addEventListener("resize", function(event){      
+   document.getElementById("full_screen").addEventListener("click", function() {    
+    fullScreenMode();
+  });
+
+   function requestFullscreen(fullScreenFuncRef){
+    fullScreenFuncRef();
+    localStorage.setItem("greenWindowFullScreenMode", "true");
+   }
+
+   function requestCancelFullScreen(cancelFullScreenFuncRef){
+    localStorage.setItem("greenWindowFullScreenMode", "false");
+    cancelFullScreenFuncRef();
+   }
+
+   function fullScreenMode(){
+    var elem = document.getElementsByTagName("html")[0];
+
+    if ((document.fullScreenElement !== undefined && document.fullScreenElement === null) 
+      || (document.msFullscreenElement !== undefined && document.msFullscreenElement === null) 
+      || (document.mozFullScreen !== undefined && !document.mozFullScreen) 
+      || (document.webkitIsFullScreen !== undefined && !document.webkitIsFullScreen)) {        
+        if (elem.requestFullScreen) {
+          requestFullscreen(elem.requestFullScreen);
+        } else if (document.documentElement.mozRequestFullScreen) {
+          document.documentElement.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullScreen) {
+          requestFullscreen(function(){
+            elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+          });
+        } else if (elem.msRequestFullscreen) {
+          requestFullscreen(elem.msRequestFullscreen);
+        }
+    } else {
+        if (document.cancelFullScreen) {
+          localStorage.setItem("greenWindowFullScreenMode", "false");
+          document.cancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+          localStorage.setItem("greenWindowFullScreenMode", "false");
+          document.mozCancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+          localStorage.setItem("greenWindowFullScreenMode", "false");
+          document.webkitCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          localStorage.setItem("greenWindowFullScreenMode", "false");
+          document.msExitFullscreen();
+        }
+    }
+   }
+
+    window.addEventListener("resize", function(event){  
       if (!isLoaded){  
         isLoaded = true;
       }
@@ -137,36 +197,6 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         slideContentElm.style.transform = transform = "scale(" + scaleVal +")";
       }
     });
-
-      document.getElementById("full_screen").addEventListener("click", function() {
-        var elem = document.getElementsByTagName("html")[0];
-        console.log(elem);
-
-        if ((document.fullScreenElement !== undefined && document.fullScreenElement === null) 
-          || (document.msFullscreenElement !== undefined && document.msFullscreenElement === null) 
-          || (document.mozFullScreen !== undefined && !document.mozFullScreen) 
-          || (document.webkitIsFullScreen !== undefined && !document.webkitIsFullScreen)) {
-            if (elem.requestFullScreen) {
-                elem.requestFullScreen();
-            } else if (elem.mozRequestFullScreen) {
-                elem.mozRequestFullScreen();
-            } else if (elem.webkitRequestFullScreen) {
-                elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            }
-        } else {
-            if (document.cancelFullScreen) {
-                document.cancelFullScreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.webkitCancelFullScreen) {
-                document.webkitCancelFullScreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        }
-      });
     `;
     try {
       scriptObj.appendChild(document.createTextNode(code));
