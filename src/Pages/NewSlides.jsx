@@ -195,7 +195,6 @@ const NewSlides = () => {
           setSourceUid("upload_" + params.get("id"));
         } else {
           let sourceUidStr;
-          console.log(sourceUid);
           if (sourceUid === "") {
             sourceUidStr = contentSource;
           } else {
