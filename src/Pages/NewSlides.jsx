@@ -5,7 +5,6 @@ import SlideSplit from "../Utils/SlideSplit";
 import { GetSlideLanguages, SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import {
   ArchiveAutoComplete,
-  GetAllArchiveData,
   getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -87,6 +86,7 @@ const NewSlides = () => {
       responsePromise.then(result => {
         if (result.payload.success) {
           setUpdateTagList([]);
+          setSourceUid('');
           if (activeButton === "button1") {
             setTimeout(() => {
               setProgress(100);
@@ -124,7 +124,17 @@ const NewSlides = () => {
 
   const handleClick = (button) => {
     setActiveButton(button);
-    // Add logic here to handle button click events
+  };
+
+  const closeSuggestionsList = () => {
+    setTimeout(() => {
+      setShowAutocompleteBox(false);
+    }, 200); // Adjust the delay as needed
+  };
+
+  const handleSuggestionClick = (source) => {
+    setContentSource(source.source_value);
+    setSourceUid(source.source_uid);
   };
 
   useEffect(() => {
@@ -211,8 +221,14 @@ const NewSlides = () => {
           }
           setSourceUid("upload_" + params.get("id"));
         } else {
-          sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${contentSource}&with_files=true`;
-          setSourceUid("upload_" + contentSource);
+          let sourceUidStr;
+          if (sourceUid.length > 0) {
+            sourceUidStr = sourceUid;
+          } else {
+            sourceUidStr = contentSource;
+          }
+          sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
+          setSourceUid("upload_" + sourceUidStr);
         }
         const sourceResponse = await fetch(sourceUrl);
         if (sourceResponse.status !== 200) {
@@ -341,17 +357,7 @@ const NewSlides = () => {
               <label className="w-100">Source Path</label>
               <div className="form-group  autoComplete">
                 <input className="form-control" type="type" value={contentSource}
-                  onBlur={() => setShowAutocompleteBox(false)}
-                  onKeyDown={(e) => {
-                    e.key === "Enter" &&
-                      dispatch(
-                        GetAllArchiveData({
-                          language: "en",
-
-                          keyword: sourceUrl,
-                        })
-                      );
-                  }}
+                  onBlur={closeSuggestionsList}
                   onChange={(e) => {
                     setShowAutocompleteBox(true);
                     setSourceUrl(e.target.value);
@@ -359,11 +365,11 @@ const NewSlides = () => {
                   }}
                 />
                 {showAutocompleteBox && (
-                  <ul class="suggestions" id="suggestions">
+                  <ul className="suggestions" id="suggestions">
                     {ActocompleteList?.map((suggestion, index) => (
                       <li
-                      // key={index}
-                      // onClick={() => handleSuggestionClick(suggestion)}
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
                       >
                         {suggestion.source_value}
                       </li>
