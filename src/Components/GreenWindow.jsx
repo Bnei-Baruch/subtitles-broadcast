@@ -195,7 +195,7 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       }
 
       const fullScreenElm = document.getElementById("full_screen");
-      
+
       if((window.fullScreen) ||
         (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
           localStorage.setItem("greenWindowFullScreenMode", "true");
@@ -206,12 +206,7 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         fullScreenElm.classList.remove("hidden");
         fullScreenElm.classList.add("visible");
       }
-
-      if (!window.screenTop && !window.screenY) {
-      }
-      else{
-      }
-
+      
     });
     `;
     try {
