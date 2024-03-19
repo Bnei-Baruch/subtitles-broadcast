@@ -195,10 +195,11 @@ const NewSlides = () => {
           setSourceUid("upload_" + params.get("id"));
         } else {
           let sourceUidStr;
-          if (sourceUid.length > 0) {
-            sourceUidStr = sourceUid;
-          } else {
+          console.log(sourceUid);
+          if (sourceUid === "") {
             sourceUidStr = contentSource;
+          } else {
+            sourceUidStr = sourceUid;
           }
           sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
           setSourceUid("upload_" + sourceUidStr);
