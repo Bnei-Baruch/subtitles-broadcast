@@ -3,7 +3,13 @@ import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
 import { GetSlideLanguages, SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
-import { useDispatch } from "react-redux";
+import {
+  ArchiveAutoComplete,
+  GetAllArchiveData,
+  getAutocompleteSuggetion,
+} from "../Redux/ArchiveTab/ArchiveSlice";
+import { useDispatch, useSelector } from "react-redux";
+import useDebounce from "../Services/useDebounce";
 import { useNavigate } from 'react-router-dom';
 
 const NewSlides = () => {
@@ -27,6 +33,10 @@ const NewSlides = () => {
   const [isChecked, setIsChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState('');
   const [progress, setProgress] = useState(0);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
+  const ActocompleteList = useSelector(getAutocompleteSuggetion);
+  const DebouncingFreeText = useDebounce(sourceUrl, 500);
 
   useEffect(() => {
     setProgress(0);
@@ -117,9 +127,9 @@ const NewSlides = () => {
     // Add logic here to handle button click events
   };
 
-  const handleInputChange = (e) => {
-    setContentSource(e.target.value);
-  };
+  useEffect(() => {
+    dispatch(ArchiveAutoComplete({ query: sourceUrl }));
+  }, [DebouncingFreeText]);
 
   const handleUpload = () => {
     const fetchData = async (fileUid) => {
@@ -232,7 +242,7 @@ const NewSlides = () => {
         const contentData = await response.text();
         await loadSlides(contentData);
       } catch (error) {
-        console.error('Error fetching or parsing data:', error.message);
+        console.error("Error fetching or parsing data:", error.message);
       }
     };
     fetchData();
@@ -329,17 +339,47 @@ const NewSlides = () => {
             <p>{localStorage.getItem("subtitleLanguage")}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
+              <div className="form-group  autoComplete">
+                <input className="form-control" type="type" value={contentSource}
+                  onBlur={() => setShowAutocompleteBox(false)}
+                  onKeyDown={(e) => {
+                    e.key === "Enter" &&
+                      dispatch(
+                        GetAllArchiveData({
+                          language: "en",
 
-              <input className="form-control" type="type" value={contentSource} onChange={handleInputChange} />
+                          keyword: sourceUrl,
+                        })
+                      );
+                  }}
+                  onChange={(e) => {
+                    setShowAutocompleteBox(true);
+                    setSourceUrl(e.target.value);
+                    setContentSource(e.target.value);
+                  }}
+                />
+                {showAutocompleteBox && (
+                  <ul class="suggestions" id="suggestions">
+                    {ActocompleteList?.map((suggestion, index) => (
+                      <li
+                      // key={index}
+                      // onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion.source_value}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSource}>Add Source</button>
             <div>
               <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} />
             </div>
-          </div>
+          </div >
         </>
       )}
-    </div>
+    </div >
   );
 };
 
