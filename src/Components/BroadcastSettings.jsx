@@ -12,7 +12,7 @@ const rightColSize = 8;
 
 const styles = {
   buttonPrimary: {
-    width: "370px",
+    width: "390px",
     textAlign: "left",
     backgroundColor: "transparent",
     transition: "none",
@@ -37,16 +37,16 @@ const styles = {
     cursor: "pointer",
   },
   labelMainVal: {
-    marginRight: "25px",
+    marginRight: "5px",
     fontWeight: "bold",
     fontSize: "16px",
-    width: "125px",
+    width: "135px",
     display: "inline-block",
   },
   labelMainLast: {
     fontWeight: "bold",
     fontSize: "16px",
-    width: "65px",
+    width: "75px",
     display: "inline-block",
   },
 };
