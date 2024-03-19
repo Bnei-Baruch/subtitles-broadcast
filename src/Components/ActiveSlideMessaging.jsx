@@ -114,14 +114,13 @@ const determinePublicJobMsg = (
     const jobMessageJson = parseMqttMessage(jobMqttMessage);
     const mqttMessageJson = parseMqttMessage(mqttMessage);
 
-    if (userAddedList) {
+    if (userAddedList && activatedTab) {
       if (
         !mqttMessageJson ||
         (mqttMessageJson.order_number !== jobMessageJson.order_number &&
           (!jobMqttMessage ||
             jobMqttMessage.order_number !== mqttMessageJson.order_number))
       ) {
-        //if (userAddedList) {
         const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
 
         if (
@@ -133,7 +132,6 @@ const determinePublicJobMsg = (
             isPublic = true;
           }
         }
-        // }
       }
     } else {
       if (
