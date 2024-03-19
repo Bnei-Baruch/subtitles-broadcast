@@ -620,26 +620,36 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
 	sourceValueSlideCountList := []struct {
 		SourceValue string `json:"source_value"`
+		SourceUid   string `json:"source_uid"`
 		SlideCount  int    `json:"slide_count"`
 	}{}
 	result := h.Database.Debug().WithContext(ctx).Raw(`
-		SELECT value AS source_value, COUNT(distinct slide) AS slide_count
-		FROM (
-			SELECT
-				TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS value,
-				slide
-			FROM
-				source_paths
-			LEFT JOIN (
-				SELECT slide, source_paths.source_uid
-				FROM slides
-				INNER JOIN files ON slides.file_uid = files.file_uid
-				INNER JOIN source_paths ON files.source_uid = source_paths.source_uid
-			) AS t ON source_paths.source_uid = t.source_uid
-		) AS source_values
-		WHERE value LIKE ?
-		GROUP BY value
-		ORDER BY value;
+	SELECT 
+    source_value, 
+    source_uid, 
+    COUNT(DISTINCT slide) AS slide_count
+	FROM (
+		SELECT
+			TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS source_value,
+			slide,
+			source_paths.source_uid AS source_uid
+		FROM
+			source_paths
+		LEFT JOIN (
+			SELECT 
+				slide, 
+				files.source_uid 
+			FROM slides
+			INNER JOIN files ON slides.file_uid = files.file_uid
+		) AS t ON source_paths.source_uid = t.source_uid
+	) AS source_values
+	WHERE source_value <> ''
+	AND source_value LIKE ?
+	GROUP BY 
+		source_value, 
+		source_uid
+	ORDER BY 
+    source_value;
 	`, "%"+query+"%").Scan(&sourceValueSlideCountList)
 	if result.Error != nil {
 		log.Error(result.Error)
