@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import markdownit from 'markdown-it'
 
-export const Slide = ({content, isLtr, parentElement}) => {
+export const Slide = ({content, isLtr}) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const md = markdownit();
