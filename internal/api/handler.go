@@ -630,7 +630,7 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
     COUNT(DISTINCT slide) AS slide_count
 	FROM (
 		SELECT
-			TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS source_value,
+		TRIM(unnest(string_to_array(path, '/'))) AS source_value,
 			slide,
 			source_paths.source_uid AS source_uid
 		FROM
