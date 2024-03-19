@@ -42,6 +42,10 @@ const NewSlides = () => {
   }, []);
 
   useEffect(() => {
+    dispatch(ArchiveAutoComplete({ query: sourceUrl }));
+  }, [DebouncingFreeText]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await dispatch(GetSlideLanguages());
@@ -109,37 +113,6 @@ const NewSlides = () => {
       fetchData();
     }
   }, [updateTagList]);
-
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0].name);
-  };
-
-  const handleCheckboxChange = (e) => {
-    setIsChecked(e.target.checked);
-  };
-
-  const getKeyByValue = (object, value) => {
-    return Object.keys(object).find(key => object[key] === value);
-  };
-
-  const handleClick = (button) => {
-    setActiveButton(button);
-  };
-
-  const closeSuggestionsList = () => {
-    setTimeout(() => {
-      setShowAutocompleteBox(false);
-    }, 200); // Adjust the delay as needed
-  };
-
-  const handleSuggestionClick = (source) => {
-    setContentSource(source.source_value);
-    setSourceUid(source.source_uid);
-  };
-
-  useEffect(() => {
-    dispatch(ArchiveAutoComplete({ query: sourceUrl }));
-  }, [DebouncingFreeText]);
 
   const handleUpload = () => {
     const fetchData = async (fileUid) => {
@@ -274,7 +247,7 @@ const NewSlides = () => {
               ? "active-button col-6"
               : "inactive-button col-6"
           }
-          onClick={() => handleClick("button1")}
+          onClick={() => setActiveButton("button1")}
         >
           Custom
         </button>
@@ -284,7 +257,7 @@ const NewSlides = () => {
               ? "active-button col-6"
               : "inactive-button col-6"
           }
-          onClick={() => handleClick("button2")}
+          onClick={() => setActiveButton("button2")}
         >
           From KabbalahMedia
         </button>
@@ -297,7 +270,7 @@ const NewSlides = () => {
               <label className="custom-checkbox">
                 <input type="checkbox"
                   checked={isChecked}
-                  onChange={handleCheckboxChange} />
+                  onChange={(e) => { setIsChecked(e.target.checked) }} />
                 <span className="checkmark"></span>
               </label>
             </div>
@@ -309,7 +282,7 @@ const NewSlides = () => {
                 options={
                   isChecked
                     ? slideLanguageOptions.map(slideLanguage => ({
-                      label: getKeyByValue(languages, slideLanguage),
+                      label: Object.keys(languages).find(key => languages[key] === slideLanguage),
                       value: slideLanguage
                     }))
                     : [{ label: localStorage.getItem("subtitleLanguage"), value: languages[localStorage.getItem("subtitleLanguage")] }] // Add this option when isChecked is false
@@ -323,7 +296,7 @@ const NewSlides = () => {
           </div>
 
           <div className="row m-4">
-            <input type="file" onChange={handleFileChange} />
+            <input type="file" onChange={(event) => { setSelectedFile(event.target.files[0].name) }} />
             <button className="btn btn-light rounded-pill col-4"
               onClick={handleUpload}>Upload File
             </button>
@@ -357,7 +330,11 @@ const NewSlides = () => {
               <label className="w-100">Source Path</label>
               <div className="form-group  autoComplete">
                 <input className="form-control" type="type" value={contentSource}
-                  onBlur={closeSuggestionsList}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowAutocompleteBox(false);
+                    }, 200);
+                  }}
                   onChange={(e) => {
                     setShowAutocompleteBox(true);
                     setSourceUrl(e.target.value);
@@ -369,7 +346,10 @@ const NewSlides = () => {
                     {ActocompleteList?.map((suggestion, index) => (
                       <li
                         key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
+                        onClick={() => {
+                          setContentSource(suggestion.source_value);
+                          setSourceUid(suggestion.source_uid);
+                        }}
                       >
                         {suggestion.source_value}
                       </li>
