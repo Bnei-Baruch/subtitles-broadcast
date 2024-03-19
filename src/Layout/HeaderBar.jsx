@@ -7,6 +7,7 @@ import {
   getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
+import BroadcastSettings from "../Components/BroadcastSettings";
 
 const HeaderBar = ({ logout }) => {
   const dispatch = useDispatch();
@@ -54,6 +55,7 @@ const HeaderBar = ({ logout }) => {
         </div>
         <div className="d-flex aligne-item-center">
           <div className="btn-group list-btn">
+            <BroadcastSettings></BroadcastSettings>
             <button
               className="btn btn-secondary dropdown-toggle"
               type="button"

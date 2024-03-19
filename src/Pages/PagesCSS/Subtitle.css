@@ -358,7 +358,7 @@ input[type="number"] {
   border-bottom: 1px solid #000;
 }
 
-dropdown-toggle{
+dropdown-toggle {
   text-align: left !important;
 }
 
@@ -370,4 +370,11 @@ dropdown-toggle{
   border-top: 0.3em solid;
   content: "";
   margin-top: 10px;
+}
+
+.modal-dialog.broadcast-settings-dialog {
+  width: 400px;
+  max-width: 400px;
+  top: 20%;
+  left: -1%;
 }

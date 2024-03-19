@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { GreenWindow } from "../Components/GreenWindow";
-import parse from "html-react-parser";
+import { Slide } from "./Slide";
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
   var className = showGreenWindow
@@ -18,34 +18,17 @@ function closeGreenWindowHandling(setShowGreenWindow, showGreenWindow) {
   setShowGreenWindow(!showGreenWindow);
 }
 
-function getDirectionStyle(srcStyles, isLtr) {
-  if (!isLtr) {
-    const cloneSrcStyles = { ...srcStyles };
-    cloneSrcStyles.direction = "rtl";
-    cloneSrcStyles["text-align"] = "rigth";
-    return cloneSrcStyles;
-  }
-
-  return srcStyles;
-}
-
 const styles = {
+  mainContainer: {
+    height: "100%",
+  },
   greenPartContainer: {
     backgroundColor: "green",
-    height: "260px",
+    height: "70%",
   },
   slidePartContainer: {
-    height: "105px",
-    "ont-family": "Roboto",
-    "font-style": "normal",
-    "font-weight": "600",
-    "font-size": "25px",
-    "line-height": "24px",
-    "letter-spacing": "0.0595px",
-    color: "#212121",
-    "text-align": "left",
-    direction: "ltr",
-    padding: "10px 10px 10px 10px",
+    height: "30%",
+    padding: "0",
   },
   cursorNotAllowed: {
     cursor: "not-allowed",
@@ -62,22 +45,21 @@ function parseMqttMessage(mqttMessage) {
       }
 
       if (msgJson.slide) {
-        return parse(msgJson.slide);
+        return msgJson.slide;
       }
-    } catch (e) {
-      //
+    } catch (err) {
+      console.log(err);
     }
-
-    return mqttMessage;
   }
+
+  return mqttMessage;
 }
 
-export const GreenWindowButton = ({
-  showGreenWindow,
-  setShowGreenWindow,
-  isLtr,
-  mqttMessage,
-}) => {
+export const GreenWindowButton = ({ isLtr, mqttMessage }) => {
+  const [showGreenWindow, setShowGreenWindow] = useState(false);
+  const elementRef = useRef(null);
+  const publishedSlide = parseMqttMessage(mqttMessage);
+
   return (
     <>
       <button
@@ -94,15 +76,20 @@ export const GreenWindowButton = ({
             closeGreenWindowHandling(setShowGreenWindow, showGreenWindow)
           }
         >
-          <div
-            className="green-part-cont"
-            style={styles.greenPartContainer}
-          ></div>
-          <div
-            className="slide-part-cont"
-            style={getDirectionStyle(styles.slidePartContainer, isLtr)}
-          >
-            {parseMqttMessage(mqttMessage)}
+          <div style={styles.mainContainer}>
+            <div
+              className="green-part-cont"
+              style={styles.greenPartContainer}
+            ></div>
+            <div className="slide-part-cont" style={styles.slidePartContainer}>
+              {publishedSlide && (
+                <Slide
+                  content={publishedSlide}
+                  isLtr={isLtr}
+                  parentElement={elementRef}
+                ></Slide>
+              )}
+            </div>
           </div>
         </GreenWindow>
       )}

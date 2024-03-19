@@ -14,33 +14,12 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
 import GreenWindowButton from "../Components/GreenWindowButton";
-import ActiveSlideMessaging from "../Components/ActiveSlideMessaging"
-import BroadcastSettings from "../Components/BroadcastSettings"
-
-const brodcastProgrammArr = [{ value: "morning_lesson", label: "Morning lesson" },
-{ value: "brodcast_1", label: "Brodcast 1" }, { value: "brodcast_2", label: "Brodcast 2" },
-{ value: "brodcast_3", label: "Brodcast 3" }];
-const broadcastLangArr = [{ value: "he", label: "Hebrew" }, { value: "ru", label: "Russian" },
-{ value: "en", label: "English" }, { value: "es", label: "Spanish" }];
-const broadcastLangMapObj = {
-  he: broadcastLangArr[0], ru: broadcastLangArr[1],
-  en: broadcastLangArr[2], es: broadcastLangArr[3]
-};
+import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
+import GreenSlide from "../Components/GreenSlide";
 
 const Subtitles = () => {
-  const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
-  const [broadcastProgramm, setBroadcastProgramm] = useState(brodcastProgrammArr[0]);
-  const [broadcastLang, setBroadcastLang] = useState(() => {
-    const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal] ?
-      broadcastLangMapObj[bcLanglocalStorageVal] : broadcastLangArr[0];
-    return bcLangObj;
-  });
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
-  const [showGreenWindow, setShowGreenWindow] = useState(false);
-  const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
-    return sessionStorage.getItem("isBroadcastSettingsShown") === "true" ? false : true;
-  });
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -108,22 +87,8 @@ const Subtitles = () => {
                 className="btn-group"
                 role="group"
                 aria-label="Basic mixed styles example"
-              >
-              </div>
-              <BroadcastSettings
-                showBroadcastSettings={showBroadcastSettings}
-                setShowBroadcastSettings={setShowBroadcastSettings}
-                broadcastProgramm={broadcastProgramm}
-                setBroadcastProgramm={setBroadcastProgramm}
-                broadcastLang={broadcastLang}
-                setBroadcastLang={setBroadcastLang}
-                brodcastProgrammArr={brodcastProgrammArr}
-                broadcastLangArr={broadcastLangArr}
-              >
-              </BroadcastSettings>
+              ></div>
               <ActiveSlideMessaging
-                broadcastProgrammCode={broadcastProgramm.value}
-                broadcastLangCode={broadcastLang.value}
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
                 setActivatedTab={setActivatedTab}
@@ -132,12 +97,7 @@ const Subtitles = () => {
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
-              <GreenWindowButton
-                showGreenWindow={showGreenWindow}
-                setShowGreenWindow={setShowGreenWindow}
-                isLtr={isLtr}
-                mqttMessage={mqttMessage}
-              />
+              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
               <button
                 type="button"
                 onClick={() => setIsLtr(!isLtr)}
@@ -162,7 +122,6 @@ const Subtitles = () => {
                     <Dropdown.Item value='brodcast_3'>Brodcast 3</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown> */}
-
             </div>
           </div>
 
@@ -193,8 +152,9 @@ const Subtitles = () => {
           </div>
           <div className="d-flex justify-content-center">
             <i
-              className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
-                }`}
+              className={`bi bi-chevron-left me-1 cursor-pointer ${
+                activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+              }`}
               onClick={() => {
                 const file_uid = UserAddedList?.slides?.[0]?.file_uid;
                 const slideID = UserAddedList?.slides?.find(
@@ -276,13 +236,15 @@ const Subtitles = () => {
                 );*/
                 setActivatedTab(+activatedTab + 1);
               }}
-              className={` cursor-pointer ${false ? "disablecolor" : "custom-pagination"
-                }`}
+              className={` cursor-pointer ${
+                false ? "disablecolor" : "custom-pagination"
+              }`}
             >
               Next{" "}
               <i
-                className={`bi bi-chevron-right  cursor-pointer  ${false ? "disablecolor" : "custom-pagination"
-                  }`}
+                className={`bi bi-chevron-right  cursor-pointer  ${
+                  false ? "disablecolor" : "custom-pagination"
+                }`}
               />
             </span>
           </div>
@@ -290,21 +252,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <div className="video">
-              <div className="ratio ratio-16x9">
-                <iframe
-                  src="https://www.youtube.com/embed/zpOULjyy-n8?rel=0"
-                  title="YouTube video"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </div>
-            <div className="box">
-              זאת אומרת, שאם הקב"ה יתן לו זה, שתהיה לו היכולת לבטל את רשותו
-              ולהיבטל לרשותו של הקב"ה, שהוא רוצה, שתהיה רק רשות היחיד בעולם,
-              היינו רשותו של הקב"ה, שזו כל ישועתו, זה נקרא שיש לו כלי וצורך
-              שהקב"ה יעזור לו.
-            </div>
+            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
@@ -329,19 +277,10 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s">
+          {/* <div className="Questions whit-s">
             <div className="top-head d-flex justify-content-between">
-              <h3>Questions</h3>
-              <div className="input-box">
-                <input
-                  className=""
-                  type="text"
-                  placeholder="Search"
-                  aria-label="Search"
-                />
-              </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </>
