@@ -110,6 +110,8 @@ const Archive = () => {
     [confirmation, message]
   );
 
+  console.log("editSlide", editSlide);
+
   return (
     <>
       {DelectConfirmationModal}
@@ -207,6 +209,7 @@ const Archive = () => {
                                       file_uid: key?.file_uid,
                                     })
                                   );
+                                  console.log("setEditSlide", key, key.ID);
                                   setEditSlide(key.ID);
                                 }}
                               />
