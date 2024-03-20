@@ -644,7 +644,7 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 		) AS t ON source_paths.source_uid = t.source_uid
 	) AS source_values
 	WHERE source_value <> ''
-	AND source_value LIKE ?
+	AND source_value ILIKE ?
 	GROUP BY 
 		source_value, 
 		source_uid
