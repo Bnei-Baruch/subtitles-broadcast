@@ -423,6 +423,71 @@ paths:
         - bearerAuth:
             - read:slides
             - delete:slides
+  /custom_slide:
+    post:
+      tags:
+        - slide
+      summary: Add a custom slide by new menu
+      description: Add a custom slide with meta data
+      operationId: addCustomSlide
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                file_name:
+                  type: string
+                  description: upload file name
+                  x-omitempty: true
+                  example: "myfile.html"
+                source_uid:
+                  type: string
+                  description: archive source uid
+                  x-omitempty: true
+                  example: "tswzgnWk"
+                file_uid:
+                  type: string
+                  description: archive file uid
+                  x-omitempty: true
+                  example: "OzSCqHYF"
+                slides:
+                  type: array
+                  items:
+                    type: string
+                    description: slide texts to upload
+                    example: ["you must know that all that is said in The Book of Zohar", "However, there are three boundaries "]
+                languages:
+                  type: array
+                  items:
+                    type: string
+                    description: languages from custom slides
+                    example: ["en", "es", "he", "ru"]
+        description: Created user slide data
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
   /file_slide:
     get:
       tags:
@@ -621,6 +686,42 @@ paths:
                         type: string
                         description: all language list for a source
                         example: "en"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /slide_language:
+    get:
+      tags:
+        - slide_language
+      summary: Get slide language names
+      description: Get slide language names
+      operationId: getSlideLanguages
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: slide language name list
+                        example: ["English", "Spanish"]
         '401':
           description: Invalid request jwt token
         '400':

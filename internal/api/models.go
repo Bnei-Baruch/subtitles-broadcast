@@ -2,6 +2,8 @@ package api
 
 import (
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // pagination model
@@ -16,13 +18,13 @@ type Pagination struct {
 // api model
 
 type File struct {
-	ID        uint   `gorm:"primarykey"`
-	Type      string `json:"type"`
-	Language  string `json:"language"`
-	Filename  string `json:"filename"`
-	Content   []byte `json:"content"`
-	SourceUid string `json:"source_uid"`
-	FileUid   string `json:"file_uid"`
+	ID        uint           `gorm:"primarykey"`
+	Type      string         `json:"type"`
+	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
+	Filename  string         `json:"filename"`
+	Content   []byte         `json:"content"`
+	SourceUid string         `json:"source_uid"`
+	FileUid   string         `json:"file_uid"`
 }
 
 type Bookmark struct {

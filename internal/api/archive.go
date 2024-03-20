@@ -49,7 +49,7 @@ const (
 func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	// Checking if file table has data (avoid to add duplicated file data from source)
 	var uniqueFiles []File
-	if err := database.Table(DBTableFiles).Table("files").Distinct("source_uid").
+	if err := database.Table(DBTableFiles).Distinct("source_uid").
 		Find(&uniqueFiles).Error; err != nil {
 		log.Fatalf("Internal error: %s", err)
 	}
@@ -91,7 +91,7 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 						Texts: texts,
 						File: &File{
 							Type:      KabbalahmediaFileSourceType,
-							Language:  sourcePath.Language,
+							Languages: []string{sourcePath.Language},
 							SourceUid: sourcePath.SourceUid,
 							FileUid:   fileUid,
 						},

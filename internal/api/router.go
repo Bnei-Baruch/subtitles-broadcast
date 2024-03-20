@@ -23,11 +23,13 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.GET("/slide", handler.GetSlides)
 	v1.PATCH("/slide", handler.UpdateSlides)
 	v1.DELETE("/slide", handler.DeleteSlides)
+	v1.POST("/custom_slide", handler.AddCustomSlides)
 
 	v1.GET("/file_slide", handler.GetSlides)
 	v1.GET("/author", handler.GetAuthors)
 	v1.GET("/auto_complete", handler.GetSourceValuesByQuery)
 	v1.GET("/source_language", handler.GetLanguageListSourceSupports)
+	v1.GET("/slide_language", handler.GetSlideLanguages)
 
 	// Unnecessary handler at this moment. If need, will be used
 	// v1.GET("/source_name", handler.GetSourceName)

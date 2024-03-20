@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -165,6 +166,71 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded"))
 }
 
+func (h *Handler) AddCustomSlides(ctx *gin.Context) {
+	req := struct {
+		FileName  string   `json:"file_name,omitempty"`
+		Languages []string `json:"languages"`
+		SourceUid string   `json:"source_uid"`
+		FileUid   string   `json:"file_uid"`
+		Slides    []string `json:"slides"`
+	}{}
+	err := ctx.BindJSON(&req)
+	if err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, err.Error(), "Binding data has failed"))
+		return
+	}
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	fileData := &File{
+		Type:      UploadFileSourceType,
+		Languages: pq.StringArray(req.Languages),
+		SourceUid: req.SourceUid,
+		FileUid:   req.FileUid,
+	}
+	if len(req.FileName) > 0 {
+		fileData.Filename = req.FileName
+	}
+	if err = tx.Table(DBTableFiles).Create(fileData).Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Creating file data has failed"))
+		return
+	}
+
+	for _, slide := range req.Slides {
+		slideData := Slide{
+			Slide:     strings.ReplaceAll(slide, "\n", "\\n"),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if len(req.FileUid) > 0 {
+			slideData.FileUid = req.FileUid
+		}
+		if err = tx.Create(&slideData).Error; err != nil {
+			tx.Rollback()
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Creating slide data has failed"))
+			return
+		}
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding custom slide data has succeeded"))
+}
+
 // Get all slides with bookmarked info by user
 func (h *Handler) GetSlides(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
@@ -187,7 +253,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		query = query.Where("files.file_uid = ?", fileUid)
 	}
 	if len(language) > 0 {
-		query = query.Where("files.language = ?", language)
+		query = query.Where("? = ANY(files.languages)", language)
 	}
 	if len(keyword) > 0 {
 		if ctx.FullPath() == "/api/v1/file_slide" {
@@ -213,9 +279,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
 	return h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
-		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, files.language, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
+		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.language, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = files.language").
+		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = ANY(files.languages)").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Order("slides.file_uid").Order("order_number")
 }
@@ -479,7 +545,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.languages)").
 		Where("bookmarks.user_id = ?", userId).
 		Order("bookmarks.order_number").
 		Find(&result)
@@ -554,26 +620,36 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
 	sourceValueSlideCountList := []struct {
 		SourceValue string `json:"source_value"`
+		SourceUid   string `json:"source_uid"`
 		SlideCount  int    `json:"slide_count"`
 	}{}
 	result := h.Database.Debug().WithContext(ctx).Raw(`
-		SELECT value AS source_value, COUNT(distinct slide) AS slide_count
-		FROM (
-			SELECT
-				TRIM(split_part(unnest(string_to_array(path, '/')), '/', 1)) AS value,
-				slide
-			FROM
-				source_paths
-			LEFT JOIN (
-				SELECT slide, source_paths.source_uid
-				FROM slides
-				INNER JOIN files ON slides.file_uid = files.file_uid
-				INNER JOIN source_paths ON files.source_uid = source_paths.source_uid
-			) AS t ON source_paths.source_uid = t.source_uid
-		) AS source_values
-		WHERE value LIKE ?
-		GROUP BY value
-		ORDER BY value;
+	SELECT 
+    source_value, 
+    source_uid, 
+    COUNT(DISTINCT slide) AS slide_count
+	FROM (
+		SELECT
+		TRIM(unnest(string_to_array(path, '/'))) AS source_value,
+			slide,
+			source_paths.source_uid AS source_uid
+		FROM
+			source_paths
+		LEFT JOIN (
+			SELECT 
+				slide, 
+				files.source_uid 
+			FROM slides
+			INNER JOIN files ON slides.file_uid = files.file_uid
+		) AS t ON source_paths.source_uid = t.source_uid
+	) AS source_values
+	WHERE source_value <> ''
+	AND source_value ILIKE ?
+	GROUP BY 
+		source_value, 
+		source_uid
+	ORDER BY 
+    source_value;
 	`, "%"+query+"%").Scan(&sourceValueSlideCountList)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -600,6 +676,19 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	}
 	sort.Strings(languageList)
 	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
+}
+
+func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
+	var result []string
+	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
+		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
+	if query.Error != nil {
+		log.Error(query.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
 }
 
 // Unnecessary handler at this moment. If need, will be used
@@ -651,7 +740,7 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 // 			Select("source_paths.path || ' / ' || slides.id AS path").
 // 			Table("slides").
 // 			Joins("INNER JOIN files on slides.file_uid = files.file_uid").
-// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND files.language = source_paths.language").
+// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.languages)").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {
 // 				ctx.JSON(http.StatusInternalServerError,
