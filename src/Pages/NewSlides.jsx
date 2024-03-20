@@ -34,7 +34,7 @@ const NewSlides = () => {
   const [progress, setProgress] = useState(0);
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
-  const ActocompleteList = useSelector(getAutocompleteSuggetion);
+  const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const DebouncingFreeText = useDebounce(sourceUrl, 500);
 
   useEffect(() => {
@@ -343,7 +343,7 @@ const NewSlides = () => {
                 />
                 {showAutocompleteBox && (
                   <ul className="suggestions" id="suggestions">
-                    {ActocompleteList?.map((suggestion, index) => (
+                    {AutocompleteList?.map((suggestion, index) => (
                       <li
                         key={index}
                         onClick={() => {
