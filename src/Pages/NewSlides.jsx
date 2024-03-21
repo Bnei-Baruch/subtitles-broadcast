@@ -3,6 +3,7 @@ import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
 import { GetSlideLanguages, SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
+import GetLangaugeCode from "../Utils/Const";
 import {
   ArchiveAutoComplete,
   getAutocompleteSuggetion,
@@ -14,13 +15,8 @@ import { useNavigate } from 'react-router-dom';
 const NewSlides = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const languages = GetLangaugeCode();
   const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
-  const languages = {
-    'English': 'en',
-    'Spanish': 'es',
-    'Hebrew': 'he',
-    'Russian': 'ru'
-  };
 
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
@@ -134,16 +130,16 @@ const NewSlides = () => {
     setSourceUid("upload_" + sourceUid);
     setFileUid("upload_" + fileUid);
     if (selectedFile) {
-      // const reader = new FileReader();
+      const reader = new FileReader();
 
-      // reader.onload = (event) => {
-      //   const fileContents = event.target.result;
-      //   // Do something with the file contents
-      //   console.log('File contents:', fileContents);
-      // };
+      reader.onload = (event) => {
+        const fileContents = event.target.result;
+        // Do something with the file contents
+        console.log('File contents:', fileContents);
+      };
 
-      // // Read the file as text
-      // reader.readAsText(selectedFile);
+      // Read the file as text
+      reader.readAsText(selectedFile);
       fetchData(fileUid);
     } else {
       console.error('No file selected');
