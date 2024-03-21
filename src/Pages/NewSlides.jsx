@@ -24,7 +24,7 @@ const NewSlides = () => {
   const [slideLanguageOptions, setSlideLanguageOptions] = useState([]);
   const [fileUid, setFileUid] = useState('');
   const [sourceUid, setSourceUid] = useState('');
-  const [activeButton, setActiveButton] = useState("button1");
+  const [insertMethod, setInsertMethod] = useState("custom_file");
   const [isChecked, setIsChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState('');
   const [progress, setProgress] = useState(0);
@@ -70,7 +70,7 @@ const NewSlides = () => {
       if (document.getElementById('languageSelect') && slideLanguageOptions.length > 0) {
         request.languages = slideLanguageOptions;
       }
-      if (activeButton === "button1") {
+      if (insertMethod === "custom_file") {
         setTimeout(() => {
           setProgress(75);
         }, 600);
@@ -87,7 +87,7 @@ const NewSlides = () => {
         if (result.payload.success) {
           setUpdateTagList([]);
           setSourceUid('');
-          if (activeButton === "button1") {
+          if (insertMethod === "custom_file") {
             setTimeout(() => {
               setProgress(100);
             }, 600);
@@ -111,36 +111,41 @@ const NewSlides = () => {
   }, [updateTagList]);
 
   const handleUpload = () => {
-    const fetchData = async (fileUid) => {
-      try {
-        const response = await fetch(`https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`);
-        if (response.status !== 200) {
-          throw new Error(`Fetch failed with status ${response.status}`);
-        }
-        const contentData = await response.text();
-        await loadSlides(contentData);
-      } catch (error) {
-        console.error('Error fetching or parsing data:', error.message);
-      }
-    };
-
     // Perform upload logic with selectedFile
-    let sourceUid = "tswzgnWk";
-    let fileUid = "OzSCqHYF";
+    let sourceUid = "tswzgnWk"; // need to update
+    let fileUid = "OzSCqHYF";   // need to update
     setSourceUid("upload_" + sourceUid);
     setFileUid("upload_" + fileUid);
     if (selectedFile) {
       const reader = new FileReader();
 
       reader.onload = (event) => {
-        const fileContents = event.target.result;
-        // Do something with the file contents
-        console.log('File contents:', fileContents);
+        let fileContents = event.target.result;
+        console.log(fileContents);
+        fileContents = fileContents.replace(/\r?\n/g, ' <br/> ');
+        const wordsArray = fileContents.split(/\s+/);
+        let structuredArray = [];
+        let previousWord = '';
+        wordsArray.forEach((word, index) => {
+          const elementObject = {
+            paragraphStart: false,
+            tagName: '',
+            word: word,
+          };
+          if (previousWord === "<br/>" && word !== "<br/>") {
+            elementObject.paragraphStart = true;
+          }
+          structuredArray.push(elementObject);
+          previousWord = word;
+        });
+        setTimeout(() => {
+          setProgress(25);
+          setTagList(structuredArray);
+        }, 600);
       };
 
       // Read the file as text
       reader.readAsText(selectedFile);
-      fetchData(fileUid);
     } else {
       console.error('No file selected');
     }
@@ -155,26 +160,23 @@ const NewSlides = () => {
       tag: element.tagName,
       content: element.outerHTML,
     }));;
-    setProgress(25);
-    setTimeout(() => {
-      let tags = [];
-      paragraphArray.forEach(elementInfo => {
-        const tagName = elementInfo.tag;
-        const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
-        wordArray.forEach((word, index) => {
-          const elementObject = {
-            paragraphStart: false,
-            tagName: tagName,
-            word: word,
-          };
-          if (index === 0) {
-            elementObject.paragraphStart = true;
-          }
-          tags.push(elementObject);
-        });
+    let tags = [];
+    paragraphArray.forEach(elementInfo => {
+      const tagName = elementInfo.tag;
+      const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
+      wordArray.forEach((word, index) => {
+        const elementObject = {
+          paragraphStart: false,
+          tagName: tagName,
+          word: word,
+        };
+        if (index === 0) {
+          elementObject.paragraphStart = true;
+        }
+        tags.push(elementObject);
       });
-      setTagList(tags);
-    }, 600);
+    });
+    setTagList(tags);
   };
 
   const loadSource = () => {
@@ -239,26 +241,26 @@ const NewSlides = () => {
       <div className="row">
         <button
           className={
-            activeButton === "button1"
+            insertMethod === "custom_file"
               ? "active-button col-6"
               : "inactive-button col-6"
           }
-          onClick={() => setActiveButton("button1")}
+          onClick={() => setInsertMethod("custom_file")}
         >
           Custom
         </button>
         <button
           className={
-            activeButton === "button2"
+            insertMethod === "source_url"
               ? "active-button col-6"
               : "inactive-button col-6"
           }
-          onClick={() => setActiveButton("button2")}
+          onClick={() => setInsertMethod("source_url")}
         >
           From KabbalahMedia
         </button>
       </div>
-      {activeButton === "button1" ? (
+      {insertMethod === "custom_file" ? (
         <>
           <div className="row m-4">
             <div className="input-box col-3 ">
@@ -292,13 +294,13 @@ const NewSlides = () => {
           </div>
 
           <div className="row m-4">
-            <input type="file" onChange={(event) => { setSelectedFile(event.target.files[0].name) }} />
+            <input type="file" onChange={(event) => { setSelectedFile(event.target.files[0]) }} />
             <button className="btn btn-light rounded-pill col-4"
               onClick={handleUpload}>Upload File
             </button>
             <div className="file-upload-preview col-7">
               <div className="d-flex justify-content-between">
-                <span className=""> File Name: {selectedFile}</span>
+                <span className=""> File Name: {selectedFile.name}</span>
               </div>
               <div className="progress">
                 <div
@@ -310,11 +312,11 @@ const NewSlides = () => {
                   aria-valuemin="0"
                   aria-valuemax="100"
                 ></div>
-                <div>
-                  <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} />
-                </div>
               </div>
             </div>
+          </div>
+          <div>
+            <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} method={insertMethod} />
           </div>
         </>
       ) : (
@@ -356,7 +358,7 @@ const NewSlides = () => {
             </div>
             <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSource}>Add Source</button>
             <div>
-              <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} />
+              <SlideSplit tags={tagList} visible={false} updateSplitTags={setUpdateTagList} method={insertMethod} />
             </div>
           </div >
         </>
