@@ -619,17 +619,20 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
 	sourceValueSlideCountList := []struct {
+		SourcePath  string `json:"source_path"`
 		SourceValue string `json:"source_value"`
 		SourceUid   string `json:"source_uid"`
 		SlideCount  int    `json:"slide_count"`
 	}{}
 	result := h.Database.Debug().WithContext(ctx).Raw(`
 	SELECT 
+    source_path,
     source_value, 
     source_uid, 
     COUNT(DISTINCT slide) AS slide_count
 	FROM (
 		SELECT
+		path As source_path,
 		TRIM(unnest(string_to_array(path, '/'))) AS source_value,
 			slide,
 			source_paths.source_uid AS source_uid
@@ -646,6 +649,7 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	WHERE source_value <> ''
 	AND source_value ILIKE ?
 	GROUP BY 
+		source_path,
 		source_value, 
 		source_uid
 	ORDER BY 
