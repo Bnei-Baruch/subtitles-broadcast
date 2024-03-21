@@ -347,11 +347,11 @@ const NewSlides = () => {
                       <li
                         key={index}
                         onClick={() => {
-                          setContentSource(suggestion.source_value);
+                          setContentSource(suggestion.source_path);
                           setSourceUid(suggestion.source_uid);
                         }}
                       >
-                        {suggestion.source_value}
+                        {suggestion.source_path}
                       </li>
                     ))}
                   </ul>
