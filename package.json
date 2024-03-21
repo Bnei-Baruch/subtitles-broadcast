@@ -12,6 +12,7 @@
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.4",
     "docker": "^1.0.0",
+    "fs": "^0.0.1-security",
     "html-react-parser": "^5.1.2",
     "json-server": "^0.17.3",
     "keycloak-js": "^20.0.3",
