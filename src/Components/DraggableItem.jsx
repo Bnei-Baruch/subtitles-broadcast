@@ -59,7 +59,8 @@ const DraggableItem = ({
 
   const handleBookMarkClick = (e) => {
     setActivatedTab(+text?.split("/")?.at(-1));
-    dispatch(GetSubtitleData(e));
+    localStorage.setItem("fileUid", e);
+    dispatch(GetSubtitleData({ file_uid: e }));
   };
   return (
     <div
@@ -72,7 +73,7 @@ const DraggableItem = ({
         className="bi bi-trash"
       />
       <span
-        className="text-truncate mx-3 text-primary"
+        className="text-truncate mx-3 text-primary bookmarkTruncate"
         data-bs-toggle="tooltip"
         data-bs-placement="top"
         title={text}

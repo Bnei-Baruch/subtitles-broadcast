@@ -63,7 +63,7 @@ body {
 .main-body .form-control {
   width: 260px;
 }
-.flex-column {
+.side-menu .flex-column {
   background-color: #232f3e !important;
   /* height: 100vh; */
 }

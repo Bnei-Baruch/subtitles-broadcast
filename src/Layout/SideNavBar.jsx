@@ -38,10 +38,11 @@ const SideNavBar = ({ logout }) => (
               <img alt="queue" src="image/queue.svg" /> New
             </NavLink>
           </li>
+
           <li>
-            <NavLink to={"/setting"} className="nav-link text-white">
+            <NavLink to={"/question"} className="nav-link text-white">
               <img alt="slider" src="image/sliders.svg" />
-              Settings
+              Question
             </NavLink>
           </li>
         </ul>

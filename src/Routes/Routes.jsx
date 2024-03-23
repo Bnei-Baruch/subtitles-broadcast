@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Subtitles from "../Pages/Subtitles";
 import Archive from "../Pages/Archive";
 import NewSlides from "../Pages/NewSlides";
+import QuestionsModule from "../Pages/QuestionModule";
 
 const MainRoutes = ({ logout }) => {
   return (
@@ -15,6 +16,7 @@ const MainRoutes = ({ logout }) => {
         <Route path="/subtitle" element={<Subtitles />} />
         <Route path="/archive" element={<Archive />} />
         <Route path="/new" element={<NewSlides />} />
+        <Route path="/question" element={<QuestionsModule />} />
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}
         {/* <Route path="login" element={<PublicRoutes />}>

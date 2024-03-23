@@ -191,6 +191,9 @@ main {
 .slide-container {
   width: 100%;
 }
+.slideNumber {
+  width: 100px;
+}
 
 .slide-content {
   position: absolute;

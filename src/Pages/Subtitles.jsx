@@ -9,13 +9,14 @@ import {
   getAllBookmarkList,
   BookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
-import GreenWindowButton from "../Components/GreenWindowButton";
-import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-import GreenSlide from "../Components/GreenSlide";
+// import GreenWindowButton from "../Components/GreenWindowButton";
+// import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
+// import GreenSlide from "../Components/GreenSlide";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -25,6 +26,7 @@ const Subtitles = () => {
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const GetAllBookmarkList = useSelector(getAllBookmarkList);
+  const [searchSlide, setSearchSlide] = useState("");
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
@@ -55,6 +57,11 @@ const Subtitles = () => {
   useEffect(() => {
     GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
   }, [GetAllBookmarkList]);
+  useEffect(() => {
+    const file_uid = localStorage.getItem("fileUid");
+    file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+  }, [searchSlide]);
+
   const moveCard = (fromIndex, toIndex) => {
     const updatedItems = [...items];
     const [movedItem] = updatedItems.splice(fromIndex, 1);
@@ -69,6 +76,12 @@ const Subtitles = () => {
       <div className="body-content d-flex ">
         <div className="left-section row">
           <div className="innerhead d-flex justify-content-between">
+            <input
+              className="no-border mx-3 "
+              value={searchSlide}
+              placeholder="search"
+              onChange={(e) => setSearchSlide(e.target.value)}
+            />
             <div
               className="btn-group"
               role="group"
@@ -88,7 +101,7 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              <ActiveSlideMessaging
+              {/* <ActiveSlideMessaging
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
                 setActivatedTab={setActivatedTab}
@@ -97,17 +110,13 @@ const Subtitles = () => {
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
-              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
+              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} /> */}
               <button
                 type="button"
                 onClick={() => setIsLtr(!isLtr)}
                 className="btn btn-tr"
               >
                 {isLtr ? "LTR" : "RTL"}
-              </button>
-
-              <button type="button" className="btn btn-tr">
-                <img alt="vectors" src="image/Vector.svg" />
               </button>
 
               {/* <Dropdown variant="success" id="brodcast_programm">
@@ -141,6 +150,7 @@ const Subtitles = () => {
                 <div className="vh-80">
                   <BookContent
                     isLtr={isLtr}
+                    setSearchSlide={setSearchSlide}
                     setActivatedTab={setActivatedTab}
                     activatedTab={activatedTab}
                     targetItemId={activatedTab}
@@ -150,7 +160,7 @@ const Subtitles = () => {
               </div>
             </div>
           </div>
-          <div className="d-flex justify-content-center">
+          <div className="d-flex justify-content-center mt-2">
             <i
               className={`bi bi-chevron-left me-1 cursor-pointer ${
                 activatedTab <= 1 ? "disablecolor" : "custom-pagination"
@@ -167,18 +177,7 @@ const Subtitles = () => {
                     update: true,
                   })
                 );
-                /*const newData = activeSlide.map((key) =>
-                  key.fileUid === file_uid
-                    ? {
-                      fileUid: file_uid,
-                      activeSlide: +key.activeSlide - 1,
-                    }
-                    : key
-                );
-                localStorage.setItem(
-                  "activeSlideFileUid",
-                  JSON.stringify(newData)
-                );*/
+
                 setActivatedTab(+activatedTab - 1);
               }}
             >
@@ -186,7 +185,7 @@ const Subtitles = () => {
             </i>
 
             <input
-              className="no-border text-center"
+              className="no-border text-center slideNumber"
               defaultValue={activatedTab}
               value={activatedTab}
               onWheel={(e) => e.target.blur()}
@@ -222,18 +221,7 @@ const Subtitles = () => {
                     update: true,
                   })
                 );
-                /*const newData = activeSlide.map((key) =>
-                  key.fileUid === file_uid
-                    ? {
-                      fileUid: file_uid,
-                      activeSlide: +key.activeSlide + 1,
-                    }
-                    : key
-                );
-                localStorage.setItem(
-                  "activeSlideFileUid",
-                  JSON.stringify(newData)
-                );*/
+
                 setActivatedTab(+activatedTab + 1);
               }}
               className={` cursor-pointer ${
@@ -252,7 +240,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
+            {/* <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide> */}
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">

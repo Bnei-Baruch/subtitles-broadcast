@@ -22,12 +22,13 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <Provider store={store}>
     <ToastContainer autoClose={2000} />
-    <Auth>
+    <App />
+    {/* <Auth>
       {(auth) => (
         <>
           <App auth={auth} />
         </>
       )}
-    </Auth>
+    </Auth> */}
   </Provider>
 );

@@ -140,7 +140,7 @@ const EditArcive = ({ handleClose }) => {
           </div>
           <div className="innerhead d-flex justify-content-between align-items-end mb-5">
             <div className="input-box first">
-              <label className="w-100">Title</label>
+              <label className="w-100">Name</label>
               <input
                 className=""
                 type="text"
@@ -226,7 +226,9 @@ const EditArcive = ({ handleClose }) => {
                   }}
                 >
                   <div
-                    className={`adjustable-font box box2 ${index == selected && "activeSlide"}`}
+                    className={`adjustable-font box box2 ${
+                      index == selected && "activeSlide"
+                    }`}
                   >
                     <textarea
                       value={key?.slide}
@@ -252,7 +254,7 @@ const EditArcive = ({ handleClose }) => {
                       }}
                       key={index}
                       className=""
-                    // style={containerStyle}
+                      // style={containerStyle}
                     />
                     {index == selected && (
                       <i
@@ -283,28 +285,17 @@ const EditArcive = ({ handleClose }) => {
                             addedNew: true,
                           });
                           setSlideListData(cloneSlidedataArray);
-                          // setAddSlides([
-                          //   ...addSlides,
-                          //   {
-                          //     slide_id: key?.ID + 1,
-                          //     slide: "",
-                          //     order_number: key?.order_number + 1,
-                          //   },
-                          // ]);
-                          //1) change selected slide
-                          //2) remove from main array which display entire slides
-                          //3) add to delete slide array list
                         }}
                         className="bi bi-plus-circle add-icon "
                       />
                     )}
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-6 my-2">
                   <div
                     key={index}
                     className="box box2  adjustable-font"
-                  // style={containerStyle}
+                    // style={containerStyle}
                   >
                     <Slide content={key?.slide} isLtr={true} />
                   </div>

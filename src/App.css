@@ -10,3 +10,7 @@
 .main-content {
   flex: 1; /* Allow main content to grow and take up remaining space */
 }
+.bookmarkTruncate {
+  direction: rtl;
+  text-align: left;
+}

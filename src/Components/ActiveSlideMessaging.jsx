@@ -1,5 +1,4 @@
-import React, { useState, useContext } from "react";
-import AppContext from "../AppContext";
+import React, { useState } from "react";
 import mqtt from "mqtt";
 
 let mqttClientId;
@@ -75,12 +74,12 @@ function initMqttClient(
 
     mqttClient = mqtt.connect(mqttBrokerUrl, mqttOptions);
 
+    mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
+    mqttClient.subscribe(mqttTopic);
+
     setMqttClient(mqttClient);
     subscribeMqttMessage(mqttClient, setJobMqttMessage);
   }
-
-  mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
-  mqttClient.subscribe(mqttTopic);
 
   return mqttClient;
 }
@@ -114,24 +113,22 @@ const determinePublicJobMsg = (
     const jobMessageJson = parseMqttMessage(jobMqttMessage);
     const mqttMessageJson = parseMqttMessage(mqttMessage);
 
-    if (userAddedList && activatedTab) {
+    if (userAddedList) {
       if (
-        !mqttMessageJson ||
-        (mqttMessageJson.order_number !== jobMessageJson.order_number &&
-          (!jobMqttMessage ||
-            jobMqttMessage.order_number !== mqttMessageJson.order_number))
+        mqttMessageJson.order_number !== jobMessageJson.order_number &&
+        (!jobMqttMessage ||
+          jobMqttMessage.order_number !== mqttMessageJson.order_number)
       ) {
+        //if (userAddedList) {
         const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
 
-        if (
-          activeSlide &&
-          activeSlide.source_uid === jobMqttMessage.source_uid
-        ) {
+        if (activeSlide.source_uid === jobMqttMessage.source_uid) {
           if (activeSlide.order_number !== jobMqttMessage.order_number) {
             setActivatedTab(jobMqttMessage.order_number + 1);
             isPublic = true;
           }
         }
+        // }
       }
     } else {
       if (
@@ -229,6 +226,8 @@ const determinePublish = (
 };
 
 export function ActiveSlideMessaging({
+  broadcastProgrammCode,
+  broadcastLangCode,
   userAddedList,
   activatedTab,
   setActivatedTab,
@@ -238,9 +237,6 @@ export function ActiveSlideMessaging({
   setJobMqttMessage,
 }) {
   const [mqttClient, setMqttClient] = useState(null);
-  const appContextlData = useContext(AppContext);
-  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
-  const broadcastLangCode = appContextlData.broadcastLang.value;
 
   initMqttClient(
     broadcastProgrammCode,
