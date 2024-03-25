@@ -4,6 +4,7 @@ import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
 import { GetSlideLanguages, SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import GetLangaugeCode from "../Utils/Const";
+import GenerateUID from "../Utils/Uid";
 import {
   ArchiveAutoComplete,
   getAutocompleteSuggetion,
@@ -114,8 +115,8 @@ const NewSlides = () => {
     // Perform upload logic with selectedFile
     let sourceUid = "tswzgnWk"; // need to update
     let fileUid = "OzSCqHYF";   // need to update
-    setSourceUid("upload_" + sourceUid);
-    setFileUid("upload_" + fileUid);
+    setSourceUid("upload_" + GenerateUID(8));
+    setFileUid("upload_" + GenerateUID(8));
     if (selectedFile) {
       const reader = new FileReader();
 
