@@ -7,7 +7,6 @@ function GenerateUID(length) {
     }
   
     return result;
-  }
-  
+}
 
 export default GenerateUID;

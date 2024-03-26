@@ -33,6 +33,7 @@ const NewSlides = () => {
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const DebouncingFreeText = useDebounce(sourceUrl, 500);
+  const [selectedOptions, setSelectedOptions] = useState([]);
 
   useEffect(() => {
     setProgress(0);
@@ -69,7 +70,11 @@ const NewSlides = () => {
         request.name = document.getElementById('upload_name').value;
       }
       if (document.getElementById('languageSelect') && slideLanguageOptions.length > 0) {
-        request.languages = slideLanguageOptions;
+        let languages = [];
+        selectedOptions?.forEach((option) => {
+          languages.push(option.value);
+        });
+        request.languages = languages;
       }
       if (insertMethod === "custom_file") {
         setTimeout(() => {
@@ -94,11 +99,11 @@ const NewSlides = () => {
             }, 600);
             setTimeout(() => {
               alert(result.payload.description);
-              navigate('/archive');
+              navigate('/archive?file_uid=' + fileUid);
             }, 1500);
           } else {
             alert(result.payload.description);
-            navigate('/archive');
+            navigate('/archive?file_uid=' + fileUid);
           }
         }
       }).catch(error => {
@@ -113,8 +118,6 @@ const NewSlides = () => {
 
   const handleUpload = () => {
     // Perform upload logic with selectedFile
-    let sourceUid = "tswzgnWk"; // need to update
-    let fileUid = "OzSCqHYF";   // need to update
     setSourceUid("upload_" + GenerateUID(8));
     setFileUid("upload_" + GenerateUID(8));
     if (selectedFile) {
@@ -122,7 +125,6 @@ const NewSlides = () => {
 
       reader.onload = (event) => {
         let fileContents = event.target.result;
-        console.log(fileContents);
         fileContents = fileContents.replace(/\r?\n/g, ' <br/> ');
         const wordsArray = fileContents.split(/\s+/);
         let structuredArray = [];
@@ -286,6 +288,10 @@ const NewSlides = () => {
                     }))
                     : [{ label: localStorage.getItem("subtitleLanguage"), value: languages[localStorage.getItem("subtitleLanguage")] }] // Add this option when isChecked is false
                 }
+                value={selectedOptions}
+                onChange={(selectedOptions) => {
+                  setSelectedOptions(selectedOptions);
+                }}
               />
             </div>
           </div>
