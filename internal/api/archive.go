@@ -84,14 +84,14 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 					<-sem
 					wg.Done()
 				}()
-				texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Language)
+				texts, fileUid := getFileContent(sourcePath.SourceUid, sourcePath.Languages[0])
 				log.Printf("%d Finished loading file content. sourceUid: %s, fileUid: %s", idx, sourcePath.SourceUid, fileUid)
 				if len(texts) > 0 {
 					contents[idx] = &AchiveTempData{
 						Texts: texts,
 						File: &File{
 							Type:      KabbalahmediaFileSourceType,
-							Languages: []string{sourcePath.Language},
+							Languages: sourcePath.Languages,
 							SourceUid: sourcePath.SourceUid,
 							FileUid:   fileUid,
 						},
@@ -168,17 +168,19 @@ func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
 	}
 	// Delete source list to be delete we get from above
 	for _, sourcePathToDelete := range sourcePathsToDelete {
-		err := tx.Where("id = ?", sourcePathToDelete.ID).Delete(sourcePathToDelete).Error
-		if err != nil {
-			tx.Rollback()
-			log.Printf("Internal error: %s", err)
-			return
+		if !strings.Contains(sourcePathToDelete.SourceUid, "upload_") {
+			err := tx.Where("id = ?", sourcePathToDelete.ID).Delete(sourcePathToDelete).Error
+			if err != nil {
+				tx.Rollback()
+				log.Printf("Internal error: %s", err)
+				return
+			}
 		}
 	}
 	// Upsert source path by gorm way
 	for _, sourcePathToInsert := range sourcePathsToInsert {
 		err := database.Debug().Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "language"}, {Name: "source_uid"}},
+			Columns:   []clause.Column{{Name: "languages"}, {Name: "source_uid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"path"}),
 		}).Create(sourcePathToInsert).Error
 		if err != nil {
@@ -303,7 +305,7 @@ func getSourcePath(sourcePaths *[]*SourcePath, source *Source, language, path st
 	currentPath := path + delimiter + source.Name
 	sourcePath := SourcePath{
 		SourceUid: source.ID,
-		Language:  language,
+		Languages: []string{language},
 		Path:      currentPath,
 	}
 	*sourcePaths = append(*sourcePaths, &sourcePath)
