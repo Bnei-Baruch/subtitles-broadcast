@@ -346,6 +346,7 @@ const NewSlides = () => {
                   //   }, 200);
                   // }}
                   onChange={(e) => {
+                    console.log(e.target.value)
                     setContentSource(e.target.value);
                     setShowAutocompleteBox(false);
                     clearTimeout(typingTimeout);
