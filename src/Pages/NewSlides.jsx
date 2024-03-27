@@ -10,7 +10,6 @@ import {
   getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
-import useDebounce from "../Services/useDebounce";
 import { useNavigate } from 'react-router-dom';
 
 const NewSlides = () => {
@@ -32,16 +31,22 @@ const NewSlides = () => {
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
-  const DebouncingFreeText = useDebounce(sourceUrl, 500);
   const [selectedOptions, setSelectedOptions] = useState([]);
+  const [typingTimeout, setTypingTimeout] = useState(null);
 
   useEffect(() => {
     setProgress(0);
   }, []);
 
   useEffect(() => {
-    dispatch(ArchiveAutoComplete({ query: sourceUrl }));
-  }, [DebouncingFreeText]);
+    if (sourceUrl.length > 0) {
+      dispatch(ArchiveAutoComplete({ query: sourceUrl }));
+    }
+  }, [sourceUrl]);
+
+  // useEffect(() => {
+  //   dispatch(ArchiveAutoComplete({ query: sourceUrl }));
+  // }, [DebouncingFreeText]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -335,20 +340,29 @@ const NewSlides = () => {
               <label className="w-100">Source Path</label>
               <div className="form-group  autoComplete">
                 <input className="form-control" type="type" value={contentSource}
-                  onBlur={() => {
-                    setTimeout(() => {
-                      setShowAutocompleteBox(false);
-                    }, 200);
-                  }}
+                  // onBlur={() => {
+                  //   setTimeout(() => {
+                  //     setShowAutocompleteBox(false);
+                  //   }, 200);
+                  // }}
                   onChange={(e) => {
-                    setShowAutocompleteBox(true);
-                    setSourceUrl(e.target.value);
                     setContentSource(e.target.value);
+                    setShowAutocompleteBox(false);
+                    clearTimeout(typingTimeout);
+                    const timeoutId = setTimeout(() => {
+                      // Perform action after typing has stopped
+                      setShowAutocompleteBox(true);
+                      setSourceUrl(e.target.value);
+                      console.log('Typing has stopped:', e.target.value);
+                    }, 500); // Adjust the timeout duration as needed
+                    // Store the timeout ID for future reference
+                    setTypingTimeout(timeoutId);
                   }}
                 />
-                {showAutocompleteBox && (
+                {showAutocompleteBox && (sourceUrl.length > 0) && (
                   <ul className="suggestions" id="suggestions">
-                    {AutocompleteList?.map((suggestion, index) => (
+                    {AutocompleteList?.map((suggestion, index) =>
+                    (
                       <li
                         key={index}
                         onClick={() => {
