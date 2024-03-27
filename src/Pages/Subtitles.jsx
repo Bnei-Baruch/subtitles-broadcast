@@ -77,7 +77,7 @@ const Subtitles = () => {
         <div className="left-section row">
           <div className="innerhead d-flex justify-content-between">
             <input
-              className="no-border mx-3 "
+              className="no-border-search mx-3 "
               value={searchSlide}
               placeholder="search"
               onChange={(e) => setSearchSlide(e.target.value)}
@@ -160,7 +160,7 @@ const Subtitles = () => {
               </div>
             </div>
           </div>
-          <div className="d-flex justify-content-center mt-2">
+          <div className="d-flex justify-content-center align-items-center mt-2 paginationStyle">
             <i
               className={`bi bi-chevron-left me-1 cursor-pointer ${
                 activatedTab <= 1 ? "disablecolor" : "custom-pagination"
@@ -264,11 +264,55 @@ const Subtitles = () => {
               </div>
             </DndProvider>
           </div>
-
-          {/* <div className="Questions whit-s">
+					<div className="Questions whit-s">
             <div className="top-head d-flex justify-content-between">
+              <h3>Questions</h3>
+              <div className="input-box">
+                <input
+                  className=""
+                  type="text"
+                  placeholder="Search"
+                  aria-label="Search"
+                />
+              </div>
             </div>
-          </div> */}
+            <div className="QuestionSection ">
+              <div className="d-flex justify-content-between h-auto">
+                <p>Hebrew</p>
+                <i className="bi bi-eye" />
+              </div>
+              <div className="d-flex justify-content-end">
+                <p>שאלה 1: מה טעם בחיים?</p>
+              </div>
+            </div>
+            <div className="QuestionSection ">
+              <div className="d-flex justify-content-between h-auto">
+                <p>Hebrew</p>
+                <i className="bi bi-eye" />
+              </div>
+              <div className="d-flex justify-content-end">
+                <p>שאלה 1: מה טעם בחיים?</p>
+              </div>
+            </div>
+            <div className="QuestionSection ">
+              <div className="d-flex justify-content-between h-auto">
+                <p>Hebrew</p>
+                <i className="bi bi-eye" />
+              </div>
+              <div className="d-flex justify-content-end">
+                <p>שאלה 1: מה טעם בחיים?</p>
+              </div>
+            </div>
+            <div className="QuestionSection ">
+              <div className="d-flex justify-content-between h-auto">
+                <p>Hebrew</p>
+                <i className="bi bi-eye" />
+              </div>
+              <div className="d-flex justify-content-end">
+                <p>שאלה 1: מה טעם בחיים?</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </>

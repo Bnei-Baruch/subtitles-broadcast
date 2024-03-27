@@ -191,9 +191,18 @@ main {
 .slide-container {
   width: 100%;
 }
+
 .slideNumber {
-  width: 100px;
+  font-family: Nunito;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  text-align: left;
 }
+
+.custom-pagination {
+}
+
 
 .slide-content {
   position: absolute;
@@ -354,7 +363,20 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+.paginationStyle i {
+  font-size: 16px;
+}
+
+
 .no-border {
+  width: 26px;
+  border: none;
+  outline: none;
+  background: none;
+  border-bottom: 1px solid #000;
+}
+
+.no-border-search {
   border: none;
   outline: none;
   background: none;
@@ -381,3 +403,10 @@ dropdown-toggle {
   top: 20%;
   left: -1%;
 }
+
+.QuestionSection {
+  background-color: #f7f7f7;
+  height: 76px;
+  margin: 5px 5px;
+}
+
