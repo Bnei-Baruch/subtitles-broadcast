@@ -54,10 +54,10 @@ type SlideDetail struct {
 }
 
 type SourcePath struct {
-	ID        uint   `gorm:"primarykey"`
-	Language  string `json:"language"`
-	SourceUid string `json:"source_uid"`
-	Path      string `json:"path"`
+	ID        uint           `gorm:"primarykey"`
+	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
+	SourceUid string         `json:"source_uid"`
+	Path      string         `json:"path"`
 }
 
 // archive model

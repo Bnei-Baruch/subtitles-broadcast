@@ -188,6 +188,18 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
+	sourcePathData := &SourcePath{
+		Languages: pq.StringArray(req.Languages),
+		SourceUid: req.SourceUid,
+		Path:      "custom_file_slide",
+	}
+	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Creating source path data has failed"))
+		return
+	}
+
 	fileData := &File{
 		Type:      UploadFileSourceType,
 		Languages: pq.StringArray(req.Languages),
@@ -204,11 +216,12 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		return
 	}
 
-	for _, slide := range req.Slides {
+	for idx, slide := range req.Slides {
 		slideData := Slide{
-			Slide:     strings.ReplaceAll(slide, "\n", "\\n"),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			Slide:       strings.ReplaceAll(slide, "\n", "\\n"),
+			OrderNumber: idx,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 		if len(req.FileUid) > 0 {
 			slideData.FileUid = req.FileUid
@@ -279,9 +292,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
 	return h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
-		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.language, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
+		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.language = ANY(files.languages)").
+		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Order("slides.file_uid").Order("order_number")
 }
@@ -545,7 +558,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.languages)").
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages").
 		Where("bookmarks.user_id = ?", userId).
 		Order("bookmarks.order_number").
 		Find(&result)
@@ -619,17 +632,20 @@ func (h *Handler) GetAuthors(ctx *gin.Context) {
 func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	query := ctx.Query("query")
 	sourceValueSlideCountList := []struct {
+		SourcePath  string `json:"source_path"`
 		SourceValue string `json:"source_value"`
 		SourceUid   string `json:"source_uid"`
 		SlideCount  int    `json:"slide_count"`
 	}{}
 	result := h.Database.Debug().WithContext(ctx).Raw(`
 	SELECT 
+    source_path,
     source_value, 
     source_uid, 
     COUNT(DISTINCT slide) AS slide_count
 	FROM (
 		SELECT
+		path As source_path,
 		TRIM(unnest(string_to_array(path, '/'))) AS source_value,
 			slide,
 			source_paths.source_uid AS source_uid
@@ -646,6 +662,7 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	WHERE source_value <> ''
 	AND source_value ILIKE ?
 	GROUP BY 
+		source_path,
 		source_value, 
 		source_uid
 	ORDER BY 
@@ -740,7 +757,7 @@ func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
 // 			Select("source_paths.path || ' / ' || slides.id AS path").
 // 			Table("slides").
 // 			Joins("INNER JOIN files on slides.file_uid = files.file_uid").
-// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.language = ANY(files.languages)").
+// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages").
 // 			Where("slides.id = ?", slideIdInt).First(&path).Error
 // 		if err != nil {
 // 				ctx.JSON(http.StatusInternalServerError,
