@@ -172,6 +172,10 @@ main {
   margin-bottom: 10px;
 }
 
+bdo {
+  width: 100%;
+}
+
 .order-number {
   position: absolute;
   right: 0;
