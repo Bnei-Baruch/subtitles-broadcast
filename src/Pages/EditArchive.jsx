@@ -57,7 +57,11 @@ const EditArcive = ({ handleClose }) => {
     }
 
     if (updateSlideList?.length > 0) {
-      dispatch(updateNewSlide(updateSlideList));
+      const updateSlideListRequest = {
+        updateSlideList: updateSlideList,
+        file_uid: slideListData[0]?.file_uid
+      }
+      dispatch(updateNewSlide(updateSlideListRequest));
     }
 
     setDeleted([]);

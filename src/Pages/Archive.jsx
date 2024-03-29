@@ -19,8 +19,10 @@ import useDebounce from "../Services/useDebounce";
 import EditArcive from "./EditArchive";
 import { Search } from "react-bootstrap-icons";
 import ReactPaginate from "react-paginate";
+import { useLocation } from 'react-router-dom';
 
 const Archive = () => {
+  const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const ArchiveList = useSelector(getAllArchiveList);
   const ActocompleteList = useSelector(getAutocompleteSuggetion);
@@ -37,6 +39,7 @@ const Archive = () => {
   );
   const message = "";
   const [editSlide, setEditSlide] = useState("");
+  const [fileUidForEditSlide, setFileUidForEditSlide] = useState(queryParams.get('file_uid'));
 
   const [toggle, setToggle] = useState(false);
   const [finalConfirm, setFinalConfirm] = useState(false);
@@ -56,13 +59,11 @@ const Archive = () => {
     if (localPagination) {
       setPage(localPagination);
     }
-    dispatch(
-      GetAllArchiveData({
-        language: "en",
-        page: page.page,
-        limit: page.limit,
-      })
-    );
+    GetAllArchiveData({
+      language: "en",
+      page: page.page,
+      limit: page.limit,
+    });
   }, [page.page, page.limit]);
 
   useEffect(() => {
@@ -79,6 +80,18 @@ const Archive = () => {
       setToggle(false);
     }
   }, [finalConfirm, toggle, deleteId, dispatch]);
+
+  useEffect(() => {
+    if (fileUidForEditSlide !== null) {
+      dispatch(
+        SlideListWithFildeUid({
+          file_uid: fileUidForEditSlide,
+        })
+      ).then(response => {
+        setEditSlide(response.payload.data.slides[0].ID);
+      });
+    }
+  }, [fileUidForEditSlide]);
 
   const DelectConfirmationModal = useMemo(
     () => (
@@ -132,9 +145,8 @@ const Archive = () => {
                   {ArchiveList?.slides?.map((key) => (
                     <tr
                       key={key.ID}
-                      className={`${
-                        key.bookmark_id !== null && "bookmarkedrow"
-                      }`}
+                      className={`${key.bookmark_id !== null && "bookmarkedrow"
+                        }`}
                     >
                       <th scope="row" className="textwidth">
                         <span className="truncate">{key.slide}</span>
