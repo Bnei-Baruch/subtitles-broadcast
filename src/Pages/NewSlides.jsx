@@ -44,10 +44,6 @@ const NewSlides = () => {
     }
   }, [sourceUrl]);
 
-  // useEffect(() => {
-  //   dispatch(ArchiveAutoComplete({ query: sourceUrl }));
-  // }, [DebouncingFreeText]);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -340,11 +336,6 @@ const NewSlides = () => {
               <label className="w-100">Source Path</label>
               <div className="form-group  autoComplete">
                 <input className="form-control" type="type" value={contentSource}
-                  // onBlur={() => {
-                  //   setTimeout(() => {
-                  //     setShowAutocompleteBox(false);
-                  //   }, 200);
-                  // }}
                   onChange={(e) => {
                     console.log(e.target.value)
                     setContentSource(e.target.value);
