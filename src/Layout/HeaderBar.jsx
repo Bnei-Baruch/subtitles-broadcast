@@ -12,16 +12,23 @@ import BroadcastSettings from "../Components/BroadcastSettings";
 const HeaderBar = ({ logout }) => {
   const dispatch = useDispatch();
   const param = useLocation();
-  const localPagination = JSON.parse(localStorage.getItem("pagination"));
+
+  const localPagination = localStorage?.getItem("pagination")
+    ? JSON?.parse(localStorage?.getItem("pagination"))
+    : { page: 1, limit: 10 };
   const [freeText, setFreeText] = useState("");
   const DebouncingFreeText = useDebounce(freeText, 500);
   useEffect(() => {
     if (param.pathname === "/archive") {
+      localStorage.setItem(
+        "pagination",
+        JSON.stringify({ page: 1, limit: localPagination?.limit })
+      );
       dispatch(
         GetAllArchiveData({
           language: "en",
           limit: localPagination?.limit || 10,
-          page: localPagination?.page || 1,
+          page: 1,
           keyword: freeText,
         })
       );

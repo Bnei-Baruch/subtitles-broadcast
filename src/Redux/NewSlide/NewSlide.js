@@ -23,9 +23,9 @@ export const SetCustomSlideBySource = createAsyncThunk(
       languages: languages,
       source_uid: data.source_uid,
       file_uid: data.file_uid,
-      slides: data.slides
+      slides: data.slides,
     };
-    
+
     const response = await axios.post(`${API}custom_slide`, requestBody);
     return response.data;
   }
@@ -34,7 +34,7 @@ export const SetCustomSlideBySource = createAsyncThunk(
 export const GetSlideLanguages = createAsyncThunk(
   `/${API_URL.GetSlideLanguages}`,
   async (data, thunkAPI) => {
-      const response = await axios.get(`${API}slide_language`);
-      return response.data;
+    const response = await axios.get(`${API}slide_language`);
+    return response.data;
   }
 );

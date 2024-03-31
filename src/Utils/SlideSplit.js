@@ -1,7 +1,6 @@
-
 import { jsx as _jsx } from "react/jsx-runtime";
-import { useRef, useEffect } from 'react';
-import markdownit from 'markdown-it';
+import { useRef, useEffect } from "react";
+import markdownit from "markdown-it";
 
 const SlideSplit = ({
   tags,
@@ -15,24 +14,24 @@ const SlideSplit = ({
   const divIdPrefix = "slide";
   const divRefs = useRef([]);
   const nextTag = useRef(null);
-  const currentContent = useRef('');
-  const previousParagraphStartsWithIntent = useRef('');
-  
+  const currentContent = useRef("");
+  const previousParagraphStartsWithIntent = useRef("");
+
   useEffect(() => {
-    const md = markdownit({html:true});
-    const createNewDiv = tagList => {
-      const newDiv = document.createElement('div');
-      newDiv.className = divIdPrefix + ' slide-content';
-      newDiv.id = divIdPrefix + '_' + index.current;
-      newDiv.style.height = 'unset';
-      newDiv.style.minHeight = '310px';
-      newDiv.style.position = 'relative';
-      newDiv.style.outline = 'solid';
-      newDiv.style.transform = 'scale(0.5)';
-      newDiv.style.transformOrigin = 'top left';
+    const md = markdownit({ html: true });
+    const createNewDiv = (tagList) => {
+      const newDiv = document.createElement("div");
+      newDiv.className = divIdPrefix + " slide-content";
+      newDiv.id = divIdPrefix + "_" + index.current;
+      newDiv.style.height = "unset";
+      newDiv.style.minHeight = "310px";
+      newDiv.style.position = "relative";
+      newDiv.style.outline = "solid";
+      newDiv.style.transform = "scale(0.5)";
+      newDiv.style.transformOrigin = "top left";
       if (!visible) {
-        newDiv.style.position = 'absolute';
-        newDiv.style.visibility = 'hidden';
+        newDiv.style.position = "absolute";
+        newDiv.style.visibility = "hidden";
       }
       nextTag.current = tagList.shift();
       if (method === "custom_file") {
@@ -41,13 +40,13 @@ const SlideSplit = ({
         }
       } else if (method === "source_url") {
         if (nextTag.current.tagName === "H1") {
-          nextTag.current.word = "# " + nextTag.current.word
+          nextTag.current.word = "# " + nextTag.current.word;
         }
       }
-      
+
       currentContent.current = nextTag.current.word;
       if (method === "custom_file") {
-        currentContent.current += ' ';
+        currentContent.current += " ";
       }
       // Append the new div to the container
       const container = divRefs.current[0] && divRefs.current[0].parentNode;
@@ -58,7 +57,7 @@ const SlideSplit = ({
       divRefs.current[index.current++] = newDiv;
       // Check and add text for the new div
       if (tagList.length > 0) {
-         checkAndAddText(newDiv, tagList);
+        checkAndAddText(newDiv, tagList);
       }
     };
     const checkAndAddText = (currentDiv, tags) => {
@@ -71,30 +70,34 @@ const SlideSplit = ({
           if (nextTag.current.paragraphStart) {
             if (method === "custom_file") {
               currentContent.current = currentContent.current.trim();
-            } 
+            }
             currentContent.current += "\n\n";
             if (nextTag.current.tagName === "H1") {
-              nextTag.current.word = "# " + nextTag.current.word
-            }   
+              nextTag.current.word = "# " + nextTag.current.word;
+            }
           }
           currentContent.current += nextTag.current.word;
           if (method === "custom_file") {
-            currentContent.current += ' ';
-          } 
-          currentDiv.innerHTML = md.render(currentContent.current)
+            currentContent.current += " ";
+          }
+          currentDiv.innerHTML = md.render(currentContent.current);
           if (tags.length === 0 && currentContent.current.length > 0) {
             slideTags.current = [...slideTags.current, currentContent.current];
           }
         } else {
           // If the height limit is reached, create a new div
-          let lengthToRemove = nextTag.current.word.length
+          let lengthToRemove = nextTag.current.word.length;
           if (method === "custom_file") {
             lengthToRemove += 1;
           }
-          currentContent.current = currentContent.current.slice(0, -lengthToRemove)
+          currentContent.current = currentContent.current.slice(
+            0,
+            -lengthToRemove
+          );
           let slideContentArrary = currentContent.current.split("\n\n");
-          previousParagraphStartsWithIntent.current = slideContentArrary[slideContentArrary.length - 1];;
-          currentDiv.innerHTML = md.render(currentContent.current)
+          previousParagraphStartsWithIntent.current =
+            slideContentArrary[slideContentArrary.length - 1];
+          currentDiv.innerHTML = md.render(currentContent.current);
           slideTags.current = [...slideTags.current, currentContent.current];
           tags.unshift(nextTag.current);
           createNewDiv(tags);
@@ -109,14 +112,16 @@ const SlideSplit = ({
     updateSplitTags(slideTags.current);
     // remove rendered divs
     if (divRefs.current.length > 1) {
-      divRefs.current.forEach(div => {
+      divRefs.current.forEach((div) => {
         div.remove();
       });
     }
   }, [tags, visible, updateSplitTags]);
-  return tags ? /*#__PURE__*/_jsx("div", {
-    ref: el => divRefs.current[0] = el
-  }) : null;
+  return tags
+    ? /*#__PURE__*/ _jsx("div", {
+        ref: (el) => (divRefs.current[0] = el),
+      })
+    : null;
 };
 
 export default SlideSplit;

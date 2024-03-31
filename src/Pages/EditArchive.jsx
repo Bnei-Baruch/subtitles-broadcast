@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewSlide,
@@ -19,6 +19,8 @@ const EditArcive = ({ handleClose }) => {
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
+  const outerRef = useRef();
+  const slideRef = useRef();
 
   useEffect(() => {
     setSlideListData(slideList?.slides);
@@ -59,8 +61,8 @@ const EditArcive = ({ handleClose }) => {
     if (updateSlideList?.length > 0) {
       const updateSlideListRequest = {
         updateSlideList: updateSlideList,
-        file_uid: slideListData[0]?.file_uid
-      }
+        file_uid: slideListData[0]?.file_uid,
+      };
       dispatch(updateNewSlide(updateSlideListRequest));
     }
 
@@ -142,41 +144,7 @@ const EditArcive = ({ handleClose }) => {
               </button>
             </div>
           </div>
-          <div className="innerhead d-flex justify-content-between align-items-end mb-5">
-            <div className="input-box first">
-              <label className="w-100">Title</label>
-              <input
-                className=""
-                type="text"
-                placeholder="נכנסים להיכל המלך"
-                aria-label="Search"
-              />
-            </div>
-            <div className="input-box sec">
-              <label className="w-100">Author</label>
-              <select
-                className="select-new"
-                aria-label="Default select example"
-              >
-                <option selected>Open this select menu</option>
-                <option value="1">One</option>
-                <option value="2">Two</option>
-                <option value="3">Three</option>
-              </select>
-            </div>
-            <div className="input-box sec">
-              <label className="w-100">Language</label>
-              <select
-                className="select-new"
-                aria-label="Default select example"
-              >
-                <option selected>Open this select menu</option>
-                <option value="1">One</option>
-                <option value="2">Two</option>
-                <option value="3">Three</option>
-              </select>
-            </div>
-
+          <div className="innerhead d-flex justify-content-end align-items-end mb-5">
             <div className="button-box group-new">
               <button
                 onClick={() => {
@@ -230,7 +198,9 @@ const EditArcive = ({ handleClose }) => {
                   }}
                 >
                   <div
-                    className={`adjustable-font box box2 ${index == selected && "activeSlide"}`}
+                    className={`adjustable-font box box2 ${
+                      index == selected && "EditActiveSlide"
+                    }`}
                   >
                     <textarea
                       value={key?.slide}
@@ -256,7 +226,7 @@ const EditArcive = ({ handleClose }) => {
                       }}
                       key={index}
                       className=""
-                    // style={containerStyle}
+                      // style={containerStyle}
                     />
                     {index == selected && (
                       <i
@@ -287,28 +257,17 @@ const EditArcive = ({ handleClose }) => {
                             addedNew: true,
                           });
                           setSlideListData(cloneSlidedataArray);
-                          // setAddSlides([
-                          //   ...addSlides,
-                          //   {
-                          //     slide_id: key?.ID + 1,
-                          //     slide: "",
-                          //     order_number: key?.order_number + 1,
-                          //   },
-                          // ]);
-                          //1) change selected slide
-                          //2) remove from main array which display entire slides
-                          //3) add to delete slide array list
                         }}
                         className="bi bi-plus-circle add-icon "
                       />
                     )}
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-6 ">
                   <div
                     key={index}
-                    className="box box2  adjustable-font"
-                  // style={containerStyle}
+                    className=" adjustable-font"
+                    // style={containerStyle}
                   >
                     <Slide content={key?.slide} isLtr={true} />
                   </div>

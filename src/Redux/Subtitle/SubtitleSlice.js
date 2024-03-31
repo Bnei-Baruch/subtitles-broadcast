@@ -21,7 +21,7 @@ export const GetSubtitleData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}slide`, {
-      params: { file_uid: data },
+      params: data,
     });
     return response.data;
   }
@@ -52,7 +52,10 @@ const SubtitleSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(GetSubtitleData.fulfilled, (state, action) => {
-      return { ...state, contentList: action?.payload };
+      return {
+        ...state,
+        contentList: action?.payload,
+      };
     });
   },
 });
