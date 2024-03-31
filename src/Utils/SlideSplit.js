@@ -1,55 +1,53 @@
-
 import { jsx as _jsx } from "react/jsx-runtime";
-import { useRef, useEffect } from 'react';
-import markdownit from 'markdown-it';
+import { useRef, useEffect } from "react";
+import markdownit from "markdown-it";
 
 const SlideSplit = ({
   tags,
   visible,
-//  updateSplitTags
+  updateSplitTags,
+  method
 }) => {
   const index = useRef(0);
-  //const slideTags = useRef([]);
+  const slideTags = useRef([]);
   const desiredContainerHeight = 310;
   const divIdPrefix = "slide";
   const divRefs = useRef([]);
-  const currentTag = useRef(null);
   const nextTag = useRef(null);
-  const currentContent = useRef('');
-  const previousParagraphStartsWithIntent = useRef('');
-  const md = markdownit({html:true});
-  const regex = /^[\d+)|\d+.|*]/;
+  const currentContent = useRef("");
+  const previousParagraphStartsWithIntent = useRef("");
 
   useEffect(() => {
-    const createNewDiv = tagList => {
-      const newDiv = document.createElement('div');
-      newDiv.className = divIdPrefix + ' slide-content';
-      newDiv.id = divIdPrefix + '_' + index.current;
-      newDiv.style.height = 'unset';
-      newDiv.style.minHeight = '310px';
-      newDiv.style.position = 'relative';
-      newDiv.style.outline = 'solid';
-      newDiv.style.transform = 'scale(0.5)';
-      newDiv.style.transformOrigin = 'top left';
+    const md = markdownit({ html: true });
+    const createNewDiv = (tagList) => {
+      const newDiv = document.createElement("div");
+      newDiv.className = divIdPrefix + " slide-content";
+      newDiv.id = divIdPrefix + "_" + index.current;
+      newDiv.style.height = "unset";
+      newDiv.style.minHeight = "310px";
+      newDiv.style.position = "relative";
+      newDiv.style.outline = "solid";
+      newDiv.style.transform = "scale(0.5)";
+      newDiv.style.transformOrigin = "top left";
       if (!visible) {
-        newDiv.style.position = 'absolute';
-        newDiv.style.visibility = 'hidden';
+        newDiv.style.position = "absolute";
+        newDiv.style.visibility = "hidden";
       }
       nextTag.current = tagList.shift();
-      currentTag.current = document.createElement(nextTag.current.tagName);
-      currentContent.current = currentTag.current.textContent;
-      if (nextTag.current.tagName == "H1") {
-        nextTag.current.word = "# " + nextTag.current.word
-      } else {
-        // If the starting word continues the previous indented content then put indent
-        var first = nextTag.current.word.charAt(0);
-        if (regex.test(previousParagraphStartsWithIntent.current)) {
-            if (first === first.toLowerCase() && first !== first.toUpperCase() || previousParagraphStartsWithIntent.current.slice(-1) != "."){
-                nextTag.current.word = "<ul>" + nextTag.current.word;
-            }
+      if (method === "custom_file") {
+        if (nextTag.current.word === "<br/>") {
+          nextTag.current.word = "";
+        }
+      } else if (method === "source_url") {
+        if (nextTag.current.tagName === "H1") {
+          nextTag.current.word = "# " + nextTag.current.word;
         }
       }
-      currentTag.current.textContent += nextTag.current.word;
+
+      currentContent.current = nextTag.current.word;
+      if (method === "custom_file") {
+        currentContent.current += " ";
+      }
       // Append the new div to the container
       const container = divRefs.current[0] && divRefs.current[0].parentNode;
       if (container) {
@@ -59,32 +57,48 @@ const SlideSplit = ({
       divRefs.current[index.current++] = newDiv;
       // Check and add text for the new div
       if (tagList.length > 0) {
-         checkAndAddText(newDiv, tagList);
+        checkAndAddText(newDiv, tagList);
       }
     };
     const checkAndAddText = (currentDiv, tags) => {
       while (tags.length > 0) {
         if (currentDiv.clientHeight <= desiredContainerHeight) {
           nextTag.current = tags.shift();
-          if (nextTag.current.paragraphStart) {
-            // close <ul> to finish paragraph indentation
-            if (currentTag.current.textContent.includes("<ul>")) {
-              currentTag.current.textContent += "</ul>";
-            }
-            currentTag.current.textContent += "\n\n";
-            if (nextTag.current.tagName == "H1") {
-              nextTag.current.word = "# " + nextTag.current.word
-            }   
+          if (nextTag.current.word === "<br/>") {
+            nextTag.current.word = "";
           }
-          currentContent.current = currentTag.current.textContent;
-          currentTag.current.textContent += nextTag.current.word;
-          currentDiv.innerHTML = md.render(currentTag.current.textContent)
+          if (nextTag.current.paragraphStart) {
+            if (method === "custom_file") {
+              currentContent.current = currentContent.current.trim();
+            }
+            currentContent.current += "\n\n";
+            if (nextTag.current.tagName === "H1") {
+              nextTag.current.word = "# " + nextTag.current.word;
+            }
+          }
+          currentContent.current += nextTag.current.word;
+          if (method === "custom_file") {
+            currentContent.current += " ";
+          }
+          currentDiv.innerHTML = md.render(currentContent.current);
+          if (tags.length === 0 && currentContent.current.length > 0) {
+            slideTags.current = [...slideTags.current, currentContent.current];
+          }
         } else {
           // If the height limit is reached, create a new div
-          currentTag.current.textContent = currentContent.current;
-          let slideContentArrary = currentTag.current.textContent.split("\n\n");
-          previousParagraphStartsWithIntent.current = slideContentArrary[slideContentArrary.length - 1];;
-          currentDiv.innerHTML = md.render(currentTag.current.textContent)
+          let lengthToRemove = nextTag.current.word.length;
+          if (method === "custom_file") {
+            lengthToRemove += 1;
+          }
+          currentContent.current = currentContent.current.slice(
+            0,
+            -lengthToRemove
+          );
+          let slideContentArrary = currentContent.current.split("\n\n");
+          previousParagraphStartsWithIntent.current =
+            slideContentArrary[slideContentArrary.length - 1];
+          currentDiv.innerHTML = md.render(currentContent.current);
+          slideTags.current = [...slideTags.current, currentContent.current];
           tags.unshift(nextTag.current);
           createNewDiv(tags);
         }
@@ -93,28 +107,21 @@ const SlideSplit = ({
 
     // Initial creation of divs
     if (tags && tags.length > 0) {
-      console.log(tags.length);
-      console.log(tags);
       createNewDiv(tags);
     }
-    // set splited slide tags
-    // divRefs.current.forEach((div, idx) => {
-    //     if (!Array.isArray(slideTags.current[idx])) {
-    //       slideTags.current[idx] = [];
-    //     }
-    //     slideTags.current[idx].push(div.innerHTML);
-    // });
-    // updateSplitTags(slideTags.current);
+    updateSplitTags(slideTags.current);
     // remove rendered divs
-    // if (divRefs.current.length > 1) {
-    //   divRefs.current.forEach(div => {
-    //     div.remove();
-    //   });
-    // }
-  }, [tags, visible]); //updateSplitTags]);
-  return tags ? /*#__PURE__*/_jsx("div", {
-    ref: el => divRefs.current[0] = el
-  }) : null;
+    if (divRefs.current.length > 1) {
+      divRefs.current.forEach((div) => {
+        div.remove();
+      });
+    }
+  }, [tags, visible, updateSplitTags]);
+  return tags
+    ? /*#__PURE__*/ _jsx("div", {
+        ref: (el) => (divRefs.current[0] = el),
+      })
+    : null;
 };
 
 export default SlideSplit;

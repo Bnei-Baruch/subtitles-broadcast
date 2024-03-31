@@ -34,28 +34,6 @@ const DraggableItem = ({
       }
     },
   });
-  // const handleBookMarkClick = (e) => {
-  //   const activeSlide =
-  //     JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
-  //   if (Array.isArray(activeSlide)) {
-  //     const findActiveSlideId = activeSlide?.find((key) => key?.fileUid == e);
-  //     if (findActiveSlideId) {
-  //       setActivatedTab(findActiveSlideId?.activeSlide);
-  //     } else {
-  //       const newData = [
-  //         ...activeSlide,
-  //         { fileUid: e, activeSlide: +text?.split("/")?.at(-1) },
-  //       ];
-  //       localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
-  //       setActivatedTab(+text?.split("/")?.at(-1) + 1);
-  //     }
-  //   } else {
-  //     const newData = [{ fileUid: e, activeSlide: +text?.split("/")?.at(-1) }];
-  //     localStorage.setItem("activeSlideFileUid", JSON.stringify(newData));
-  //     setActivatedTab(+text?.split("/")?.at(-1) + 1);
-  //   }
-  //   dispatch(GetSubtitleData(e));
-  // };
 
   const handleBookMarkClick = (e) => {
     setActivatedTab(+text?.split("/")?.at(-1));
@@ -64,10 +42,12 @@ const DraggableItem = ({
   };
   return (
     <div
+      onClick={() => handleBookMarkClick(fileUid)}
       className="d-flex justify-content-between cursor-pointer"
       ref={(node) => ref(drop(node))}
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
     >
+      <i class="bi bi-grip-vertical me-3" />
       <i
         onClick={() => dispatch(UnBookmarkSlide(bookmarkDelete))}
         className="bi bi-trash"

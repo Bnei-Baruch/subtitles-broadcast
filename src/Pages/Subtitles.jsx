@@ -14,9 +14,10 @@ import { useSelector } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../Components/DraggableItem";
-// import GreenWindowButton from "../Components/GreenWindowButton";
-// import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-// import GreenSlide from "../Components/GreenSlide";
+import Select from "react-select";
+import GreenWindowButton from "../Components/GreenWindowButton";
+import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
+import GreenSlide from "../Components/GreenSlide";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -31,15 +32,32 @@ const Subtitles = () => {
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
 
-  const handleKeyPress = (event) => {
-    if (event.key === "n" || event.keyCode === 78) {
-      setActivatedTab(+activatedTab + 1);
-    }
-    if (event.key === "b" || event.keyCode === 66) {
-      setActivatedTab(+activatedTab - 1);
+  const handleChange = (selectedOption) => {
+    console.log(selectedOption, "selectedOption");
+    const inputValue = +selectedOption?.label - 1;
+    const maxSlideIndex = +UserAddedList?.slides?.at(-1)?.["order_number"];
+    if (inputValue >= 0 && inputValue <= maxSlideIndex) {
+      localStorage.setItem("activeSlideFileUid", inputValue);
+      setActivatedTab(inputValue);
+    } else if (inputValue > maxSlideIndex) {
+      // Handle the case when inputValue is greater than maxSlideIndex
+      localStorage.setItem("activeSlideFileUid", maxSlideIndex + 1);
+      setActivatedTab(maxSlideIndex + 1);
+    } else {
+      localStorage.setItem("activeSlideFileUid", 1);
+      setActivatedTab("");
     }
   };
-
+  const handleKeyPress = (event) => {
+    if (event.key === "n" || event.keyCode === 78) {
+      setActivatedTab((pre) => +pre + 1);
+      localStorage.setItem("activatedTabData", +activatedTab + 1);
+    }
+    if (event.key === "b" || event.keyCode === 66) {
+      setActivatedTab((pre) => +pre - 1);
+      localStorage.setItem("activatedTabData", +activatedTab - 1);
+    }
+  };
   useEffect(() => {
     // Add event listener when the component mounts
     window.addEventListener("keydown", handleKeyPress);
@@ -101,7 +119,8 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              {/* <ActiveSlideMessaging
+              (
+              <ActiveSlideMessaging
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
                 setActivatedTab={setActivatedTab}
@@ -110,7 +129,8 @@ const Subtitles = () => {
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
-              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} /> */}
+              )
+              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
               <button
                 type="button"
                 onClick={() => setIsLtr(!isLtr)}
@@ -118,19 +138,20 @@ const Subtitles = () => {
               >
                 {isLtr ? "LTR" : "RTL"}
               </button>
-
               {/* <Dropdown variant="success" id="brodcast_programm">
-                  <Dropdown.Toggle id="dropdown-autoclose-outside">
-                    Brodcasting programm
-                  </Dropdown.Toggle>
+                <Dropdown.Toggle id="dropdown-autoclose-outside">
+                  Brodcasting programm
+                </Dropdown.Toggle>
 
-                  <Dropdown.Menu>
-                    <Dropdown.Item value='morning_lesson' >Morning lesson</Dropdown.Item>
-                    <Dropdown.Item value='brodcast_1'>Brodcast 1</Dropdown.Item>
-                    <Dropdown.Item value='brodcast_2'>Brodcast 3</Dropdown.Item>
-                    <Dropdown.Item value='brodcast_3'>Brodcast 3</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown> */}
+                <Dropdown.Menu>
+                  <Dropdown.Item value="morning_lesson">
+                    Morning lesson
+                  </Dropdown.Item>
+                  <Dropdown.Item value="brodcast_1">Brodcast 1</Dropdown.Item>
+                  <Dropdown.Item value="brodcast_2">Brodcast 3</Dropdown.Item>
+                  <Dropdown.Item value="brodcast_3">Brodcast 3</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown> */}
             </div>
           </div>
 
@@ -166,72 +187,101 @@ const Subtitles = () => {
                 activatedTab <= 1 ? "disablecolor" : "custom-pagination"
               }`}
               onClick={() => {
-                const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-                const slideID = UserAddedList?.slides?.find(
-                  (key) => key?.order_number == +activatedTab
-                );
-                dispatch(
-                  BookmarkSlide({
-                    file_uid: file_uid,
-                    slide_id: slideID?.ID,
-                    update: true,
-                  })
-                );
-
-                setActivatedTab(+activatedTab - 1);
-              }}
-            >
-              Back{" "}
-            </i>
-
-            <input
-              className="no-border text-center slideNumber"
-              defaultValue={activatedTab}
-              value={activatedTab}
-              onWheel={(e) => e.target.blur()}
-              type="number" // Set the input type to "number" to enforce numeric input
-              onChange={(e) => {
-                const inputValue = +e.target.value;
-                const maxSlideIndex = +UserAddedList?.slides?.length;
-                if (inputValue > 0 && inputValue <= maxSlideIndex) {
-                  localStorage.setItem("activeSlideFileUid", inputValue);
-                  setActivatedTab(inputValue);
-                } else if (inputValue > maxSlideIndex) {
-                  // Handle the case when inputValue is greater than maxSlideIndex
-                  localStorage.setItem("activeSlideFileUid", maxSlideIndex + 1);
-                  setActivatedTab(maxSlideIndex + 1);
-                } else {
-                  localStorage.setItem("activeSlideFileUid", 1);
-                  setActivatedTab("");
+                if (activatedTab > 1) {
+                  const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                  const slideID = UserAddedList?.slides?.find(
+                    (key) => key?.order_number == +activatedTab
+                  );
+                  dispatch(
+                    BookmarkSlide({
+                      file_uid: file_uid,
+                      slide_id: slideID?.ID,
+                      update: true,
+                    })
+                  );
+                  setActivatedTab(+activatedTab - 1);
                 }
               }}
-              placeholder="slide_ID"
+            >
+              Back
+            </i>
+
+            <Select
+              menuPlacement="top"
+              id="numberSelector"
+              styles={{
+                control: (provided, state) => ({
+                  ...provided,
+                  boxShadow: "none", // Remove box shadow
+                  border: "none", // Remove border
+                  backgroundColor: "transparent", // Set background color to transparent
+                  textDecoration: "underline",
+                }),
+                dropdownIndicator: (provided, state) => ({
+                  ...provided,
+                  display: "none", // Hide dropdown icon
+                }),
+                menuList: (provided, state) => ({
+                  ...provided,
+                  textAlign: "center",
+                }),
+                indicatorSeparator: (provided, state) => ({
+                  ...provided,
+                  display: "none", // Hide indicator separator
+                }),
+              }}
+              value={{
+                value: `${activatedTab}/${
+                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                }`,
+                label: `${activatedTab + 1}/${
+                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                }`,
+              }}
+              onChange={handleChange}
+              options={[
+                ...Array(
+                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                ).keys(),
+              ].map((index) => ({
+                label: index + 1,
+                value: `${index + 1}/${
+                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                }`,
+              }))}
             />
             <span
               onClick={() => {
-                const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-                setActivatedTab(+activatedTab + 1);
-                const slideID = UserAddedList?.slides?.find(
-                  (key) => key?.order_number == +activatedTab
-                );
-                dispatch(
-                  BookmarkSlide({
-                    file_uid: file_uid,
-                    slide_id: slideID?.ID,
-                    update: true,
-                  })
-                );
-
-                setActivatedTab(+activatedTab + 1);
+                if (
+                  UserAddedList?.slides?.at(-1)?.["order_number"] >
+                  +activatedTab
+                ) {
+                  const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                  setActivatedTab(+activatedTab + 1);
+                  const slideID = UserAddedList?.slides?.find(
+                    (key) => key?.order_number == +activatedTab
+                  );
+                  dispatch(
+                    BookmarkSlide({
+                      file_uid: file_uid,
+                      slide_id: slideID?.ID,
+                      update: true,
+                    })
+                  );
+                }
               }}
               className={` cursor-pointer ${
-                false ? "disablecolor" : "custom-pagination"
+                UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
+                  ? "disablecolor"
+                  : "custom-pagination"
               }`}
             >
               Next{" "}
               <i
                 className={`bi bi-chevron-right  cursor-pointer  ${
-                  false ? "disablecolor" : "custom-pagination"
+                  UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
+                    ? "disablecolor"
+                    : "custom-pagination"
                 }`}
               />
             </span>
@@ -264,7 +314,8 @@ const Subtitles = () => {
               </div>
             </DndProvider>
           </div>
-					<div className="Questions whit-s">
+
+          <div className="Questions whit-s">
             <div className="top-head d-flex justify-content-between">
               <h3>Questions</h3>
               <div className="input-box">

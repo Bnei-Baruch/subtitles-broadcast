@@ -1,60 +1,264 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
+import {
+  GetSlideLanguages,
+  SetCustomSlideBySource,
+} from "../Redux/NewSlide/NewSlide";
+import GetLangaugeCode from "../Utils/Const";
+import GenerateUID from "../Utils/Uid";
+import {
+  ArchiveAutoComplete,
+  getAutocompleteSuggetion,
+} from "../Redux/ArchiveTab/ArchiveSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const NewSlides = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const languages = GetLangaugeCode();
+  const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+
   const [tagList, setTagList] = useState([]);
-  //const [updateTagList, setUpdateTagList] = useState([]);
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [updateTagList, setUpdateTagList] = useState([]);
+  const [contentSource, setContentSource] = useState("");
+  const [slideLanguageOptions, setSlideLanguageOptions] = useState([]);
+  const [fileUid, setFileUid] = useState("");
+  const [sourceUid, setSourceUid] = useState("");
+  const [insertMethod, setInsertMethod] = useState("custom_file");
+  const [isChecked, setIsChecked] = useState(false);
+  const [selectedFile, setSelectedFile] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
+  const AutocompleteList = useSelector(getAutocompleteSuggetion);
+  const [selectedOptions, setSelectedOptions] = useState([]);
+  const [typingTimeout, setTypingTimeout] = useState(null);
 
-  const [activeButton, setActiveButton] = useState("button1");
+  useEffect(() => {
+    setProgress(0);
+  }, []);
 
-  const handleClick = (button) => {
-    setActiveButton(button);
-    // Add logic here to handle button click events
-  };
+  useEffect(() => {
+    if (sourceUrl.length > 0) {
+      dispatch(ArchiveAutoComplete({ query: sourceUrl }));
+    }
+  }, [sourceUrl]);
 
-  const handleInputChange = (e) => {
-    setSourceUrl(e.target.value);
-  };
-
-  const loadSlides = () => {
-    const docUrl = `${sourceUrl}`;
-    const parser = new DOMParser();
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(docUrl);
+        const response = await dispatch(GetSlideLanguages());
+        setSlideLanguageOptions(response.payload.data);
+      } catch (error) {
+        throw new Error(`Error fetching slide languages`, error);
+      }
+    };
+
+    fetchData();
+  }, [dispatch]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // add name and update langauges
+      let request = {
+        name: "KabbalahMedia",
+        source_uid: sourceUid,
+        file_uid: fileUid,
+        languages: languages[localStorage.getItem("subtitleLanguage")],
+        slides: updateTagList,
+      };
+      if (
+        document.getElementById("upload_name") &&
+        document.getElementById("upload_name").value.length > 0
+      ) {
+        request.name = document.getElementById("upload_name").value;
+      }
+      if (
+        document.getElementById("languageSelect") &&
+        slideLanguageOptions.length > 0
+      ) {
+        let languages = [];
+        selectedOptions?.forEach((option) => {
+          languages.push(option.value);
+        });
+        request.languages = languages;
+      }
+      if (insertMethod === "custom_file") {
+        setTimeout(() => {
+          setProgress(75);
+        }, 600);
+      }
+      const responsePromise = new Promise((resolve, reject) => {
+        try {
+          const response = dispatch(SetCustomSlideBySource(request));
+          resolve(response);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      responsePromise
+        .then((result) => {
+          if (result.payload.success) {
+            setUpdateTagList([]);
+            setSourceUid("");
+            if (insertMethod === "custom_file") {
+              setTimeout(() => {
+                setProgress(100);
+              }, 600);
+              setTimeout(() => {
+                alert(result.payload.description);
+                navigate("/archive?file_uid=" + fileUid);
+              }, 1500);
+            } else {
+              alert(result.payload.description);
+              navigate("/archive?file_uid=" + fileUid);
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Error occurred:", error); // Handle any errors during promise execution
+        });
+    };
+
+    if (updateTagList.length > 0) {
+      fetchData();
+    }
+  }, [updateTagList]);
+
+  const handleUpload = () => {
+    // Perform upload logic with selectedFile
+    setSourceUid("upload_" + GenerateUID(8));
+    setFileUid("upload_" + GenerateUID(8));
+    if (selectedFile) {
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        let fileContents = event.target.result;
+        fileContents = fileContents.replace(/\r?\n/g, " <br/> ");
+        const wordsArray = fileContents.split(/\s+/);
+        let structuredArray = [];
+        let previousWord = "";
+        wordsArray.forEach((word, index) => {
+          const elementObject = {
+            paragraphStart: false,
+            tagName: "",
+            word: word,
+          };
+          if (previousWord === "<br/>" && word !== "<br/>") {
+            elementObject.paragraphStart = true;
+          }
+          structuredArray.push(elementObject);
+          previousWord = word;
+        });
+        setTimeout(() => {
+          setProgress(25);
+          setTagList(structuredArray);
+        }, 600);
+      };
+
+      // Read the file as text
+      reader.readAsText(selectedFile);
+    } else {
+      console.error("No file selected");
+    }
+  };
+
+  const loadSlides = async (sourceData) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sourceData, "text/html");
+    // Extract text content from tags, for example, from all paragraphs
+    const contentElements = doc.querySelectorAll("h1,p");
+    const paragraphArray = Array.from(contentElements).map((element) => ({
+      tag: element.tagName,
+      content: element.outerHTML,
+    }));
+    let tags = [];
+    paragraphArray.forEach((elementInfo) => {
+      const tagName = elementInfo.tag;
+      const wordArray = elementInfo.content
+        .replace(/<[^>]*>/g, "")
+        .replace(/\n/g, "")
+        .trim()
+        .split("  ")
+        .join(" ")
+        .split(/(\s+)/);
+      wordArray.forEach((word, index) => {
+        const elementObject = {
+          paragraphStart: false,
+          tagName: tagName,
+          word: word,
+        };
+        if (index === 0) {
+          elementObject.paragraphStart = true;
+        }
+        tags.push(elementObject);
+      });
+    });
+    setTagList(tags);
+  };
+
+  const loadSource = () => {
+    let sourceUrl = `${contentSource}`;
+    const fetchData = async () => {
+      try {
+        // get fileuid from source
+        if (
+          urlRegex.test(sourceUrl) &&
+          sourceUrl.includes("kabbalahmedia.info/backend/content_units")
+        ) {
+          const url = new URL(sourceUrl);
+          const params = new URLSearchParams(url.search);
+          if (!params.has("id")) {
+            throw new Error(`Fetch failed from source url misses id query`);
+          }
+          setSourceUid("upload_" + params.get("id"));
+        } else {
+          let sourceUidStr;
+          if (sourceUid === "") {
+            sourceUidStr = contentSource;
+          } else {
+            sourceUidStr = sourceUid;
+          }
+          sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
+          setSourceUid("upload_" + sourceUidStr);
+        }
+        const sourceResponse = await fetch(sourceUrl);
+        if (sourceResponse.status !== 200) {
+          throw new Error(`Fetch failed with status ${sourceResponse.status}`);
+        }
+        const sourceData = await sourceResponse.json();
+        let fileUid;
+        if (sourceData.hasOwnProperty("content_units")) {
+          const contentUnits = sourceData["content_units"];
+          contentUnits.forEach((contentUnit) => {
+            if (contentUnit.hasOwnProperty("files")) {
+              const files = contentUnit["files"];
+              files.forEach((file) => {
+                if (
+                  languages[localStorage.getItem("subtitleLanguage")] ===
+                  file["language"]
+                ) {
+                  fileUid = file["id"];
+                }
+              });
+            }
+          });
+        }
+        setFileUid("upload_" + fileUid);
+        // get contents from fileuid
+        const response = await fetch(
+          `https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`
+        );
         if (response.status !== 200) {
           throw new Error(`Fetch failed with status ${response.status}`);
         }
-        const data = await response.text();
-        const doc = parser.parseFromString(data, 'text/html');
-        // Extract text content from tags, for example, from all paragraphs
-        const contentElements = doc.querySelectorAll('h1,p');
-        const paragraphArray = Array.from(contentElements).map(element => ({
-          tag: element.tagName,
-          content: element.outerHTML,
-        }));;
-        let tags = [];
-        paragraphArray.forEach(elementInfo => {
-          const tagName = elementInfo.tag;
-          const wordArray = elementInfo.content.replace(/<[^>]*>/g, '').replace(/\n/g, '').trim().split('  ').join(' ').split(/(\s+)/);
-          wordArray.forEach((word, index) => {
-            const elementObject = {
-              paragraphStart: false,
-              tagName: tagName,
-              word: word,
-            };
-            if (index === 0) {
-              elementObject.paragraphStart = true;
-            }
-            tags.push(elementObject);
-          });
-        });
-        setTagList(tags);
+        const contentData = await response.text();
+        await loadSlides(contentData);
       } catch (error) {
-        console.error('Error fetching or parsing data:', error.message);
+        console.error("Error fetching or parsing data:", error.message);
       }
     };
     fetchData();
@@ -66,69 +270,97 @@ const NewSlides = () => {
       <div className="row">
         <button
           className={
-            activeButton === "button1"
+            insertMethod === "custom_file"
               ? "active-button col-6"
               : "inactive-button col-6"
           }
-          onClick={() => handleClick("button1")}
+          onClick={() => setInsertMethod("custom_file")}
         >
           Custom
         </button>
         <button
           className={
-            activeButton === "button2"
+            insertMethod === "source_url"
               ? "active-button col-6"
               : "inactive-button col-6"
           }
-          onClick={() => handleClick("button2")}
+          onClick={() => setInsertMethod("source_url")}
         >
           From KabbalahMedia
         </button>
       </div>
-      {activeButton === "button1" ? (
+      {insertMethod === "custom_file" ? (
         <>
           <div className="row m-4">
             <div className="input-box col-3 ">
               <label className="w-100">Multilingual</label>
-              <label class="custom-checkbox">
-                <input type="checkbox" />
-                <span class="checkmark"></span>
+              <label className="custom-checkbox">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={(e) => {
+                    setIsChecked(e.target.checked);
+                  }}
+                />
+                <span className="checkmark"></span>
               </label>
             </div>
             <div className="input-box col-7">
               <label>Languages</label>
-
               <Select
+                id="languageSelect"
                 isMulti
-                options={[
-                  { label: "dfgdf1", value: "shbsdchh1" },
-                  { label: "dfgdf2", value: "shbsdchh2" },
-                  { label: "dfgdf3", value: "shbsdchh3" },
-                ]}
+                options={
+                  isChecked
+                    ? slideLanguageOptions.map((slideLanguage) => ({
+                        label: Object.keys(languages).find(
+                          (key) => languages[key] === slideLanguage
+                        ),
+                        value: slideLanguage,
+                      }))
+                    : [
+                        {
+                          label: localStorage.getItem("subtitleLanguage"),
+                          value:
+                            languages[localStorage.getItem("subtitleLanguage")],
+                        },
+                      ] // Add this option when isChecked is false
+                }
+                value={selectedOptions}
+                onChange={(selectedOptions) => {
+                  setSelectedOptions(selectedOptions);
+                }}
               />
             </div>
           </div>
           <div className="input-box ">
             <label className="w-100">Name</label>
-
-            <input className="form-control" type="type" />
+            <input className="form-control" type="type" id="upload_name" />
           </div>
 
           <div className="row m-4">
-            <button type="button" class="btn btn-light rounded-pill col-4">
-              <i class="bi bi-plus-lg mr-2"></i> Upload File
+            <input
+              type="file"
+              onChange={(event) => {
+                setSelectedFile(event.target.files[0]);
+              }}
+            />
+            <button
+              className="btn btn-light rounded-pill col-4"
+              onClick={handleUpload}
+            >
+              Upload File
             </button>
             <div className="file-upload-preview col-7">
               <div className="d-flex justify-content-between">
-                <span className=""> File Name: XYZ</span>
-                <i className="bi bi-x" />
+                <span className=""> File Name: {selectedFile.name}</span>
               </div>
-              <div class="progress">
+              <div className="progress">
                 <div
-                  class="progress-bar"
+                  className="progress-bar"
                   role="progressbar"
                   aria-label="Basic example"
-                  style={{ width: "50%" }}
+                  style={{ width: `${progress}%` }}
                   aria-valuenow="50"
                   aria-valuemin="0"
                   aria-valuemax="100"
@@ -136,26 +368,77 @@ const NewSlides = () => {
               </div>
             </div>
           </div>
-          <button className="btn btn-primary btn-sm col-3 m-4">Add</button>
+          <div>
+            <SlideSplit
+              tags={tagList}
+              visible={false}
+              updateSplitTags={setUpdateTagList}
+              method={insertMethod}
+            />
+          </div>
         </>
       ) : (
         <>
           <div className="row m-4">
             <label>Language</label>
-            <p>English</p>
+            <p>{localStorage.getItem("subtitleLanguage")}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
-
-              <input className="form-control" type="type" value={sourceUrl} onChange={handleInputChange} />
+              <div className="form-group  autoComplete">
+                <input
+                  className="form-control"
+                  type="type"
+                  value={contentSource}
+                  onChange={(e) => {
+                    console.log(e.target.value);
+                    setContentSource(e.target.value);
+                    setShowAutocompleteBox(false);
+                    clearTimeout(typingTimeout);
+                    const timeoutId = setTimeout(() => {
+                      // Perform action after typing has stopped
+                      setShowAutocompleteBox(true);
+                      setSourceUrl(e.target.value);
+                      console.log("Typing has stopped:", e.target.value);
+                    }, 500); // Adjust the timeout duration as needed
+                    // Store the timeout ID for future reference
+                    setTypingTimeout(timeoutId);
+                  }}
+                />
+                {showAutocompleteBox && sourceUrl.length > 0 && (
+                  <ul className="suggestions" id="suggestions">
+                    {AutocompleteList?.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        onClick={() => {
+                          setContentSource(suggestion.source_path);
+                          setSourceUid(suggestion.source_uid);
+                        }}
+                      >
+                        {suggestion.source_path}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-            <button className="btn btn-primary btn-sm col-3 m-4" onClick={loadSlides}>Add</button>
+            <button
+              className="btn btn-primary btn-sm col-3 m-4"
+              onClick={loadSource}
+            >
+              Add Source
+            </button>
             <div>
-              <SlideSplit tags={tagList} visible={true} />
+              <SlideSplit
+                tags={tagList}
+                visible={false}
+                updateSplitTags={setUpdateTagList}
+                method={insertMethod}
+              />
             </div>
-          </div>
+          </div >
         </>
       )}
-    </div>
+    </div >
   );
 };
 

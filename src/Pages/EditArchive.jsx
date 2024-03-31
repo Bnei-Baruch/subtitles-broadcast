@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewSlide,
@@ -19,6 +19,8 @@ const EditArcive = ({ handleClose }) => {
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
+  const outerRef = useRef();
+  const slideRef = useRef();
 
   useEffect(() => {
     setSlideListData(slideList?.slides);
@@ -57,7 +59,11 @@ const EditArcive = ({ handleClose }) => {
     }
 
     if (updateSlideList?.length > 0) {
-      dispatch(updateNewSlide(updateSlideList));
+      const updateSlideListRequest = {
+        updateSlideList: updateSlideList,
+        file_uid: slideListData[0]?.file_uid,
+      };
+      dispatch(updateNewSlide(updateSlideListRequest));
     }
 
     setDeleted([]);
@@ -138,41 +144,7 @@ const EditArcive = ({ handleClose }) => {
               </button>
             </div>
           </div>
-          <div className="innerhead d-flex justify-content-between align-items-end mb-5">
-            <div className="input-box first">
-              <label className="w-100">Name</label>
-              <input
-                className=""
-                type="text"
-                placeholder="נכנסים להיכל המלך"
-                aria-label="Search"
-              />
-            </div>
-            <div className="input-box sec">
-              <label className="w-100">Author</label>
-              <select
-                className="select-new"
-                aria-label="Default select example"
-              >
-                <option selected>Open this select menu</option>
-                <option value="1">One</option>
-                <option value="2">Two</option>
-                <option value="3">Three</option>
-              </select>
-            </div>
-            <div className="input-box sec">
-              <label className="w-100">Language</label>
-              <select
-                className="select-new"
-                aria-label="Default select example"
-              >
-                <option selected>Open this select menu</option>
-                <option value="1">One</option>
-                <option value="2">Two</option>
-                <option value="3">Three</option>
-              </select>
-            </div>
-
+          <div className="innerhead d-flex justify-content-end align-items-end mb-5">
             <div className="button-box group-new">
               <button
                 onClick={() => {
@@ -227,7 +199,7 @@ const EditArcive = ({ handleClose }) => {
                 >
                   <div
                     className={`adjustable-font box box2 ${
-                      index == selected && "activeSlide"
+                      index == selected && "EditActiveSlide"
                     }`}
                   >
                     <textarea
@@ -291,10 +263,10 @@ const EditArcive = ({ handleClose }) => {
                     )}
                   </div>
                 </div>
-                <div className="col-md-6 my-2">
+                <div className="col-md-6 ">
                   <div
                     key={index}
-                    className="box box2  adjustable-font"
+                    className=" adjustable-font"
                     // style={containerStyle}
                   >
                     <Slide content={key?.slide} isLtr={true} />

@@ -75,18 +75,25 @@ Auth.propTypes = {
   children: PropTypes.func.isRequired, // PropTypes validation for children prop
 };
 
-function parseBroadcastLanguage(keycloak){
-  if (keycloak && keycloak.realmAccess && keycloak.realmAccess.roles){  
-    const broadCastLangRex = new RegExp("subtitles_language_(?<language>.*)"); 
-    
+function parseBroadcastLanguage(keycloak) {
+  if (keycloak && keycloak.realmAccess && keycloak.realmAccess.roles) {
+    const broadCastLangRex = new RegExp("subtitles_language_(?<language>.*)");
+
     for (let index = 0; index < keycloak.realmAccess.roles.length; index++) {
-      const role =  keycloak.realmAccess.roles[index]; 
-      const bcLangMatchRes =   role.match(broadCastLangRex)  ;
-      
-      if (bcLangMatchRes && bcLangMatchRes.groups && bcLangMatchRes.groups.language){
-        localStorage.setItem("broadcastLanguage", bcLangMatchRes.groups.language);
+      const role = keycloak.realmAccess.roles[index];
+      const bcLangMatchRes = role.match(broadCastLangRex);
+
+      if (
+        bcLangMatchRes &&
+        bcLangMatchRes.groups &&
+        bcLangMatchRes.groups.language
+      ) {
+        localStorage.setItem(
+          "broadcastLanguage",
+          bcLangMatchRes.groups.language
+        );
       }
-    }   
+    }
   }
 }
 

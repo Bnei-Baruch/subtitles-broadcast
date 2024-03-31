@@ -19,8 +19,11 @@ import useDebounce from "../Services/useDebounce";
 import EditArcive from "./EditArchive";
 import { Search } from "react-bootstrap-icons";
 import ReactPaginate from "react-paginate";
+import { Slide } from "../Components/Slide";
+import { useLocation } from "react-router-dom";
 
 const Archive = () => {
+  const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const ArchiveList = useSelector(getAllArchiveList);
   const ActocompleteList = useSelector(getAutocompleteSuggetion);
@@ -30,13 +33,16 @@ const Archive = () => {
     page: 1,
     limit: 10,
   });
-  const startIndex = (page.page - 1) * page.limit + 1;
-  const endIndex = Math.min(
-    page.page * page.limit,
-    ArchiveList?.pagination?.total_rows
-  );
+  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
+  const localPagination = localStorage?.getItem("pagination")
+    ? JSON?.parse(localStorage?.getItem("pagination"))
+    : page;
+
   const message = "";
   const [editSlide, setEditSlide] = useState("");
+  const [fileUidForEditSlide, setFileUidForEditSlide] = useState(
+    queryParams.get("file_uid")
+  );
 
   const [toggle, setToggle] = useState(false);
   const [finalConfirm, setFinalConfirm] = useState(false);
@@ -50,12 +56,25 @@ const Archive = () => {
     order: "",
   });
   // const [bookmarkId, setBookmarkId] = useState();
-  const localPagination = JSON.parse(localStorage.getItem("pagination"));
+  useEffect(() => {
+    setPage(localPagination);
+    const limit = +localPagination?.limit || 10;
+    const page = +localPagination?.page || 1;
+    const totalRows = +ArchiveList?.pagination?.total_rows || 0;
+
+    setPageIndex({
+      startIndex: (page - 1) * limit + 1,
+      endIndex: +page * +limit < +totalRows ? page * limit : totalRows,
+    });
+
+    // const startIndex = (page.page - 1) * page.limit + 1;
+    // const endIndex = Math.min(
+    //   page.page * page.limit,
+    //   ArchiveList?.pagination?.total_rows
+    // );
+  }, [localPagination.page, localPagination.limit, ArchiveList]);
 
   useEffect(() => {
-    if (localPagination) {
-      setPage(localPagination);
-    }
     dispatch(
       GetAllArchiveData({
         language: "en",
@@ -79,6 +98,18 @@ const Archive = () => {
       setToggle(false);
     }
   }, [finalConfirm, toggle, deleteId, dispatch]);
+
+  useEffect(() => {
+    if (fileUidForEditSlide !== null) {
+      dispatch(
+        SlideListWithFildeUid({
+          file_uid: fileUidForEditSlide,
+        })
+      ).then((response) => {
+        setEditSlide(response.payload.data.slides[0].ID);
+      });
+    }
+  }, [fileUidForEditSlide]);
 
   const DelectConfirmationModal = useMemo(
     () => (
@@ -118,116 +149,114 @@ const Archive = () => {
         <EditArcive handleClose={() => setEditSlide(false)} />
       ) : (
         <div className="archiveBackground  bg-light Edit">
-          <div className="card">
+          <div className="card" style={{ border: "none" }}>
             {ArchiveList ? (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th scope="col">Text</th>
-                    <th scope="col">Path</th>
-                    <th scope="col">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ArchiveList?.slides?.map((key) => (
-                    <tr
-                      key={key.ID}
-                      className={`${
-                        key.bookmark_id !== null && "bookmarkedrow"
-                      }`}
-                    >
-                      <th scope="row" className="textwidth">
-                        <span className="truncate">{key.slide}</span>
-                      </th>
-
-                      {/* <td>{key.slide_source_path?.split("/")?.[0]}</td> */}
-                      <td>{key.slide_source_path}</td>
-
-                      <td>
-                        {key.bookmark_id !== null ? (
-                          <i
-                            onClick={() => {
-                              setConfirmation(true);
-                              setBookmarkData({
-                                file_uid: key?.file_uid,
-                                slide_id: key?.ID,
-                                update: true,
-                              });
-                            }}
-                            className="bi bi-bookmark-check-fill m-2"
-                          />
-                        ) : (
-                          <i
-                            onClick={() => {
-                              dispatch(
-                                BookmarkSlideFromArchivePage({
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  className=""
+                  style={{ padding: "20px", minWidth: "100%" }}
+                >
+                  <thead>
+                    <colgroup>
+                      <col style={{ width: "65%" }} />
+                      <col style={{ width: "20%" }} />
+                      <col style={{ width: "15%" }} />
+                    </colgroup>
+                    <tr>
+                      <th style={{ width: "65%", padding: "10px" }}>Text</th>
+                      <th style={{ width: "20%", padding: "10px" }}>Path</th>
+                      <th style={{ width: "15%", padding: "10px" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ArchiveList?.slides?.map((key) => (
+                      <tr
+                        key={key.ID}
+                        className={
+                          key.bookmark_id !== null ? "bookmarkedrow" : ""
+                        }
+                      >
+                        <td style={{ padding: "10px" }}>
+                          <div className="" style={{ outline: "solid" }}>
+                            <Slide content={key.slide} isLtr={true} />
+                          </div>
+                        </td>
+                        <td
+                          style={{ padding: "10px" }}
+                          className="text-truncate"
+                        >
+                          {key.slide_source_path}
+                        </td>
+                        <td style={{ padding: "10px" }}>
+                          {key.bookmark_id !== null ? (
+                            <i
+                              onClick={() => {
+                                setConfirmation(true);
+                                setBookmarkData({
                                   file_uid: key?.file_uid,
                                   slide_id: key?.ID,
-                                  update: false,
-                                  order: ArchiveList?.slides?.find(
-                                    (key) => key.bookmark_id !== null
-                                  )?.length,
-                                  params: {
-                                    page: page.page,
-                                    limit: page.limit,
-                                  },
-                                })
-                              ).then((res) => {
-                                if (
-                                  res.payload ===
-                                  "The bookmark with the same file exists"
-                                ) {
-                                  setBookmarkData({
+                                  update: true,
+                                });
+                              }}
+                              className="bi bi-bookmark-check-fill m-2 cursor-pointer "
+                            />
+                          ) : (
+                            <i
+                              onClick={() => {
+                                dispatch(
+                                  BookmarkSlideFromArchivePage({
                                     file_uid: key?.file_uid,
                                     slide_id: key?.ID,
-                                    update: true,
-                                  });
-                                  setConfirmation(true);
-                                }
-                              });
-                            }}
-                            className="bi bi-bookmark m-2"
-                          />
-                        )}
-
-                        <Dropdown>
-                          <Dropdown.Toggle
-                            variant="Secondary"
-                            id="dropdown-basic"
-                          >
-                            <i className="bi bi-three-dots-vertical"></i>
-                          </Dropdown.Toggle>
-
-                          <Dropdown.Menu>
-                            <Dropdown.Item>
-                              <i
-                                className="bi bi-pencil"
-                                onClick={() => {
-                                  dispatch(
-                                    SlideListWithFildeUid({
+                                    update: false,
+                                    order: ArchiveList?.slides?.find(
+                                      (k) => k.bookmark_id !== null
+                                    )?.length,
+                                    params: {
+                                      page: page.page,
+                                      limit: page.limit,
+                                    },
+                                  })
+                                ).then((res) => {
+                                  if (
+                                    res.payload ===
+                                    "The bookmark with the same file exists"
+                                  ) {
+                                    setBookmarkData({
                                       file_uid: key?.file_uid,
-                                    })
-                                  );
-                                  setEditSlide(key.ID);
-                                }}
-                              />
-                            </Dropdown.Item>
-                            <Dropdown.Item>
-                              <i
-                                onClick={() => {
-                                  setDeleteConfirmationPopup(true);
-                                  setDeleteId(key.ID);
-                                }}
-                                className="bi bi-trash3 "
-                              />
-                            </Dropdown.Item>
-                          </Dropdown.Menu>
-                        </Dropdown>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                                      slide_id: key?.ID,
+                                      update: true,
+                                    });
+                                    setConfirmation(true);
+                                  }
+                                });
+                              }}
+                              className="bi bi-bookmark m-2 cursor-pointer "
+                            />
+                          )}
+                          <i
+                            className="bi bi-pencil m-2 cursor-pointer "
+                            onClick={() => {
+                              dispatch(
+                                SlideListWithFildeUid({
+                                  file_uid: key?.file_uid,
+                                })
+                              );
+                              setEditSlide(key.ID);
+                            }}
+                          />
+                          <i
+                            onClick={() => {
+                              setDeleteConfirmationPopup(true);
+                              setDeleteId(key.ID);
+                            }}
+                            className="bi bi-trash3 m-2 cursor-pointer "
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="card d-flex h-auto">
                 <div>NO Data</div>
@@ -255,7 +284,7 @@ const Archive = () => {
                 <option value={30}>30</option>
               </select>{" "}
               &nbsp; &nbsp; &nbsp;
-              <span>{`${startIndex}-${endIndex} of ${ArchiveList?.pagination?.total_rows} `}</span>
+              <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${ArchiveList?.pagination?.total_rows} `}</span>
             </div>
 
             <div className="flex-box-center">

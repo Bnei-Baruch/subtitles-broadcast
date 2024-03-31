@@ -30,6 +30,8 @@ const BookContent = ({
               onClick={() => {
                 setSearchSlide("");
                 setActivatedTab(+item?.order_number);
+                localStorage.setItem("activatedTabData", +item?.order_number);
+
                 dispatch(
                   BookmarkSlide({
                     file_uid: item.file_uid,
@@ -37,25 +39,10 @@ const BookContent = ({
                     update: true,
                   })
                 );
-                const activeSlide =
-                  JSON.parse(localStorage.getItem("activeSlideFileUid")) || [];
-                const newData = activeSlide.map((key) =>
-                  key.fileUid === item.file_uid
-                    ? {
-                        fileUid: item.file_uid,
-                        activeSlide: +item.order_number + 1,
-                      }
-                    : key
-                );
-                localStorage.setItem(
-                  "activeSlideFileUid",
-                  JSON.stringify(newData)
-                );
-                setActivatedTab(+item?.order_number + 1);
               }}
-              ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
-              className={`box-content d-flex cursor-pointer ${
-                +activatedTab === item.order_number + 1 && "activeSlide"
+              ref={+activatedTab === item.order_number ? focusSlides : null}
+              className={`box-content d-flex  cursor-pointer  ${
+                +activatedTab === item.order_number && "activeSlide"
               }`}
             >
               <bdo
