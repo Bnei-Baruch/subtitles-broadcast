@@ -6,6 +6,7 @@ import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import DropdownButtonDef from "../Components/DropdownButtonDef";
 import AppContext from "../AppContext";
+import { broadcastLanguages } from "../Utils/Const";
 
 const leftColSize = 4;
 const rightColSize = 8;
@@ -58,15 +59,8 @@ const brodcastProgrammArr = [
   { value: "brodcast_3", label: "Brodcast 3" },
 ];
 
-const broadcastLangArr = [
-  { value: "he", label: "Hebrew" },
-  { value: "ru", label: "Russian" },
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-];
-
 const broadcastLangMapObj = {};
-broadcastLangArr.forEach((broadcastLangObj) => {
+broadcastLanguages.forEach((broadcastLangObj) => {
   broadcastLangMapObj[broadcastLangObj.value] = broadcastLangObj;
 });
 
@@ -87,7 +81,7 @@ export function BroadcastSettings({ props }) {
     const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
     const bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
       ? broadcastLangMapObj[bcLanglocalStorageVal]
-      : broadcastLangArr[0];
+      : broadcastLanguages[0];
 
     appContextlData.broadcastLang = bcLangObj.value;
     appContextlData.setBroadcastLang(bcLangObj);
@@ -150,7 +144,7 @@ export function BroadcastSettings({ props }) {
               <Col xs={rightColSize} md={rightColSize}>
                 <DropdownButtonDef
                   id="brodcast_lang"
-                  data={broadcastLangArr}
+                  data={broadcastLanguages}
                   currentValue={appContextlData.broadcastLang}
                   setDataRef={appContextlData.setBroadcastLang}
                   style={styles.dropDown}

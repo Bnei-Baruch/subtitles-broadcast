@@ -17,7 +17,7 @@ import DraggableItem from "../Components/DraggableItem";
 import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-import GreenSlide from "../Components/GreenSlide";
+import QuestionMessage from "../Components/QuestionMessage";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -288,7 +288,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
+            {/* <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide> */}
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
@@ -325,42 +325,22 @@ const Subtitles = () => {
                 />
               </div>
             </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
+            {/* <QuestionMessage
+              mode="subtitle"
+              languageCode="he"
+            ></QuestionMessage>
+            <QuestionMessage
+              mode="subtitle"
+              languageCode="ru"
+            ></QuestionMessage>
+            <QuestionMessage
+              mode="subtitle"
+              languageCode="en"
+            ></QuestionMessage>
+            <QuestionMessage
+              mode="subtitle"
+              languageCode="es"
+            ></QuestionMessage> */}
           </div>
         </div>
       </div>

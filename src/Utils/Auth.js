@@ -90,7 +90,6 @@ function parseBroadcastLanguage(keycloak, appContextlData) {
         bcLangMatchRes.groups &&
         bcLangMatchRes.groups.language
       ) {
-        appContextlData.setBroadcastLang(bcLangMatchRes.groups.language);
         localStorage.setItem(
           "broadcastLanguage",
           bcLangMatchRes.groups.language
