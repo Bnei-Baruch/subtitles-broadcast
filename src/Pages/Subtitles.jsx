@@ -119,7 +119,6 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              (
               <ActiveSlideMessaging
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
@@ -129,7 +128,6 @@ const Subtitles = () => {
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
-              )
               <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
               <button
                 type="button"
