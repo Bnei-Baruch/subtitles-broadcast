@@ -1,25 +1,8 @@
-import React, { useState, useContext } from "react";
+import React, { useContext } from "react";
 import AppContext from "../AppContext";
-import mqtt from "mqtt";
+import mqttClientUtils, { parseMqttMessage } from "../Utils/MqttUtils";
 
-let mqttClientId;
 let mqttTopic;
-
-function parseMqttMessage(mqttMessage) {
-  if (mqttMessage) {
-    try {
-      if (typeof mqttMessage === "string") {
-        let msgJson = JSON.parse(mqttMessage);
-
-        return msgJson;
-      }
-    } catch (err) {
-      console.log(err);
-    }
-
-    return mqttMessage;
-  }
-}
 
 const mqttPublish = (msgText, mqttClient, setMqttMessage) => {
   if (mqttClient && mqttTopic) {
@@ -31,7 +14,9 @@ const mqttPublish = (msgText, mqttClient, setMqttMessage) => {
         if (error) {
           console.log("Publish error:", error);
         } else {
-          setMqttMessage(msgText);
+          if (setMqttMessage) {
+            setMqttMessage(msgText);
+          }
         }
       }
     );
@@ -60,38 +45,38 @@ function initMqttClient(
   broadcastLangCode,
   mqttClient,
   setMqttClient,
-  setJobMqttMessage
+  jobMqttMessage,
+  setJobMqttMessage,
+  mqttClientId,
+  setMqttClientId
 ) {
   if (!mqttClient) {
-    mqttClientId =
-      "kab_subtitles_" + Math.random().toString(16).substring(2, 8);
-    const mqttUrl = process.env.REACT_APP_MQTT_URL;
-    const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
-    const mqttPort = process.env.REACT_APP_MQTT_PORT;
-    const mqttPath = process.env.REACT_APP_MQTT_PATH;
-
-    const mqttOptions = { protocol: mqttProtocol, clientId: mqttClientId };
-    const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
-
-    mqttClient = mqtt.connect(mqttBrokerUrl, mqttOptions);
-
-    setMqttClient(mqttClient);
-    subscribeMqttMessage(mqttClient, setJobMqttMessage);
+    mqttClientUtils(setMqttClient, setMqttClientId);
+  } else {
+    subscribeMqttMessage(
+      mqttClient,
+      setJobMqttMessage,
+      mqttClientId,
+      jobMqttMessage
+    );
+    mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
+    mqttClient.subscribe(mqttTopic);
   }
-
-  mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
-  mqttClient.subscribe(mqttTopic);
-
-  return mqttClient;
 }
 
-function subscribeMqttMessage(mqttClient, setJobMqttMessage) {
-  if (mqttClient) {
+function subscribeMqttMessage(
+  mqttClient,
+  setJobMqttMessage,
+  mqttClientId,
+  jobMqttMessage
+) {
+  if (mqttClient && setJobMqttMessage) {
     mqttClient.on("message", function (topic, message) {
       const messageStr = message.toString();
       const jobMessageJson = parseMqttMessage(messageStr);
 
-      if (jobMessageJson.clientId !== mqttClientId) {
+      if (jobMessageJson && jobMessageJson.clientId !== mqttClientId) {
+        var tmp = jobMqttMessage;
         setJobMqttMessage(jobMessageJson);
       }
     });
@@ -158,10 +143,11 @@ const determinePublishActiveSlide = (
   mqttMessage,
   setMqttMessage,
   jobMqttMessage,
-  setJobMqttMessage
+  setJobMqttMessage,
+  mqttClientId
 ) => {
   const mqttMessageJson = parseMqttMessage(mqttMessage);
-  const activeSlideOrderNum = activatedTab - 1;
+  const activeSlideOrderNum = activatedTab;
   const jobMessageJson = parseMqttMessage(jobMqttMessage);
 
   if (userAddedList) {
@@ -203,7 +189,8 @@ const determinePublish = (
   mqttMessage,
   setMqttMessage,
   jobMqttMessage,
-  setJobMqttMessage
+  setJobMqttMessage,
+  mqttClientId
 ) => {
   let isPublished = determinePublicJobMsg(
     userAddedList,
@@ -223,7 +210,8 @@ const determinePublish = (
       mqttMessage,
       setMqttMessage,
       jobMqttMessage,
-      setJobMqttMessage
+      setJobMqttMessage,
+      mqttClientId
     );
   }
 };
@@ -237,8 +225,11 @@ export function ActiveSlideMessaging({
   jobMqttMessage,
   setJobMqttMessage,
 }) {
-  const [mqttClient, setMqttClient] = useState(null);
   const appContextlData = useContext(AppContext);
+  const mqttClientId = appContextlData.mqttClientId;
+  const setMqttClientId = appContextlData.setMqttClientId;
+  const mqttClient = appContextlData.mqttClient;
+  const setMqttClient = appContextlData.setMqttClient;
   const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
   const broadcastLangCode = appContextlData.broadcastLang.value;
 
@@ -247,7 +238,10 @@ export function ActiveSlideMessaging({
     broadcastLangCode,
     mqttClient,
     setMqttClient,
-    setJobMqttMessage
+    jobMqttMessage,
+    setJobMqttMessage,
+    mqttClientId,
+    setMqttClientId
   );
 
   determinePublish(
@@ -258,7 +252,8 @@ export function ActiveSlideMessaging({
     mqttMessage,
     setMqttMessage,
     jobMqttMessage,
-    setJobMqttMessage
+    setJobMqttMessage,
+    mqttClientId
   );
 
   return <div style={{ display: "none" }}></div>;

@@ -11,6 +11,12 @@ import AppContext from "./AppContext";
 const App = ({ auth }) => {
   const [broadcastProgramm, setBroadcastProgramm] = useState();
   const [broadcastLang, setBroadcastLang] = useState();
+  const [mqttClient, setMqttClient] = useState();
+  const [mqttClientId, setMqttClientId] = useState();
+  // const mqttClientObj = {
+  //   mqttClient: mqttClient,
+  //   setMqttClient: setMqttClient,
+  // };
 
   return (
     <BrowserRouter>
@@ -21,6 +27,10 @@ const App = ({ auth }) => {
             setBroadcastProgramm,
             broadcastLang,
             setBroadcastLang,
+            mqttClient,
+            setMqttClient,
+            mqttClientId,
+            setMqttClientId,
           }}
         >
           <SideNavBar />

@@ -119,7 +119,6 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              (
               <ActiveSlideMessaging
                 userAddedList={UserAddedList}
                 activatedTab={activatedTab}
@@ -129,7 +128,6 @@ const Subtitles = () => {
                 jobMqttMessage={jobMqttMessage}
                 setJobMqttMessage={setJobMqttMessage}
               />
-              )
               <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
               <button
                 type="button"
@@ -290,7 +288,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            {/* <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide> */}
+            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
