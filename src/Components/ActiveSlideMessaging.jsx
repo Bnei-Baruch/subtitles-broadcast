@@ -161,7 +161,7 @@ const determinePublishActiveSlide = (
   setJobMqttMessage
 ) => {
   const mqttMessageJson = parseMqttMessage(mqttMessage);
-  const activeSlideOrderNum = activatedTab - 1;
+  const activeSlideOrderNum = activatedTab;
   const jobMessageJson = parseMqttMessage(jobMqttMessage);
 
   if (userAddedList) {
