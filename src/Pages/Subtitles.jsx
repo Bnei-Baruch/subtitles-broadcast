@@ -92,6 +92,32 @@ const Subtitles = () => {
 
     setItems(updatedItems);
   };
+  function questionsBtnOnClick(evt) {
+    const subtitelsBtnElm = document.getElementById("btnSubtitels");
+    const bookContentContElm = document.getElementById("bookContentCont");
+    // const nqttQuestion = localStorage.getItem(
+    //   `nqttQuestion${broadcastLangCode}`
+    // );
+
+    evt.target.classList.add("btn-success");
+    subtitelsBtnElm.classList.remove("btn-success");
+    bookContentContElm.style.display = "none";
+
+    // setMqttMessage(nqttQuestion);
+    // setJobMqttMessage(nqttQuestion);
+    setIsSubTitleMode(false);
+  }
+
+  function subtitelsBtnOnClick(evt) {
+    const subtitelsBtnElm = document.getElementById("btnQuestions");
+    const bookContentContElm = document.getElementById("bookContentCont");
+
+    evt.target.classList.add("btn-success");
+    subtitelsBtnElm.classList.remove("btn-success");
+    bookContentContElm.style.display = "block";
+
+    setIsSubTitleMode(true);
+  }
 
   console.log(
     // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
