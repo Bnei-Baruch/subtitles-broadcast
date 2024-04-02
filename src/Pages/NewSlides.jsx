@@ -30,16 +30,11 @@ const NewSlides = () => {
   const [insertMethod, setInsertMethod] = useState("custom_file");
   const [isChecked, setIsChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
-  const [progress, setProgress] = useState(0);
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [typingTimeout, setTypingTimeout] = useState(null);
-
-  useEffect(() => {
-    setProgress(0);
-  }, []);
 
   useEffect(() => {
     if (sourceUrl.length > 0) {
@@ -86,11 +81,6 @@ const NewSlides = () => {
         });
         request.languages = languages;
       }
-      if (insertMethod === "custom_file") {
-        setTimeout(() => {
-          setProgress(75);
-        }, 600);
-      }
       const responsePromise = new Promise((resolve, reject) => {
         try {
           const response = dispatch(SetCustomSlideBySource(request));
@@ -104,18 +94,8 @@ const NewSlides = () => {
           if (result.payload.success) {
             setUpdateTagList([]);
             setSourceUid("");
-            if (insertMethod === "custom_file") {
-              setTimeout(() => {
-                setProgress(100);
-              }, 600);
-              setTimeout(() => {
-                alert(result.payload.description);
-                navigate("/archive?file_uid=" + fileUid);
-              }, 1500);
-            } else {
-              alert(result.payload.description);
-              navigate("/archive?file_uid=" + fileUid);
-            }
+            alert(result.payload.description);
+            navigate("/archive?file_uid=" + fileUid);
           }
         })
         .catch((error) => {
@@ -153,10 +133,7 @@ const NewSlides = () => {
           structuredArray.push(elementObject);
           previousWord = word;
         });
-        setTimeout(() => {
-          setProgress(25);
-          setTagList(structuredArray);
-        }, 600);
+        setTagList(structuredArray);
       };
 
       // Read the file as text
@@ -313,18 +290,18 @@ const NewSlides = () => {
                 options={
                   isChecked
                     ? slideLanguageOptions.map((slideLanguage) => ({
-                        label: Object.keys(languages).find(
-                          (key) => languages[key] === slideLanguage
-                        ),
-                        value: slideLanguage,
-                      }))
+                      label: Object.keys(languages).find(
+                        (key) => languages[key] === slideLanguage
+                      ),
+                      value: slideLanguage,
+                    }))
                     : [
-                        {
-                          label: localStorage.getItem("subtitleLanguage"),
-                          value:
-                            languages[localStorage.getItem("subtitleLanguage")],
-                        },
-                      ] // Add this option when isChecked is false
+                      {
+                        label: localStorage.getItem("subtitleLanguage"),
+                        value:
+                          languages[localStorage.getItem("subtitleLanguage")],
+                      },
+                    ] // Add this option when isChecked is false
                 }
                 value={selectedOptions}
                 onChange={(selectedOptions) => {
@@ -351,22 +328,6 @@ const NewSlides = () => {
             >
               Upload File
             </button>
-            <div className="file-upload-preview col-7">
-              <div className="d-flex justify-content-between">
-                <span className=""> File Name: {selectedFile.name}</span>
-              </div>
-              <div className="progress">
-                <div
-                  className="progress-bar"
-                  role="progressbar"
-                  aria-label="Basic example"
-                  style={{ width: `${progress}%` }}
-                  aria-valuenow="50"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                ></div>
-              </div>
-            </div>
           </div>
           <div>
             <SlideSplit
