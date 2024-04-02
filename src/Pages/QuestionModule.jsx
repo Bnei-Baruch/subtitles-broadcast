@@ -1,8 +1,8 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import "./PagesCSS/Questions.css";
 import AppContext from "../AppContext";
-import mqttClientUtils, { parseMqttMessage } from "../Utils/MqttUtils";
-// import QuestionMessage from "../Components/QuestionMessage";
+import mqttClientUtils from "../Utils/MqttUtils";
+import QuestionMessage from "../Components/QuestionMessage";
 
 const QuestionModule = () => {
   const newQuestionTxtRef = React.createRef();
@@ -12,14 +12,8 @@ const QuestionModule = () => {
   const mqttClientId = appContextlData.mqttClientId;
   const setMqttClientId = appContextlData.setMqttClientId;
   const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
-  const broadcastLangCode = appContextlData.broadcastLang;
-  const [mqttInitilized, setMqttInitilized] = useState(false);
+  const broadcastLangCode = appContextlData.broadcastLang.value;
   const [handleSuccess, sethandleSuccess] = useState(false);
-  const [mqttTopic, setMqttTopic] = useState();
-  const [mqttQuestionEn, setMqttQuestionEn] = useState();
-  const [mqttQuestionHe, setMqttQuestionHe] = useState();
-  const [mqttQuestionRu, setMqttQuestionRu] = useState();
-  const [mqttQuestionEs, setMqttQuestionEs] = useState();
 
   const clearButtonClickHandler = () => {
     sethandleSuccess(false);
@@ -45,11 +39,13 @@ const QuestionModule = () => {
               ? broadcastLangCode.value
               : broadcastLangCode,
           context: qustionTxt,
+          date: new Date().toUTCString(),
+          visible: true,
         };
 
         const jsonMsgStr = JSON.stringify(jsonMsg);
-        const mqttTopic = jsonMsg.lang + "_questions_" + broadcastProgrammCode;
-        mqttPublish(mqttTopic, jsonMsgStr, setMqttQuestionEn);
+        const mqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+        mqttPublish(mqttTopic, jsonMsgStr);
       }
     }
   };
@@ -62,51 +58,6 @@ const QuestionModule = () => {
     return mqttClient;
   }
 
-  function subscribeMqttMessage() {
-    // if (mqttClient && !mqttInitilized) {
-    if (mqttClient) {
-      const mqttTopicTmpHe = "he_questions_" + broadcastProgrammCode;
-      const mqttTopicTmpEn = "en_questions_" + broadcastProgrammCode;
-      const mqttTopicTmpRu = "ru_questions_" + broadcastProgrammCode;
-      const mqttTopicTmpEs = "es_questions_" + broadcastProgrammCode;
-
-      mqttClient.subscribe(mqttTopicTmpHe);
-      mqttClient.subscribe(mqttTopicTmpEn);
-      mqttClient.subscribe(mqttTopicTmpRu);
-      mqttClient.subscribe(mqttTopicTmpEs);
-
-      // mqttClient.on("message", function (topic, message) {
-      //   updateMqttQuestion(message);
-      // });
-
-      setMqttInitilized(true);
-    }
-  }
-
-  const updateMqttQuestion = (message) => {
-    const messageStr = message.toString();
-    const jobMessageJson = parseMqttMessage(messageStr);
-
-    if (jobMessageJson && jobMessageJson.lang) {
-      switch (jobMessageJson.lang) {
-        case "en":
-          setMqttQuestionEn(jobMessageJson.context);
-          break;
-        case "he":
-          setMqttQuestionHe(jobMessageJson.context);
-          break;
-        case "ru":
-          setMqttQuestionRu(jobMessageJson.context);
-          break;
-        case "es":
-          setMqttQuestionEs(jobMessageJson.context);
-          break;
-        default:
-          break;
-      }
-    }
-  };
-
   const mqttPublish = (mqttTopic, msgText, setMqttMessage) => {
     if (mqttClient && mqttTopic) {
       mqttClient.publish(
@@ -116,8 +67,6 @@ const QuestionModule = () => {
         (error) => {
           if (error) {
             console.log("Publish error:", error);
-          } else {
-            setMqttMessage(msgText);
           }
         }
       );
@@ -128,33 +77,7 @@ const QuestionModule = () => {
     }
   };
 
-  useEffect(() => {
-    if (mqttClient) {
-      console.log(mqttClient);
-
-      subscribeMqttMessage();
-
-      mqttClient.on("connect", () => {
-        console.log("Connected");
-      });
-
-      mqttClient.on("error", (err) => {
-        console.error("Connection error: ", err);
-        mqttClient.end();
-      });
-
-      mqttClient.on("reconnect", () => {
-        console.log("Reconnecting");
-      });
-
-      mqttClient.on("message", (topic, message) => {
-        updateMqttQuestion(message);
-      });
-    }
-  }, [mqttClient]);
-
   initMqttClient();
-  //subscribeMqttMessage();
 
   return (
     <div className="form-Question">
@@ -196,71 +119,12 @@ const QuestionModule = () => {
       </div>
       <div className="my-5">
         <p>History</p>
-
         <div class="SendQutionHistory">
           <ul>
-            <li class="item">
-              <span class="datetime">Date: 2024-03-21 Time: 10:30 AM</span>
-              <br />
-              <span class="message">This is the message for Item 1.</span>
-            </li>
-            <hr />
-            <li class="item">
-              <span class="datetime">Date: 2024-03-22 Time: 11:45 AM</span>
-              <br />
-              <span class="message">This is the message for Item 2.</span>
-            </li>
-            <hr />
-            {/* <li class="item">
-              <span class="datetime">Date: 2024-03-30 Time: 10:00 AM</span>
-              <br />
-              <div class="message">{mqttQuestionHe}</div>
-            </li>
-            <hr /> */}
-            {/* <QuestionMessage languageCode="he"></QuestionMessage>
-            <QuestionMessage languageCode="en"></QuestionMessage>
+            <QuestionMessage languageCode="he"></QuestionMessage>
             <QuestionMessage languageCode="ru"></QuestionMessage>
-            <QuestionMessage languageCode="es"></QuestionMessage> */}
-            {mqttQuestionHe && (
-              <div>
-                <li class="item">
-                  <span class="datetime">Date: 2024-03-30 Time: 10:00 AM</span>
-                  <br />
-                  <div class="message">{mqttQuestionHe}</div>
-                </li>
-                <hr />
-              </div>
-            )}
-            {mqttQuestionEn && (
-              <div>
-                <li class="item">
-                  <span class="datetime">Date: 2024-03-31 Time: 11:08 AM</span>
-                  <br />
-                  <div class="message">{mqttQuestionEn}</div>
-                </li>
-                <hr />
-              </div>
-            )}
-            {mqttQuestionRu && (
-              <div>
-                <li class="item">
-                  <span class="datetime">Date: 2024-03-23 Time: 03:08 AM</span>
-                  <br />
-                  <div class="message">{mqttQuestionRu}</div>
-                </li>
-                <hr />
-              </div>
-            )}
-            {mqttQuestionEs && (
-              <div>
-                <li class="item">
-                  <span class="datetime">Date: 2024-03-20 Time: 01:08 AM</span>
-                  <br />
-                  <div class="message">{mqttQuestionEs}</div>
-                </li>
-                <hr />
-              </div>
-            )}
+            <QuestionMessage languageCode="en"></QuestionMessage>
+            <QuestionMessage languageCode="es"></QuestionMessage>
           </ul>
         </div>
       </div>

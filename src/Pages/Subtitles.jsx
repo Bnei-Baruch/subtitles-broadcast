@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import AppContext from "../AppContext";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
@@ -31,6 +32,9 @@ const Subtitles = () => {
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
+  const [isSubTitleMode, setIsSubTitleMode] = useState(true);
+  const appContextlData = useContext(AppContext);
+  const broadcastLangCode = appContextlData.broadcastLang.value;
 
   const handleChange = (selectedOption) => {
     console.log(selectedOption, "selectedOption");
@@ -89,6 +93,33 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
+  function questionsBtnOnClick(evt) {
+    const subtitelsBtnElm = document.getElementById("btnSubtitels");
+    const bookContentContElm = document.getElementById("bookContentCont");
+    // const nqttQuestion = localStorage.getItem(
+    //   `nqttQuestion${broadcastLangCode}`
+    // );
+
+    evt.target.classList.add("btn-success");
+    subtitelsBtnElm.classList.remove("btn-success");
+    bookContentContElm.style.display = "none";
+
+    // setMqttMessage(nqttQuestion);
+    // setJobMqttMessage(nqttQuestion);
+    setIsSubTitleMode(false);
+  }
+
+  function subtitelsBtnOnClick(evt) {
+    const subtitelsBtnElm = document.getElementById("btnQuestions");
+    const bookContentContElm = document.getElementById("bookContentCont");
+
+    evt.target.classList.add("btn-success");
+    subtitelsBtnElm.classList.remove("btn-success");
+    bookContentContElm.style.display = "block";
+
+    setIsSubTitleMode(true);
+  }
+
   return (
     <>
       <div className="body-content d-flex ">
@@ -105,11 +136,21 @@ const Subtitles = () => {
               role="group"
               aria-label="Basic mixed styles example"
             >
-              <button type="button" className="btn btn-success">
+              <button
+                id="btnSubtitels"
+                type="button"
+                className="btn btn-success"
+                onClick={(evt) => subtitelsBtnOnClick(evt)}
+              >
                 Subtitels
               </button>
 
-              <button type="button" className="btn btn-tr">
+              <button
+                id="btnQuestions"
+                type="button"
+                className="btn btn-tr"
+                onClick={(evt) => questionsBtnOnClick(evt)}
+              >
                 Questions
               </button>
             </div>
@@ -166,7 +207,7 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div className="vh-80">
+                <div id="bookContentCont" className="vh-80">
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
@@ -325,7 +366,7 @@ const Subtitles = () => {
                 />
               </div>
             </div>
-            {/* <QuestionMessage
+            <QuestionMessage
               mode="subtitle"
               languageCode="he"
             ></QuestionMessage>
@@ -340,7 +381,7 @@ const Subtitles = () => {
             <QuestionMessage
               mode="subtitle"
               languageCode="es"
-            ></QuestionMessage> */}
+            ></QuestionMessage>
           </div>
         </div>
       </div>

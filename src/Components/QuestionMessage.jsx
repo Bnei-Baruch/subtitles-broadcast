@@ -48,6 +48,10 @@ const QuestionMessage = (props) => {
     ) {
       setMqttQuestion(jobMessageJson.context);
       setMqttDate(jobMessageJson.date);
+      localStorage.setItem(
+        `nqttQuestion${props.languageCode}`,
+        jobMessageJson.context
+      );
     }
   };
 
