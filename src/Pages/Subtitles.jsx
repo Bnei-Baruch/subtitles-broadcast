@@ -89,6 +89,12 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
+  console.log(
+    // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
+    "Mkmnnn",
+    UserAddedList?.slides?.at(-1)?.["order_number"]
+  );
+
   return (
     <>
       <div className="body-content d-flex ">
@@ -238,13 +244,14 @@ const Subtitles = () => {
               onChange={handleChange}
               options={[
                 ...Array(
-                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                  UserAddedList?.slides?.at(-1)?.["order_number"]
                 )?.keys(),
+                UserAddedList?.slides?.at(-1)?.["order_number"],
               ]?.map((index) => ({
                 label: index + 1,
-                value: `${index + 1}/${+UserAddedList?.slides?.at(-1)?.[
-                  "order_number"
-                ]}`,
+                value: `${index + 1}/${
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                }`,
               }))}
             />
 
