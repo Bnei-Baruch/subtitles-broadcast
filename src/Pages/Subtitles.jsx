@@ -18,7 +18,7 @@ import DraggableItem from "../Components/DraggableItem";
 import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-import QuestionMessage from "../Components/QuestionMessage";
+// import QuestionMessage from "../Components/QuestionMessage";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -372,7 +372,7 @@ const Subtitles = () => {
                 />
               </div>
             </div>
-            <QuestionMessage
+            {/* <QuestionMessage
               mode="subtitle"
               languageCode="he"
             ></QuestionMessage>
@@ -387,7 +387,7 @@ const Subtitles = () => {
             <QuestionMessage
               mode="subtitle"
               languageCode="es"
-            ></QuestionMessage>
+            ></QuestionMessage> */}
           </div>
         </div>
       </div>
