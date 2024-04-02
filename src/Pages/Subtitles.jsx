@@ -203,7 +203,6 @@ const Subtitles = () => {
             >
               Back
             </i>
-
             <Select
               menuPlacement="top"
               id="numberSelector"
@@ -230,24 +229,25 @@ const Subtitles = () => {
               }}
               value={{
                 value: `${activatedTab}/${
-                  UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                 }`,
                 label: `${activatedTab + 1}/${
-                  UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                 }`,
               }}
               onChange={handleChange}
               options={[
                 ...Array(
-                  UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                ).keys(),
-              ].map((index) => ({
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                )?.keys(),
+              ]?.map((index) => ({
                 label: index + 1,
-                value: `${index + 1}/${
-                  UserAddedList?.slides?.at(-1)?.["order_number"]
-                }`,
+                value: `${index + 1}/${+UserAddedList?.slides?.at(-1)?.[
+                  "order_number"
+                ]}`,
               }))}
             />
+
             <span
               onClick={() => {
                 if (
