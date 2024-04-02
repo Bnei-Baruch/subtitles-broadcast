@@ -17,7 +17,7 @@ import DraggableItem from "../Components/DraggableItem";
 import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-// import GreenSlide from "../Components/GreenSlide";
+import GreenSlide from "../Components/GreenSlide";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -295,7 +295,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            {/* <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide> */}
+            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
