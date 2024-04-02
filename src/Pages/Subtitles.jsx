@@ -89,6 +89,12 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
+  console.log(
+    // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
+    "Mkmnnn",
+    UserAddedList?.slides?.at(-1)?.["order_number"]
+  );
+
   return (
     <>
       <div className="body-content d-flex ">
@@ -203,7 +209,6 @@ const Subtitles = () => {
             >
               Back
             </i>
-
             <Select
               menuPlacement="top"
               id="numberSelector"
@@ -230,24 +235,26 @@ const Subtitles = () => {
               }}
               value={{
                 value: `${activatedTab}/${
-                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                 }`,
                 label: `${activatedTab + 1}/${
-                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                 }`,
               }}
               onChange={handleChange}
               options={[
                 ...Array(
                   UserAddedList?.slides?.at(-1)?.["order_number"]
-                ).keys(),
-              ].map((index) => ({
+                )?.keys(),
+                UserAddedList?.slides?.at(-1)?.["order_number"],
+              ]?.map((index) => ({
                 label: index + 1,
                 value: `${index + 1}/${
-                  UserAddedList?.slides?.at(-1)?.["order_number"]
+                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                 }`,
               }))}
             />
+
             <span
               onClick={() => {
                 if (

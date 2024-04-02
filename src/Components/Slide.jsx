@@ -33,7 +33,7 @@ export const Slide = ({ content, isLtr }) => {
     <div ref={outerRef} className="slide-container">
       <div
         ref={slideRef}
-        className={`slide-content ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}
+        className={`slide-content  ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}
       ></div>
     </div>
   );
