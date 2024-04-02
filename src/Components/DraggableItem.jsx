@@ -53,10 +53,11 @@ const DraggableItem = ({
         className="bi bi-trash"
       />
       <span
-        className="text-truncate mx-3 text-primary bookmarkTruncate"
+        className="text-truncate mx-3 text-primary bookmarkTruncate "
         data-bs-toggle="tooltip"
         data-bs-placement="top"
         title={text}
+        style={{ width: "600px" }}
         onClick={() => handleBookMarkClick(fileUid)}
       >
         {text}
