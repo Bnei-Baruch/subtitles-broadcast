@@ -45,12 +45,12 @@ const BookContent = ({
                 +activatedTab === item.order_number && "activeSlide"
               }`}
             >
-              <bdo
+              {/* <bdo
                 className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
                 dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
-              >
-                <Slide content={item?.slide} isLtr={isLtr}></Slide>
-              </bdo>
+              > */}
+              <Slide content={item?.slide} isLtr={isLtr}></Slide>
+              {/* </bdo> */}
               <span className="order-number">{+item?.order_number + 1}</span>
             </div>
           </>

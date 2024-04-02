@@ -89,7 +89,7 @@ const HeaderBar = ({ logout }) => {
               </li>
             </ul>
           </div>
-          <div className="btn-group list-btn">
+          {/* <div className="btn-group list-btn">
             <button
               className="btn btn-secondary dropdown-toggle"
               type="button"
@@ -104,7 +104,7 @@ const HeaderBar = ({ logout }) => {
               />
               <span className="m-2">EN</span>
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </>
