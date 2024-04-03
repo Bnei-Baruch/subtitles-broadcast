@@ -110,36 +110,40 @@ const NewSlides = () => {
 
   const handleUpload = () => {
     // Perform upload logic with selectedFile
-    setSourceUid("upload_" + GenerateUID(8));
-    setFileUid("upload_" + GenerateUID(8));
-    if (selectedFile) {
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        let fileContents = event.target.result;
-        fileContents = fileContents.replace(/\r?\n/g, " <br/> ");
-        const wordsArray = fileContents.split(/\s+/);
-        let structuredArray = [];
-        let previousWord = "";
-        wordsArray.forEach((word, index) => {
-          const elementObject = {
-            paragraphStart: false,
-            tagName: "",
-            word: word,
-          };
-          if (previousWord === "<br/>" && word !== "<br/>") {
-            elementObject.paragraphStart = true;
-          }
-          structuredArray.push(elementObject);
-          previousWord = word;
-        });
-        setTagList(structuredArray);
-      };
-
-      // Read the file as text
-      reader.readAsText(selectedFile);
+    if (document.getElementById("upload_name").value === "") {
+      alert("Name must be filled");
     } else {
-      console.error("No file selected");
+      setSourceUid("upload_" + GenerateUID(8));
+      setFileUid("upload_" + GenerateUID(8));
+      if (selectedFile) {
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+          let fileContents = event.target.result;
+          fileContents = fileContents.replace(/\r?\n/g, " <br/> ");
+          const wordsArray = fileContents.split(/\s+/);
+          let structuredArray = [];
+          let previousWord = "";
+          wordsArray.forEach((word, index) => {
+            const elementObject = {
+              paragraphStart: false,
+              tagName: "",
+              word: word,
+            };
+            if (previousWord === "<br/>" && word !== "<br/>") {
+              elementObject.paragraphStart = true;
+            }
+            structuredArray.push(elementObject);
+            previousWord = word;
+          });
+          setTagList(structuredArray);
+        };
+
+        // Read the file as text
+        reader.readAsText(selectedFile);
+      } else {
+        console.error("No file selected");
+      }
     }
   };
 
@@ -325,6 +329,7 @@ const NewSlides = () => {
             <button
               className="btn btn-light rounded-pill col-4"
               onClick={handleUpload}
+              disabled={!selectedFile}
             >
               Upload File
             </button>
