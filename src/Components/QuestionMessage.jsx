@@ -2,14 +2,49 @@ import React, { useState, useContext, useEffect } from "react";
 import AppContext from "../AppContext";
 import PropTypes from "prop-types";
 import mqttClientUtils, { parseMqttMessage } from "../Utils/MqttUtils";
+//import useMqtt, { parseMqttMessage } from "../Utils/UseMqttUtils";
 import { broadcastLanguages } from "../Utils/Const";
+
 
 const QuestionMessage = (props) => {
   const appContextlData = useContext(AppContext);
+  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
+  // const broadcastLangCode = appContextlData.broadcastLang.value;
+  // const {
+  //   mqttUnSubscribe,
+  //   mqttSubscribe,
+  //   mqttPublush,
+  //   isConnected,
+  //   payload,
+  //   clientId,
+  // } = useMqtt();
+  // const [notificationList, setNotificationList] = useState([]);
+  // const mqttTopicList = broadcastLanguages.map((langItem, index) => {
+  //   const mqttTopic = `subtitles_${broadcastProgrammCode}_${langItem.value}`;
+  //   return mqttTopic;
+  // })
+
+  // useEffect(() => {
+  //   // Notification.requestPermission();
+
+  //   return () => {
+  //     mqttUnSubscribe(mqttTopic);
+  //   };
+  // }, []);
+
+  // useEffect(() => {
+  //   if (isConnected) {
+  //     mqttTopicList.forEach((mqttTopic, index) => {
+  //       mqttSubscribe(mqttTopic);
+  //     })
+  //   }
+  // }, [isConnected]);
+
+
+
   const mqttClient = appContextlData.mqttClient;
   const setMqttClient = appContextlData.setMqttClient;
   const setMqttClientId = appContextlData.setMqttClientId;
-  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
   const [mqttQuestion, setMqttQuestion] = useState();
   const [mqttDate, setMqttDate] = useState();
 

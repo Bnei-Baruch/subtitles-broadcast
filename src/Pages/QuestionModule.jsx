@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import "./PagesCSS/Questions.css";
 import AppContext from "../AppContext";
 import mqttClientUtils from "../Utils/MqttUtils";
-import QuestionMessage from "../Components/QuestionMessage";
+// import QuestionMessage from "../Components/QuestionMessage";
 
 const QuestionModule = () => {
   const newQuestionTxtRef = React.createRef();
@@ -121,10 +121,10 @@ const QuestionModule = () => {
         <p>History</p>
         <div class="SendQutionHistory">
           <ul>
-            <QuestionMessage languageCode="he"></QuestionMessage>
+            {/* <QuestionMessage languageCode="he"></QuestionMessage>
             <QuestionMessage languageCode="ru"></QuestionMessage>
             <QuestionMessage languageCode="en"></QuestionMessage>
-            <QuestionMessage languageCode="es"></QuestionMessage>
+            <QuestionMessage languageCode="es"></QuestionMessage> */}
           </ul>
         </div>
       </div>

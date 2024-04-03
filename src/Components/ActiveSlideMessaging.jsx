@@ -43,8 +43,7 @@ export function ActiveSlideMessaging({
     clientId,
   } = useMqtt();
   const [notificationList, setNotificationList] = useState([]);
-  const mqttTopic =
-    "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
+  const mqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
 
   function findActiveSlide(userAddedList, activeSlideOrderNum) {
     let retSlide;
