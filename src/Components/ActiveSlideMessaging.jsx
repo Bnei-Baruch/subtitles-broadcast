@@ -199,7 +199,7 @@ export function ActiveSlideMessaging({
   };
 
   useEffect(() => {
-    Notification.requestPermission();
+    // Notification.requestPermission();
 
     return () => {
       mqttUnSubscribe(mqttTopic);
@@ -209,17 +209,6 @@ export function ActiveSlideMessaging({
   useEffect(() => {
     if (isConnected) {
       mqttSubscribe(mqttTopic);
-
-      determinePublish(
-        userAddedList,
-        activatedTab,
-        setActivatedTab,
-        mqttMessage,
-        setMqttMessage,
-        jobMqttMessage,
-        setJobMqttMessage,
-        clientId
-      );
     }
   }, [isConnected]);
 
@@ -228,13 +217,24 @@ export function ActiveSlideMessaging({
       const newMessage = JSON.parse(payload.message);
       const notif = [newMessage];
       setNotificationList(notif);
-      new Notification(newMessage.slide);
+      // new Notification(newMessage.slide);
 
       if (newMessage && newMessage.clientId !== clientId) {
         setJobMqttMessage(newMessage);
       }
     }
   }, [payload]);
+
+  determinePublish(
+    userAddedList,
+    activatedTab,
+    setActivatedTab,
+    mqttMessage,
+    setMqttMessage,
+    jobMqttMessage,
+    setJobMqttMessage,
+    clientId
+  );
 
   return (
     <>
@@ -253,21 +253,19 @@ export function ActiveSlideMessaging({
           ))}
         </div>
       </div>
+
       {/* <div className="App">
         <div className="card">
           <h3>Last Active Slide </h3>
           <ol>
             {notificationList.map((obj) => (
-              // <li>{obj.slide}</li>
-              <Slide content={obj.slide} isLtr={isLtr}></Slide>
+              <li>{obj.slide}</li>
             ))}
           </ol>
         </div>
       </div> */}
     </>
   );
-
-  // return <div style={{ display: "none" }}></div>;
 }
 
 export default ActiveSlideMessaging;
