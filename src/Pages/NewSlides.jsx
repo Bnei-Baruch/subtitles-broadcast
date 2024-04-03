@@ -33,7 +33,12 @@ const NewSlides = () => {
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
-  const [selectedOptions, setSelectedOptions] = useState([]);
+  const [selectedOptions, setSelectedOptions] = useState([
+    {
+      label: localStorage.getItem("subtitleLanguage"),
+      value: languages[localStorage.getItem("subtitleLanguage")],
+    },
+  ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
 
   useEffect(() => {
@@ -293,19 +298,19 @@ const NewSlides = () => {
                 isMulti
                 options={
                   isChecked
-                    ? slideLanguageOptions.map((slideLanguage) => ({
-                      label: Object.keys(languages).find(
-                        (key) => languages[key] === slideLanguage
-                      ),
-                      value: slideLanguage,
-                    }))
-                    : [
-                      {
-                        label: localStorage.getItem("subtitleLanguage"),
-                        value:
-                          languages[localStorage.getItem("subtitleLanguage")],
-                      },
-                    ] // Add this option when isChecked is false
+                    ? slideLanguageOptions.map((slideLanguage) => {
+                      if (slideLanguage !== languages[localStorage.getItem("subtitleLanguage")]) {
+                        return {
+                          label: Object.keys(languages).find(
+                            (key) => languages[key] === slideLanguage
+                          ),
+                          value: slideLanguage,
+                        };
+                      } else {
+                        return null; // Skip the undesired option
+                      }
+                    }).filter(option => option !== null) // Filter out null options
+                    : []
                 }
                 value={selectedOptions}
                 onChange={(selectedOptions) => {
