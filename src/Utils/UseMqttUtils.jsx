@@ -44,6 +44,7 @@ export default function useMqtt() {
     const clientMqtt = await mqtt.connect(url, options);
     setMqttClient(clientMqtt);
     setClientId(clientId);
+    console.log(clientId);
   };
 
   const mqttPublush = async (mqttTopic, msgText) => {
@@ -55,6 +56,8 @@ export default function useMqtt() {
         (error) => {
           if (error) {
             console.log("Publish error:", error);
+          } else {
+            console.log(`"Published Topic: ${mqttTopic} Message: ${msgText}`);
           }
         }
       );
@@ -64,7 +67,7 @@ export default function useMqtt() {
   const mqttDisconnect = () => {
     if (mqttClient) {
       mqttClient.end(() => {
-        console.log("MQTT Disconnected");
+        console.log("MQTT Disconnected", clientId);
         setIsConnected(false);
       });
     }
@@ -114,7 +117,7 @@ export default function useMqtt() {
     if (mqttClient) {
       mqttClient.on("connect", () => {
         setIsConnected(true);
-        console.log("MQTT Connected");
+        console.log("MQTT Connected", clientId);
       });
       mqttClient.on("error", (err) => {
         console.error("MQTT Connection error: ", err);
@@ -125,6 +128,9 @@ export default function useMqtt() {
       });
       mqttClient.on("message", (_topic, message) => {
         const payloadMessage = { topic: _topic, message: message.toString() };
+        console.error(
+          `MQTT message: ${message.toString()} \n topic: ${_topic}`
+        );
         setPayload(payloadMessage);
       });
     }

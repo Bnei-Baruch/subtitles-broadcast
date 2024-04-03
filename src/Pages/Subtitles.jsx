@@ -18,7 +18,7 @@ import DraggableItem from "../Components/DraggableItem";
 import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-// import QuestionMessage from "../Components/QuestionMessage";
+import QuestionMessage from "../Components/QuestionMessage";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -364,20 +364,14 @@ const Subtitles = () => {
           <div className="Questions whit-s">
             <div className="top-head d-flex justify-content-between">
               <h3>Questions</h3>
-              <div className="input-box">
-                <input
-                  className=""
-                  type="text"
-                  placeholder="Search"
-                  aria-label="Search"
-                />
-              </div>
             </div>
-            {/* <QuestionMessage
-              mode="subtitle"
-              languageCode="he"
-            ></QuestionMessage>
             <QuestionMessage
+              languagesList={[
+                { value: "he", label: "Hebrew" },
+                { value: "ru", label: "Russian" },
+              ]}
+            ></QuestionMessage>
+            {/* <QuestionMessage
               mode="subtitle"
               languageCode="ru"
             ></QuestionMessage>
