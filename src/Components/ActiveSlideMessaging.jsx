@@ -15,7 +15,7 @@ const styles = {
   },
   slidePartContainer: {
     height: "35%",
-    "text-align": "left",
+    textAlign: "left",
     padding: "0",
     margin: "0",
   },
@@ -244,7 +244,12 @@ export function ActiveSlideMessaging({
         </div>
         <div className="slide-part-cont" style={styles.slidePartContainer}>
           {notificationList.map((obj) => (
-            <Slide content={obj.slide} isLtr={isLtr}></Slide>
+            <Slide
+              data-key={obj.ID}
+              key={obj.ID}
+              content={obj.slide}
+              isLtr={isLtr}
+            ></Slide>
           ))}
         </div>
       </div>
