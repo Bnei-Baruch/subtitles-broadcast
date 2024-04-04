@@ -47,7 +47,7 @@ const DraggableItem = ({
       ref={(node) => ref(drop(node))}
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
     >
-      <i class="bi bi-grip-vertical me-3" />
+      <i className="bi bi-grip-vertical me-3" />
       <i
         onClick={() => dispatch(UnBookmarkSlide(bookmarkDelete))}
         className="bi bi-trash"

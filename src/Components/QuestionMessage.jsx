@@ -1,16 +1,28 @@
-import React, { useState, useContext, useEffect } from "react";
-import AppContext from "../AppContext";
-import PropTypes from "prop-types";
-// import mqttClientUtils, { parseMqttMessage } from "../Utils/MqttUtils";
-// import useMqtt, { parseMqttMessage } from "../Utils/UseMqttUtils";
-import useMqtt from "../Utils/UseMqttUtils";
-import { broadcastLanguages } from "../Utils/Const";
+import React, { useState, useEffect } from "react";
+// import PropTypes from "prop-types";
+import {
+  broadcastLanguages,
+  brodcastProgrammArr,
+  broadcastLangMapObj,
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm,
+  parseMqttMessage,
+} from "../Utils/Const";
+import {
+  publishEvent,
+  subscribeEvent,
+  unsubscribeEvent,
+} from "../Utils/Events";
 
 const QuestionMessage = (props) => {
-  const appContextlData = useContext(AppContext);
-  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
-  //const broadcastLangCode = appContextlData.broadcastLang.value;
-  const { mqttUnSubscribe, mqttSubscribe, isConnected, payload } = useMqtt();
+  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
+    return getCurrentBroadcastProgramm();
+  });
+  const broadcastProgrammCode = broadcastProgrammObj.value;
+
+  const [broadcastLang, setBroadcastLang] = useState(() => {
+    return getCurrentBroadcastLanguage();
+  });
 
   const [notificationList, setNotificationList] = useState([]);
   const langList = props.languagesList
@@ -23,43 +35,46 @@ const QuestionMessage = (props) => {
   });
 
   useEffect(() => {
+    console.log("QuestionMessage mqttSubscribe");
+
+    mqttTopicList.forEach((mqttTopic, index) => {
+      publishEvent("mqttSubscribe", {
+        mqttTopic: mqttTopic,
+      });
+
+      subscribeEvent(mqttTopic, (event) => {
+        newMessageHandling(event);
+      });
+
+      console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+    });
+
     return () => {
       mqttTopicList.forEach((mqttTopic, index) => {
-        mqttUnSubscribe(mqttTopic);
+        publishEvent("mqttUnSubscribe", {
+          mqttTopic: mqttTopic,
+        });
       });
     };
   }, []);
 
-  useEffect(() => {
-    if (isConnected) {
-      mqttTopicList.forEach((mqttTopic, index) => {
-        mqttSubscribe(mqttTopic);
-      });
-    }
-  }, [isConnected]);
+  let notificationListTmp = [];
 
-  useEffect(() => {
-    if (payload.message && mqttTopicList.includes(payload.topic)) {
-      const newMessage = JSON.parse(payload.message);
-      const notif = [...notificationList, newMessage];
-      setNotificationList(notif);
+  const newMessageHandling = (event) => {
+    console.log("QuestionMessage newMessageHandling", event);
+    const clientId = event.detail.clientId;
+    const newMessage = event.detail.messageJson;
 
-      setMqttQuestion(newMessage);
-      setMqttDate(newMessage.date);
-      sessionStorage.setItem(
-        `nqttQuestion${props.languageCode}`,
-        JSON.stringify(newMessage)
-      );
+    if (newMessage && newMessage.clientId !== clientId) {
+      //const notif = [...notificationList, newMessage];
+      notificationListTmp = [...notificationListTmp, newMessage];
+      setNotificationList(notificationListTmp);
+      //setJobMqttMessage(newMessage);
     }
-  }, [payload]);
+  };
 
   const [mqttQuestion, setMqttQuestion] = useState();
   const [mqttDate, setMqttDate] = useState();
-
-  const broadcastLangMapObj = {};
-  broadcastLanguages.forEach((broadcastLangObj) => {
-    broadcastLangMapObj[broadcastLangObj.value] = broadcastLangObj;
-  });
 
   const parseUtcStrToLocal = (utcDateStr) => {
     let retVal = utcDateStr;
@@ -72,46 +87,51 @@ const QuestionMessage = (props) => {
     return retVal;
   };
 
-  if (mqttQuestion) {
-    if (props.mode === "subtitle") {
-      const langName = broadcastLangMapObj[props.languageCode].label;
+  const getLanguageName = (langCode) => {
+    const langName = broadcastLangMapObj[langCode].label;
+    return langName;
+  };
 
-      return (
-        <div className="QuestionSection ">
-          <div className="d-flex justify-content-between h-auto">
-            {/* <p>{langName}</p> */}
-            <i className="bi bi-eye" />
-          </div>
-          <div className="d-flex justify-content-end">
-            1111 WWW
-            {/* <p>{mqttQuestion}</p> */}
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <>
-          {notificationList.map((obj) => (
-            <div>
-              <div>
-                <li class="item">
-                  <span class="datetime">
-                    222 OOO
-                    {/* Date: {parseUtcStrToLocal(mqttDate)} */}
-                  </span>
-                  <br />
-                  <div class="message">{obj.context}</div>
-                </li>
-                <hr />
-              </div>
+  if (props.mode === "subtitle") {
+    return (
+      <>
+        {notificationList.map((obj) => (
+          <div className="QuestionSection " data-key={obj.ID} key={obj.ID}>
+            <div className="d-flex justify-content-between h-auto">
+              <p>{getLanguageName(obj.lang)}</p>
+              <i className="bi bi-eye" />
             </div>
-          ))}
-        </>
-      );
-    }
+            <div className="d-flex justify-content-end">
+              <p>{obj.context}</p>
+            </div>
+          </div>
+        ))}
+      </>
+    );
   } else {
-    return <></>;
+    return (
+      <>
+        {notificationList.map((obj) => (
+          <div data-key={obj.ID} key={obj.ID}>
+            <div>
+              <li className="item">
+                <span className="datetime">
+                  222 OOO
+                  {/* Date: {parseUtcStrToLocal(mqttDate)} */}
+                </span>
+                <br />
+                <div className="message">{obj.context}</div>
+              </li>
+              <hr />
+            </div>
+          </div>
+        ))}
+      </>
+    );
   }
+  // } else {
+  //   return <></>;
+  // }
 };
 
 // QuestionMessage.propTypes = {

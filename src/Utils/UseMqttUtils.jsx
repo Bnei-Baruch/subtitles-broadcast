@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import mqtt from "mqtt";
+import {
+  subscribeEvent,
+  unsubscribeEvent,
+  publishEvent,
+} from "../Utils/Events";
 
 const mqttUrl = process.env.REACT_APP_MQTT_URL;
 const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
 const mqttPort = process.env.REACT_APP_MQTT_PORT;
 const mqttPath = process.env.REACT_APP_MQTT_PATH;
-//const mqttOptions = { protocol: mqttProtocol, clientId: mqttClientId };
 const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
 
 const setting = {
@@ -25,7 +29,7 @@ export default function useMqtt() {
 
   const getClientId = () => {
     const clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-    console.log(`Set MQTT Client: ${clientId}`);
+    console.log(`useMqtt Set MQTT Client: ${clientId}`);
     return clientId;
   };
 
@@ -44,7 +48,7 @@ export default function useMqtt() {
     const clientMqtt = await mqtt.connect(url, options);
     setMqttClient(clientMqtt);
     setClientId(clientId);
-    console.log(clientId);
+    console.log("useMqtt ", clientId);
   };
 
   const mqttPublush = async (mqttTopic, msgText) => {
@@ -55,9 +59,11 @@ export default function useMqtt() {
         { label: "0", value: 0, retain: true },
         (error) => {
           if (error) {
-            console.log("Publish error:", error);
+            console.log("useMqtt  Publish error:", error);
           } else {
-            console.log(`"Published Topic: ${mqttTopic} Message: ${msgText}`);
+            console.log(
+              `"useMqtt  Published Topic: ${mqttTopic} Message: ${msgText}`
+            );
           }
         }
       );
@@ -67,7 +73,7 @@ export default function useMqtt() {
   const mqttDisconnect = () => {
     if (mqttClient) {
       mqttClient.end(() => {
-        console.log("MQTT Disconnected", clientId);
+        console.log("useMqtt  MQTT Disconnected", clientId);
         setIsConnected(false);
       });
     }
@@ -75,7 +81,7 @@ export default function useMqtt() {
 
   const mqttSubscribe = async (topic) => {
     if (mqttClient) {
-      console.log("MQTT subscribe ", topic);
+      console.log("useMqtt MQTT subscribe ", topic);
       const clientMqtt = await mqttClient.subscribe(
         topic,
         {
@@ -85,7 +91,7 @@ export default function useMqtt() {
         },
         (error) => {
           if (error) {
-            console.log("MQTT Subscribe to topics error", error);
+            console.log("useMqtt MQTT Subscribe to topics error", error);
             return;
           }
         }
@@ -98,7 +104,7 @@ export default function useMqtt() {
     if (mqttClient) {
       const clientMqtt = await mqttClient.unsubscribe(topic, (error) => {
         if (error) {
-          console.log("MQTT Unsubscribe error", error);
+          console.log("useMqtt MQTT Unsubscribe error", error);
           return;
         }
       });
@@ -117,10 +123,10 @@ export default function useMqtt() {
     if (mqttClient) {
       mqttClient.on("connect", () => {
         setIsConnected(true);
-        console.log("MQTT Connected", clientId);
+        console.log("useMqtt MQTT Connected", clientId);
       });
       mqttClient.on("error", (err) => {
-        console.error("MQTT Connection error: ", err);
+        console.error("useMqtt MQTT Connection error: ", err);
         mqttClient.end();
       });
       mqttClient.on("reconnect", () => {
@@ -128,10 +134,19 @@ export default function useMqtt() {
       });
       mqttClient.on("message", (_topic, message) => {
         const payloadMessage = { topic: _topic, message: message.toString() };
-        console.error(
-          `MQTT message: ${message.toString()} \n topic: ${_topic}`
-        );
+        const newMessage = JSON.parse(payloadMessage.message);
+
+        publishEvent(_topic, {
+          mqttTopic: _topic,
+          clientId: clientId,
+          messageJson: newMessage,
+        });
+
         setPayload(payloadMessage);
+
+        console.log(
+          `useMqtt MQTT message: ${message.toString()} \n topic: ${_topic}`
+        );
       });
     }
   }, [mqttClient]);

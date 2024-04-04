@@ -19,6 +19,14 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
+import {
+  broadcastLanguages,
+  brodcastProgrammArr,
+  broadcastLangMapObj,
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm,
+  parseMqttMessage,
+} from "../Utils/Const";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -34,7 +42,7 @@ const Subtitles = () => {
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
   const appContextlData = useContext(AppContext);
-  const broadcastLangCode = appContextlData.broadcastLang.value;
+  // const broadcastLangCode = appContextlData.broadcastLang.value;
 
   const handleChange = (selectedOption) => {
     console.log(selectedOption, "selectedOption");
@@ -336,7 +344,6 @@ const Subtitles = () => {
               setJobMqttMessage={setJobMqttMessage}
               isLtr={isLtr}
             />
-            {/* <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide> */}
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
@@ -347,7 +354,7 @@ const Subtitles = () => {
                 {items?.length > 0 &&
                   items?.map((item, index) => (
                     <DraggableItem
-                      key={item.id}
+                      key={index}
                       id={item.id}
                       setActivatedTab={setActivatedTab}
                       bookmarkDelete={item.bookmark_id}
@@ -366,23 +373,9 @@ const Subtitles = () => {
               <h3>Questions</h3>
             </div>
             <QuestionMessage
-              languagesList={[
-                { value: "he", label: "Hebrew" },
-                { value: "ru", label: "Russian" },
-              ]}
-            ></QuestionMessage>
-            {/* <QuestionMessage
               mode="subtitle"
-              languageCode="ru"
+              languagesList={[getCurrentBroadcastLanguage()]}
             ></QuestionMessage>
-            <QuestionMessage
-              mode="subtitle"
-              languageCode="en"
-            ></QuestionMessage>
-            <QuestionMessage
-              mode="subtitle"
-              languageCode="es"
-            ></QuestionMessage> */}
           </div>
         </div>
       </div>

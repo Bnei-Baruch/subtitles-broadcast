@@ -1,6 +1,20 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { GreenWindow } from "../Components/GreenWindow";
 import { Slide } from "./Slide";
+
+import {
+  broadcastLanguages,
+  brodcastProgrammArr,
+  broadcastLangMapObj,
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm,
+  parseMqttMessage,
+} from "../Utils/Const";
+import {
+  publishEvent,
+  subscribeEvent,
+  unsubscribeEvent,
+} from "../Utils/Events";
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
   var className = showGreenWindow
@@ -35,30 +49,50 @@ const styles = {
   },
 };
 
-function parseMqttMessage(mqttMessage) {
-  if (mqttMessage) {
-    try {
-      let msgJson = mqttMessage;
-
-      if (typeof mqttMessage === "string") {
-        msgJson = JSON.parse(mqttMessage);
-      }
-
-      if (msgJson.slide) {
-        return msgJson.slide;
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  return mqttMessage;
-}
-
 export const GreenWindowButton = ({ isLtr, mqttMessage }) => {
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const elementRef = useRef(null);
   const publishedSlide = parseMqttMessage(mqttMessage);
+
+  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
+    return getCurrentBroadcastProgramm();
+  });
+
+  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
+    return getCurrentBroadcastLanguage();
+  });
+  const broadcastProgrammCode = broadcastProgrammObj.value;
+  const broadcastLangCode = broadcastLangObj.value;
+  const [context, setContext] = useState();
+  const mqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
+
+  let contextTmp = [];
+
+  useEffect(() => {
+    console.log("ActiveSlideMessaging mqttSubscribe", mqttTopic);
+    publishEvent("mqttSubscribe", {
+      mqttTopic: mqttTopic,
+    });
+
+    subscribeEvent(mqttTopic, newMessageHandling);
+
+    return () => {
+      publishEvent("mqttUnSubscribe", {
+        mqttTopic: mqttTopic,
+      });
+    };
+  }, []);
+
+  const newMessageHandling = (data) => {
+    console.log("GreenWindowButton newMessageHandling", data);
+    //const clientId = data.clientId;
+    contextTmp = data.detail.messageJson;
+    setContext(contextTmp);
+
+    // if (newMessage && newMessage.clientId !== clientId) {
+    //   setJobMqttMessage(newMessage);
+    // }
+  };
 
   return (
     <>
@@ -82,9 +116,9 @@ export const GreenWindowButton = ({ isLtr, mqttMessage }) => {
               style={styles.greenPartContainer}
             ></div>
             <div className="slide-part-cont" style={styles.slidePartContainer}>
-              {publishedSlide && (
+              {context && (
                 <Slide
-                  content={publishedSlide}
+                  content={context.slide}
                   isLtr={isLtr}
                   parentElement={elementRef}
                 ></Slide>

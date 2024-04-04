@@ -28,12 +28,66 @@ export const broadcastLanguages = [
   { value: "es", label: "Spanish" },
 ];
 
-export const broadcastLangMapObj = broadcastLanguages.map(
-  function (broadcastLangObj) {
-    var obj = {};
-    obj[broadcastLangObj.value] = obj;
-    return obj;
+export let broadcastLangMapObj = {};
+broadcastLanguages.forEach((langObj, index) => {
+  broadcastLangMapObj[langObj.value] = langObj;
+});
+
+export const brodcastProgrammArr = [
+  { value: "morning_lesson", label: "Morning lesson" },
+  { value: "brodcast_1", label: "Brodcast 1" },
+  { value: "brodcast_2", label: "Brodcast 2" },
+  { value: "brodcast_3", label: "Brodcast 3" },
+];
+
+export function getCurrentBroadcastLanguage() {
+  let bcLangObj;
+  const broadcastLangObjStr = sessionStorage.getItem("broadcastLangObj");
+
+  if (broadcastLangObjStr) {
+    bcLangObj = JSON.parse(broadcastLangObjStr);
+  } else {
+    const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
+
+    bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
+      ? broadcastLangMapObj[bcLanglocalStorageVal]
+      : broadcastLanguages[0];
+
+    console.log("init broadcastLangObj");
   }
-);
+
+  return bcLangObj;
+}
+
+export function getCurrentBroadcastProgramm() {
+  let bcProgrammObj;
+  const broadcastProgrammObjStr = sessionStorage.getItem(
+    "broadcastProgrammObj"
+  );
+  if (broadcastProgrammObjStr) {
+    bcProgrammObj = JSON.parse(broadcastProgrammObjStr);
+  } else {
+    console.log("init broadcastProgrammObj");
+    bcProgrammObj = { value: "morning_lesson", label: "Morning lesson" };
+  }
+
+  return bcProgrammObj;
+}
+
+export function parseMqttMessage(mqttMessage) {
+  if (mqttMessage) {
+    try {
+      if (typeof mqttMessage === "string") {
+        let msgJson = JSON.parse(mqttMessage);
+
+        return msgJson;
+      }
+    } catch (err) {
+      console.log(err);
+    }
+
+    return mqttMessage;
+  }
+}
 
 export default GetLangaugeCode;

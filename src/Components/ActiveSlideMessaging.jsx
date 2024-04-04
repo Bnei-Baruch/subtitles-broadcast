@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
-import AppContext from "../AppContext";
-import useMqtt, { parseMqttMessage } from "../Utils/UseMqttUtils";
 import { Slide } from "../Components/Slide";
+import {
+  broadcastLanguages,
+  brodcastProgrammArr,
+  broadcastLangMapObj,
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm,
+  parseMqttMessage,
+} from "../Utils/Const";
+import {
+  publishEvent,
+  subscribeEvent,
+  unsubscribeEvent,
+} from "../Utils/Events";
 
 const styles = {
   mainContainer: {
@@ -26,22 +37,21 @@ export function ActiveSlideMessaging({
   activatedTab,
   setActivatedTab,
   mqttMessage,
-  setMqttMessage,
+  // setMqttMessage,
   jobMqttMessage,
   setJobMqttMessage,
   isLtr,
 }) {
-  const appContextlData = useContext(AppContext);
-  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
-  const broadcastLangCode = appContextlData.broadcastLang.value;
-  const {
-    mqttUnSubscribe,
-    mqttSubscribe,
-    mqttPublush,
-    isConnected,
-    payload,
-    clientId,
-  } = useMqtt();
+  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
+    return getCurrentBroadcastProgramm();
+  });
+
+  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
+    return getCurrentBroadcastLanguage();
+  });
+
+  const broadcastProgrammCode = broadcastProgrammObj.value;
+  const broadcastLangCode = broadcastLangObj.value;
   const [notificationList, setNotificationList] = useState([]);
   const mqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
 
@@ -65,7 +75,7 @@ export function ActiveSlideMessaging({
     activatedTab,
     setActivatedTab,
     mqttMessage,
-    setMqttMessage,
+    // setMqttMessage,
     jobMqttMessage,
     setJobMqttMessage
   ) => {
@@ -109,7 +119,7 @@ export function ActiveSlideMessaging({
 
       if (isPublic) {
         const cloneJobMsgJson = { ...jobMessageJson };
-        setMqttMessage(cloneJobMsgJson);
+        // setMqttMessage(cloneJobMsgJson);
       }
     }
 
@@ -120,7 +130,7 @@ export function ActiveSlideMessaging({
     userAddedList,
     activatedTab,
     mqttMessage,
-    setMqttMessage,
+    // setMqttMessage,
     jobMqttMessage,
     setJobMqttMessage,
     mqttClientId
@@ -128,7 +138,6 @@ export function ActiveSlideMessaging({
     const mqttMessageJson = parseMqttMessage(mqttMessage);
     const activeSlideOrderNum = activatedTab;
     const jobMessageJson = parseMqttMessage(jobMqttMessage);
-
     if (userAddedList) {
       if (
         !mqttMessageJson ||
@@ -137,7 +146,6 @@ export function ActiveSlideMessaging({
             jobMessageJson.order_number !== activeSlideOrderNum))
       ) {
         const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
-
         if (
           activeSlide &&
           (!mqttMessageJson ||
@@ -153,12 +161,14 @@ export function ActiveSlideMessaging({
             clientId: mqttClientId,
           };
           var jsonMsgStr = JSON.stringify(jsonMsg);
-
           setJobMqttMessage(null);
-
-          mqttPublush(mqttTopic, jsonMsgStr).then(() => {
-            setMqttMessage(jsonMsg);
+          publishEvent("mqttPublush", {
+            mqttTopic: mqttTopic,
+            message: jsonMsgStr,
           });
+          // mqttPublush(mqttTopic, jsonMsgStr).then(() => {
+          //   setMqttMessage(jsonMsg);
+          // });
         }
       }
     }
@@ -169,7 +179,7 @@ export function ActiveSlideMessaging({
     activatedTab,
     setActivatedTab,
     mqttMessage,
-    setMqttMessage,
+    // setMqttMessage,
     jobMqttMessage,
     setJobMqttMessage,
     mqttClientId
@@ -179,7 +189,7 @@ export function ActiveSlideMessaging({
       activatedTab,
       setActivatedTab,
       mqttMessage,
-      setMqttMessage,
+      // setMqttMessage,
       jobMqttMessage,
       setJobMqttMessage
     );
@@ -189,7 +199,7 @@ export function ActiveSlideMessaging({
         userAddedList,
         activatedTab,
         mqttMessage,
-        setMqttMessage,
+        // setMqttMessage,
         jobMqttMessage,
         setJobMqttMessage,
         mqttClientId
@@ -198,41 +208,40 @@ export function ActiveSlideMessaging({
   };
 
   useEffect(() => {
-    // Notification.requestPermission();
+    console.log("ActiveSlideMessaging mqttSubscribe", mqttTopic);
+    publishEvent("mqttSubscribe", {
+      mqttTopic: mqttTopic,
+    });
+
+    subscribeEvent(mqttTopic, newMessageHandling);
 
     return () => {
-      mqttUnSubscribe(mqttTopic);
+      publishEvent("mqttUnSubscribe", {
+        mqttTopic: mqttTopic,
+      });
     };
   }, []);
 
-  useEffect(() => {
-    if (isConnected) {
-      mqttSubscribe(mqttTopic);
-    }
-  }, [isConnected]);
+  const newMessageHandling = (data) => {
+    console.log("ActiveSlideMessaging newMessageHandling", data);
+    const clientId = data.clientId;
+    const newMessage = data.detail.messageJson;
+    const notif = [...notificationList, newMessage];
+    setNotificationList(notif);
 
-  useEffect(() => {
-    if (payload.message && [mqttTopic].includes(payload.topic)) {
-      const newMessage = JSON.parse(payload.message);
-      const notif = [newMessage];
-      setNotificationList(notif);
-      // new Notification(newMessage.slide);
-
-      if (newMessage && newMessage.clientId !== clientId) {
-        setJobMqttMessage(newMessage);
-      }
+    if (newMessage && newMessage.clientId !== clientId) {
+      setJobMqttMessage(newMessage);
     }
-  }, [payload]);
+  };
 
   determinePublish(
     userAddedList,
     activatedTab,
     setActivatedTab,
     mqttMessage,
-    setMqttMessage,
+    // setMqttMessage,
     jobMqttMessage,
-    setJobMqttMessage,
-    clientId
+    setJobMqttMessage
   );
 
   return (
@@ -258,7 +267,9 @@ export function ActiveSlideMessaging({
           <h3>Last Active Slide </h3>
           <ol>
             {notificationList.map((obj) => (
-              <li>{obj.slide}</li>
+              <li data-key={obj.ID} key={obj.ID}>
+                {obj.slide}
+              </li>
             ))}
           </ol>
         </div>
