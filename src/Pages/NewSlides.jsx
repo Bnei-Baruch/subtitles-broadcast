@@ -28,7 +28,6 @@ const NewSlides = () => {
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
-  const [isChecked, setIsChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
@@ -46,6 +45,13 @@ const NewSlides = () => {
       dispatch(ArchiveAutoComplete({ query: sourceUrl }));
     }
   }, [sourceUrl]);
+
+  useEffect(() => {
+    const ulElement = document.getElementById("suggestions");
+    if (ulElement !== null) {
+      ulElement.style.display = "block";
+    }
+  }, [AutocompleteList]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -278,39 +284,30 @@ const NewSlides = () => {
       {insertMethod === "custom_file" ? (
         <>
           <div className="row m-4">
-            <div className="input-box col-3 ">
-              <label className="w-100">Multilingual</label>
-              <label className="custom-checkbox">
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={(e) => {
-                    setIsChecked(e.target.checked);
-                  }}
-                />
-                <span className="checkmark"></span>
-              </label>
+            <div className="input-box ">
+              <label className="w-100">Name</label>
+              <input className="form-control" type="type" id="upload_name" />
             </div>
+          </div>
+          <div className="row m-4">
             <div className="input-box col-7">
               <label>Languages</label>
               <Select
                 id="languageSelect"
                 isMulti
                 options={
-                  isChecked
-                    ? slideLanguageOptions.map((slideLanguage) => {
-                      if (slideLanguage !== languages[localStorage.getItem("subtitleLanguage")]) {
-                        return {
-                          label: Object.keys(languages).find(
-                            (key) => languages[key] === slideLanguage
-                          ),
-                          value: slideLanguage,
-                        };
-                      } else {
-                        return null; // Skip the undesired option
-                      }
-                    }).filter(option => option !== null) // Filter out null options
-                    : []
+                  slideLanguageOptions.map((slideLanguage) => {
+                    if (slideLanguage !== languages[localStorage.getItem("subtitleLanguage")]) {
+                      return {
+                        label: Object.keys(languages).find(
+                          (key) => languages[key] === slideLanguage
+                        ),
+                        value: slideLanguage,
+                      };
+                    } else {
+                      return null; // Skip the undesired option
+                    }
+                  }).filter(option => option !== null) // Filter out null options
                 }
                 value={selectedOptions}
                 onChange={(selectedOptions) => {
@@ -319,25 +316,22 @@ const NewSlides = () => {
               />
             </div>
           </div>
-          <div className="input-box ">
-            <label className="w-100">Name</label>
-            <input className="form-control" type="type" id="upload_name" />
-          </div>
-
           <div className="row m-4">
-            <input
-              type="file"
-              onChange={(event) => {
-                setSelectedFile(event.target.files[0]);
-              }}
-            />
-            <button
-              className="btn btn-light rounded-pill col-4"
-              onClick={handleUpload}
-              disabled={!selectedFile}
-            >
-              Upload File
-            </button>
+            <div>
+              <input
+                type="file"
+                onChange={(event) => {
+                  setSelectedFile(event.target.files[0]);
+                }}
+              />
+              <button
+                className="btn btn-light rounded-pill col-4"
+                onClick={handleUpload}
+                disabled={!selectedFile}
+              >
+                Add
+              </button>
+            </div>
           </div>
           <div>
             <SlideSplit
@@ -361,7 +355,6 @@ const NewSlides = () => {
                   type="type"
                   value={contentSource}
                   onChange={(e) => {
-                    console.log(e.target.value);
                     setContentSource(e.target.value);
                     setShowAutocompleteBox(false);
                     clearTimeout(typingTimeout);
@@ -369,18 +362,18 @@ const NewSlides = () => {
                       // Perform action after typing has stopped
                       setShowAutocompleteBox(true);
                       setSourceUrl(e.target.value);
-                      console.log("Typing has stopped:", e.target.value);
                     }, 500); // Adjust the timeout duration as needed
                     // Store the timeout ID for future reference
                     setTypingTimeout(timeoutId);
                   }}
                 />
                 {showAutocompleteBox && sourceUrl.length > 0 && (
-                  <ul className="suggestions" id="suggestions">
+                  <ul className="suggestions" id="suggestions" style={{ display: "none" }}>
                     {AutocompleteList?.map((suggestion, index) => (
                       <li
                         key={index}
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.target.parentNode.style.display = "none";
                           setContentSource(suggestion.source_path);
                           setSourceUid(suggestion.source_uid);
                         }}
