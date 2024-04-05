@@ -193,6 +193,9 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		SourceUid: req.SourceUid,
 		Path:      "custom_file_slide",
 	}
+	if len(req.FileName) > 0 {
+		sourcePathData.Path = req.FileName
+	}
 	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
