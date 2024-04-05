@@ -13,6 +13,7 @@ import {
   subscribeEvent,
   unsubscribeEvent,
 } from "../Utils/Events";
+import { Slide } from "./Slide";
 
 const QuestionMessage = (props) => {
   const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
@@ -23,6 +24,7 @@ const QuestionMessage = (props) => {
   const [broadcastLang, setBroadcastLang] = useState(() => {
     return getCurrentBroadcastLanguage();
   });
+  const broadcastLangCode = broadcastLang.value;
 
   const [notificationList, setNotificationList] = useState([]);
   const langList = props.languagesList
@@ -68,6 +70,11 @@ const QuestionMessage = (props) => {
     console.log("QuestionMessage newMessageHandling", event);
     const clientId = event.detail.clientId;
     const newMessage = event.detail.messageJson;
+
+    const currMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+    if (event.detail.mqttTopic === currMqttTopic) {
+      sessionStorage.setItem("currentBroadcastquestions", newMessage);
+    }
 
     if (newMessage && newMessage.clientId !== clientId) {
       if (newMessage.date) {
@@ -116,6 +123,18 @@ const QuestionMessage = (props) => {
               <div className="d-flex justify-content-end">
                 <p>{obj.context}</p>
               </div>
+            </div>
+          ))}
+      </>
+    );
+  } else if (props.mode === "slide") {
+    return (
+      <>
+        {notificationList
+          .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+          .map((obj) => (
+            <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
+              <Slide content={obj.context} isLtr={props.isLtr}></Slide>
             </div>
           ))}
       </>

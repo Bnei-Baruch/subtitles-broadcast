@@ -100,32 +100,33 @@ const Subtitles = () => {
 
     setItems(updatedItems);
   };
+
   function questionsBtnOnClick(evt) {
-    const subtitelsBtnElm = document.getElementById("btnSubtitels");
-    const bookContentContElm = document.getElementById("bookContentCont");
     // const nqttQuestion = localStorage.getItem(
     //   `nqttQuestion${broadcastLangCode}`
     // );
-
     evt.target.classList.add("btn-success");
-    subtitelsBtnElm.classList.remove("btn-success");
-    bookContentContElm.style.display = "none";
-
+    btnSubtitelsRef.current.classList.remove("btn-success");
+    bookContentContRef.current.style.display = "none";
+    questionContentContRef.current.style.display = "block";
     // setMqttMessage(nqttQuestion);
     // setJobMqttMessage(nqttQuestion);
     setIsSubTitleMode(false);
   }
 
   function subtitelsBtnOnClick(evt) {
-    const subtitelsBtnElm = document.getElementById("btnQuestions");
-    const bookContentContElm = document.getElementById("bookContentCont");
-
     evt.target.classList.add("btn-success");
-    subtitelsBtnElm.classList.remove("btn-success");
-    bookContentContElm.style.display = "block";
+    btnQuestionsRef.current.classList.remove("btn-success");
+    bookContentContRef.current.style.display = "block";
+    questionContentContRef.current.style.display = "none";
 
     setIsSubTitleMode(true);
   }
+
+  const bookContentContRef = React.createRef();
+  const questionContentContRef = React.createRef();
+  const btnSubtitelsRef = React.createRef();
+  const btnQuestionsRef = React.createRef();
 
   console.log(
     // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
@@ -150,6 +151,7 @@ const Subtitles = () => {
               aria-label="Basic mixed styles example"
             >
               <button
+                ref={btnSubtitelsRef}
                 id="btnSubtitels"
                 type="button"
                 className="btn btn-success"
@@ -157,8 +159,8 @@ const Subtitles = () => {
               >
                 Subtitels
               </button>
-
               <button
+                ref={btnQuestionsRef}
                 id="btnQuestions"
                 type="button"
                 className="btn btn-tr"
@@ -173,7 +175,11 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
+              <GreenWindowButton
+                isSubTitleMode={isSubTitleMode}
+                isLtr={isLtr}
+                mqttMessage={mqttMessage}
+              />
               <button
                 type="button"
                 onClick={() => setIsLtr(!isLtr)}
@@ -181,20 +187,6 @@ const Subtitles = () => {
               >
                 {isLtr ? "LTR" : "RTL"}
               </button>
-              {/* <Dropdown variant="success" id="brodcast_programm">
-                <Dropdown.Toggle id="dropdown-autoclose-outside">
-                  Brodcasting programm
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item value="morning_lesson">
-                    Morning lesson
-                  </Dropdown.Item>
-                  <Dropdown.Item value="brodcast_1">Brodcast 1</Dropdown.Item>
-                  <Dropdown.Item value="brodcast_2">Brodcast 3</Dropdown.Item>
-                  <Dropdown.Item value="brodcast_3">Brodcast 3</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown> */}
             </div>
           </div>
 
@@ -211,7 +203,11 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div id="bookContentCont" className="vh-80">
+                <div
+                  ref={bookContentContRef}
+                  id="bookContentCont"
+                  className="vh-80"
+                >
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
@@ -220,6 +216,21 @@ const Subtitles = () => {
                     targetItemId={activatedTab}
                     contents={UserAddedList}
                   />
+                </div>
+                <div
+                  ref={questionContentContRef}
+                  id="questionContentCont"
+                  className="vh-80"
+                  style={{
+                    height: "200px",
+                    display: isSubTitleMode ? "none" : "block",
+                  }}
+                >
+                  <QuestionMessage
+                    isLtr={isLtr}
+                    mode="slide"
+                    languagesList={[getCurrentBroadcastLanguage()]}
+                  ></QuestionMessage>
                 </div>
               </div>
             </div>

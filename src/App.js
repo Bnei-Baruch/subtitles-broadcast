@@ -26,7 +26,7 @@ const App = ({ auth }) => {
   const [mqttClientId, setMqttClientId] = useState(mqttClientIdUseMqtt);
   const [mqttTopicList, setMqttTopicList] = useState([]);
   const [notificationList, setNotificationList] = useState([]);
-  const [init, setInit] = useState(true);
+  const [subscribeCandidateList, setSubscribeCandidateList] = useState([]);
 
   const mqttUnSubscribeEventHandler = (data) => {
     const mqttTopic = data.detail.mqttTopic;
@@ -43,14 +43,41 @@ const App = ({ auth }) => {
     const mqttTopic = data.detail.mqttTopic;
 
     if (mqttTopicList.includes(mqttTopic)) {
-      console.log("App mqttSubscribe already subscribed", mqttTopic);
+      notificationList.forEach((message, index) => {
+        if (message.topic === mqttTopic) {
+          publishEvent(mqttTopic, message);
+          console.log(
+            "App mqttSubscribe already subscribed, raise custome event",
+            message
+          );
+        }
+      });
     } else {
       mqttTopicList.push(mqttTopic);
 
       if (isConnected) {
         mqttSubscribe(mqttTopic);
         console.log("App mqttSubscribe DONE", mqttTopic);
+
+        subscribeCandidate(mqttTopic);
+      } else {
+        const notif = [...subscribeCandidateList, "mqttTopic"];
+        setSubscribeCandidateList(notif);
+        console.log("App mqttSubscribe Candidate", mqttTopic);
       }
+    }
+  };
+
+  const subscribeCandidate = (mqttTopic) => {
+    if (subscribeCandidateList.length > 0) {
+      subscribeCandidateList.forEach((topic, index) => {
+        if (topic !== mqttTopic) {
+          mqttTopicList.push(mqttTopic);
+          mqttSubscribe(topic);
+          console.log("App mqttSubscribe Candidate DONE", mqttTopic);
+        }
+      });
+      setSubscribeCandidateList([]);
     }
   };
 
@@ -63,44 +90,62 @@ const App = ({ auth }) => {
     });
   };
 
-  if (init) {
-    setInit(false);
-    // subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-    // subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-    // subscribeEvent("mqttPublush", mqttPublushEventHandler);
-  }
-
-  useEffect(() => {
+  const subscribeAppEvents = () => {
     subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
     subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
     subscribeEvent("mqttPublush", mqttPublushEventHandler);
+  };
+  const unSubscribeAppEvents = () => {
+    unsubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
+    unsubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
+    unsubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
+  };
+
+  useEffect(() => {
+    subscribeAppEvents();
 
     return () => {
-      unsubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-      unsubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-      unsubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
+      unSubscribeAppEvents();
     };
   }, []);
 
   useEffect(() => {
+    subscribeAppEvents();
+
     if (isConnected) {
       mqttTopicList.forEach((mqttTopic, index) => {
         mqttSubscribe(mqttTopic);
         console.log("App useEffect mqttSubscribe DONE", mqttTopic);
       });
+
+      subscribeCandidate("");
     }
+
+    return () => {
+      unSubscribeAppEvents();
+    };
   }, [isConnected]);
 
   useEffect(() => {
     console.log("App payload", payload);
+
+    subscribeAppEvents();
+
     if (payload.message && mqttTopicList.includes(payload.topic)) {
       const newMessage = JSON.parse(payload.message);
-      const notif = [...notificationList, newMessage];
+      const newNotif = { topic: payload.topic, message: newMessage };
+      const notif = [...notificationList, newNotif];
       setNotificationList(notif);
 
-      console.log("App newMessage", newMessage);
+      console.log("App New Message", newNotif);
     }
+
+    return () => {
+      unSubscribeAppEvents();
+    };
   }, [payload]);
+
+  subscribeAppEvents();
 
   return (
     <BrowserRouter>

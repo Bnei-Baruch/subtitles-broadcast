@@ -13,6 +13,7 @@ const mqttPath = process.env.REACT_APP_MQTT_PATH;
 const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
 
 const setting = {
+  protocol: mqttProtocol,
   url: mqttBrokerUrl,
   config: {
     username: "",
@@ -38,11 +39,11 @@ export default function useMqtt() {
     const url = setting.url;
     const options = {
       clientId,
-      keepalive: 60,
-      clean: true,
-      reconnectPeriod: 300000,
-      connectTimeout: 30000,
-      rejectUnauthorized: false,
+      // keepalive: 60,
+      // clean: true,
+      // reconnectPeriod: 300000,
+      // connectTimeout: 30000,
+      // rejectUnauthorized: false,
       ...setting.config,
     };
     const clientMqtt = await mqtt.connect(url, options);
