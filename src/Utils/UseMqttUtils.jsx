@@ -25,7 +25,7 @@ export default function useMqtt() {
   const [mqttClient, setMqttClient] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [payload, setPayload] = useState({});
-  const [clientId, setClientId] = useState(false);
+  const [mqttClientId, setMqttClientId] = useState(false);
 
   const getClientId = () => {
     const clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
@@ -47,13 +47,16 @@ export default function useMqtt() {
     };
     const clientMqtt = await mqtt.connect(url, options);
     setMqttClient(clientMqtt);
-    setClientId(clientId);
-    console.log("useMqtt ", clientId);
+    setMqttClientId(clientId);
+    localStorage.setItem("mqttClientId", clientId);
+    console.log("useMqtt mqttclientId", clientId);
   };
 
-  const mqttPublush = async (mqttTopic, msgText) => {
-    if (mqttClient) {
-      mqttClient.publish(
+  const mqttPublush = async (mqttTopic, msgText, mqttClientObj) => {
+    const trgMqttClient = mqttClient ? mqttClient : mqttClientObj;
+
+    if (trgMqttClient) {
+      trgMqttClient.publish(
         mqttTopic,
         msgText,
         { label: "0", value: 0, retain: true },
@@ -73,7 +76,7 @@ export default function useMqtt() {
   const mqttDisconnect = () => {
     if (mqttClient) {
       mqttClient.end(() => {
-        console.log("useMqtt  MQTT Disconnected", clientId);
+        console.log("useMqtt  MQTT Disconnected", mqttClientId);
         setIsConnected(false);
       });
     }
@@ -123,7 +126,7 @@ export default function useMqtt() {
     if (mqttClient) {
       mqttClient.on("connect", () => {
         setIsConnected(true);
-        console.log("useMqtt MQTT Connected", clientId);
+        console.log("useMqtt MQTT Connected", mqttClientId);
       });
       mqttClient.on("error", (err) => {
         console.error("useMqtt MQTT Connection error: ", err);
@@ -138,7 +141,7 @@ export default function useMqtt() {
 
         publishEvent(_topic, {
           mqttTopic: _topic,
-          clientId: clientId,
+          clientId: mqttClientId,
           messageJson: newMessage,
         });
 
@@ -159,7 +162,8 @@ export default function useMqtt() {
     mqttPublush,
     payload,
     isConnected,
-    clientId,
+    mqttClientId,
+    mqttClient,
   };
 }
 

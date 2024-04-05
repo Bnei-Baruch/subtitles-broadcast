@@ -1,19 +1,35 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import "./PagesCSS/Questions.css";
-import AppContext from "../AppContext";
-import mqttClientUtils from "../Utils/MqttUtils";
-// import QuestionMessage from "../Components/QuestionMessage";
+import QuestionMessage from "../Components/QuestionMessage";
+import {
+  broadcastLanguages,
+  brodcastProgrammArr,
+  broadcastLangMapObj,
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm,
+  parseMqttMessage,
+} from "../Utils/Const";
+import {
+  publishEvent,
+  subscribeEvent,
+  unsubscribeEvent,
+} from "../Utils/Events";
 
 const QuestionModule = () => {
+  const mqttClientId = localStorage.getItem("mqttClientId");
+
   const newQuestionTxtRef = React.createRef();
-  const appContextlData = useContext(AppContext);
-  const mqttClient = appContextlData.mqttClient;
-  const setMqttClient = appContextlData.setMqttClient;
-  const mqttClientId = appContextlData.mqttClientId;
-  const setMqttClientId = appContextlData.setMqttClientId;
-  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
-  const broadcastLangCode = appContextlData.broadcastLang.value;
   const [handleSuccess, sethandleSuccess] = useState(false);
+
+  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
+    return getCurrentBroadcastProgramm();
+  });
+  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
+    return getCurrentBroadcastLanguage();
+  });
+  const broadcastProgrammCode = broadcastProgrammObj.value;
+  const broadcastLangCode = broadcastLangObj.value;
+  const [notificationList, setNotificationList] = useState([]);
 
   const clearButtonClickHandler = () => {
     sethandleSuccess(false);
@@ -45,39 +61,14 @@ const QuestionModule = () => {
 
         const jsonMsgStr = JSON.stringify(jsonMsg);
         const mqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
-        mqttPublish(mqttTopic, jsonMsgStr);
+
+        publishEvent("mqttPublush", {
+          mqttTopic: mqttTopic,
+          message: jsonMsgStr,
+        });
       }
     }
   };
-
-  function initMqttClient() {
-    if (!mqttClient) {
-      mqttClientUtils(setMqttClient, setMqttClientId);
-    }
-
-    return mqttClient;
-  }
-
-  const mqttPublish = (mqttTopic, msgText, setMqttMessage) => {
-    if (mqttClient && mqttTopic) {
-      mqttClient.publish(
-        mqttTopic,
-        msgText,
-        { label: "0", value: 0, retain: true },
-        (error) => {
-          if (error) {
-            console.log("Publish error:", error);
-          }
-        }
-      );
-    } else {
-      console.error(
-        "Can't publish Active slide, the  mqttClient is not defined"
-      );
-    }
-  };
-
-  initMqttClient();
 
   return (
     <div className="form-Question">
@@ -110,7 +101,7 @@ const QuestionModule = () => {
           )}
           <textarea
             ref={newQuestionTxtRef}
-            class="new-question-txt form-control"
+            className="new-question-txt form-control"
             id="new_question_txt"
             rows="8"
             placeholder="New Question typing"
@@ -119,12 +110,11 @@ const QuestionModule = () => {
       </div>
       <div className="my-5">
         <p>History</p>
-        <div class="SendQutionHistory">
+        <div className="SendQutionHistory">
           <ul>
-            {/* <QuestionMessage languageCode="he"></QuestionMessage>
-            <QuestionMessage languageCode="ru"></QuestionMessage>
-            <QuestionMessage languageCode="en"></QuestionMessage>
-            <QuestionMessage languageCode="es"></QuestionMessage> */}
+            <QuestionMessage
+              languageCode={broadcastLanguages}
+            ></QuestionMessage>
           </ul>
         </div>
       </div>

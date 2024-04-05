@@ -37,19 +37,23 @@ const QuestionMessage = (props) => {
   useEffect(() => {
     console.log("QuestionMessage mqttSubscribe");
 
-    mqttTopicList.forEach((mqttTopic, index) => {
-      publishEvent("mqttSubscribe", {
-        mqttTopic: mqttTopic,
-      });
+    const timeoutId = setTimeout(() => {
+      mqttTopicList.forEach((mqttTopic, index) => {
+        publishEvent("mqttSubscribe", {
+          mqttTopic: mqttTopic,
+        });
 
-      subscribeEvent(mqttTopic, (event) => {
-        newMessageHandling(event);
-      });
+        subscribeEvent(mqttTopic, (event) => {
+          newMessageHandling(event);
+        });
 
-      console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+        console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+      }, 0);
     });
 
     return () => {
+      clearTimeout(timeoutId);
+
       mqttTopicList.forEach((mqttTopic, index) => {
         publishEvent("mqttUnSubscribe", {
           mqttTopic: mqttTopic,
@@ -66,15 +70,21 @@ const QuestionMessage = (props) => {
     const newMessage = event.detail.messageJson;
 
     if (newMessage && newMessage.clientId !== clientId) {
+      if (newMessage.date) {
+        newMessage.dateUtcJs = new Date(newMessage.date);
+      }
       //const notif = [...notificationList, newMessage];
       notificationListTmp = [...notificationListTmp, newMessage];
+
+      //notificationListTmp.sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+
       setNotificationList(notificationListTmp);
       //setJobMqttMessage(newMessage);
     }
   };
 
-  const [mqttQuestion, setMqttQuestion] = useState();
-  const [mqttDate, setMqttDate] = useState();
+  // const [mqttQuestion, setMqttQuestion] = useState();
+  // const [mqttDate, setMqttDate] = useState();
 
   const parseUtcStrToLocal = (utcDateStr) => {
     let retVal = utcDateStr;
@@ -95,43 +105,43 @@ const QuestionMessage = (props) => {
   if (props.mode === "subtitle") {
     return (
       <>
-        {notificationList.map((obj) => (
-          <div className="QuestionSection " data-key={obj.ID} key={obj.ID}>
-            <div className="d-flex justify-content-between h-auto">
-              <p>{getLanguageName(obj.lang)}</p>
-              <i className="bi bi-eye" />
+        {notificationList
+          .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+          .map((obj) => (
+            <div className="QuestionSection " data-key={obj.ID} key={obj.ID}>
+              <div className="d-flex justify-content-between h-auto">
+                <p>{getLanguageName(obj.lang)}</p>
+                <i className="bi bi-eye" />
+              </div>
+              <div className="d-flex justify-content-end">
+                <p>{obj.context}</p>
+              </div>
             </div>
-            <div className="d-flex justify-content-end">
-              <p>{obj.context}</p>
-            </div>
-          </div>
-        ))}
+          ))}
       </>
     );
   } else {
     return (
       <>
-        {notificationList.map((obj) => (
-          <div data-key={obj.ID} key={obj.ID}>
-            <div>
-              <li className="item">
-                <span className="datetime">
-                  222 OOO
-                  {/* Date: {parseUtcStrToLocal(mqttDate)} */}
-                </span>
-                <br />
-                <div className="message">{obj.context}</div>
-              </li>
-              <hr />
+        {notificationList
+          .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+          .map((obj) => (
+            <div data-key={obj.ID} key={obj.ID}>
+              <div>
+                <li className="item">
+                  <span className="datetime">
+                    Date: {parseUtcStrToLocal(obj.date)}
+                  </span>
+                  <br />
+                  <div className="message">{obj.context}</div>
+                </li>
+                <hr />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </>
     );
   }
-  // } else {
-  //   return <></>;
-  // }
 };
 
 // QuestionMessage.propTypes = {

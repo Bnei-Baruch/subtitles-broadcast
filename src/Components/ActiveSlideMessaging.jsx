@@ -208,14 +208,17 @@ export function ActiveSlideMessaging({
   };
 
   useEffect(() => {
-    console.log("ActiveSlideMessaging mqttSubscribe", mqttTopic);
-    publishEvent("mqttSubscribe", {
-      mqttTopic: mqttTopic,
-    });
+    const timeoutId = setTimeout(() => {
+      console.log("ActiveSlideMessaging mqttSubscribe", mqttTopic);
+      publishEvent("mqttSubscribe", {
+        mqttTopic: mqttTopic,
+      });
 
-    subscribeEvent(mqttTopic, newMessageHandling);
+      subscribeEvent(mqttTopic, newMessageHandling);
+    }, 0);
 
     return () => {
+      clearTimeout(timeoutId);
       publishEvent("mqttUnSubscribe", {
         mqttTopic: mqttTopic,
       });

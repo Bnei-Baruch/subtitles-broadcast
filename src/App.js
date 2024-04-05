@@ -17,12 +17,13 @@ const App = ({ auth }) => {
     mqttPublush,
     isConnected,
     payload,
-    clientId,
+    mqttClientIdUseMqtt,
+    mqttClient,
   } = useMqtt();
   const [broadcastProgramm, setBroadcastProgramm] = useState();
   const [broadcastLang, setBroadcastLang] = useState();
-  const [mqttClient, setMqttClient] = useState();
-  const [mqttClientId, setMqttClientId] = useState();
+  const [mqttClientObj, setMqttClientObj] = useState(mqttClient);
+  const [mqttClientId, setMqttClientId] = useState(mqttClientIdUseMqtt);
   const [mqttTopicList, setMqttTopicList] = useState([]);
   const [notificationList, setNotificationList] = useState([]);
   const [init, setInit] = useState(true);
@@ -34,36 +35,50 @@ const App = ({ auth }) => {
 
     if (isConnected) {
       mqttUnSubscribe(mqttTopic);
+      console.log("App mqttUnSubscribed", data);
     }
-
-    console.log("App mqttUnSubscribe", data);
   };
 
   const mqttSubscribeEventHandler = (data) => {
     const mqttTopic = data.detail.mqttTopic;
-    mqttTopicList.push(mqttTopic);
 
-    if (isConnected) {
-      mqttSubscribe(mqttTopic);
-      console.log("App mqttSubscribe DONE", mqttTopic);
+    if (mqttTopicList.includes(mqttTopic)) {
+      console.log("App mqttSubscribe already subscribed", mqttTopic);
+    } else {
+      mqttTopicList.push(mqttTopic);
+
+      if (isConnected) {
+        mqttSubscribe(mqttTopic);
+        console.log("App mqttSubscribe DONE", mqttTopic);
+      }
     }
   };
 
   const mqttPublushEventHandler = (data) => {
-    console.log("App mqttPublush", data);
+    const mqttTopic = data.detail.mqttTopic;
+    const message = data.detail.message;
+
+    mqttPublush(mqttTopic, message, mqttClientObj).then(() => {
+      console.log("App mqttPublushed", data);
+    });
   };
 
   if (init) {
     setInit(false);
-    subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-    subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-    subscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
+    // subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
+    // subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
+    // subscribeEvent("mqttPublush", mqttPublushEventHandler);
   }
 
   useEffect(() => {
+    subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
+    subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
+    subscribeEvent("mqttPublush", mqttPublushEventHandler);
+
     return () => {
       unsubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
       unsubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
+      unsubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
     };
   }, []);
 
@@ -71,7 +86,7 @@ const App = ({ auth }) => {
     if (isConnected) {
       mqttTopicList.forEach((mqttTopic, index) => {
         mqttSubscribe(mqttTopic);
-        console.log("App mqttSubscribe DONE", mqttTopic);
+        console.log("App useEffect mqttSubscribe DONE", mqttTopic);
       });
     }
   }, [isConnected]);
@@ -82,11 +97,6 @@ const App = ({ auth }) => {
       const newMessage = JSON.parse(payload.message);
       const notif = [...notificationList, newMessage];
       setNotificationList(notif);
-      // publishEvent(payload.topic, {
-      //   mqttTopic: payload.topic,
-      //   clientId: clientId,
-      //   messageJson: newMessage,
-      // });
 
       console.log("App newMessage", newMessage);
     }
@@ -97,14 +107,7 @@ const App = ({ auth }) => {
       <div className="app">
         <AppContext.Provider
           value={{
-            broadcastProgramm,
-            setBroadcastProgramm,
-            broadcastLang,
-            setBroadcastLang,
-            mqttClient,
-            setMqttClient,
             mqttClientId,
-            setMqttClientId,
           }}
         >
           <SideNavBar />
