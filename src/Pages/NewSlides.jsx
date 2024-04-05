@@ -44,7 +44,7 @@ const NewSlides = () => {
     if (sourceUrl.length > 0) {
       dispatch(ArchiveAutoComplete({ query: sourceUrl }));
     }
-  }, [sourceUrl]);
+  }, [sourceUrl, dispatch]);
 
   useEffect(() => {
     const ulElement = document.getElementById("suggestions");
@@ -92,76 +92,63 @@ const NewSlides = () => {
         });
         request.languages = languages;
       }
-      const responsePromise = new Promise((resolve, reject) => {
-        try {
-          const response = dispatch(SetCustomSlideBySource(request));
-          resolve(response);
-        } catch (error) {
-          reject(error);
+      try {
+        const response = await dispatch(SetCustomSlideBySource(request));
+        if (response.payload.success) {
+          setUpdateTagList([]);
+          setSourceUid("");
+          alert(response.payload.description);
+          navigate("/archive?file_uid=" + fileUid);
         }
-      });
-      responsePromise
-        .then((result) => {
-          if (result.payload.success) {
-            setUpdateTagList([]);
-            setSourceUid("");
-            alert(result.payload.description);
-            navigate("/archive?file_uid=" + fileUid);
-          }
-        })
-        .catch((error) => {
-          console.error("Error occurred:", error); // Handle any errors during promise execution
-        });
+      } catch (error) {
+        console.error("Error occurred:", error); // Handle any errors
+      }
     };
 
     if (updateTagList.length > 0) {
       fetchData();
     }
-  }, [updateTagList]);
+  }, [updateTagList, dispatch, fileUid, languages, navigate, selectedOptions, slideLanguageOptions, sourceUid]);
 
   const handleUpload = () => {
-    // Perform upload logic with selectedFile
-    if (document.getElementById("upload_name").value === "") {
+    const name = document.getElementById("upload_name").value;
+    if (name === "") {
       alert("Name must be filled");
-    } else {
-      setSourceUid("upload_" + GenerateUID(8));
-      setFileUid("upload_" + GenerateUID(8));
-      if (selectedFile) {
-        const reader = new FileReader();
-
-        reader.onload = (event) => {
-          let fileContents = event.target.result;
-          fileContents = fileContents.replace(/\r?\n/g, " <br/> ");
-          const wordsArray = fileContents.split(/\s+/);
-          let structuredArray = [];
-          let previousWord = "";
-          wordsArray.forEach((word, index) => {
-            const elementObject = {
-              paragraphStart: false,
-              tagName: "",
-              word: word,
-            };
-            if (previousWord === "<br/>" && word !== "<br/>") {
-              elementObject.paragraphStart = true;
-            }
-            structuredArray.push(elementObject);
-            previousWord = word;
-          });
-          setTagList(structuredArray);
-        };
-
-        // Read the file as text
-        reader.readAsText(selectedFile);
-      } else {
-        console.error("No file selected");
-      }
+      return;
     }
+
+    setSourceUid("upload_" + GenerateUID(8));
+    setFileUid("upload_" + GenerateUID(8));
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fileContents = event.target.result;
+      const structuredArray = parseFileContents(fileContents);
+      setTagList(structuredArray);
+    };
+
+    // Read the file as text
+    reader.readAsText(selectedFile);
+  };
+
+  const parseFileContents = (fileContents) => {
+    const wordsArray = fileContents.replace(/\r?\n/g, " <br/> ").split(/\s+/);
+    let structuredArray = [];
+    let previousWord = "";
+    wordsArray.forEach((word, index) => {
+      const elementObject = {
+        paragraphStart: previousWord === "<br/>" && word !== "<br/>",
+        tagName: "",
+        word: word,
+      };
+      structuredArray.push(elementObject);
+      previousWord = word;
+    });
+    return structuredArray;
   };
 
   const loadSlides = async (sourceData) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(sourceData, "text/html");
-    // Extract text content from tags, for example, from all paragraphs
     const contentElements = doc.querySelectorAll("h1,p");
     const paragraphArray = Array.from(contentElements).map((element) => ({
       tag: element.tagName,
@@ -179,13 +166,10 @@ const NewSlides = () => {
         .split(/(\s+)/);
       wordArray.forEach((word, index) => {
         const elementObject = {
-          paragraphStart: false,
+          paragraphStart: index === 0,
           tagName: tagName,
           word: word,
         };
-        if (index === 0) {
-          elementObject.paragraphStart = true;
-        }
         tags.push(elementObject);
       });
     });
@@ -218,7 +202,7 @@ const NewSlides = () => {
           setSourceUid("upload_" + sourceUidStr);
         }
         const sourceResponse = await fetch(sourceUrl);
-        if (sourceResponse.status !== 200) {
+        if (!sourceResponse.ok) {
           throw new Error(`Fetch failed with status ${sourceResponse.status}`);
         }
         const sourceData = await sourceResponse.json();
