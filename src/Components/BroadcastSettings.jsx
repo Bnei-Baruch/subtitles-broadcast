@@ -96,7 +96,10 @@ export function BroadcastSettings({ props }) {
   const handleClose = () => {
     sessionStorage.setItem("isBroadcastSettingsShown", true);
     setShowBroadcastSettings(false);
-    localStorage.setItem("subtitleLanguage", appContextlData.broadcastLang.label);
+    localStorage.setItem(
+      "subtitleLanguage",
+      appContextlData.broadcastLang.label
+    );
   };
   const handleShow = () => setShowBroadcastSettings(true);
 
@@ -156,7 +159,6 @@ export function BroadcastSettings({ props }) {
                   setDataRef={appContextlData.setBroadcastLang}
                   style={styles.dropDown}
                   variant="light"
-                  disabled={true}
                 ></DropdownButtonDef>
               </Col>
             </Row>

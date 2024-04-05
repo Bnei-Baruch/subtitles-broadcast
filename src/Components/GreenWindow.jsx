@@ -91,14 +91,12 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       margin-bottom: 1rem;
     }
     .visible {
-      visibility: visible;
       opacity: 1;
-      transition: opacity 2s linear;
+      transition: opacity 0.1s linear;
     }
     .hidden {
-      visibility: hidden;
       opacity: 0;
-      transition: visibility 0s 3s, opacity 3s linear;
+      transition: opacity 3s linear;
     }
       `)
     );
@@ -130,16 +128,40 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     var code = ` 
     let isLoaded = false;
 
+    function fullScreenMouseover(event) {
+      if((window.fullScreen) ||
+        (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
+          event.srcElement.classList.remove("hidden");
+          event.srcElement.classList.add("visible");
+      } 
+    }
+
+    function fullScreenMouseleave(event) {
+      if((window.fullScreen) ||
+        (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
+          event.srcElement.classList.remove("visible");
+          event.srcElement.classList.add("hidden");
+      } 
+    } 
+
     window.onload = function(){ 
       const slideContentCol = document.getElementsByClassName("slide-content");
       const slideContentElm = slideContentCol[0];      
       slideContentElm.style.letterSpacing = "2.6px";
    }
 
-   document.getElementById("full_screen").addEventListener("click", function() {    
+   let fullScreenBtnElm = document.getElementById("full_screen");
+
+   fullScreenBtnElm.addEventListener("click", function() {    
     fullScreenMode();
   });
-
+  fullScreenBtnElm.addEventListener("mouseover",function(event) {
+    return fullScreenMouseover(event);
+  });
+  fullScreenBtnElm.addEventListener("mouseleave", (event) => {
+    return fullScreenMouseleave(event);
+  });
+  
    function requestFullscreen(fullScreenFuncRef){
     fullScreenFuncRef();
     localStorage.setItem("greenWindowFullScreenMode", "true");
@@ -205,8 +227,8 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         localStorage.setItem("greenWindowFullScreenMode", "false");
         fullScreenElm.classList.remove("hidden");
         fullScreenElm.classList.add("visible");
-      }
-      
+      }      
+
     });
     `;
     try {
