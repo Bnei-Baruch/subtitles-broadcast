@@ -197,6 +197,11 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		sourcePathData.Path = req.FileName
 	}
 	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, err.Error(), "The source uid with the langauges already exists"))
+			return
+		}
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Creating source path data has failed"))
