@@ -28,24 +28,30 @@ const NewSlides = () => {
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
-  const [isChecked, setIsChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
-  const [progress, setProgress] = useState(0);
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
-  const [selectedOptions, setSelectedOptions] = useState([]);
+  const [selectedOptions, setSelectedOptions] = useState([
+    {
+      label: localStorage.getItem("subtitleLanguage"),
+      value: languages[localStorage.getItem("subtitleLanguage")],
+    },
+  ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
-
-  useEffect(() => {
-    setProgress(0);
-  }, []);
 
   useEffect(() => {
     if (sourceUrl.length > 0) {
       dispatch(ArchiveAutoComplete({ query: sourceUrl }));
     }
-  }, [sourceUrl]);
+  }, [sourceUrl, dispatch]);
+
+  useEffect(() => {
+    const ulElement = document.getElementById("suggestions");
+    if (ulElement !== null) {
+      ulElement.style.display = "block";
+    }
+  }, [AutocompleteList]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,90 +92,63 @@ const NewSlides = () => {
         });
         request.languages = languages;
       }
-      if (insertMethod === "custom_file") {
-        setTimeout(() => {
-          setProgress(75);
-        }, 600);
-      }
-      const responsePromise = new Promise((resolve, reject) => {
-        try {
-          const response = dispatch(SetCustomSlideBySource(request));
-          resolve(response);
-        } catch (error) {
-          reject(error);
+      try {
+        const response = await dispatch(SetCustomSlideBySource(request));
+        if (response.payload.success) {
+          setUpdateTagList([]);
+          setSourceUid("");
+          alert(response.payload.description);
+          navigate("/archive?file_uid=" + fileUid);
         }
-      });
-      responsePromise
-        .then((result) => {
-          if (result.payload.success) {
-            setUpdateTagList([]);
-            setSourceUid("");
-            if (insertMethod === "custom_file") {
-              setTimeout(() => {
-                setProgress(100);
-              }, 600);
-              setTimeout(() => {
-                alert(result.payload.description);
-                navigate("/archive?file_uid=" + fileUid);
-              }, 1500);
-            } else {
-              alert(result.payload.description);
-              navigate("/archive?file_uid=" + fileUid);
-            }
-          }
-        })
-        .catch((error) => {
-          console.error("Error occurred:", error); // Handle any errors during promise execution
-        });
+      } catch (error) {
+        console.error("Error occurred:", error); // Handle any errors
+      }
     };
 
     if (updateTagList.length > 0) {
       fetchData();
     }
-  }, [updateTagList]);
+  }, [updateTagList, dispatch, fileUid, languages, navigate, selectedOptions, slideLanguageOptions, sourceUid]);
 
   const handleUpload = () => {
-    // Perform upload logic with selectedFile
+    const name = document.getElementById("upload_name").value;
+    if (name === "") {
+      alert("Name must be filled");
+      return;
+    }
+
     setSourceUid("upload_" + GenerateUID(8));
     setFileUid("upload_" + GenerateUID(8));
-    if (selectedFile) {
-      const reader = new FileReader();
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fileContents = event.target.result;
+      const structuredArray = parseFileContents(fileContents);
+      setTagList(structuredArray);
+    };
 
-      reader.onload = (event) => {
-        let fileContents = event.target.result;
-        fileContents = fileContents.replace(/\r?\n/g, " <br/> ");
-        const wordsArray = fileContents.split(/\s+/);
-        let structuredArray = [];
-        let previousWord = "";
-        wordsArray.forEach((word, index) => {
-          const elementObject = {
-            paragraphStart: false,
-            tagName: "",
-            word: word,
-          };
-          if (previousWord === "<br/>" && word !== "<br/>") {
-            elementObject.paragraphStart = true;
-          }
-          structuredArray.push(elementObject);
-          previousWord = word;
-        });
-        setTimeout(() => {
-          setProgress(25);
-          setTagList(structuredArray);
-        }, 600);
+    // Read the file as text
+    reader.readAsText(selectedFile);
+  };
+
+  const parseFileContents = (fileContents) => {
+    const wordsArray = fileContents.replace(/\r?\n/g, " <br/> ").split(/\s+/);
+    let structuredArray = [];
+    let previousWord = "";
+    wordsArray.forEach((word, index) => {
+      const elementObject = {
+        paragraphStart: previousWord === "<br/>" && word !== "<br/>",
+        tagName: "",
+        word: word,
       };
-
-      // Read the file as text
-      reader.readAsText(selectedFile);
-    } else {
-      console.error("No file selected");
-    }
+      structuredArray.push(elementObject);
+      previousWord = word;
+    });
+    return structuredArray;
   };
 
   const loadSlides = async (sourceData) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(sourceData, "text/html");
-    // Extract text content from tags, for example, from all paragraphs
     const contentElements = doc.querySelectorAll("h1,p");
     const paragraphArray = Array.from(contentElements).map((element) => ({
       tag: element.tagName,
@@ -187,13 +166,10 @@ const NewSlides = () => {
         .split(/(\s+)/);
       wordArray.forEach((word, index) => {
         const elementObject = {
-          paragraphStart: false,
+          paragraphStart: index === 0,
           tagName: tagName,
           word: word,
         };
-        if (index === 0) {
-          elementObject.paragraphStart = true;
-        }
         tags.push(elementObject);
       });
     });
@@ -226,7 +202,7 @@ const NewSlides = () => {
           setSourceUid("upload_" + sourceUidStr);
         }
         const sourceResponse = await fetch(sourceUrl);
-        if (sourceResponse.status !== 200) {
+        if (!sourceResponse.ok) {
           throw new Error(`Fetch failed with status ${sourceResponse.status}`);
         }
         const sourceData = await sourceResponse.json();
@@ -292,39 +268,30 @@ const NewSlides = () => {
       {insertMethod === "custom_file" ? (
         <>
           <div className="row m-4">
-            <div className="input-box col-3 ">
-              <label className="w-100">Multilingual</label>
-              <label className="custom-checkbox">
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={(e) => {
-                    setIsChecked(e.target.checked);
-                  }}
-                />
-                <span className="checkmark"></span>
-              </label>
+            <div className="input-box ">
+              <label className="w-100">Name</label>
+              <input className="form-control" type="type" id="upload_name" />
             </div>
+          </div>
+          <div className="row m-4">
             <div className="input-box col-7">
               <label>Languages</label>
               <Select
                 id="languageSelect"
                 isMulti
                 options={
-                  isChecked
-                    ? slideLanguageOptions.map((slideLanguage) => ({
+                  slideLanguageOptions.map((slideLanguage) => {
+                    if (slideLanguage !== languages[localStorage.getItem("subtitleLanguage")]) {
+                      return {
                         label: Object.keys(languages).find(
                           (key) => languages[key] === slideLanguage
                         ),
                         value: slideLanguage,
-                      }))
-                    : [
-                        {
-                          label: localStorage.getItem("subtitleLanguage"),
-                          value:
-                            languages[localStorage.getItem("subtitleLanguage")],
-                        },
-                      ] // Add this option when isChecked is false
+                      };
+                    } else {
+                      return null; // Skip the undesired option
+                    }
+                  }).filter(option => option !== null) // Filter out null options
                 }
                 value={selectedOptions}
                 onChange={(selectedOptions) => {
@@ -333,39 +300,21 @@ const NewSlides = () => {
               />
             </div>
           </div>
-          <div className="input-box ">
-            <label className="w-100">Name</label>
-            <input className="form-control" type="type" id="upload_name" />
-          </div>
-
           <div className="row m-4">
-            <input
-              type="file"
-              onChange={(event) => {
-                setSelectedFile(event.target.files[0]);
-              }}
-            />
-            <button
-              className="btn btn-light rounded-pill col-4"
-              onClick={handleUpload}
-            >
-              Upload File
-            </button>
-            <div className="file-upload-preview col-7">
-              <div className="d-flex justify-content-between">
-                <span className=""> File Name: {selectedFile.name}</span>
-              </div>
-              <div className="progress">
-                <div
-                  className="progress-bar"
-                  role="progressbar"
-                  aria-label="Basic example"
-                  style={{ width: `${progress}%` }}
-                  aria-valuenow="50"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                ></div>
-              </div>
+            <div>
+              <input
+                type="file"
+                onChange={(event) => {
+                  setSelectedFile(event.target.files[0]);
+                }}
+              />
+              <button
+                className="btn btn-light rounded-pill col-4"
+                onClick={handleUpload}
+                disabled={!selectedFile}
+              >
+                Add
+              </button>
             </div>
           </div>
           <div>
@@ -390,7 +339,6 @@ const NewSlides = () => {
                   type="type"
                   value={contentSource}
                   onChange={(e) => {
-                    console.log(e.target.value);
                     setContentSource(e.target.value);
                     setShowAutocompleteBox(false);
                     clearTimeout(typingTimeout);
@@ -398,18 +346,18 @@ const NewSlides = () => {
                       // Perform action after typing has stopped
                       setShowAutocompleteBox(true);
                       setSourceUrl(e.target.value);
-                      console.log("Typing has stopped:", e.target.value);
                     }, 500); // Adjust the timeout duration as needed
                     // Store the timeout ID for future reference
                     setTypingTimeout(timeoutId);
                   }}
                 />
                 {showAutocompleteBox && sourceUrl.length > 0 && (
-                  <ul className="suggestions" id="suggestions">
+                  <ul className="suggestions" id="suggestions" style={{ display: "none" }}>
                     {AutocompleteList?.map((suggestion, index) => (
                       <li
                         key={index}
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.target.parentNode.style.display = "none";
                           setContentSource(suggestion.source_path);
                           setSourceUid(suggestion.source_uid);
                         }}

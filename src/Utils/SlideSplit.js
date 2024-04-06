@@ -71,7 +71,7 @@ const SlideSplit = ({
             if (method === "custom_file") {
               currentContent.current = currentContent.current.trim();
             }
-            currentContent.current += "\n\n";
+            currentContent.current += "\r";
             if (nextTag.current.tagName === "H1") {
               nextTag.current.word = "# " + nextTag.current.word;
             }
@@ -94,7 +94,7 @@ const SlideSplit = ({
             0,
             -lengthToRemove
           );
-          let slideContentArrary = currentContent.current.split("\n\n");
+          let slideContentArrary = currentContent.current.split("\r");
           previousParagraphStartsWithIntent.current =
             slideContentArrary[slideContentArrary.length - 1];
           currentDiv.innerHTML = md.render(currentContent.current);
@@ -116,7 +116,7 @@ const SlideSplit = ({
         div.remove();
       });
     }
-  }, [tags, visible, updateSplitTags]);
+  }, [tags, visible, updateSplitTags, method]);
   return tags
     ? /*#__PURE__*/ _jsx("div", {
         ref: (el) => (divRefs.current[0] = el),
