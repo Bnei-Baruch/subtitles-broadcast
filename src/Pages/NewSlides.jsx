@@ -6,6 +6,7 @@ import {
   GetSlideLanguages,
   SetCustomSlideBySource,
 } from "../Redux/NewSlide/NewSlide";
+
 import GetLangaugeCode from "../Utils/Const";
 import GenerateUID from "../Utils/Uid";
 import {
@@ -44,7 +45,7 @@ const NewSlides = () => {
     if (sourceUrl.length > 0) {
       dispatch(ArchiveAutoComplete({ query: sourceUrl }));
     }
-  }, [sourceUrl, dispatch]);
+  }, [sourceUrl]);
 
   useEffect(() => {
     const ulElement = document.getElementById("suggestions");
@@ -94,7 +95,11 @@ const NewSlides = () => {
       }
       try {
         const response = await dispatch(SetCustomSlideBySource(request));
-        if (response.payload.success) {
+        if (response.error !== undefined && response.error.code === "ERR_BAD_REQUEST") {
+          alert("Wrong request. There is something wrong with your input like same source uid. Please double check your input");
+          return;
+        }
+        if (response.payload !== undefined && response.payload.success) {
           setUpdateTagList([]);
           setSourceUid("");
           alert(response.payload.description);
@@ -108,7 +113,7 @@ const NewSlides = () => {
     if (updateTagList.length > 0) {
       fetchData();
     }
-  }, [updateTagList, dispatch, fileUid, languages, navigate, selectedOptions, slideLanguageOptions, sourceUid]);
+  }, [updateTagList]);
 
   const handleUpload = () => {
     const name = document.getElementById("upload_name").value;
@@ -197,6 +202,9 @@ const NewSlides = () => {
             sourceUidStr = contentSource;
           } else {
             sourceUidStr = sourceUid;
+            if (sourceUidStr.includes("upload_")) {
+              sourceUidStr = sourceUidStr.replace("upload_", "");
+            }
           }
           sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
           setSourceUid("upload_" + sourceUidStr);
@@ -215,7 +223,7 @@ const NewSlides = () => {
               files.forEach((file) => {
                 if (
                   languages[localStorage.getItem("subtitleLanguage")] ===
-                  file["language"]
+                  file["language"] && file["type"] === "text"
                 ) {
                   fileUid = file["id"];
                 }
@@ -229,7 +237,12 @@ const NewSlides = () => {
           `https://kabbalahmedia.info/assets/api/doc2html/${fileUid}`
         );
         if (response.status !== 200) {
-          throw new Error(`Fetch failed with status ${response.status}`);
+          if (response.status === 404) {
+            alert("File not found");
+          } else {
+            alert("Failed to load a file");
+          }
+          return;
         }
         const contentData = await response.text();
         await loadSlides(contentData);
