@@ -65,7 +65,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 	}
 
 	updateSourcePath(db, sourcePaths)
-	archiveDataCopy(db, sourcePaths)
+	// archiveDataCopy(db, sourcePaths)
 
 	ticker := time.NewTicker(SourcePathUpdateTermHour * time.Hour)
 	go func() {
