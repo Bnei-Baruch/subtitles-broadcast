@@ -6,8 +6,7 @@ import SideNavBar from "./Layout/SideNavBar";
 
 import MainRoutes from "./Routes/Routes";
 import HeaderBar from "./Layout/HeaderBar";
-import AppContext from "./AppContext";
-import useMqtt, { parseMqttMessage } from "./Utils/UseMqttUtils";
+import useMqtt from "./Utils/UseMqttUtils";
 import { subscribeEvent, unsubscribeEvent, publishEvent } from "./Utils/Events";
 
 const App = ({ auth }) => {
@@ -17,13 +16,9 @@ const App = ({ auth }) => {
     mqttPublush,
     isConnected,
     payload,
-    mqttClientIdUseMqtt,
     mqttClient,
   } = useMqtt();
-  const [broadcastProgramm, setBroadcastProgramm] = useState();
-  const [broadcastLang, setBroadcastLang] = useState();
   const [mqttClientObj, setMqttClientObj] = useState(mqttClient);
-  const [mqttClientId, setMqttClientId] = useState(mqttClientIdUseMqtt);
   const [mqttTopicList, setMqttTopicList] = useState([]);
   const [notificationList, setNotificationList] = useState([]);
   const [subscribeCandidateList, setSubscribeCandidateList] = useState([]);
@@ -103,7 +98,6 @@ const App = ({ auth }) => {
   let subscribed = false;
 
   const subscribeAppEvents = () => {
-    //TODO: Find proper solution to subscribe only once
     if (!subscribed) {
       subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
       subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
@@ -169,22 +163,14 @@ const App = ({ auth }) => {
     };
   }, [payload]);
 
-  // subscribeAppEvents();
-
   return (
     <BrowserRouter>
       <div className="app">
-        <AppContext.Provider
-          value={{
-            mqttClientId,
-          }}
-        >
-          <SideNavBar />
-          <div style={{ backgroundColor: "#eeee" }} className="main-content">
-            <HeaderBar logout={auth?.keycloak} />
-            <MainRoutes logout={auth?.keycloak} />
-          </div>
-        </AppContext.Provider>
+        <SideNavBar />
+        <div style={{ backgroundColor: "#eeee" }} className="main-content">
+          <HeaderBar logout={auth?.keycloak} />
+          <MainRoutes logout={auth?.keycloak} />
+        </div>
       </div>
     </BrowserRouter>
   );
