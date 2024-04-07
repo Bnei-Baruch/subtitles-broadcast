@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from "react";
-// import PropTypes from "prop-types";
 import {
   broadcastLanguages,
-  brodcastProgrammArr,
   broadcastLangMapObj,
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm,
-  parseMqttMessage,
 } from "../Utils/Const";
-import {
-  publishEvent,
-  subscribeEvent,
-  unsubscribeEvent,
-} from "../Utils/Events";
+import { publishEvent, subscribeEvent } from "../Utils/Events";
 import { Slide } from "./Slide";
 
 const QuestionMessage = (props) => {
@@ -20,12 +13,10 @@ const QuestionMessage = (props) => {
     return getCurrentBroadcastProgramm();
   });
   const broadcastProgrammCode = broadcastProgrammObj.value;
-
   const [broadcastLang, setBroadcastLang] = useState(() => {
     return getCurrentBroadcastLanguage();
   });
   const broadcastLangCode = broadcastLang.value;
-
   const [notificationList, setNotificationList] = useState([]);
   const langList = props.languagesList
     ? props.languagesList
@@ -67,7 +58,6 @@ const QuestionMessage = (props) => {
 
   const newMessageHandling = (event) => {
     console.log("QuestionMessage newMessageHandling", event);
-    const clientId = event.detail.clientId;
     const newMessage = event.detail.messageJson;
 
     const currMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;

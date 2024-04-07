@@ -3,17 +3,10 @@ import "./PagesCSS/Questions.css";
 import QuestionMessage from "../Components/QuestionMessage";
 import {
   broadcastLanguages,
-  brodcastProgrammArr,
-  broadcastLangMapObj,
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm,
-  parseMqttMessage,
 } from "../Utils/Const";
-import {
-  publishEvent,
-  subscribeEvent,
-  unsubscribeEvent,
-} from "../Utils/Events";
+import { publishEvent } from "../Utils/Events";
 
 const QuestionModule = () => {
   const mqttClientId = localStorage.getItem("mqttClientId");
@@ -29,7 +22,6 @@ const QuestionModule = () => {
   });
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
-  const [notificationList, setNotificationList] = useState([]);
 
   const clearButtonClickHandler = () => {
     sethandleSuccess(false);
@@ -54,7 +46,6 @@ const QuestionModule = () => {
             broadcastLangCode && broadcastLangCode.value
               ? broadcastLangCode.value
               : broadcastLangCode,
-          //context: qustionTxt,
           slide: qustionTxt,
           date: new Date().toUTCString(),
           visible: true,

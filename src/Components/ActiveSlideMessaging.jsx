@@ -28,23 +28,15 @@ const styles = {
   },
 };
 
-export function ActiveSlideMessaging({
-  userAddedList,
-  activatedTab,
-  setActivatedTab,
-  isLtr,
-}) {
+export function ActiveSlideMessaging(props) {
   const mqttClientId = sessionStorage.getItem("mqttClientId");
   const [mqttMessage, setMqttMessage] = useState(null);
-
   const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
     return getCurrentBroadcastProgramm();
   });
-
   const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
     return getCurrentBroadcastLanguage();
   });
-
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
   const mqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
@@ -128,17 +120,17 @@ export function ActiveSlideMessaging({
     );
 
     if (
-      userAddedList &&
-      activatedTab &&
-      lastMqttMessageJson.order_number !== activatedTab
+      props.userAddedList &&
+      props.activatedTab &&
+      lastMqttMessageJson.order_number !== props.activatedTab
     ) {
-      setActivatedTab(lastMqttMessageJson.order_number);
+      props.setActivatedTab(lastMqttMessageJson.order_number);
     }
 
     setMqttMessage(newMessageJson);
   };
 
-  determinePublishActiveSlide(userAddedList, activatedTab);
+  determinePublishActiveSlide(props.userAddedList, props.activatedTab);
 
   return (
     <>
@@ -152,7 +144,7 @@ export function ActiveSlideMessaging({
               data-key={mqttMessage.ID}
               key={mqttMessage.ID}
               content={mqttMessage.slide}
-              isLtr={isLtr}
+              isLtr={props.isLtr}
             ></Slide>
           )}
         </div>
