@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
-import AppContext from "../AppContext";
+import React, { useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
@@ -19,19 +18,16 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import {
-  broadcastLanguages,
-  brodcastProgrammArr,
-  broadcastLangMapObj,
-  getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
-  parseMqttMessage,
-} from "../Utils/Const";
+import { getCurrentBroadcastLanguage } from "../Utils/Const";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
+  const bookContentContRef = React.createRef();
+  const questionContentContRef = React.createRef();
+  const btnSubtitelsRef = React.createRef();
+  const btnQuestionsRef = React.createRef();
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -100,15 +96,11 @@ const Subtitles = () => {
   };
 
   function questionsBtnOnClick(evt) {
-    // const nqttQuestion = localStorage.getItem(
-    //   `nqttQuestion${broadcastLangCode}`
-    // );
     evt.target.classList.add("btn-success");
     btnSubtitelsRef.current.classList.remove("btn-success");
     bookContentContRef.current.style.display = "none";
     questionContentContRef.current.style.visibility = "visible";
-    // setMqttMessage(nqttQuestion);
-    // setJobMqttMessage(nqttQuestion);
+
     setIsSubTitleMode(false);
   }
 
@@ -120,11 +112,6 @@ const Subtitles = () => {
 
     setIsSubTitleMode(true);
   }
-
-  const bookContentContRef = React.createRef();
-  const questionContentContRef = React.createRef();
-  const btnSubtitelsRef = React.createRef();
-  const btnQuestionsRef = React.createRef();
 
   console.log(
     // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
@@ -176,7 +163,6 @@ const Subtitles = () => {
               <GreenWindowButton
                 isSubTitleMode={isSubTitleMode}
                 isLtr={isLtr}
-                mqttMessage={mqttMessage}
               />
               <button
                 type="button"

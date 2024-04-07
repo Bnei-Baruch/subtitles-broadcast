@@ -49,7 +49,7 @@ export default function useMqtt() {
     const clientMqtt = await mqtt.connect(url, options);
     setMqttClient(clientMqtt);
     setMqttClientId(clientId);
-    localStorage.setItem("mqttClientId", clientId);
+    sessionStorage.setItem("mqttClientId", clientId);
     console.log("useMqtt mqttclientId", clientId);
   };
 
