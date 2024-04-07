@@ -166,9 +166,6 @@ export function ActiveSlideMessaging({
             mqttTopic: mqttTopic,
             message: jsonMsgStr,
           });
-          // mqttPublush(mqttTopic, jsonMsgStr).then(() => {
-          //   setMqttMessage(jsonMsg);
-          // });
         }
       }
     }
@@ -225,10 +222,10 @@ export function ActiveSlideMessaging({
     };
   }, []);
 
-  const newMessageHandling = (data) => {
-    console.log("ActiveSlideMessaging newMessageHandling", data);
-    const clientId = data.clientId;
-    const newMessage = data.detail.messageJson;
+  const newMessageHandling = (event) => {
+    console.log("ActiveSlideMessaging newMessageHandling", event);
+    const clientId = event.clientId;
+    const newMessage = event.detail.messageJson;
     const notif = [...notificationList, newMessage];
     setNotificationList(notif);
 
@@ -264,19 +261,6 @@ export function ActiveSlideMessaging({
           ))}
         </div>
       </div>
-
-      {/* <div className="App">
-        <div className="card">
-          <h3>Last Active Slide </h3>
-          <ol>
-            {notificationList.map((obj) => (
-              <li data-key={obj.ID} key={obj.ID}>
-                {obj.slide}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div> */}
     </>
   );
 }

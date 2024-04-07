@@ -41,27 +41,37 @@ const App = ({ auth }) => {
 
   const mqttSubscribeEventHandler = (data) => {
     const mqttTopic = data.detail.mqttTopic;
+    let isIncludes = false;
 
-    if (mqttTopicList.includes(mqttTopic)) {
-      notificationList.forEach((message, index) => {
-        if (message.topic === mqttTopic) {
-          publishEvent(mqttTopic, message);
-          console.log(
-            "App mqttSubscribe already subscribed, raise custome event",
-            message
-          );
-        }
-      });
-    } else {
+    let msgListStorageArrJsonStr = sessionStorage.getItem(
+      "AppNotificationList"
+    );
+    let msgListStorageJson = JSON.parse(msgListStorageArrJsonStr);
+
+    if (!msgListStorageJson) {
+      msgListStorageJson = notificationList;
+    }
+
+    notificationList.forEach((message, index) => {
+      if (message.topic === mqttTopic) {
+        publishEvent(mqttTopic, message);
+
+        console.log(
+          "App mqttSubscribe already subscribed, raised custome event",
+          message
+        );
+      }
+    });
+
+    if (!isIncludes) {
       mqttTopicList.push(mqttTopic);
 
       if (isConnected) {
         mqttSubscribe(mqttTopic);
-        console.log("App mqttSubscribe DONE", mqttTopic);
-
         subscribeCandidate(mqttTopic);
+        console.log("App mqttSubscribe DONE", mqttTopic);
       } else {
-        const notif = [...subscribeCandidateList, "mqttTopic"];
+        const notif = [...subscribeCandidateList, mqttTopic];
         setSubscribeCandidateList(notif);
         console.log("App mqttSubscribe Candidate", mqttTopic);
       }
@@ -72,12 +82,12 @@ const App = ({ auth }) => {
     if (subscribeCandidateList.length > 0) {
       subscribeCandidateList.forEach((topic, index) => {
         if (topic !== mqttTopic) {
+          console.log("App mqttSubscribe Candidate DONE", mqttTopic);
           mqttTopicList.push(mqttTopic);
           mqttSubscribe(topic);
-          console.log("App mqttSubscribe Candidate DONE", mqttTopic);
+          setSubscribeCandidateList([]);
         }
       });
-      setSubscribeCandidateList([]);
     }
   };
 
@@ -90,10 +100,16 @@ const App = ({ auth }) => {
     });
   };
 
+  let subscribed = false;
+
   const subscribeAppEvents = () => {
-    subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-    subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-    subscribeEvent("mqttPublush", mqttPublushEventHandler);
+    //TODO: Find proper solution to subscribe only once
+    if (!subscribed) {
+      subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
+      subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
+      subscribeEvent("mqttPublush", mqttPublushEventHandler);
+    }
+    subscribed = true;
   };
   const unSubscribeAppEvents = () => {
     unsubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
@@ -110,15 +126,12 @@ const App = ({ auth }) => {
   }, []);
 
   useEffect(() => {
-    subscribeAppEvents();
-
     if (isConnected) {
+      subscribeAppEvents();
       mqttTopicList.forEach((mqttTopic, index) => {
         mqttSubscribe(mqttTopic);
         console.log("App useEffect mqttSubscribe DONE", mqttTopic);
       });
-
-      subscribeCandidate("");
     }
 
     return () => {
@@ -127,17 +140,28 @@ const App = ({ auth }) => {
   }, [isConnected]);
 
   useEffect(() => {
-    console.log("App payload", payload);
-
-    subscribeAppEvents();
-
     if (payload.message && mqttTopicList.includes(payload.topic)) {
+      let msgListStorageArrJsonStr = sessionStorage.getItem(
+        "AppNotificationList"
+      );
+      let msgListStorageArrJson = JSON.parse(msgListStorageArrJsonStr);
+
+      if (!Array.isArray(msgListStorageArrJson)) {
+        msgListStorageArrJson = notificationList;
+      }
+
       const newMessage = JSON.parse(payload.message);
       const newNotif = { topic: payload.topic, message: newMessage };
-      const notif = [...notificationList, newNotif];
+      const notif = [...msgListStorageArrJson, newNotif];
       setNotificationList(notif);
+      console.log("App payload New Message", newNotif);
 
-      console.log("App New Message", newNotif);
+      msgListStorageArrJsonStr = JSON.stringify(notif);
+      sessionStorage.setItem("AppNotificationList", msgListStorageArrJsonStr);
+      sessionStorage.setItem(
+        `lastMqttMessage_${payload.topic}`,
+        payload.message
+      );
     }
 
     return () => {
@@ -145,7 +169,7 @@ const App = ({ auth }) => {
     };
   }, [payload]);
 
-  subscribeAppEvents();
+  // subscribeAppEvents();
 
   return (
     <BrowserRouter>

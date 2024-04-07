@@ -31,7 +31,6 @@ const QuestionMessage = (props) => {
     ? props.languagesList
     : broadcastLanguages;
   const mqttTopicList = langList.map((langItem, index) => {
-    //'he_questions_morning_lesson'
     const mqttTopic = `${langItem.value}_questions_${broadcastProgrammCode}`;
     return mqttTopic;
   });
@@ -64,7 +63,7 @@ const QuestionMessage = (props) => {
     };
   }, []);
 
-  let notificationListTmp = [];
+  let notificationListTmp = notificationList;
 
   const newMessageHandling = (event) => {
     console.log("QuestionMessage newMessageHandling", event);
@@ -76,22 +75,17 @@ const QuestionMessage = (props) => {
       sessionStorage.setItem("currentBroadcastquestions", newMessage);
     }
 
-    if (newMessage && newMessage.clientId !== clientId) {
+    if (newMessage) {
       if (newMessage.date) {
         newMessage.dateUtcJs = new Date(newMessage.date);
+        notificationListTmp = [...notificationListTmp, newMessage];
+        setNotificationList(notificationListTmp);
+
+        console.log("notificationList: ", notificationList);
+        console.log("notificationListTmp: ", notificationListTmp);
       }
-      //const notif = [...notificationList, newMessage];
-      notificationListTmp = [...notificationListTmp, newMessage];
-
-      //notificationListTmp.sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
-
-      setNotificationList(notificationListTmp);
-      //setJobMqttMessage(newMessage);
     }
   };
-
-  // const [mqttQuestion, setMqttQuestion] = useState();
-  // const [mqttDate, setMqttDate] = useState();
 
   const parseUtcStrToLocal = (utcDateStr) => {
     let retVal = utcDateStr;
@@ -121,7 +115,7 @@ const QuestionMessage = (props) => {
                 <i className="bi bi-eye" />
               </div>
               <div className="d-flex justify-content-end">
-                <p>{obj.context}</p>
+                <p>{obj.slide}</p>
               </div>
             </div>
           ))}
@@ -134,7 +128,7 @@ const QuestionMessage = (props) => {
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
           .map((obj) => (
             <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
-              <Slide content={obj.context} isLtr={props.isLtr}></Slide>
+              <Slide content={obj.slide} isLtr={props.isLtr}></Slide>
             </div>
           ))}
       </>
@@ -152,7 +146,7 @@ const QuestionMessage = (props) => {
                     Date: {parseUtcStrToLocal(obj.date)}
                   </span>
                   <br />
-                  <div className="message">{obj.context}</div>
+                  <div className="message">{obj.slide}</div>
                 </li>
                 <hr />
               </div>

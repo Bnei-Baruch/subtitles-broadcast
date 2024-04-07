@@ -31,6 +31,7 @@ import {
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
+  const [isSubTitleMode, setIsSubTitleMode] = useState(true);
 
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
@@ -40,9 +41,6 @@ const Subtitles = () => {
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
-  const [isSubTitleMode, setIsSubTitleMode] = useState(true);
-  const appContextlData = useContext(AppContext);
-  // const broadcastLangCode = appContextlData.broadcastLang.value;
 
   const handleChange = (selectedOption) => {
     console.log(selectedOption, "selectedOption");
@@ -108,7 +106,7 @@ const Subtitles = () => {
     evt.target.classList.add("btn-success");
     btnSubtitelsRef.current.classList.remove("btn-success");
     bookContentContRef.current.style.display = "none";
-    questionContentContRef.current.style.display = "block";
+    questionContentContRef.current.style.visibility = "visible";
     // setMqttMessage(nqttQuestion);
     // setJobMqttMessage(nqttQuestion);
     setIsSubTitleMode(false);
@@ -118,7 +116,7 @@ const Subtitles = () => {
     evt.target.classList.add("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
     bookContentContRef.current.style.display = "block";
-    questionContentContRef.current.style.display = "none";
+    questionContentContRef.current.style.visibility = "hidden";
 
     setIsSubTitleMode(true);
   }
@@ -223,7 +221,7 @@ const Subtitles = () => {
                   className="vh-80"
                   style={{
                     height: "200px",
-                    display: isSubTitleMode ? "none" : "block",
+                    visibility: isSubTitleMode ? "hidden" : "visible",
                   }}
                 >
                   <QuestionMessage

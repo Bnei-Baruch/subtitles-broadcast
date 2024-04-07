@@ -85,7 +85,7 @@ export default function useMqtt() {
 
   const mqttSubscribe = async (topic) => {
     if (mqttClient) {
-      console.log("useMqtt MQTT subscribe ", topic);
+      console.log("useMqtt MQTT subscribe ", topic, mqttClientId);
       const clientMqtt = await mqttClient.subscribe(
         topic,
         {

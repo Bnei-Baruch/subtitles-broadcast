@@ -54,13 +54,16 @@ const QuestionModule = () => {
             broadcastLangCode && broadcastLangCode.value
               ? broadcastLangCode.value
               : broadcastLangCode,
-          context: qustionTxt,
+          //context: qustionTxt,
+          slide: qustionTxt,
           date: new Date().toUTCString(),
           visible: true,
         };
 
         const jsonMsgStr = JSON.stringify(jsonMsg);
         const mqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+
+        console.log("QuestionModule publishEvent mqttPublush", mqttTopic);
 
         publishEvent("mqttPublush", {
           mqttTopic: mqttTopic,

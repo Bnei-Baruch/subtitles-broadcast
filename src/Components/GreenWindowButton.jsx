@@ -52,15 +52,8 @@ const styles = {
 export const GreenWindowButton = (props) => {
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const elementRef = useRef(null);
-  const publishedSlide = parseMqttMessage(props.mqttMessage);
-
-  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
-    return getCurrentBroadcastProgramm();
-  });
-
-  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
-    return getCurrentBroadcastLanguage();
-  });
+  const broadcastProgrammObj = getCurrentBroadcastProgramm();
+  const broadcastLangObj = getCurrentBroadcastLanguage();
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
   const [context, setContext] = useState();
@@ -70,58 +63,60 @@ export const GreenWindowButton = (props) => {
   if (props.isSubTitleMode !== isSubTitleMode) {
     setIsSubTitleMode(props.isSubTitleMode);
   }
-  // useEffect(() => {
-  //   //console.log("GreenWindowButton useEffect");
-  //   // publishEvent("mqttSubscribe", {
-  //   //   mqttTopic: mqttTopic,
-  //   // });
-  //   // subscribeEvent(mqttTopic, function (data) {
-  //   //   return newMessageHandling(data);
-  //   // });
-  //   // return () => {
-  //   //   unsubscribeEvent(mqttTopic, function (data) {
-  //   //     return newMessageHandling(data);
-  //   //   });
-  //   // };
-  // }, []);
+
+  let subscribed = false;
+  const qwSubscribeEvents = () => {
+    if (!subscribed) {
+      subscribeEvent("mqttSubscribe", newMessageHandling);
+    }
+    subscribed = true;
+  };
+  const qwUnSubscribeAppEvents = () => {
+    unsubscribeEvent("mqttSubscribe", newMessageHandling);
+  };
+
+  const mqttTopic = isSubTitleMode
+    ? `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`
+    : `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+
+  const lastMqttMessageStr = sessionStorage.getItem(
+    `lastMqttMessage_${mqttTopic}`
+  );
+  const lastMqttMessageJson = JSON.parse(lastMqttMessageStr);
+
+  if (
+    (lastMqttMessageJson && !context) ||
+    (lastMqttMessageJson &&
+      context &&
+      lastMqttMessageJson.slide !== context.slide)
+  ) {
+    setContext(lastMqttMessageJson);
+  }
 
   useEffect(() => {
-    const mqttTopic = isSubTitleMode
-      ? `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`
-      : `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
-
     console.log("GreenWindowButton useEffect publishEvent ", mqttTopic);
 
     const timeoutId = setTimeout(() => {
-      subscribeEvent(mqttTopic, function (data) {
-        return newMessageHandling(data);
-      });
-
       publishEvent("mqttSubscribe", {
         mqttTopic: mqttTopic,
       });
+
+      qwSubscribeEvents();
     }, 0);
 
     return () => {
-      //clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-      unsubscribeEvent(mqttTopic, function (data) {
-        return newMessageHandling(data);
-      });
+      qwUnSubscribeAppEvents();
     };
   }, [isSubTitleMode]);
 
   const newMessageHandling = (data) => {
     console.log("GreenWindowButton newMessageHandling", data);
-    //const clientId = data.clientId;
     contextTmp = data.detail.messageJson
       ? data.detail.messageJson
       : data.detail.message;
     setContext(contextTmp);
-
-    // if (newMessage && newMessage.clientId !== clientId) {
-    //   setJobMqttMessage(newMessage);
-    // }
   };
 
   return (
