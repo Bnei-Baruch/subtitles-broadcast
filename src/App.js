@@ -7,7 +7,7 @@ import SideNavBar from "./Layout/SideNavBar";
 import MainRoutes from "./Routes/Routes";
 import HeaderBar from "./Layout/HeaderBar";
 import useMqtt from "./Utils/UseMqttUtils";
-import { subscribeEvent, unsubscribeEvent, publishEvent } from "./Utils/Events";
+import { publishEvent, subscribeEvent, unSubscribeEvent } from "./Utils/Events";
 
 const App = ({ auth }) => {
   const {
@@ -106,9 +106,9 @@ const App = ({ auth }) => {
     subscribed = true;
   };
   const unSubscribeAppEvents = () => {
-    unsubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-    unsubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-    unsubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
+    unSubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
+    unSubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
+    unSubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
   };
 
   useEffect(() => {
