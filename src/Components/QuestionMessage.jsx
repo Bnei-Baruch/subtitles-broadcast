@@ -5,7 +5,11 @@ import {
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm,
 } from "../Utils/Const";
-import { publishEvent, subscribeEvent } from "../Utils/Events";
+import {
+  publishEvent,
+  subscribeEvent,
+  unSubscribeEvent,
+} from "../Utils/Events";
 import { Slide } from "./Slide";
 
 const QuestionMessage = (props) => {
@@ -27,6 +31,15 @@ const QuestionMessage = (props) => {
   });
 
   let subscribed = false;
+  const compSubscribeEvents = () => {
+    if (!subscribed) {
+      subscribed = true;
+    }
+  };
+  const compUnSubscribeAppEvents = () => {
+    unSubscribeEvent("mqttSubscribe", newMessageHandling);
+    subscribed = false;
+  };
 
   useEffect(() => {
     console.log("QuestionMessage mqttSubscribe");
@@ -40,6 +53,7 @@ const QuestionMessage = (props) => {
         if (!subscribed) {
           subscribeEvent(mqttTopic, (event) => {
             newMessageHandling(event);
+            subscribed = true;
           });
 
           console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);

@@ -9,7 +9,7 @@ import {
 import {
   publishEvent,
   subscribeEvent,
-  unsubscribeEvent,
+  unSubscribeEvent,
 } from "../Utils/Events";
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
@@ -68,7 +68,7 @@ export const GreenWindowButton = (props) => {
     subscribed = true;
   };
   const compUnSubscribeAppEvents = () => {
-    unsubscribeEvent("mqttSubscribe", newMessageHandling);
+    unSubscribeEvent("mqttSubscribe", newMessageHandling);
   };
 
   const mqttTopic = isSubTitleMode

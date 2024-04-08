@@ -7,7 +7,7 @@ import {
 import {
   publishEvent,
   subscribeEvent,
-  unsubscribeEvent,
+  unSubscribeEvent,
 } from "../Utils/Events";
 
 const styles = {
@@ -107,7 +107,7 @@ export function ActiveSlideMessaging(props) {
     subscribed = true;
   };
   const compUnSubscribeAppEvents = () => {
-    unsubscribeEvent("mqttSubscribe", newMessageHandling);
+    unSubscribeEvent("mqttSubscribe", newMessageHandling);
   };
 
   useEffect(() => {

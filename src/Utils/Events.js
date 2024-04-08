@@ -3,7 +3,7 @@ function subscribeEvent(eventName, listener) {
   document.addEventListener(eventName, listener);
 }
 
-function unsubscribeEvent(eventName, listener) {
+function unSubscribeEvent(eventName, listener) {
   //console.log("unsubscribeEvent: " + eventName, listener);
   document.removeEventListener(eventName, listener);
 }
@@ -14,4 +14,4 @@ function publishEvent(eventName, data) {
   document.dispatchEvent(event);
 }
 
-export { publishEvent, subscribeEvent, unsubscribeEvent };
+export { publishEvent, subscribeEvent, unSubscribeEvent };
