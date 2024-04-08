@@ -61,13 +61,13 @@ export const GreenWindowButton = (props) => {
   }
 
   let subscribed = false;
-  const qwSubscribeEvents = () => {
+  const compSubscribeEvents = () => {
     if (!subscribed) {
       subscribeEvent("mqttSubscribe", newMessageHandling);
     }
     subscribed = true;
   };
-  const qwUnSubscribeAppEvents = () => {
+  const compUnSubscribeAppEvents = () => {
     unsubscribeEvent("mqttSubscribe", newMessageHandling);
   };
 
@@ -97,13 +97,12 @@ export const GreenWindowButton = (props) => {
         mqttTopic: mqttTopic,
       });
 
-      qwSubscribeEvents();
+      compSubscribeEvents();
     }, 0);
 
     return () => {
       clearTimeout(timeoutId);
-
-      qwUnSubscribeAppEvents();
+      compUnSubscribeAppEvents();
     };
   }, [isSubTitleMode]);
 

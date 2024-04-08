@@ -139,7 +139,7 @@ const Subtitles = () => {
                 ref={btnSubtitelsRef}
                 id="btnSubtitels"
                 type="button"
-                className="btn btn-success"
+                className={isSubTitleMode ? "btn btn-success" : "btn"}
                 onClick={(evt) => subtitelsBtnOnClick(evt)}
               >
                 Subtitels
@@ -148,7 +148,7 @@ const Subtitles = () => {
                 ref={btnQuestionsRef}
                 id="btnQuestions"
                 type="button"
-                className="btn btn-tr"
+                className={isSubTitleMode ? "btn" : "btn btn-success"}
                 onClick={(evt) => questionsBtnOnClick(evt)}
               >
                 Questions
@@ -205,10 +205,7 @@ const Subtitles = () => {
                   ref={questionContentContRef}
                   id="questionContentCont"
                   className="vh-80"
-                  style={{
-                    height: "200px",
-                    visibility: isSubTitleMode ? "hidden" : "visible",
-                  }}
+                  parentElement={bookContentContRef}
                 >
                   <QuestionMessage
                     isLtr={isLtr}

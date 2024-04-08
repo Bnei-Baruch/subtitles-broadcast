@@ -26,6 +26,8 @@ const QuestionMessage = (props) => {
     return mqttTopic;
   });
 
+  let subscribed = false;
+
   useEffect(() => {
     console.log("QuestionMessage mqttSubscribe");
 
@@ -35,11 +37,13 @@ const QuestionMessage = (props) => {
           mqttTopic: mqttTopic,
         });
 
-        subscribeEvent(mqttTopic, (event) => {
-          newMessageHandling(event);
-        });
+        if (!subscribed) {
+          subscribeEvent(mqttTopic, (event) => {
+            newMessageHandling(event);
+          });
 
-        console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+          console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+        }
       }, 0);
     });
 

@@ -414,3 +414,8 @@ dropdown-toggle {
   height: 76px;
   margin: 5px 5px;
 }
+
+#questionContentCont {
+  visibility: hidden;
+  transform: translate(0px, 0px);
+}
