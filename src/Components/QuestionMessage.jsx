@@ -33,6 +33,16 @@ const QuestionMessage = (props) => {
   let subscribed = false;
   const compSubscribeEvents = () => {
     if (!subscribed) {
+      mqttTopicList.forEach((mqttTopic, index) => {
+        if (!subscribed) {
+          subscribeEvent(mqttTopic, (event) => {
+            newMessageHandling(event);
+            subscribed = true;
+          });
+          console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+        }
+      });
+
       subscribed = true;
     }
   };
@@ -49,20 +59,14 @@ const QuestionMessage = (props) => {
         publishEvent("mqttSubscribe", {
           mqttTopic: mqttTopic,
         });
+      });
 
-        if (!subscribed) {
-          subscribeEvent(mqttTopic, (event) => {
-            newMessageHandling(event);
-            subscribed = true;
-          });
-
-          console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
-        }
-      }, 0);
+      compSubscribeEvents();
     });
 
     return () => {
       clearTimeout(timeoutId);
+      compUnSubscribeAppEvents();
 
       mqttTopicList.forEach((mqttTopic, index) => {
         publishEvent("mqttUnSubscribe", {
