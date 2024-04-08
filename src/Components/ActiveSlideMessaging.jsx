@@ -95,19 +95,34 @@ export function ActiveSlideMessaging(props) {
     }
   };
 
+  let subscribed = false;
+  const compSubscribeEvents = () => {
+    if (!subscribed) {
+      subscribeEvent(mqttTopic, newMessageHandling);
+      console.log(
+        "ActiveSlideMessaging subscribeEvent  DONE mqttTopic: ",
+        mqttTopic
+      );
+    }
+    subscribed = true;
+  };
+  const compUnSubscribeAppEvents = () => {
+    unsubscribeEvent("mqttSubscribe", newMessageHandling);
+  };
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log("ActiveSlideMessaging mqttSubscribe", mqttTopic);
+      console.log("ActiveSlideMessaging publishEvent mqttSubscribe", mqttTopic);
       publishEvent("mqttSubscribe", {
         mqttTopic: mqttTopic,
       });
 
-      subscribeEvent(mqttTopic, newMessageHandling);
+      compSubscribeEvents();
     }, 0);
 
     return () => {
       clearTimeout(timeoutId);
-      unsubscribeEvent(mqttTopic, newMessageHandling);
+      compUnSubscribeAppEvents();
     };
   }, []);
 
