@@ -24,8 +24,6 @@ const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
-  const bookContentContRef = React.createRef();
-  const questionContentContRef = React.createRef();
   const btnSubtitelsRef = React.createRef();
   const btnQuestionsRef = React.createRef();
 
@@ -98,8 +96,6 @@ const Subtitles = () => {
   function questionsBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
     btnSubtitelsRef.current.classList.remove("btn-success");
-    bookContentContRef.current.style.display = "none";
-    questionContentContRef.current.style.visibility = "visible";
 
     setIsSubTitleMode(false);
   }
@@ -107,8 +103,6 @@ const Subtitles = () => {
   function subtitelsBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
-    bookContentContRef.current.style.display = "block";
-    questionContentContRef.current.style.visibility = "hidden";
 
     setIsSubTitleMode(true);
   }
@@ -187,11 +181,7 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div
-                  ref={bookContentContRef}
-                  id="bookContentCont"
-                  className="vh-80"
-                >
+                <div id="bookContentCont" className="vh-80">
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
@@ -200,18 +190,6 @@ const Subtitles = () => {
                     targetItemId={activatedTab}
                     contents={UserAddedList}
                   />
-                </div>
-                <div
-                  ref={questionContentContRef}
-                  id="questionContentCont"
-                  className="vh-80"
-                  parentElement={bookContentContRef}
-                >
-                  <QuestionMessage
-                    isLtr={isLtr}
-                    mode="slide"
-                    languagesList={[getCurrentBroadcastLanguage()]}
-                  ></QuestionMessage>
                 </div>
               </div>
             </div>
