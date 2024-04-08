@@ -112,6 +112,19 @@ const QuestionMessage = (props) => {
     const langName = broadcastLangMapObj[langCode].label;
     return langName;
   };
+  const languageIsLtr = (langCode) => {
+    let isLeftToRight = true;
+
+    if (langCode) {
+      const lnagObj = broadcastLangMapObj[langCode];
+
+      if (lnagObj) {
+        isLeftToRight = !(lnagObj.isLtr === false);
+      }
+    }
+
+    return isLeftToRight;
+  };
 
   if (props.mode === "subtitle") {
     return (
@@ -125,7 +138,13 @@ const QuestionMessage = (props) => {
                 <i className="bi bi-eye" />
               </div>
               <div className="d-flex justify-content-end">
-                <p>{obj.slide}</p>
+                <p
+                  className={`${
+                    languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
+                  }`}
+                >
+                  {obj.slide}
+                </p>
               </div>
             </div>
           ))}
@@ -156,7 +175,13 @@ const QuestionMessage = (props) => {
                     Date: {parseUtcStrToLocal(obj.date)}
                   </span>
                   <br />
-                  <div className="message">{obj.slide}</div>
+                  <div
+                    className={`message ${
+                      languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
+                  >
+                    {obj.slide}
+                  </div>
                 </li>
                 <hr />
               </div>
