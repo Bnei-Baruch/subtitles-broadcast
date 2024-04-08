@@ -18,7 +18,7 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import { getCurrentBroadcastLanguage } from "../Utils/Const";
+import { broadcastLanguages } from "../Utils/Const";
 
 const Subtitles = () => {
   const [mqttMessage, setMqttMessage] = useState(null);
@@ -344,7 +344,7 @@ const Subtitles = () => {
             </div>
             <QuestionMessage
               mode="subtitle"
-              languagesList={[getCurrentBroadcastLanguage()]}
+              languagesList={broadcastLanguages}
             ></QuestionMessage>
           </div>
         </div>

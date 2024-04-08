@@ -22,9 +22,7 @@ const QuestionMessage = (props) => {
   });
   const broadcastLangCode = broadcastLang.value;
   const [notificationList, setNotificationList] = useState([]);
-  const langList = props.languagesList
-    ? props.languagesList
-    : broadcastLanguages;
+  const langList = props.languagesList;
   const mqttTopicList = langList.map((langItem, index) => {
     const mqttTopic = `${langItem.value}_questions_${broadcastProgrammCode}`;
     return mqttTopic;

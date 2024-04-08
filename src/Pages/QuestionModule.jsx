@@ -107,7 +107,7 @@ const QuestionModule = () => {
         <div className="SendQutionHistory">
           <ul>
             <QuestionMessage
-              languageCode={broadcastLanguages}
+              languagesList={broadcastLanguages}
             ></QuestionMessage>
           </ul>
         </div>
