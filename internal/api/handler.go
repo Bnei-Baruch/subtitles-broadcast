@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -168,11 +169,12 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 
 func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	req := struct {
-		FileName  string   `json:"file_name,omitempty"`
-		Languages []string `json:"languages"`
-		SourceUid string   `json:"source_uid"`
-		FileUid   string   `json:"file_uid"`
-		Slides    []string `json:"slides"`
+		FileName   string   `json:"file_name"`
+		SourcePath string   `json:"source_path"`
+		Languages  []string `json:"languages"`
+		SourceUid  string   `json:"source_uid"`
+		FileUid    string   `json:"file_uid"`
+		Slides     []string `json:"slides"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -188,15 +190,31 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
+	// When SourcePath in the request has just source uid and get source path from the DB
+	if regexp.MustCompile(`^[a-zA-Z0-9]{8}$`).MatchString(req.SourcePath) {
+		sourcePath := struct {
+			Path string `gorm:"column:path"`
+		}{}
+		result := h.Database.Debug().WithContext(ctx).
+			Select("path").
+			Table(DBTableSourcePaths).
+			Where("source_uid = ?", req.SourcePath).
+			First(&sourcePath)
+		if result.Error != nil {
+			log.Error(result.Error)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
+			return
+		}
+		req.SourcePath = sourcePath.Path
+	}
 	sourcePathData := &SourcePath{
 		Languages: pq.StringArray(req.Languages),
 		SourceUid: req.SourceUid,
-		Path:      "custom_file_slide",
-	}
-	if len(req.FileName) > 0 {
-		sourcePathData.Path = req.FileName
+		Path:      req.SourcePath,
 	}
 	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
+		tx.Rollback()
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
 			ctx.JSON(http.StatusBadRequest,
 				getResponse(false, nil, err.Error(), "The source uid with the langauges already exists"))
@@ -213,11 +231,10 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		Languages: pq.StringArray(req.Languages),
 		SourceUid: req.SourceUid,
 		FileUid:   req.FileUid,
-	}
-	if len(req.FileName) > 0 {
-		fileData.Filename = req.FileName
+		Filename:  req.FileName,
 	}
 	if err = tx.Table(DBTableFiles).Create(fileData).Error; err != nil {
+		tx.Rollback()
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Creating file data has failed"))
@@ -411,7 +428,6 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Updating slide data has failed"))
@@ -476,7 +492,6 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Deleting slide data has failed"))
