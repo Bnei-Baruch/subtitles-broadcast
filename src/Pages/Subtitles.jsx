@@ -21,8 +21,6 @@ import QuestionMessage from "../Components/QuestionMessage";
 import { broadcastLanguages } from "../Utils/Const";
 
 const Subtitles = () => {
-  const [mqttMessage, setMqttMessage] = useState(null);
-  const [jobMqttMessage, setJobMqttMessage] = useState(null);
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
   const btnSubtitelsRef = React.createRef();
   const btnQuestionsRef = React.createRef();
@@ -308,11 +306,8 @@ const Subtitles = () => {
               userAddedList={UserAddedList}
               activatedTab={activatedTab}
               setActivatedTab={setActivatedTab}
-              mqttMessage={mqttMessage}
-              setMqttMessage={setMqttMessage}
-              jobMqttMessage={jobMqttMessage}
-              setJobMqttMessage={setJobMqttMessage}
               isLtr={isLtr}
+              isSubTitleMode={isSubTitleMode}
             />
           </div>
           <div className="book-mark whit-s">
