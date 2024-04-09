@@ -172,7 +172,7 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div className="vh-80">
+                <div className="slides-set">
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}

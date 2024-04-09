@@ -14,7 +14,7 @@ const Auth = ({ children }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const keycloak = Keycloak({
+    const keycloak = new Keycloak({
       realm: "master",
       url: "https://auth.2serv.eu/auth",
       clientId: "kolman-dev",
