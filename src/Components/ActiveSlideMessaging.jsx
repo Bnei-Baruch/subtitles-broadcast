@@ -71,7 +71,7 @@ export function ActiveSlideMessaging(props) {
       props.isSubTitleMode &&
       isSubTitleMode &&
       userAddedList &&
-      activatedTab
+      activatedTab >= 0
     ) {
       if (
         !subtitleMqttMessage ||
