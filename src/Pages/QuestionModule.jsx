@@ -40,6 +40,7 @@ const QuestionModule = () => {
 
       if (qustionTxt) {
         const jsonMsg = {
+          type: "question",
           ID: Math.random().toString(16).substring(2, 8),
           clientId: mqttClientId,
           lang:
