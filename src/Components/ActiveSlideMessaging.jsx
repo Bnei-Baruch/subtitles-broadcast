@@ -30,7 +30,8 @@ const styles = {
 
 export function ActiveSlideMessaging(props) {
   const mqttClientId = sessionStorage.getItem("mqttClientId");
-  const [mqttMessage, setMqttMessage] = useState(null);
+  const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
+  const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
     return getCurrentBroadcastProgramm();
   });
@@ -39,7 +40,16 @@ export function ActiveSlideMessaging(props) {
   });
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
-  const mqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
+  const subtitleMqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
+  const questionMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+  const [isSubTitleMode, setIsSubTitleMode] = useState(props.isSubTitleMode);
+  const contextMqttMessage = isSubTitleMode
+    ? subtitleMqttMessage
+    : questionMqttMessage;
+
+  if (props.isSubTitleMode !== isSubTitleMode) {
+    setIsSubTitleMode(props.isSubTitleMode);
+  }
 
   function findActiveSlide(userAddedList, activeSlideOrderNum) {
     let retSlide;
@@ -57,8 +67,16 @@ export function ActiveSlideMessaging(props) {
   }
 
   const determinePublishActiveSlide = (userAddedList, activatedTab) => {
-    if (userAddedList && activatedTab) {
-      if (!mqttMessage || mqttMessage.order_number !== activatedTab) {
+    if (
+      props.isSubTitleMode &&
+      isSubTitleMode &&
+      userAddedList &&
+      activatedTab
+    ) {
+      if (
+        !subtitleMqttMessage ||
+        subtitleMqttMessage.order_number !== activatedTab
+      ) {
         const activeSlide = findActiveSlide(userAddedList, activatedTab);
 
         if (activeSlide) {
@@ -71,6 +89,7 @@ export function ActiveSlideMessaging(props) {
             Number(lastMqttMessageJson.order_number) !== activatedTab
           ) {
             var jsonMsg = {
+              type: "subtitle",
               ID: activeSlide.ID,
               bookmark_id: activeSlide.bookmark_id,
               file_uid: activeSlide.file_uid,
@@ -81,7 +100,7 @@ export function ActiveSlideMessaging(props) {
             };
 
             publishEvent("mqttPublush", {
-              mqttTopic: mqttTopic,
+              mqttTopic: subtitleMqttTopic,
               message: JSON.stringify(jsonMsg),
             });
 
@@ -98,23 +117,31 @@ export function ActiveSlideMessaging(props) {
   let subscribed = false;
   const compSubscribeEvents = () => {
     if (!subscribed) {
-      subscribeEvent(mqttTopic, newMessageHandling);
+      subscribeEvent(subtitleMqttTopic, newMessageHandling);
+      subscribeEvent(questionMqttTopic, newMessageHandling);
       console.log(
         "ActiveSlideMessaging subscribeEvent  DONE mqttTopic: ",
-        mqttTopic
+        subtitleMqttTopic
       );
     }
     subscribed = true;
   };
   const compUnSubscribeAppEvents = () => {
-    unSubscribeEvent("mqttSubscribe", newMessageHandling);
+    unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
+    subscribeEvent(questionMqttTopic, newMessageHandling);
   };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log("ActiveSlideMessaging publishEvent mqttSubscribe", mqttTopic);
+      console.log(
+        "ActiveSlideMessaging publishEvent mqttSubscribe",
+        subtitleMqttTopic
+      );
       publishEvent("mqttSubscribe", {
-        mqttTopic: mqttTopic,
+        mqttTopic: subtitleMqttTopic,
+      });
+      publishEvent("mqttSubscribe", {
+        mqttTopic: questionMqttTopic,
       });
 
       compSubscribeEvents();
@@ -124,7 +151,7 @@ export function ActiveSlideMessaging(props) {
       clearTimeout(timeoutId);
       compUnSubscribeAppEvents();
     };
-  }, []);
+  }, [isSubTitleMode]);
 
   const newMessageHandling = (event) => {
     console.log("ActiveSlideMessaging newMessageHandling", event);
@@ -134,15 +161,19 @@ export function ActiveSlideMessaging(props) {
       sessionStorage.getItem("LastActiveSlidePublishedMessage")
     );
 
-    if (
-      props.userAddedList &&
-      props.activatedTab &&
-      lastMqttMessageJson.order_number !== props.activatedTab
-    ) {
-      props.setActivatedTab(lastMqttMessageJson.order_number);
-    }
+    if (event.detail.mqttTopic === subtitleMqttTopic) {
+      if (
+        props.userAddedList &&
+        props.activatedTab &&
+        lastMqttMessageJson.order_number !== props.activatedTab
+      ) {
+        props.setActivatedTab(lastMqttMessageJson.order_number);
+      }
 
-    setMqttMessage(newMessageJson);
+      setSubtitleMqttMessage(newMessageJson);
+    } else if (event.detail.mqttTopic === questionMqttTopic) {
+      setQuestionMqttMessage(newMessageJson);
+    }
   };
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
@@ -154,11 +185,11 @@ export function ActiveSlideMessaging(props) {
           &nbsp;{" "}
         </div>
         <div className="slide-part-cont" style={styles.slidePartContainer}>
-          {mqttMessage && (
+          {contextMqttMessage && (
             <Slide
-              data-key={mqttMessage.ID}
-              key={mqttMessage.ID}
-              content={mqttMessage.slide}
+              data-key={contextMqttMessage.ID}
+              key={contextMqttMessage.ID}
+              content={contextMqttMessage.slide}
               isLtr={props.isLtr}
             ></Slide>
           )}

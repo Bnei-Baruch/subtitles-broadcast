@@ -52,9 +52,15 @@ export const GreenWindowButton = (props) => {
   const broadcastLangObj = getCurrentBroadcastLanguage();
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
-  const [context, setContext] = useState();
+  const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
+  const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [isSubTitleMode, setIsSubTitleMode] = useState(props.isSubTitleMode);
-  let contextTmp = [];
+  const subtitleMqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
+  const questionMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+
+  const contextMqttMessage = isSubTitleMode
+    ? subtitleMqttMessage
+    : questionMqttMessage;
 
   if (props.isSubTitleMode !== isSubTitleMode) {
     setIsSubTitleMode(props.isSubTitleMode);
@@ -63,31 +69,19 @@ export const GreenWindowButton = (props) => {
   let subscribed = false;
   const compSubscribeEvents = () => {
     if (!subscribed) {
-      subscribeEvent("mqttSubscribe", newMessageHandling);
+      subscribeEvent(subtitleMqttTopic, newMessageHandling);
+      subscribeEvent(questionMqttTopic, newMessageHandling);
     }
     subscribed = true;
   };
   const compUnSubscribeAppEvents = () => {
-    unSubscribeEvent("mqttSubscribe", newMessageHandling);
+    unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
+    subscribeEvent(questionMqttTopic, newMessageHandling);
   };
 
   const mqttTopic = isSubTitleMode
     ? `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`
     : `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
-
-  const lastMqttMessageStr = sessionStorage.getItem(
-    `lastMqttMessage_${mqttTopic}`
-  );
-  const lastMqttMessageJson = JSON.parse(lastMqttMessageStr);
-
-  if (
-    (lastMqttMessageJson && !context) ||
-    (lastMqttMessageJson &&
-      context &&
-      lastMqttMessageJson.slide !== context.slide)
-  ) {
-    setContext(lastMqttMessageJson);
-  }
 
   useEffect(() => {
     console.log("GreenWindowButton useEffect publishEvent ", mqttTopic);
@@ -106,12 +100,14 @@ export const GreenWindowButton = (props) => {
     };
   }, [isSubTitleMode]);
 
-  const newMessageHandling = (data) => {
-    console.log("GreenWindowButton newMessageHandling", data);
-    contextTmp = data.detail.messageJson
-      ? data.detail.messageJson
-      : data.detail.message;
-    setContext(contextTmp);
+  const newMessageHandling = (event) => {
+    console.log("GreenWindowButton newMessageHandling", event);
+
+    if (event.detail.mqttTopic === subtitleMqttTopic) {
+      setSubtitleMqttMessage(event.detail.messageJson);
+    } else if (event.detail.mqttTopic === questionMqttTopic) {
+      setQuestionMqttMessage(event.detail.messageJson);
+    }
   };
 
   return (
@@ -136,9 +132,13 @@ export const GreenWindowButton = (props) => {
               style={styles.greenPartContainer}
             ></div>
             <div className="slide-part-cont" style={styles.slidePartContainer}>
-              {context && (
+              {contextMqttMessage && (
                 <Slide
-                  content={context.slide ? context.slide : context.context}
+                  content={
+                    contextMqttMessage.slide
+                      ? contextMqttMessage.slide
+                      : contextMqttMessage.context
+                  }
                   isLtr={props.isLtr}
                   parentElement={elementRef}
                 ></Slide>
