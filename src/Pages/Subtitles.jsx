@@ -18,7 +18,10 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import { broadcastLanguages } from "../Utils/Const";
+import {
+  broadcastLanguages,
+  getCurrentBroadcastLanguage,
+} from "../Utils/Const";
 
 const Subtitles = () => {
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
@@ -333,15 +336,17 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s">
-            <div className="top-head d-flex justify-content-between">
-              <h3>Questions</h3>
+          {getCurrentBroadcastLanguage().value === "he" && (
+            <div className="Questions whit-s">
+              <div className="top-head d-flex justify-content-between">
+                <h3>Questions</h3>
+              </div>
+              <QuestionMessage
+                mode="subtitle"
+                languagesList={broadcastLanguages}
+              ></QuestionMessage>
             </div>
-            <QuestionMessage
-              mode="subtitle"
-              languagesList={broadcastLanguages}
-            ></QuestionMessage>
-          </div>
+          )}
         </div>
       </div>
     </>
