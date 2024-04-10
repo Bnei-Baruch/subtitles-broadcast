@@ -2,8 +2,10 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
+import GetLangaugeCode from "../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
+const langauges = GetLangaugeCode()
 
 const initialState = {
   archiveList: [],
@@ -58,7 +60,7 @@ export const DeleteArchive = createAsyncThunk(
       data,
     });
 
-    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
 
     return response.data;
   }
@@ -118,7 +120,7 @@ export const BookmarkSlideFromArchivePage = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await axios.post(`${API}bookmark`, data);
-      thunkAPI.dispatch(GetAllArchiveData({ language: "en", ...data.params }));
+      thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")], ...data.params }));
       thunkAPI.dispatch(UserBookmarkList());
       return response.data;
     } catch (error) {
@@ -148,7 +150,7 @@ export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}bookmark/${data}`);
-    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
     thunkAPI.dispatch(UserBookmarkList());
     return response.data;
   }
@@ -168,7 +170,7 @@ export const addNewSlide = createAsyncThunk(
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}slide`, data);
     response.data.success && toast.success(response.data.description);
-    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
     return response.data;
   }
 );
@@ -177,7 +179,7 @@ export const deleteNewSlide = createAsyncThunk(
   "deleteNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}slide`, { data });
-    thunkAPI.dispatch(GetAllArchiveData({ language: "en" }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
     response.data.success && toast.success(response.data.description);
     return response.data;
   }
