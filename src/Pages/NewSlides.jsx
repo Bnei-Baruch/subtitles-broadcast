@@ -72,6 +72,7 @@ const NewSlides = () => {
       // add name and update langauges
       let request = {
         name: "KabbalahMedia",
+        source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
         languages: languages[localStorage.getItem("subtitleLanguage")],
@@ -82,6 +83,7 @@ const NewSlides = () => {
         document.getElementById("upload_name").value.length > 0
       ) {
         request.name = document.getElementById("upload_name").value;
+        request.source_path = document.getElementById("upload_name").value;
       }
       if (
         document.getElementById("languageSelect") &&

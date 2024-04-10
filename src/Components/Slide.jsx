@@ -11,12 +11,9 @@ export const Slide = ({ content, isLtr }) => {
     slideRef.current.style.transform = `scale(${scale})`;
     slideRef.current.style.transformOrigin = "top left";
     outerRef.current.style.height = `${scale * 310}px`;
-
-    console.log("Updating scale", slideRef.current.style.transform);
   };
 
   useEffect(() => {
-    console.log(outerRef.current); // logs <div>I'm an element</div>
     window.addEventListener("resize", handleResize);
     handleResize();
     return () => {
@@ -25,7 +22,11 @@ export const Slide = ({ content, isLtr }) => {
   }, []);
 
   useEffect(() => {
-    console.log("update html", content);
+    console.log('a');
+    handleResize();
+  });
+
+  useEffect(() => {
     slideRef.current.innerHTML = md.render(content);
   }, [content, md]);
 

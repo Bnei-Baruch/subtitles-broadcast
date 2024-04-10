@@ -16,7 +16,7 @@ const Auth = ({ children }) => {
   const appContextlData = useContext(AppContext);
 
   useEffect(() => {
-    const keycloak = Keycloak({
+    const keycloak = new Keycloak({
       realm: "master",
       url: "https://auth.2serv.eu/auth",
       clientId: "kolman-dev",

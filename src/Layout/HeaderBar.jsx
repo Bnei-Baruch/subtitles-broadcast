@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
-  ArchiveAutoComplete,
   GetAllArchiveData,
-  getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
 import BroadcastSettings from "../Components/BroadcastSettings";
+import GetLangaugeCode from "../Utils/Const";
 
 const HeaderBar = ({ logout }) => {
   const dispatch = useDispatch();
   const param = useLocation();
+  const languages = GetLangaugeCode();
 
   const localPagination = localStorage?.getItem("pagination")
     ? JSON?.parse(localStorage?.getItem("pagination"))
@@ -26,7 +26,7 @@ const HeaderBar = ({ logout }) => {
       );
       dispatch(
         GetAllArchiveData({
-          language: "en",
+          language: languages[localStorage.getItem("subtitleLanguage")],
           limit: localPagination?.limit || 10,
           page: 1,
           keyword: freeText,
@@ -46,7 +46,7 @@ const HeaderBar = ({ logout }) => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllArchiveData({
-                    language: "en",
+                    language: languages[localStorage.getItem("subtitleLanguage")],
                     keyword: freeText,
                   })
                 );
