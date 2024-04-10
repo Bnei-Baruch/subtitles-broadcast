@@ -20,7 +20,6 @@ const NewSlides = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const languages = GetLangaugeCode();
-  const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
   const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
   const [tagList, setTagList] = useState([]);
@@ -86,11 +85,9 @@ const NewSlides = () => {
         request.name = document.getElementById("upload_name").value;
         request.source_path = document.getElementById("upload_name").value;
       } else {
-        if (urlRegex.test(contentSource)) {
-          const url = new URL(contentSource);
-          const params = new URLSearchParams(url.search);
-          request.source_path = params.get("id");
-          console.log(request.source_path);
+        if (contentSource.includes("http://kabbalahmedia.info")) {
+          let parts = sourceUrl.split("/");
+          request.source_path = parts[parts.length - 1]
         }
       }
       if (
@@ -196,16 +193,12 @@ const NewSlides = () => {
     const fetchData = async () => {
       try {
         // get fileuid from source
-        if (urlRegex.test(sourceUrl) &&
-          sourceUrl.includes("kabbalahmedia.info/backend/content_units")) {
-          const url = new URL(sourceUrl);
-          const params = new URLSearchParams(url.search);
-          if (!params.has("id")) {
-            throw new Error(`Fetch failed from source url misses id query`);
-          }
-          setSourceUid("upload_" + params.get("id"));
+        let sourceUidStr;
+        if (sourceUrl.includes("https://kabbalahmedia.info/")) {
+          console.log(sourceUrl);
+          let parts = sourceUrl.split("/");
+          sourceUidStr = parts[parts.length - 1]
         } else if (uidRegex.test(sourceUrl)) {
-          let sourceUidStr;
           if (sourceUid === "") {
             sourceUidStr = contentSource;
           } else {
@@ -214,12 +207,12 @@ const NewSlides = () => {
               sourceUidStr = sourceUidStr.replace("upload_", "");
             }
           }
-          sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
-          setSourceUid("upload_" + sourceUidStr);
         } else {
-          alert("The input must be 8 letters or numbers combination uid or source url starts with https://kabbalahmedia.info/backend/content_units");
+          alert("The input must be source uid or source url");
           return
         }
+        sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
+        setSourceUid("upload_" + sourceUidStr);
         const sourceResponse = await fetch(sourceUrl);
         if (!sourceResponse.ok) {
           throw new Error(`Fetch failed with status ${sourceResponse.status}`);
@@ -242,6 +235,7 @@ const NewSlides = () => {
             }
           });
         }
+        console.log(fileUid);
         setFileUid("upload_" + fileUid);
         // get contents from fileuid
         const response = await fetch(
