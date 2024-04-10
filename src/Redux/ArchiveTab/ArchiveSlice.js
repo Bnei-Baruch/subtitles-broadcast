@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
-import GetLangaugeCode from "../Utils/Const";
+import GetLangaugeCode from "../../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 const langauges = GetLangaugeCode()
