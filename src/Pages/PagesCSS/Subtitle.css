@@ -167,6 +167,9 @@ main {
 
 .box-content {
   position: relative;
+  border-left: solid 1px black;
+  border-right: solid 1px black;
+  border-bottom: solid 1px black;
 }
 
 bdo {
@@ -207,7 +210,7 @@ bdo {
   line-height: 62px;
   width: 1920px;
   height: 310px;
-  padding: 30px;
+  padding: 0.2em 1.5em 0 1.1em;
 
   h1 {
     font-size: 82px;
