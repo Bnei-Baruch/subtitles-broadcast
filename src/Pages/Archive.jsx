@@ -1,32 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
-  ArchiveAutoComplete,
   BookmarkSlideFromArchivePage,
   DeleteArchive,
   GetAllArchiveData,
-  GetAllAuthorList,
   SlideListWithFildeUid,
-  emptyAutoComplete,
-  getAutocompleteSuggetion,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllArchiveList } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
-import Dropdown from "react-bootstrap/Dropdown";
-import useDebounce from "../Services/useDebounce";
 import EditArcive from "./EditArchive";
-import { Search } from "react-bootstrap-icons";
 import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation } from "react-router-dom";
+import GetLangaugeCode from "../Utils/Const";
 
 const Archive = () => {
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const ArchiveList = useSelector(getAllArchiveList);
-  const ActocompleteList = useSelector(getAutocompleteSuggetion);
+  const languages = GetLangaugeCode();
 
   // const [delete,setDelete]=useState('')
   const [page, setPage] = useState({
@@ -77,7 +71,7 @@ const Archive = () => {
   useEffect(() => {
     dispatch(
       GetAllArchiveData({
-        language: "en",
+        language: languages[localStorage.getItem("subtitleLanguage")],
         page: page.page,
         limit: page.limit,
       })

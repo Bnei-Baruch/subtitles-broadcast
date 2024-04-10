@@ -21,6 +21,7 @@ export const SetCustomSlideBySource = createAsyncThunk(
       // Your request body data here
       file_name: data.name,
       languages: languages,
+      source_path: data.source_path,
       source_uid: data.source_uid,
       file_uid: data.file_uid,
       slides: data.slides,
