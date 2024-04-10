@@ -4,15 +4,15 @@ import { Slide } from "./Slide";
 const styles = {
   mainContainer: {
     outline: "1px solid rgb(204, 204, 204)",
-    aspectRatio: "16/8",
+    aspectRatio: "16/9",
     margin: "0 0 1px 0",
   },
   greenPartContainer: {
     backgroundColor: "green",
-    height: "65%",
+    height: "71.3%",
   },
   slidePartContainer: {
-    height: "35%",
+    height: "28.7%",
     "text-align": "left",
     padding: "0",
     margin: "0",
