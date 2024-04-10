@@ -85,7 +85,8 @@ const NewSlides = () => {
         request.name = document.getElementById("upload_name").value;
         request.source_path = document.getElementById("upload_name").value;
       } else {
-        if (contentSource.includes("http://kabbalahmedia.info")) {
+        console.log(contentSource)
+        if (contentSource.includes("https://kabbalahmedia.info")) {
           let parts = sourceUrl.split("/");
           request.source_path = parts[parts.length - 1]
         }
@@ -195,21 +196,20 @@ const NewSlides = () => {
         // get fileuid from source
         let sourceUidStr;
         if (sourceUrl.includes("https://kabbalahmedia.info/")) {
-          console.log(sourceUrl);
           let parts = sourceUrl.split("/");
           sourceUidStr = parts[parts.length - 1]
-        } else if (uidRegex.test(sourceUrl)) {
-          if (sourceUid === "") {
-            sourceUidStr = contentSource;
-          } else {
-            sourceUidStr = sourceUid;
-            if (sourceUidStr.includes("upload_")) {
-              sourceUidStr = sourceUidStr.replace("upload_", "");
-            }
+        } else if (sourceUid !== "") {
+          sourceUidStr = sourceUid;
+          if (sourceUidStr.includes("upload_")) {
+            sourceUidStr = sourceUidStr.replace("upload_", "");
           }
         } else {
-          alert("The input must be source uid or source url");
-          return
+          if (uidRegex.test(sourceUrl)) {
+            sourceUidStr = contentSource;
+          } else {
+            alert("The input must be source uid or source url");
+            return
+          }
         }
         sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
         setSourceUid("upload_" + sourceUidStr);
@@ -235,7 +235,6 @@ const NewSlides = () => {
             }
           });
         }
-        console.log(fileUid);
         setFileUid("upload_" + fileUid);
         // get contents from fileuid
         const response = await fetch(
