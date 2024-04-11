@@ -156,21 +156,26 @@ export function ActiveSlideMessaging(props) {
   const newMessageHandling = (event) => {
     console.log("ActiveSlideMessaging newMessageHandling", event);
     const newMessageJson = event.detail.messageJson;
-
     const lastMqttMessageJson = JSON.parse(
       sessionStorage.getItem("LastActiveSlidePublishedMessage")
     );
 
     if (event.detail.mqttTopic === subtitleMqttTopic) {
       if (
-        props.userAddedList &&
-        props.activatedTab &&
-        lastMqttMessageJson.order_number !== props.activatedTab
+        !subtitleMqttMessage ||
+        subtitleMqttMessage.ID !== newMessageJson.ID
       ) {
-        props.setActivatedTab(lastMqttMessageJson.order_number);
+        setSubtitleMqttMessage(newMessageJson);
       }
 
-      setSubtitleMqttMessage(newMessageJson);
+      const targetSlide = document.getElementById(`slide_${newMessageJson.ID}`);
+
+      if (targetSlide) {
+        if (!targetSlide.classList.contains("activeSlide")) {
+          targetSlide.focus();
+          targetSlide.click();
+        }
+      }
     } else if (event.detail.mqttTopic === questionMqttTopic) {
       setQuestionMqttMessage(newMessageJson);
     }
