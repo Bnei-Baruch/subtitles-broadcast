@@ -228,6 +228,7 @@ const NewSlides = () => {
                 if (
                   languages[localStorage.getItem("subtitleLanguage")] ===
                   file["language"] && file["type"] === "text"
+                  && file["mimetype"] === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 ) {
                   fileUid = file["id"];
                 }
