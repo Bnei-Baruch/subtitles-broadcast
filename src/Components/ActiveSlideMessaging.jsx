@@ -156,9 +156,6 @@ export function ActiveSlideMessaging(props) {
   const newMessageHandling = (event) => {
     console.log("ActiveSlideMessaging newMessageHandling", event);
     const newMessageJson = event.detail.messageJson;
-    const lastMqttMessageJson = JSON.parse(
-      sessionStorage.getItem("LastActiveSlidePublishedMessage")
-    );
 
     if (event.detail.mqttTopic === subtitleMqttTopic) {
       if (
