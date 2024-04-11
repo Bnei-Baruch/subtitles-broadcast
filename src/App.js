@@ -10,15 +10,8 @@ import useMqtt from "./Utils/UseMqttUtils";
 import { publishEvent, subscribeEvent, unSubscribeEvent } from "./Utils/Events";
 
 const App = ({ auth }) => {
-  const {
-    mqttUnSubscribe,
-    mqttSubscribe,
-    mqttPublush,
-    isConnected,
-    payload,
-    mqttClient,
-  } = useMqtt();
-  const [mqttClientObj, setMqttClientObj] = useState(mqttClient);
+  const { mqttUnSubscribe, mqttSubscribe, mqttPublush, isConnected, payload } =
+    useMqtt();
   const [mqttTopicList, setMqttTopicList] = useState([]);
   const [notificationList, setNotificationList] = useState([]);
   const [subscribeCandidateList, setSubscribeCandidateList] = useState([]);
@@ -90,7 +83,7 @@ const App = ({ auth }) => {
     const mqttTopic = data.detail.mqttTopic;
     const message = data.detail.message;
 
-    mqttPublush(mqttTopic, message, mqttClientObj).then(() => {
+    mqttPublush(mqttTopic, message).then(() => {
       console.log("App mqttPublushed", data);
     });
   };
@@ -135,27 +128,11 @@ const App = ({ auth }) => {
 
   useEffect(() => {
     if (payload.message && mqttTopicList.includes(payload.topic)) {
-      let msgListStorageArrJsonStr = sessionStorage.getItem(
-        "AppNotificationList"
-      );
-      let msgListStorageArrJson = JSON.parse(msgListStorageArrJsonStr);
-
-      if (!Array.isArray(msgListStorageArrJson)) {
-        msgListStorageArrJson = notificationList;
-      }
-
       const newMessage = JSON.parse(payload.message);
       const newNotif = { topic: payload.topic, message: newMessage };
-      const notif = [...msgListStorageArrJson, newNotif];
+      const notif = [...notificationList, newNotif];
       setNotificationList(notif);
       console.log("App payload New Message", newNotif);
-
-      msgListStorageArrJsonStr = JSON.stringify(notif);
-      sessionStorage.setItem("AppNotificationList", msgListStorageArrJsonStr);
-      sessionStorage.setItem(
-        `lastMqttMessage_${payload.topic}`,
-        payload.message
-      );
     }
 
     return () => {
