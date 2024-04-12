@@ -209,51 +209,58 @@ const Subtitles = () => {
             >
               Back
             </i>
-            <Select
-              menuPlacement="top"
-              id="numberSelector"
-              styles={{
-                control: (provided, state) => ({
-                  ...provided,
-                  boxShadow: "none", // Remove box shadow
-                  border: "none", // Remove border
-                  backgroundColor: "transparent", // Set background color to transparent
-                  textDecoration: "underline",
-                }),
-                dropdownIndicator: (provided, state) => ({
-                  ...provided,
-                  display: "none", // Hide dropdown icon
-                }),
-                menuList: (provided, state) => ({
-                  ...provided,
-                  textAlign: "center",
-                }),
-                indicatorSeparator: (provided, state) => ({
-                  ...provided,
-                  display: "none", // Hide indicator separator
-                }),
-              }}
-              value={{
-                value: `${activatedTab}/${
-                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                }`,
-                label: `${activatedTab + 1}/${
-                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                }`,
-              }}
-              onChange={handleChange}
-              options={[
-                ...Array(
-                  UserAddedList?.slides?.at(-1)?.["order_number"]
-                )?.keys(),
-                UserAddedList?.slides?.at(-1)?.["order_number"],
-              ]?.map((index) => ({
-                label: index + 1,
-                value: `${index + 1}/${
-                  +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                }`,
-              }))}
-            />
+            <div className="custom-select-container">
+              <Select
+                menuPlacement="top"
+                id="numberSelector"
+                className="custom-select"
+                styles={{
+                  control: (provided, state) => ({
+                    ...provided,
+                    boxShadow: "none", // Remove box shadow
+                    border: "none", // Remove border
+                    backgroundColor: "transparent", // Set background color to transparent
+                  }),
+                  dropdownIndicator: (provided, state) => ({
+                    ...provided,
+                    display: "none", // Hide dropdown icon
+                  }),
+                  menuList: (provided, state) => ({
+                    ...provided,
+                    textAlign: "center",
+                  }),
+                  indicatorSeparator: (provided, state) => ({
+                    ...provided,
+                    display: "none", // Hide indicator separator
+                  }),
+                }}
+                value={
+                  isNaN(+UserAddedList?.slides?.at(-1)?.["order_number"])
+                    ? { value: "/", label: "- / -" }
+                    : {
+                        value: `${activatedTab}/${
+                          +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                        }`,
+                        label: `${activatedTab + 1}/${
+                          +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                        }`,
+                      }
+                }
+                onChange={handleChange}
+                options={[
+                  ...Array(
+                    UserAddedList?.slides?.at(-1)?.["order_number"]
+                  )?.keys(),
+                  UserAddedList?.slides?.at(-1)?.["order_number"],
+                ]?.map((index) => ({
+                  label: index + 1,
+                  value: `${index + 1}/${
+                    +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                  }`,
+                }))}
+              />
+              <div className="underline"></div>
+            </div>
 
             <span
               onClick={() => {
