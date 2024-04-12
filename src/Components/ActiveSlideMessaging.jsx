@@ -28,7 +28,10 @@ const styles = {
   },
 };
 
+let activatedTabGlbTmp1;
+
 export function ActiveSlideMessaging(props) {
+  let subtitleMqttMessageTmp = props.activatedTab;
   const mqttClientId = sessionStorage.getItem("mqttClientId");
   const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
@@ -73,20 +76,24 @@ export function ActiveSlideMessaging(props) {
       userAddedList &&
       activatedTab >= 0
     ) {
-      if (
-        !subtitleMqttMessage ||
-        subtitleMqttMessage.order_number !== activatedTab
-      ) {
-        const activeSlide = findActiveSlide(userAddedList, activatedTab);
+      const activeSlide = findActiveSlide(userAddedList, activatedTab);
 
-        if (activeSlide) {
+      if (activeSlide) {
+        const sourceUid = activeSlide.source_uid;
+
+        if (
+          !subtitleMqttMessage ||
+          subtitleMqttMessage.order_number !== activatedTab ||
+          sourceUid !== subtitleMqttMessage.source_uid
+        ) {
           const lastMqttMessageJson = JSON.parse(
             sessionStorage.getItem("LastActiveSlidePublishedMessage")
           );
 
           if (
             !lastMqttMessageJson ||
-            Number(lastMqttMessageJson.order_number) !== activatedTab
+            lastMqttMessageJson.order_number !== activatedTab ||
+            activeSlide.source_uid !== lastMqttMessageJson.source_uid
           ) {
             var jsonMsg = {
               type: "subtitle",
@@ -108,6 +115,7 @@ export function ActiveSlideMessaging(props) {
               "LastActiveSlidePublishedMessage",
               JSON.stringify(jsonMsg)
             );
+            subtitleMqttMessageTmp = jsonMsg;
           }
         }
       }
@@ -156,23 +164,40 @@ export function ActiveSlideMessaging(props) {
   const newMessageHandling = (event) => {
     console.log("ActiveSlideMessaging newMessageHandling", event);
     const newMessageJson = event.detail.messageJson;
+    const propsActivatedTab = props.activatedTab;
+    const subtitleMqttMessageTmp2 = subtitleMqttMessage;
+
+    if (propsActivatedTab === subtitleMqttMessageTmp2 && activatedTabGlbTmp1) {
+      let tmp33 = "activatedTabGlbTmp1: " + activatedTabGlbTmp1;
+    }
 
     if (event.detail.mqttTopic === subtitleMqttTopic) {
+      const lastMqttMessageJson = JSON.parse(
+        sessionStorage.getItem("LastActiveSlidePublishedMessage")
+      );
+
       if (
-        !subtitleMqttMessage ||
-        subtitleMqttMessage.ID !== newMessageJson.ID
+        !lastMqttMessageJson ||
+        lastMqttMessageJson.ID !== newMessageJson.source_uid ||
+        lastMqttMessageJson.source_uid !== newMessageJson.ID
       ) {
         setSubtitleMqttMessage(newMessageJson);
+        subtitleMqttMessageTmp = newMessageJson;
+
+        sessionStorage.setItem(
+          "LastActiveSlidePublishedMessage",
+          JSON.stringify(newMessageJson)
+        );
       }
 
       const targetSlide = document.getElementById(`slide_${newMessageJson.ID}`);
 
-      if (targetSlide) {
-        if (!targetSlide.classList.contains("activeSlide")) {
-          targetSlide.focus();
-          targetSlide.click();
-        }
-      }
+      // if (targetSlide) {
+      //   if (!targetSlide.classList.contains("activeSlide")) {
+      //     targetSlide.focus();
+      //     targetSlide.click();
+      //   }
+      // }
     } else if (event.detail.mqttTopic === questionMqttTopic) {
       setQuestionMqttMessage(newMessageJson);
     }
