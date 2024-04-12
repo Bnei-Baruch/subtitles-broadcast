@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import markdownit from "markdown-it";
 
-export const Slide = ({ content, isLtr }) => {
+export const Slide = ({ content, isLtr, searchKeyword }) => {
   const outerRef = useRef();
   const slideRef = useRef();
-  const md = markdownit();
+  const md = markdownit({ html: true });
+  const backgroundColor = "green";
 
   const handleResize = () => {
     const scale = outerRef.current.clientWidth / 1920;
@@ -27,6 +28,14 @@ export const Slide = ({ content, isLtr }) => {
   });
 
   useEffect(() => {
+    if (searchKeyword !== undefined && searchKeyword !== "") {
+      // // Escape special characters in the search keyword
+      // const escapedKeyword = searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // // Create a regular expression with word boundaries
+      // const regex = new RegExp('\\b' + escapedKeyword + '\\b', 'g');
+      const regex = new RegExp(searchKeyword, 'g');
+      content = content.replace(regex, `<span style="background-color: ${backgroundColor};">${searchKeyword}</span>`);
+    }
     slideRef.current.innerHTML = md.render(content);
   }, [content, md]);
 
