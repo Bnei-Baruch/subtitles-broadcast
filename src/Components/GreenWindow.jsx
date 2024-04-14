@@ -68,6 +68,12 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       opacity: 0;
       transition: opacity 3s linear;
     }
+
+    .slide-content{
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+
       `)
     );
     bodyElm.appendChild(styleElm);
