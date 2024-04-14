@@ -95,13 +95,12 @@ export function ActiveSlideMessaging(props) {
             clientId: mqttClientId,
             date: new Date().toUTCString(),
           };
+          setSubtitleMqttMessage(slideJsonMsg);
 
           if (
             !lastMqttMessageJson ||
             lastMqttMessageJson.slide !== activeSlide.slide
           ) {
-            //setSubtitleMqttMessage(slideJsonMsg);
-
             publishEvent("mqttPublush", {
               mqttTopic: subtitleMqttTopic,
               message: JSON.stringify(slideJsonMsg),
