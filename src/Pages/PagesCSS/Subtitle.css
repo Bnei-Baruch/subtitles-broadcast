@@ -453,3 +453,7 @@ dropdown-toggle {
   width: 100%; /* Width to cover the whole select element */
   background-color: black; /* Change color as needed */
 }
+#questionContentCont {
+  visibility: hidden;
+  transform: translate(0px, 0px);
+}
