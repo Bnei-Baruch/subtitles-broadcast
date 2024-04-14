@@ -436,7 +436,20 @@ dropdown-toggle {
   margin: 5px 5px;
 }
 
-#questionContentCont {
-  visibility: hidden;
-  transform: translate(0px, 0px);
+.custom-select-container {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-select {
+  /* Your select styles here */
+}
+
+.underline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px; /* Adjust height as needed */
+  width: 100%; /* Width to cover the whole select element */
+  background-color: black; /* Change color as needed */
 }

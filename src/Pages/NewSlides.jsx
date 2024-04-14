@@ -21,6 +21,7 @@ const NewSlides = () => {
   const navigate = useNavigate();
   const languages = GetLangaugeCode();
   const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+  const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
@@ -84,6 +85,13 @@ const NewSlides = () => {
       ) {
         request.name = document.getElementById("upload_name").value;
         request.source_path = document.getElementById("upload_name").value;
+      } else {
+        if (urlRegex.test(contentSource)) {
+          const url = new URL(contentSource);
+          const params = new URLSearchParams(url.search);
+          request.source_path = params.get("id");
+          console.log(request.source_path);
+        }
       }
       if (
         document.getElementById("languageSelect") &&
@@ -188,17 +196,15 @@ const NewSlides = () => {
     const fetchData = async () => {
       try {
         // get fileuid from source
-        if (
-          urlRegex.test(sourceUrl) &&
-          sourceUrl.includes("kabbalahmedia.info/backend/content_units")
-        ) {
+        if (urlRegex.test(sourceUrl) &&
+          sourceUrl.includes("kabbalahmedia.info/backend/content_units")) {
           const url = new URL(sourceUrl);
           const params = new URLSearchParams(url.search);
           if (!params.has("id")) {
             throw new Error(`Fetch failed from source url misses id query`);
           }
           setSourceUid("upload_" + params.get("id"));
-        } else {
+        } else if (uidRegex.test(sourceUrl)) {
           let sourceUidStr;
           if (sourceUid === "") {
             sourceUidStr = contentSource;
@@ -210,6 +216,9 @@ const NewSlides = () => {
           }
           sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
           setSourceUid("upload_" + sourceUidStr);
+        } else {
+          alert("The input must be 8 letters or numbers combination uid or source url starts with https://kabbalahmedia.info/backend/content_units");
+          return
         }
         const sourceResponse = await fetch(sourceUrl);
         if (!sourceResponse.ok) {
