@@ -10,6 +10,7 @@ const BookContent = ({
   contents,
   isLtr,
   setSearchSlide,
+  searchKeyword,
 }) => {
   const dispatch = useDispatch();
   const focusSlides = useRef();
@@ -41,15 +42,14 @@ const BookContent = ({
                 );
               }}
               ref={+activatedTab === item.order_number ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${
-                +activatedTab === item.order_number && "activeSlide"
-              }`}
+              className={`box-content d-flex  cursor-pointer  ${+activatedTab === item.order_number && "activeSlide"
+                }`}
             >
               {/* <bdo
                 className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
                 dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
               > */}
-              <Slide content={item?.slide} isLtr={isLtr}></Slide>
+              <Slide content={item?.slide} isLtr={isLtr} searchKeyword={searchKeyword}></Slide>
               {/* </bdo> */}
               <span className="order-number">{+item?.order_number + 1}</span>
             </div>

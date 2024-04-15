@@ -89,12 +89,6 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
-  console.log(
-    // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
-    "Mkmnnn",
-    UserAddedList?.slides?.at(-1)?.["order_number"]
-  );
-
   return (
     <>
       <div className="body-content d-flex ">
@@ -180,6 +174,7 @@ const Subtitles = () => {
                     activatedTab={activatedTab}
                     targetItemId={activatedTab}
                     contents={UserAddedList}
+                    searchKeyword={searchSlide}
                   />
                 </div>
               </div>
@@ -187,9 +182,8 @@ const Subtitles = () => {
           </div>
           <div className="d-flex justify-content-center align-items-center mt-2 paginationStyle">
             <i
-              className={`bi bi-chevron-left me-1 cursor-pointer ${
-                activatedTab <= 1 ? "disablecolor" : "custom-pagination"
-              }`}
+              className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+                }`}
               onClick={() => {
                 if (activatedTab > 1) {
                   const file_uid = UserAddedList?.slides?.[0]?.file_uid;
@@ -238,13 +232,11 @@ const Subtitles = () => {
                   isNaN(+UserAddedList?.slides?.at(-1)?.["order_number"])
                     ? { value: "/", label: "- / -" }
                     : {
-                        value: `${activatedTab}/${
-                          +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                      value: `${activatedTab}/${+UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                         }`,
-                        label: `${activatedTab + 1}/${
-                          +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                      label: `${activatedTab + 1}/${+UserAddedList?.slides?.at(-1)?.["order_number"] + 1
                         }`,
-                      }
+                    }
                 }
                 onChange={handleChange}
                 options={[
@@ -254,14 +246,12 @@ const Subtitles = () => {
                   UserAddedList?.slides?.at(-1)?.["order_number"],
                 ]?.map((index) => ({
                   label: index + 1,
-                  value: `${index + 1}/${
-                    +UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                  }`,
+                  value: `${index + 1}/${+UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                    }`,
                 }))}
               />
               <div className="underline"></div>
             </div>
-
             <span
               onClick={() => {
                 if (
@@ -282,19 +272,17 @@ const Subtitles = () => {
                   );
                 }
               }}
-              className={` cursor-pointer ${
-                UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
-                  ? "disablecolor"
-                  : "custom-pagination"
-              }`}
+              className={` cursor-pointer ${UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
+                ? "disablecolor"
+                : "custom-pagination"
+                }`}
             >
               Next{" "}
               <i
-                className={`bi bi-chevron-right  cursor-pointer  ${
-                  UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
-                    ? "disablecolor"
-                    : "custom-pagination"
-                }`}
+                className={`bi bi-chevron-right  cursor-pointer  ${UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
+                  ? "disablecolor"
+                  : "custom-pagination"
+                  }`}
               />
             </span>
           </div>
