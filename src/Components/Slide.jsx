@@ -5,7 +5,7 @@ export const Slide = ({ content, isLtr, searchKeyword }) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const md = markdownit({ html: true });
-  const backgroundColor = "green";
+  const backgroundColor = "#01cd27";
 
   const handleResize = () => {
     const scale = outerRef.current.clientWidth / 1920;
@@ -23,18 +23,17 @@ export const Slide = ({ content, isLtr, searchKeyword }) => {
   }, []);
 
   useEffect(() => {
-    console.log('a');
     handleResize();
   });
 
   useEffect(() => {
     if (searchKeyword !== undefined && searchKeyword !== "") {
-      // // Escape special characters in the search keyword
-      // const escapedKeyword = searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // // Create a regular expression with word boundaries
-      // const regex = new RegExp('\\b' + escapedKeyword + '\\b', 'g');
-      const regex = new RegExp(searchKeyword, 'g');
-      content = content.replace(regex, `<span style="background-color: ${backgroundColor};">${searchKeyword}</span>`);
+      const escapeRegex = (str) => {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      };
+      const escapedKeyword = escapeRegex(searchKeyword);
+      const regex = new RegExp(escapedKeyword, 'g');
+      content = content.replace(regex, `<span style="background-color: ${backgroundColor};">$&</span>`);
     }
     slideRef.current.innerHTML = md.render(content);
   }, [content, md]);

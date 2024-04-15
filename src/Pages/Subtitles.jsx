@@ -89,12 +89,6 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
-  console.log(
-    // [...Array(UserAddedList?.slides?.at(-1)?.["order_number"] + 1)],
-    "Mkmnnn",
-    UserAddedList?.slides?.at(-1)?.["order_number"]
-  );
-
   return (
     <>
       <div className="body-content d-flex ">
