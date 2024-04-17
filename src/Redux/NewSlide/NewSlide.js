@@ -26,8 +26,12 @@ export const SetCustomSlideBySource = createAsyncThunk(
       file_uid: data.file_uid,
       slides: data.slides,
     };
-    const response = await axios.post(`${API}custom_slide`, requestBody);
-    return response.data;
+    try {
+      const response = await axios.post(`${API}custom_slide`, requestBody);
+      return response.data;
+    } catch (error) {
+      return error.response.data;
+    }
   }
 );
 

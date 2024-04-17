@@ -103,8 +103,13 @@ const NewSlides = () => {
       }
       try {
         const response = await dispatch(SetCustomSlideBySource(request));
-        if (response.error !== undefined && response.error.code === "ERR_BAD_REQUEST") {
-          alert("Wrong request. There is something wrong with your input like same source uid. Please double check your input");
+        console.log(response);
+        if (response.payload.error !== "") {
+          if (response.payload.error.includes("SQLSTATE 22021")) {
+            alert("Wrong request. File is not a txt file. Please check your upload file");
+          } else if (response.payload.error.includes("SQLSTATE 23505")) {
+            alert("Wrong request. The file uid is duplicated. Please check your input");
+          }
           return;
         }
         if (response.payload !== undefined && response.payload.success) {
@@ -124,23 +129,30 @@ const NewSlides = () => {
   }, [updateTagList]);
 
   const handleUpload = () => {
-    const name = document.getElementById("upload_name").value;
-    if (name === "") {
-      alert("Name must be filled");
-      return;
+    try {
+      const name = document.getElementById("upload_name").value;
+      if (name === "") {
+        alert("Name must be filled");
+        return;
+      }
+
+      setSourceUid("upload_" + GenerateUID(8));
+      setFileUid("upload_" + GenerateUID(8));
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const fileContents = event.target.result;
+        const structuredArray = parseFileContents(fileContents);
+        setTagList(structuredArray);
+      };
+      if (selectedFile.name.split('.').pop() !== "txt") {
+        alert("The file must be txt file");
+        return;
+      }
+      // Read the file as text
+      reader.readAsText(selectedFile);
+    } catch (error) {
+      console.error("Error occurred:", error); // Handle any errors
     }
-
-    setSourceUid("upload_" + GenerateUID(8));
-    setFileUid("upload_" + GenerateUID(8));
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const fileContents = event.target.result;
-      const structuredArray = parseFileContents(fileContents);
-      setTagList(structuredArray);
-    };
-
-    // Read the file as text
-    reader.readAsText(selectedFile);
   };
 
   const parseFileContents = (fileContents) => {
