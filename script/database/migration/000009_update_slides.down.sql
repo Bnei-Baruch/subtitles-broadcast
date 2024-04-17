@@ -1,3 +1,5 @@
 DROP INDEX idx_slide;
 
-CREATE INDEX idx_slide ON slides USING GIST (slide);
+DROP EXTENSION IF EXISTS pg_trgm;
+
+CREATE INDEX idx_slide ON slides (slide);
