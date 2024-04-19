@@ -83,16 +83,6 @@ export function BroadcastSettings({ props }) {
     JSON.stringify(broadcastProgramm)
   );
 
-  useEffect(() => {
-    // sessionStorage.setItem("broadcastLangObj", JSON.stringify(broadcastLang));
-    // sessionStorage.setItem(
-    //   "broadcastProgrammObj",
-    //   JSON.stringify(broadcastProgramm)
-    // );
-    // return () => {
-    // };
-  }, []);
-
   return (
     <>
       <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
