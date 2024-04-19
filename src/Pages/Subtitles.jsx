@@ -20,8 +20,8 @@ import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
 import {
   broadcastLanguages,
-  getCurrentBroadcastLanguage,
 } from "../Utils/Const";
+import { getCurrentBroadcastLanguage } from "../Utils/getCurrentBroadcastLanguage";
 
 const Subtitles = () => {
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);

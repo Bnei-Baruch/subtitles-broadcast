@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Slide } from "../Components/Slide";
 import {
   getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
-} from "../Utils/Const";
+  getCurrentBroadcastProgramm
+} from "../Utils/getCurrentBroadcastLanguage";
 import {
   publishEvent,
   subscribeEvent,

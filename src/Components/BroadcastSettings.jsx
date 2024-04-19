@@ -9,8 +9,8 @@ import {
   broadcastLanguages,
   brodcastProgrammArr,
   broadcastLangMapObj,
-  getCurrentBroadcastLanguage,
 } from "../Utils/Const";
+import { getCurrentBroadcastLanguage } from "../Utils/getCurrentBroadcastLanguage";
 
 const leftColSize = 4;
 const rightColSize = 8;

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   broadcastLangMapObj,
-  getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
 } from "../Utils/Const";
+import {
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm
+} from "../Utils/getCurrentBroadcastLanguage";
 import {
   publishEvent,
   subscribeEvent,
@@ -138,9 +140,8 @@ const QuestionMessage = (props) => {
               </div>
               <div className="d-flex justify-content-end">
                 <p
-                  className={`${
-                    languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
-                  }`}
+                  className={`${languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
                 >
                   {obj.slide}
                 </p>
@@ -175,9 +176,8 @@ const QuestionMessage = (props) => {
                   </span>
                   <br />
                   <div
-                    className={`message ${
-                      languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
+                    className={`message ${languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
+                      }`}
                   >
                     {obj.slide}
                   </div>

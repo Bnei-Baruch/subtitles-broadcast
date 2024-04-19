@@ -3,9 +3,11 @@ import "./PagesCSS/Questions.css";
 import QuestionMessage from "../Components/QuestionMessage";
 import {
   broadcastLanguages,
-  getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
 } from "../Utils/Const";
+import {
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm
+} from "../Utils/getCurrentBroadcastLanguage";
 import { publishEvent } from "../Utils/Events";
 
 const QuestionModule = () => {

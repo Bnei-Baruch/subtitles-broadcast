@@ -4,8 +4,8 @@ import { Slide } from "./Slide";
 
 import {
   getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
-} from "../Utils/Const";
+  getCurrentBroadcastProgramm
+} from "../Utils/getCurrentBroadcastLanguage";
 import {
   publishEvent,
   subscribeEvent,
