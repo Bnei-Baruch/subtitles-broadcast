@@ -39,11 +39,6 @@ export default function useMqtt() {
     const url = setting.url;
     const options = {
       clientId,
-      // keepalive: 60,
-      // clean: true,
-      // reconnectPeriod: 300000,
-      // connectTimeout: 30000,
-      // rejectUnauthorized: false,
       ...setting.config,
     };
     const clientMqtt = await mqtt.connect(url, options);
