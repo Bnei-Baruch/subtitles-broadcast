@@ -5,7 +5,7 @@ import {
 import {
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm
-} from "../Utils/getCurrentBroadcastLanguage";
+} from "../Utils/Common";
 import {
   publishEvent,
   subscribeEvent,

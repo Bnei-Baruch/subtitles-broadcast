@@ -21,7 +21,7 @@ import QuestionMessage from "../Components/QuestionMessage";
 import {
   broadcastLanguages,
 } from "../Utils/Const";
-import { getCurrentBroadcastLanguage } from "../Utils/getCurrentBroadcastLanguage";
+import { getCurrentBroadcastLanguage } from "../Utils/Common";
 
 const Subtitles = () => {
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
