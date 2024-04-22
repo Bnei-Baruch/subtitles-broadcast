@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Keycloak from "keycloak-js";
 
 import { useDispatch } from "react-redux";
@@ -7,11 +7,13 @@ import ErrorLogin from "../Pages/Views/ErrorLogin";
 import LoadingScreen from "../Pages/Views/LoadingScreen";
 import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 import PropTypes from "prop-types";
+import AppContext from "../AppContext";
 
 const Auth = ({ children }) => {
   const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
+  const appContextlData = useContext(AppContext);
 
   useEffect(() => {
     const keycloak = new Keycloak({
@@ -49,7 +51,7 @@ const Auth = ({ children }) => {
             profile,
           });
 
-          parseBroadcastLanguage(keycloak);
+          parseBroadcastLanguage(keycloak, appContextlData);
         });
       });
   }, [dispatch]);
@@ -75,7 +77,7 @@ Auth.propTypes = {
   children: PropTypes.func.isRequired, // PropTypes validation for children prop
 };
 
-function parseBroadcastLanguage(keycloak) {
+function parseBroadcastLanguage(keycloak, appContextlData) {
   if (keycloak && keycloak.realmAccess && keycloak.realmAccess.roles) {
     const broadCastLangRex = new RegExp("subtitles_language_(?<language>.*)");
 

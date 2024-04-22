@@ -28,6 +28,8 @@ const BookContent = ({
         contents?.slides?.map((item, index) => (
           <>
             <div
+              id={`slide_${item.ID}`}
+              source-uid={item.source_uid}
               onClick={() => {
                 setSearchSlide("");
                 setActivatedTab(+item?.order_number);

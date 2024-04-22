@@ -18,6 +18,9 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     var docRef = externalWindow.current.document;
     var bodyElm = docRef.body;
     //bodyElm.style.marging = "0";
+    if (externalWindow) {
+      copyStyles(document, externalWindow.current.document);
+    }
     var styleElm = document.createElement("style");
     styleElm.setAttribute("rel", "stylesheet");
     styleElm.setAttribute("type", "text/css");
@@ -57,39 +60,6 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     [fullscreen] .full-screen-btn svg:nth-child(2) {
         display: inline-block;
     }
-    .slide-container{
-      //height:  100%; 
-    }
-    .slide-content{
-      height:  100%; 
-      position: absolute;
-      overflow: hidden;
-      font-family: "Roboto";
-      font-size: 60px;
-      line-height: 60px;
-      width: 1860px;
-      height: 270px;
-      padding: 30px;
-      vertical-align: top;
-    }
-    h1 {
-      font-size: 100px;
-      line-height: 100px;
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-    p {
-      margin-top: 0;
-      margin-bottom: 1rem;
-    }
-    ol {
-      padding-left: 4rem;
-    }
-    dl, ol, ul {
-      margin-top: 0;
-      margin-bottom: 1rem;
-    }
     .visible {
       opacity: 1;
       transition: opacity 0.1s linear;
@@ -98,6 +68,7 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       opacity: 0;
       transition: opacity 3s linear;
     }
+
       `)
     );
     bodyElm.appendChild(styleElm);
@@ -252,5 +223,31 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
     closeWinUnloadingRef();
   });
 
+  function copyStyles(sourceDoc, targetDoc) {
+    Array.from(sourceDoc.styleSheets).forEach((styleSheet) => {
+      try {
+        if (styleSheet.cssRules) {
+          // for <style> elements
+          const newStyleEl = sourceDoc.createElement("style");
+
+          Array.from(styleSheet.cssRules).forEach((cssRule) => {
+            // write the text of each rule into the body of the style element
+            newStyleEl.appendChild(sourceDoc.createTextNode(cssRule.cssText));
+          });
+
+          targetDoc.head.appendChild(newStyleEl);
+        } else if (styleSheet.href) {
+          // for <link> elements loading CSS from a URL
+          const newLinkEl = sourceDoc.createElement("link");
+
+          newLinkEl.rel = "stylesheet";
+          newLinkEl.href = styleSheet.href;
+          targetDoc.head.appendChild(newLinkEl);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+  }
   return ReactDOM.createPortal(children, containerEl);
 };

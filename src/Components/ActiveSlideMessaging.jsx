@@ -1,267 +1,223 @@
-import React, { useState, useContext } from "react";
-import AppContext from "../AppContext";
-import mqtt from "mqtt";
+import React, { useState, useEffect } from "react";
+import { Slide } from "../Components/Slide";
+import {
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm
+} from "../Utils/Common";
+import {
+  publishEvent,
+  subscribeEvent,
+  unSubscribeEvent,
+} from "../Utils/Events";
 
-let mqttClientId;
-let mqttTopic;
-
-function parseMqttMessage(mqttMessage) {
-  if (mqttMessage) {
-    try {
-      if (typeof mqttMessage === "string") {
-        let msgJson = JSON.parse(mqttMessage);
-
-        return msgJson;
-      }
-    } catch (err) {
-      console.log(err);
-    }
-
-    return mqttMessage;
-  }
-}
-
-const mqttPublish = (msgText, mqttClient, setMqttMessage) => {
-  if (mqttClient && mqttTopic) {
-    mqttClient.publish(
-      mqttTopic,
-      msgText,
-      { label: "0", value: 0, retain: true },
-      (error) => {
-        if (error) {
-          console.log("Publish error:", error);
-        } else {
-          setMqttMessage(msgText);
-        }
-      }
-    );
-  } else {
-    console.error("Can't publish Active slide, the  mqttClient is not defined");
-  }
+const styles = {
+  mainContainer: {
+    outline: "1px solid rgb(204, 204, 204)",
+    aspectRatio: "16/9",
+    margin: "0 0 1px 0",
+  },
+  greenPartContainer: {
+    backgroundColor: "green",
+    height: "65%",
+  },
 };
 
-function findActiveSlide(userAddedList, activeSlideOrderNum) {
-  let retSlide;
+export function ActiveSlideMessaging(props) {
+  const mqttClientId = sessionStorage.getItem("mqttClientId");
+  const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
+  const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
+  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
+    return getCurrentBroadcastProgramm();
+  });
+  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
+    return getCurrentBroadcastLanguage();
+  });
+  const broadcastProgrammCode = broadcastProgrammObj.value;
+  const broadcastLangCode = broadcastLangObj.value;
+  const subtitleMqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
+  const questionMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+  const [isSubTitleMode, setIsSubTitleMode] = useState(props.isSubTitleMode);
+  const contextMqttMessage = isSubTitleMode
+    ? subtitleMqttMessage
+    : questionMqttMessage;
 
-  for (let i = 0; i < userAddedList.slides.length; i++) {
-    const lupSlide = userAddedList.slides[i];
-
-    if (lupSlide.order_number === activeSlideOrderNum) {
-      retSlide = lupSlide;
-      break;
-    }
+  if (props.isSubTitleMode !== isSubTitleMode) {
+    setIsSubTitleMode(props.isSubTitleMode);
   }
 
-  return retSlide;
-}
+  function findActiveSlide(userAddedList, activeSlideOrderNum) {
+    let retSlide;
 
-function initMqttClient(
-  broadcastProgrammCode,
-  broadcastLangCode,
-  mqttClient,
-  setMqttClient,
-  setJobMqttMessage
-) {
-  if (!mqttClient) {
-    mqttClientId =
-      "kab_subtitles_" + Math.random().toString(16).substring(2, 8);
-    const mqttUrl = process.env.REACT_APP_MQTT_URL;
-    const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
-    const mqttPort = process.env.REACT_APP_MQTT_PORT;
-    const mqttPath = process.env.REACT_APP_MQTT_PATH;
+    for (let i = 0; i < userAddedList.slides.length; i++) {
+      const lupSlide = userAddedList.slides[i];
 
-    const mqttOptions = { protocol: mqttProtocol, clientId: mqttClientId };
-    const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
-
-    mqttClient = mqtt.connect(mqttBrokerUrl, mqttOptions);
-
-    setMqttClient(mqttClient);
-    subscribeMqttMessage(mqttClient, setJobMqttMessage);
-  }
-
-  mqttTopic = "subtitles_" + broadcastProgrammCode + "_" + broadcastLangCode;
-  mqttClient.subscribe(mqttTopic);
-
-  return mqttClient;
-}
-
-function subscribeMqttMessage(mqttClient, setJobMqttMessage) {
-  if (mqttClient) {
-    mqttClient.on("message", function (topic, message) {
-      const messageStr = message.toString();
-      const jobMessageJson = parseMqttMessage(messageStr);
-
-      if (jobMessageJson.clientId !== mqttClientId) {
-        setJobMqttMessage(jobMessageJson);
+      if (lupSlide.order_number === activeSlideOrderNum) {
+        retSlide = lupSlide;
+        break;
       }
-    });
+    }
+
+    return retSlide;
   }
-}
 
-const determinePublicJobMsg = (
-  userAddedList,
-  activatedTab,
-  setActivatedTab,
-  mqttMessage,
-  setMqttMessage,
-  jobMqttMessage,
-  setJobMqttMessage
-) => {
-  let isPublic = false;
+  const determinePublishActiveSlide = (userAddedList, activatedTab) => {
+    if (
+      props.isSubTitleMode &&
+      isSubTitleMode &&
+      userAddedList &&
+      activatedTab >= 0
+    ) {
+      const activeSlide = findActiveSlide(userAddedList, activatedTab);
 
-  if (jobMqttMessage) {
-    const activeSlideOrderNum = activatedTab - 1;
-    const jobMessageJson = parseMqttMessage(jobMqttMessage);
-    const mqttMessageJson = parseMqttMessage(mqttMessage);
-
-    if (userAddedList && activatedTab) {
-      if (
-        !mqttMessageJson ||
-        (mqttMessageJson.order_number !== jobMessageJson.order_number &&
-          (!jobMqttMessage ||
-            jobMqttMessage.order_number !== mqttMessageJson.order_number))
-      ) {
-        const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
-
+      if (activeSlide) {
         if (
-          activeSlide &&
-          activeSlide.source_uid === jobMqttMessage.source_uid
+          !subtitleMqttMessage ||
+          subtitleMqttMessage.slide !== activeSlide.slide
         ) {
-          if (activeSlide.order_number !== jobMqttMessage.order_number) {
-            setActivatedTab(jobMqttMessage.order_number + 1);
-            isPublic = true;
+          const lastMqttMessageJson = JSON.parse(
+            sessionStorage.getItem("ActiveSlideMessaging")
+          );
+
+          var slideJsonMsg = {
+            type: "subtitle",
+            ID: activeSlide.ID,
+            bookmark_id: activeSlide.bookmark_id,
+            file_uid: activeSlide.file_uid,
+            order_number: activeSlide.order_number,
+            slide: activeSlide.slide,
+            source_uid: activeSlide.source_uid,
+            clientId: mqttClientId,
+            date: new Date().toUTCString(),
+          };
+          setSubtitleMqttMessage(slideJsonMsg);
+
+          if (
+            !lastMqttMessageJson ||
+            lastMqttMessageJson.slide !== activeSlide.slide
+          ) {
+            publishEvent("mqttPublush", {
+              mqttTopic: subtitleMqttTopic,
+              message: JSON.stringify(slideJsonMsg),
+            });
+
+            sessionStorage.setItem(
+              "ActiveSlideMessaging",
+              JSON.stringify(slideJsonMsg)
+            );
           }
         }
       }
-    } else {
+    }
+  };
+
+  let subscribed = false;
+  const compSubscribeEvents = () => {
+    if (!subscribed) {
+      subscribeEvent(subtitleMqttTopic, newMessageHandling);
+      subscribeEvent(questionMqttTopic, newMessageHandling);
+      console.log(
+        "ActiveSlideMessaging subscribeEvent  DONE mqttTopic: ",
+        subtitleMqttTopic
+      );
+    }
+    subscribed = true;
+  };
+  const compUnSubscribeAppEvents = () => {
+    unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
+    subscribeEvent(questionMqttTopic, newMessageHandling);
+  };
+
+  useEffect(() => {
+    window.onbeforeunload = function () {
+      sessionStorage.removeItem("LastActiveSlidePublishedMessage");
+    };
+
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      console.log(
+        "ActiveSlideMessaging publishEvent mqttSubscribe",
+        subtitleMqttTopic
+      );
+      publishEvent("mqttSubscribe", {
+        mqttTopic: subtitleMqttTopic,
+      });
+      publishEvent("mqttSubscribe", {
+        mqttTopic: questionMqttTopic,
+      });
+
+      compSubscribeEvents();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      compUnSubscribeAppEvents();
+    };
+  }, [isSubTitleMode]);
+
+  const newMessageHandling = (event) => {
+    console.log("ActiveSlideMessaging newMessageHandling", event);
+    const newMessageJson = event.detail.messageJson;
+
+    if (event.detail.mqttTopic === subtitleMqttTopic) {
+      const lastMqttMessageJson = JSON.parse(
+        sessionStorage.getItem("LastActiveSlidePublishedMessage")
+      );
+      const newMsgDateUtcJs = new Date(newMessageJson.date);
+
       if (
-        !mqttMessageJson ||
-        mqttMessageJson.order_number !== jobMqttMessage.order_number
+        !lastMqttMessageJson ||
+        (lastMqttMessageJson.slide !== newMessageJson.slide &&
+          newMsgDateUtcJs > new Date(lastMqttMessageJson.date))
       ) {
-        isPublic = true;
+        setSubtitleMqttMessage(newMessageJson);
+
+        sessionStorage.setItem(
+          "LastActiveSlidePublishedMessage",
+          JSON.stringify(newMessageJson)
+        );
+
+        const targetSlide = document.getElementById(
+          `slide_${newMessageJson.ID}`
+        );
+
+        if (targetSlide) {
+          if (!targetSlide.classList.contains("activeSlide")) {
+            targetSlide.focus();
+            targetSlide.click();
+          }
+        }
       }
+    } else if (event.detail.mqttTopic === questionMqttTopic) {
+      setQuestionMqttMessage(newMessageJson);
     }
+  };
 
-    if (isPublic) {
-      const cloneJobMsgJson = { ...jobMessageJson };
-      setMqttMessage(cloneJobMsgJson);
-    }
-  }
+  determinePublishActiveSlide(props.userAddedList, props.activatedTab);
 
-  return isPublic;
-};
-
-const determinePublishActiveSlide = (
-  userAddedList,
-  activatedTab,
-  mqttClient,
-  mqttMessage,
-  setMqttMessage,
-  jobMqttMessage,
-  setJobMqttMessage
-) => {
-  const mqttMessageJson = parseMqttMessage(mqttMessage);
-  const activeSlideOrderNum = activatedTab;
-  const jobMessageJson = parseMqttMessage(jobMqttMessage);
-
-  if (userAddedList) {
-    if (
-      !mqttMessageJson ||
-      (mqttMessageJson.order_number !== activeSlideOrderNum &&
-        (!jobMessageJson ||
-          jobMessageJson.order_number !== activeSlideOrderNum))
-    ) {
-      const activeSlide = findActiveSlide(userAddedList, activeSlideOrderNum);
-
-      if (
-        activeSlide &&
-        (!mqttMessageJson ||
-          activeSlide.order_number !== mqttMessageJson.order_number)
-      ) {
-        var jsonMsgStr = JSON.stringify({
-          ID: activeSlide.ID,
-          bookmark_id: activeSlide.bookmark_id,
-          file_uid: activeSlide.file_uid,
-          order_number: activeSlide.order_number,
-          slide: activeSlide.slide,
-          source_uid: activeSlide.source_uid,
-          clientId: mqttClientId,
-        });
-
-        setJobMqttMessage(null);
-        mqttPublish(jsonMsgStr, mqttClient, setMqttMessage);
-      }
-    }
-  }
-};
-
-const determinePublish = (
-  userAddedList,
-  activatedTab,
-  setActivatedTab,
-  mqttClient,
-  mqttMessage,
-  setMqttMessage,
-  jobMqttMessage,
-  setJobMqttMessage
-) => {
-  let isPublished = determinePublicJobMsg(
-    userAddedList,
-    activatedTab,
-    setActivatedTab,
-    mqttMessage,
-    setMqttMessage,
-    jobMqttMessage,
-    setJobMqttMessage
+  return (
+    <>
+      <div style={styles.mainContainer}>
+        <div className="green-part-cont" style={styles.greenPartContainer}>
+          &nbsp;{" "}
+        </div>
+        <div className="slide-part-cont" >
+          {contextMqttMessage && (
+            <Slide
+              data-key={contextMqttMessage.ID}
+              key={contextMqttMessage.ID}
+              content={contextMqttMessage.slide}
+              isLtr={props.isLtr}
+            ></Slide>
+          )}
+        </div>
+      </div>
+    </>
   );
-
-  if (!isPublished) {
-    determinePublishActiveSlide(
-      userAddedList,
-      activatedTab,
-      mqttClient,
-      mqttMessage,
-      setMqttMessage,
-      jobMqttMessage,
-      setJobMqttMessage
-    );
-  }
-};
-
-export function ActiveSlideMessaging({
-  userAddedList,
-  activatedTab,
-  setActivatedTab,
-  mqttMessage,
-  setMqttMessage,
-  jobMqttMessage,
-  setJobMqttMessage,
-}) {
-  const [mqttClient, setMqttClient] = useState(null);
-  const appContextlData = useContext(AppContext);
-  const broadcastProgrammCode = appContextlData.broadcastProgramm.value;
-  const broadcastLangCode = appContextlData.broadcastLang.value;
-
-  initMqttClient(
-    broadcastProgrammCode,
-    broadcastLangCode,
-    mqttClient,
-    setMqttClient,
-    setJobMqttMessage
-  );
-
-  determinePublish(
-    userAddedList,
-    activatedTab,
-    setActivatedTab,
-    mqttClient,
-    mqttMessage,
-    setMqttMessage,
-    jobMqttMessage,
-    setJobMqttMessage
-  );
-
-  return <div style={{ display: "none" }}></div>;
 }
 
 export default ActiveSlideMessaging;
