@@ -112,9 +112,9 @@ const Subtitles = () => {
     <>
       <div className="body-content d-flex ">
         <div className="left-section row">
-          <div className="innerhead d-flex justify-content-between">
+          <div className="innerhead d-flex justify-content-between subtitle-header">
             <input
-              className="no-border-search mx-3 "
+              className="no-border-search mx-3 subtitle-search"
               value={searchSlide}
               placeholder="search"
               onChange={(e) => setSearchSlide(e.target.value)}
