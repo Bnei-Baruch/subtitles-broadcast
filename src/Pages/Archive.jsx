@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
   BookmarkSlideFromArchivePage,
@@ -15,8 +15,10 @@ import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation } from "react-router-dom";
 import GetLangaugeCode from "../Utils/Const";
+import AppContext from "../AppContext";
 
 const Archive = () => {
+  const appContextlData = useContext(AppContext);
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const ArchiveList = useSelector(getAllArchiveList);
@@ -71,12 +73,12 @@ const Archive = () => {
   useEffect(() => {
     dispatch(
       GetAllArchiveData({
-        language: languages[localStorage.getItem("subtitleLanguage")],
+        language: languages[appContextlData.broadcastLang.label],
         page: page.page,
         limit: page.limit,
       })
     );
-  }, [page.page, page.limit]);
+  }, [page.page, page.limit, appContextlData.broadcastLang.label]);
 
   useEffect(() => {
     if (finalConfirm === true) {

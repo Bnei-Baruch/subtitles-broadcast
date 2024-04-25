@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
@@ -18,8 +18,12 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import GreenSlide from "../Components/GreenSlide";
+import GetLangaugeCode from "../Utils/Const";
+import AppContext from "../AppContext";
 
 const Subtitles = () => {
+  const appContextlData = useContext(AppContext);
+  const languages = GetLangaugeCode();
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
 
@@ -68,8 +72,8 @@ const Subtitles = () => {
     };
   }, []);
   useEffect(() => {
-    dispatch(UserBookmarkList());
-  }, [dispatch]);
+    dispatch(UserBookmarkList({ language: languages[appContextlData.broadcastLang.label] }));
+  }, [dispatch, appContextlData.broadcastLang.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
@@ -78,6 +82,7 @@ const Subtitles = () => {
   useEffect(() => {
     const file_uid = localStorage.getItem("fileUid");
     file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+    localStorage.setItem("fileUid", "");
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {
