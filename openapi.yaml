@@ -20,6 +20,14 @@ paths:
       summary: Get the user bookmark list
       description: Finds bookmark paths by the user
       operationId: GetUserBookmarks
+      parameters:
+        - name: language_code
+          in: query
+          description: language code
+          required: true
+          explode: true
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
