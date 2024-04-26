@@ -1,13 +1,16 @@
 import React, { useContext, useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
-import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
+import {
+  getAllBookAddedByUser,
+  clearAllBookmarks
+} from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
   BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
-  BookmarkSlide,
+  BookmarkSlide
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { useSelector } from "react-redux";
@@ -71,11 +74,12 @@ const Subtitles = () => {
   }, []);
   useEffect(() => {
     dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
+    dispatch(clearAllBookmarks());
   }, [dispatch, appContextlData.broadcastLang.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
-    GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
+    setItems(GetAllBookmarkList);
   }, [GetAllBookmarkList]);
   useEffect(() => {
     const file_uid = localStorage.getItem("fileUid");
