@@ -569,10 +569,10 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
-	languageCode := ctx.Query("language_code")
-	if len(languageCode) == 0 {
+	language := ctx.Query("language")
+	if len(language) == 0 {
 		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "Query language code is missing", "Query language code is missing"))
+			getResponse(false, nil, "Query language is missing", "Query language is missing"))
 		return
 	}
 	result := []struct {
@@ -587,7 +587,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages AND ? = ANY(files.languages)", languageCode).
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages AND ? = ANY(files.languages)", language).
 		Where("bookmarks.user_id = ?", userId).
 		Order("bookmarks.order_number").
 		Find(&result)
