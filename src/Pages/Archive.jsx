@@ -14,7 +14,6 @@ import EditArcive from "./EditArchive";
 import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation } from "react-router-dom";
-import GetLangaugeCode from "../Utils/Const";
 import AppContext from "../AppContext";
 
 const Archive = () => {
@@ -22,7 +21,6 @@ const Archive = () => {
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const ArchiveList = useSelector(getAllArchiveList);
-  const languages = GetLangaugeCode();
 
   // const [delete,setDelete]=useState('')
   const [page, setPage] = useState({
@@ -73,7 +71,7 @@ const Archive = () => {
   useEffect(() => {
     dispatch(
       GetAllArchiveData({
-        language: languages[appContextlData.broadcastLang.label],
+        language: appContextlData.broadcastLang.label,
         page: page.page,
         limit: page.limit,
       })
@@ -85,12 +83,16 @@ const Archive = () => {
       dispatch(
         DeleteArchive({
           slide_ids: [deleteId],
+          language: appContextlData.broadcastLang.label
         })
       );
       setFinalConfirm(false);
     }
     if (toggle) {
-      dispatch(BookmarkSlideFromArchivePage(deleteId));
+      dispatch(BookmarkSlideFromArchivePage({
+        data: deleteId,
+        language: appContextlData.broadcastLang.label
+      }));
       setToggle(false);
     }
   }, [finalConfirm, toggle, deleteId, dispatch]);
@@ -124,7 +126,8 @@ const Archive = () => {
         setFinalConfirm={() => {
           dispatch(
             BookmarkSlideFromArchivePage({
-              ...bookmarkData,
+              data: bookmarkData,
+              language: appContextlData.broadcastLang.label,
               params: { page: page.page, limit: page.limit },
             })
           );
@@ -201,12 +204,15 @@ const Archive = () => {
                               onClick={() => {
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
-                                    file_uid: key?.file_uid,
-                                    slide_id: key?.ID,
-                                    update: false,
-                                    order: ArchiveList?.slides?.find(
-                                      (k) => k.bookmark_id !== null
-                                    )?.length,
+                                    data: {
+                                      file_uid: key?.file_uid,
+                                      slide_id: key?.ID,
+                                      update: false,
+                                      order: ArchiveList?.slides?.find(
+                                        (k) => k.bookmark_id !== null
+                                      )?.length
+                                    },
+                                    langauge: appContextlData.broadcastLang.label,
                                     params: {
                                       page: page.page,
                                       limit: page.limit,

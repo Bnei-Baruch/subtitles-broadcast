@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
@@ -6,12 +6,12 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
 import BroadcastSettings from "../Components/BroadcastSettings";
-import GetLangaugeCode from "../Utils/Const";
+import AppContext from "../AppContext";
 
 const HeaderBar = ({ logout }) => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const param = useLocation();
-  const languages = GetLangaugeCode();
 
   const localPagination = localStorage?.getItem("pagination")
     ? JSON?.parse(localStorage?.getItem("pagination"))
@@ -26,7 +26,7 @@ const HeaderBar = ({ logout }) => {
       );
       dispatch(
         GetAllArchiveData({
-          language: languages[localStorage.getItem("subtitleLanguage")],
+          language: appContextlData.broadcastLang.label,
           limit: localPagination?.limit || 10,
           page: 1,
           keyword: freeText,
@@ -46,7 +46,7 @@ const HeaderBar = ({ logout }) => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllArchiveData({
-                    language: languages[localStorage.getItem("subtitleLanguage")],
+                    language: appContextlData.broadcastLang.label,
                     keyword: freeText,
                   })
                 );

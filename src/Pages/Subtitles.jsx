@@ -18,12 +18,10 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import GreenSlide from "../Components/GreenSlide";
-import GetLangaugeCode from "../Utils/Const";
 import AppContext from "../AppContext";
 
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
-  const languages = GetLangaugeCode();
   const [mqttMessage, setMqttMessage] = useState(null);
   const [jobMqttMessage, setJobMqttMessage] = useState(null);
 
@@ -72,7 +70,7 @@ const Subtitles = () => {
     };
   }, []);
   useEffect(() => {
-    dispatch(UserBookmarkList({ language: languages[appContextlData.broadcastLang.label] }));
+    dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
   }, [dispatch, appContextlData.broadcastLang.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
@@ -197,9 +195,12 @@ const Subtitles = () => {
                   );
                   dispatch(
                     BookmarkSlide({
-                      file_uid: file_uid,
-                      slide_id: slideID?.ID,
-                      update: true,
+                      data: {
+                        file_uid: file_uid,
+                        slide_id: slideID?.ID,
+                        update: true
+                      },
+                      language: appContextlData.broadcastLang.label
                     })
                   );
                   setActivatedTab(+activatedTab - 1);
@@ -270,9 +271,12 @@ const Subtitles = () => {
                   );
                   dispatch(
                     BookmarkSlide({
-                      file_uid: file_uid,
-                      slide_id: slideID?.ID,
-                      update: true,
+                      data: {
+                        file_uid: file_uid,
+                        slide_id: slideID?.ID,
+                        update: true
+                      },
+                      language: appContextlData.broadcastLang.label
                     })
                   );
                 }

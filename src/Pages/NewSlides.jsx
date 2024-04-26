@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
@@ -15,8 +15,10 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import AppContext from "../AppContext";
 
 const NewSlides = () => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const languages = GetLangaugeCode();
@@ -35,8 +37,8 @@ const NewSlides = () => {
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const [selectedOptions, setSelectedOptions] = useState([
     {
-      label: localStorage.getItem("subtitleLanguage"),
-      value: languages[localStorage.getItem("subtitleLanguage")],
+      label: appContextlData.broadcastLang.label,
+      value: languages[appContextlData.broadcastLang.label],
     },
   ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
@@ -75,7 +77,7 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        languages: languages[localStorage.getItem("subtitleLanguage")],
+        languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
       if (
@@ -238,7 +240,7 @@ const NewSlides = () => {
               const files = contentUnit["files"];
               files.forEach((file) => {
                 if (
-                  languages[localStorage.getItem("subtitleLanguage")] ===
+                  languages[appContextlData.broadcastLang.label] ===
                   file["language"] && file["type"] === "text"
                   && file["mimetype"] === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 ) {
@@ -311,7 +313,7 @@ const NewSlides = () => {
                 isMulti
                 options={
                   slideLanguageOptions.map((slideLanguage) => {
-                    if (slideLanguage !== languages[localStorage.getItem("subtitleLanguage")]) {
+                    if (slideLanguage !== languages[appContextlData.broadcastLang.label]) {
                       return {
                         label: Object.keys(languages).find(
                           (key) => languages[key] === slideLanguage
@@ -360,7 +362,7 @@ const NewSlides = () => {
         <>
           <div className="row m-4">
             <label>Language</label>
-            <p>{localStorage.getItem("subtitleLanguage")}</p>
+            <p>{appContextlData.broadcastLang.label}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
               <div className="form-group  autoComplete">

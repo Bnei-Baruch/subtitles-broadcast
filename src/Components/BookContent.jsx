@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { Slide } from "./Slide";
 //import { debounce } from "lodash";
+import AppContext from "../AppContext";
 
 const BookContent = ({
   setActivatedTab,
@@ -12,6 +13,7 @@ const BookContent = ({
   setSearchSlide,
   searchKeyword,
 }) => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const focusSlides = useRef();
 
@@ -35,9 +37,12 @@ const BookContent = ({
 
                 dispatch(
                   BookmarkSlide({
-                    file_uid: item.file_uid,
-                    slide_id: item.ID,
-                    update: true,
+                    data: {
+                      file_uid: item.file_uid,
+                      slide_id: item.ID,
+                      update: true
+                    },
+                    langauge: appContextlData.broadcastLang.label
                   })
                 );
               }}

@@ -1,9 +1,10 @@
 // List.js
-import React from "react";
+import React, { useContext } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
+import AppContext from "../AppContext";
 
 const ItemTypes = {
   CARD: "card",
@@ -19,6 +20,7 @@ const DraggableItem = ({
   bookmarkDelete,
   setActivatedTab,
 }) => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
@@ -49,7 +51,10 @@ const DraggableItem = ({
     >
       <i class="bi bi-grip-vertical me-3" />
       <i
-        onClick={() => dispatch(UnBookmarkSlide(bookmarkDelete))}
+        onClick={() => dispatch(UnBookmarkSlide({
+          bookmark_id: bookmarkDelete,
+          language: appContextlData.broadcastLang.label
+        }))}
         className="bi bi-trash"
       />
       <span
