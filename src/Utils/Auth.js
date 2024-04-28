@@ -18,7 +18,7 @@ const Auth = ({ children }) => {
   useEffect(() => {
     const keycloak = new Keycloak({
       realm: "master",
-      url: "https://auth.2serv.eu/auth",
+      url: process.env.REACT_APP_KEYCLOAK_URL,
       clientId: "kolman-dev",
     });
     keycloak
