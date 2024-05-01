@@ -705,42 +705,42 @@ paths:
       security:
         - bearerAuth:
             - read:authors
-  /slide_language:
-    get:
-      tags:
-        - slide_language
-      summary: Get slide language names
-      description: Get slide language names
-      operationId: getSlideLanguages
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/BasicResponse'
-                - type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        type: string
-                        description: slide language name list
-                        example: ["English", "Spanish"]
-        '401':
-          description: Invalid request jwt token
-        '400':
-          description: Invalid request query
-        '405':
-          description: Invalid http method
-        '500':
-          description: Internal error
-      security:
-        - bearerAuth:
-            - read:authors
+  # /slide_language:
+  #   get:
+  #     tags:
+  #       - slide_language
+  #     summary: Get slide language names
+  #     description: Get slide language names
+  #     operationId: getSlideLanguages
+  #     responses:
+  #       '200':
+  #         description: successful operation
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #               - $ref: '#/components/schemas/BasicResponse'
+  #               - type: object
+  #                 required:
+  #                   - data
+  #                 properties:
+  #                   data:
+  #                     type: array
+  #                     items:
+  #                       type: string
+  #                       description: slide language name list
+  #                       example: ["English", "Spanish"]
+  #       '401':
+  #         description: Invalid request jwt token
+  #       '400':
+  #         description: Invalid request query
+  #       '405':
+  #         description: Invalid http method
+  #       '500':
+  #         description: Internal error
+  #     security:
+  #       - bearerAuth:
+  #           - read:authors
 components:
   schemas:
     Slide:

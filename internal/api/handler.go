@@ -724,18 +724,18 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
 }
 
-func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
-	var result []string
-	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
-		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
-	if query.Error != nil {
-		log.Error(query.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
-}
+// func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
+// 	var result []string
+// 	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
+// 		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
+// 	if query.Error != nil {
+// 		log.Error(query.Error)
+// 		ctx.JSON(http.StatusInternalServerError,
+// 			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
+// 		return
+// 	}
+// 	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
+// }
 
 // Unnecessary handler at this moment. If need, will be used
 
