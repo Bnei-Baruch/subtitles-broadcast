@@ -48,9 +48,10 @@ type Slide struct {
 
 type SlideDetail struct {
 	Slide
-	SlideSourcePath string `json:"slide_source_path" gorm:"->"` // author/type/title/slide_id
-	Bookmark_id     *uint  `json:"bookmark_id" gorm:"->"`
-	SourceUid       string `json:"source_uid" gorm:"->"`
+	Languages       pq.StringArray `json:"languages,omitempty" gorm:"type:text[]"`
+	SlideSourcePath string         `json:"slide_source_path" gorm:"->"` // author/type/title/slide_id
+	Bookmark_id     *uint          `json:"bookmark_id" gorm:"->"`
+	SourceUid       string         `json:"source_uid" gorm:"->"`
 }
 
 type SourcePath struct {
