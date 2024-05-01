@@ -1,6 +1,16 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { GreenWindow } from "../Components/GreenWindow";
 import { Slide } from "./Slide";
+
+import {
+  getCurrentBroadcastLanguage,
+  getCurrentBroadcastProgramm
+} from "../Utils/Common";
+import {
+  publishEvent,
+  subscribeEvent,
+  unSubscribeEvent,
+} from "../Utils/Events";
 
 function getButtonClassName(showGreenWindow, isButtonDisabled) {
   var className = showGreenWindow
@@ -35,30 +45,70 @@ const styles = {
   },
 };
 
-function parseMqttMessage(mqttMessage) {
-  if (mqttMessage) {
-    try {
-      let msgJson = mqttMessage;
-
-      if (typeof mqttMessage === "string") {
-        msgJson = JSON.parse(mqttMessage);
-      }
-
-      if (msgJson.slide) {
-        return msgJson.slide;
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  return mqttMessage;
-}
-
-export const GreenWindowButton = ({ isLtr, mqttMessage }) => {
+export const GreenWindowButton = (props) => {
   const [showGreenWindow, setShowGreenWindow] = useState(false);
   const elementRef = useRef(null);
-  const publishedSlide = parseMqttMessage(mqttMessage);
+  const broadcastProgrammObj = getCurrentBroadcastProgramm();
+  const broadcastLangObj = getCurrentBroadcastLanguage();
+  const broadcastProgrammCode = broadcastProgrammObj.value;
+  const broadcastLangCode = broadcastLangObj.value;
+  const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
+  const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
+  const [isSubTitleMode, setIsSubTitleMode] = useState(props.isSubTitleMode);
+  const subtitleMqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
+  const questionMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+
+  const contextMqttMessage = isSubTitleMode
+    ? subtitleMqttMessage
+    : questionMqttMessage;
+
+  if (props.isSubTitleMode !== isSubTitleMode) {
+    setIsSubTitleMode(props.isSubTitleMode);
+  }
+
+  let subscribed = false;
+  const compSubscribeEvents = () => {
+    if (!subscribed) {
+      subscribeEvent(subtitleMqttTopic, newMessageHandling);
+      subscribeEvent(questionMqttTopic, newMessageHandling);
+    }
+    subscribed = true;
+  };
+  const compUnSubscribeAppEvents = () => {
+    unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
+    subscribeEvent(questionMqttTopic, newMessageHandling);
+  };
+
+  const mqttTopic = isSubTitleMode
+    ? `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`
+    : `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+
+  useEffect(() => {
+    console.log("GreenWindowButton useEffect publishEvent ", mqttTopic);
+
+    const timeoutId = setTimeout(() => {
+      publishEvent("mqttSubscribe", {
+        mqttTopic: mqttTopic,
+      });
+
+      compSubscribeEvents();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      compUnSubscribeAppEvents();
+    };
+  }, [isSubTitleMode]);
+
+  const newMessageHandling = (event) => {
+    console.log("GreenWindowButton newMessageHandling", event);
+
+    if (event.detail.mqttTopic === subtitleMqttTopic) {
+      setSubtitleMqttMessage(event.detail.messageJson);
+    } else if (event.detail.mqttTopic === questionMqttTopic) {
+      setQuestionMqttMessage(event.detail.messageJson);
+    }
+  };
 
   return (
     <>
@@ -82,10 +132,14 @@ export const GreenWindowButton = ({ isLtr, mqttMessage }) => {
               style={styles.greenPartContainer}
             ></div>
             <div className="slide-part-cont" style={styles.slidePartContainer}>
-              {publishedSlide && (
+              {contextMqttMessage && (
                 <Slide
-                  content={publishedSlide}
-                  isLtr={isLtr}
+                  content={
+                    contextMqttMessage.slide
+                      ? contextMqttMessage.slide
+                      : contextMqttMessage.context
+                  }
+                  isLtr={props.isLtr}
                   parentElement={elementRef}
                 ></Slide>
               )}

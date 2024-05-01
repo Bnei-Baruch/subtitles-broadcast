@@ -39,27 +39,28 @@ const HeaderBar = ({ logout }) => {
     <>
       <div className="top-header d-flex justify-content-between ">
         <div className="form-group col-3 autoComplete">
-          <input
-            placeholder="Search"
-            value={freeText}
-            onKeyDown={(e) => {
-              e.key === "Enter" &&
-                dispatch(
-                  GetAllArchiveData({
-                    language: appContextlData.broadcastLang.label,
-                    keyword: freeText,
-                  })
-                );
-            }}
-            onChange={(e) => {
-              setFreeText(e.target.value);
-            }}
-            type="text"
-            className="form-control input"
-          />
-
+          {param.pathname === "/archive" &&
+            <input
+              placeholder="Search"
+              value={freeText}
+              onKeyDown={(e) => {
+                e.key === "Enter" &&
+                  dispatch(
+                    GetAllArchiveData({
+                      language: appContextlData.broadcastLang.label,
+                      keyword: freeText,
+                    })
+                  );
+              }}
+              onChange={(e) => {
+                setFreeText(e.target.value);
+              }}
+              type="text"
+              className="form-control input"
+            />
+          }
           <div></div>
-        </div>
+        </div >
         <div className="d-flex aligne-item-center">
           <div className="btn-group list-btn">
             <BroadcastSettings></BroadcastSettings>
@@ -106,7 +107,7 @@ const HeaderBar = ({ logout }) => {
             </button>
           </div> */}
         </div>
-      </div>
+      </div >
     </>
   );
 };

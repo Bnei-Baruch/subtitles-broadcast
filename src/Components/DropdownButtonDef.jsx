@@ -50,6 +50,7 @@ export function DropdownButtonDef({
     >
       {data.map((item) => (
         <Dropdown.Item
+          data-key={item.value}
           key={item.value}
           eventKey={item.value}
           {...(item.value === currentValue.value && { active: true })}

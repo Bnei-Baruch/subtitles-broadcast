@@ -72,6 +72,7 @@
 
 .body-content .left-section {
   width: 60%;
+  flex-direction: column;
 }
 .body-content .right-section {
   width: 40%;
@@ -167,9 +168,7 @@ main {
 
 .box-content {
   position: relative;
-  border-left: solid 1px black;
-  border-right: solid 1px black;
-  border-bottom: solid 1px black;
+  outline: solid 1px black;
 }
 
 bdo {
@@ -236,6 +235,10 @@ bdo {
     border-top: 5px solid;
     color: black;
   }
+}
+
+.subtitle-header {
+  margin-bottom: 0.5em;
 }
 
 .top-tab .nav-tabs .nav-link {
@@ -402,11 +405,16 @@ input[type="number"] {
 .underLineBorder input {
   width: 26px !important;
 }
+
 .no-border-search {
   border: none;
   outline: none;
   background: none;
   border-bottom: 1px solid #000;
+}
+
+.subtitle-search {
+  flex-grow: 1;
 }
 
 dropdown-toggle {
@@ -453,3 +461,8 @@ dropdown-toggle {
   width: 100%; /* Width to cover the whole select element */
   background-color: black; /* Change color as needed */
 }
+#questionContentCont {
+  visibility: hidden;
+  transform: translate(0px, 0px);
+}
+

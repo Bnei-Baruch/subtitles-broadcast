@@ -20,14 +20,18 @@ import DraggableItem from "../Components/DraggableItem";
 import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-import GreenSlide from "../Components/GreenSlide";
+import QuestionMessage from "../Components/QuestionMessage";
+import {
+  broadcastLanguages,
+} from "../Utils/Const";
+import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
 
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
-  const [mqttMessage, setMqttMessage] = useState(null);
-  const [jobMqttMessage, setJobMqttMessage] = useState(null);
-
+  const [isSubTitleMode, setIsSubTitleMode] = useState(true);
+  const btnSubtitelsRef = React.createRef();
+  const btnQuestionsRef = React.createRef();
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
@@ -96,13 +100,27 @@ const Subtitles = () => {
     setItems(updatedItems);
   };
 
+  function questionsBtnOnClick(evt) {
+    evt.target.classList.add("btn-success");
+    btnSubtitelsRef.current.classList.remove("btn-success");
+
+    setIsSubTitleMode(false);
+  }
+
+  function subtitelsBtnOnClick(evt) {
+    evt.target.classList.add("btn-success");
+    btnQuestionsRef.current.classList.remove("btn-success");
+
+    setIsSubTitleMode(true);
+  }
+
   return (
     <>
       <div className="body-content d-flex ">
         <div className="left-section row">
-          <div className="innerhead d-flex justify-content-between">
+          <div className="innerhead d-flex justify-content-between subtitle-header">
             <input
-              className="no-border-search mx-3 "
+              className="no-border-search mx-3 subtitle-search"
               value={searchSlide}
               placeholder="search"
               onChange={(e) => setSearchSlide(e.target.value)}
@@ -112,11 +130,22 @@ const Subtitles = () => {
               role="group"
               aria-label="Basic mixed styles example"
             >
-              <button type="button" className="btn btn-success">
+              <button
+                ref={btnSubtitelsRef}
+                id="btnSubtitels"
+                type="button"
+                className={isSubTitleMode ? "btn btn-success" : "btn"}
+                onClick={(evt) => subtitelsBtnOnClick(evt)}
+              >
                 Subtitels
               </button>
-
-              <button type="button" className="btn btn-tr">
+              <button
+                ref={btnQuestionsRef}
+                id="btnQuestions"
+                type="button"
+                className={isSubTitleMode ? "btn" : "btn btn-success"}
+                onClick={(evt) => questionsBtnOnClick(evt)}
+              >
                 Questions
               </button>
             </div>
@@ -126,16 +155,10 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
-              <ActiveSlideMessaging
-                userAddedList={UserAddedList}
-                activatedTab={activatedTab}
-                setActivatedTab={setActivatedTab}
-                mqttMessage={mqttMessage}
-                setMqttMessage={setMqttMessage}
-                jobMqttMessage={jobMqttMessage}
-                setJobMqttMessage={setJobMqttMessage}
+              <GreenWindowButton
+                isSubTitleMode={isSubTitleMode}
+                isLtr={isLtr}
               />
-              <GreenWindowButton isLtr={isLtr} mqttMessage={mqttMessage} />
               <button
                 type="button"
                 onClick={() => setIsLtr(!isLtr)}
@@ -143,20 +166,6 @@ const Subtitles = () => {
               >
                 {isLtr ? "LTR" : "RTL"}
               </button>
-              {/* <Dropdown variant="success" id="brodcast_programm">
-                <Dropdown.Toggle id="dropdown-autoclose-outside">
-                  Brodcasting programm
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item value="morning_lesson">
-                    Morning lesson
-                  </Dropdown.Item>
-                  <Dropdown.Item value="brodcast_1">Brodcast 1</Dropdown.Item>
-                  <Dropdown.Item value="brodcast_2">Brodcast 3</Dropdown.Item>
-                  <Dropdown.Item value="brodcast_3">Brodcast 3</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown> */}
             </div>
           </div>
 
@@ -173,7 +182,7 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div className="slides-set">
+                <div id="bookContentCont" className="slides-set">
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
@@ -303,7 +312,13 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <GreenSlide isLtr={isLtr} mqttMessage={mqttMessage}></GreenSlide>
+            <ActiveSlideMessaging
+              userAddedList={UserAddedList}
+              activatedTab={activatedTab}
+              setActivatedTab={setActivatedTab}
+              isLtr={isLtr}
+              isSubTitleMode={isSubTitleMode}
+            />
           </div>
           <div className="book-mark whit-s">
             <div className="top-head">
@@ -314,7 +329,7 @@ const Subtitles = () => {
                 {items?.length > 0 &&
                   items?.map((item, index) => (
                     <DraggableItem
-                      key={item.id}
+                      key={index}
                       id={item.id}
                       setActivatedTab={setActivatedTab}
                       bookmarkDelete={item.bookmark_id}
@@ -328,55 +343,17 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s">
-            <div className="top-head d-flex justify-content-between">
-              <h3>Questions</h3>
-              <div className="input-box">
-                <input
-                  className=""
-                  type="text"
-                  placeholder="Search"
-                  aria-label="Search"
-                />
+          {getCurrentBroadcastLanguage().value === "he" && (
+            <div className="Questions whit-s">
+              <div className="top-head d-flex justify-content-between">
+                <h3>Questions</h3>
               </div>
+              <QuestionMessage
+                mode="subtitle"
+                languagesList={broadcastLanguages}
+              ></QuestionMessage>
             </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-            <div className="QuestionSection ">
-              <div className="d-flex justify-content-between h-auto">
-                <p>Hebrew</p>
-                <i className="bi bi-eye" />
-              </div>
-              <div className="d-flex justify-content-end">
-                <p>שאלה 1: מה טעם בחיים?</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </>

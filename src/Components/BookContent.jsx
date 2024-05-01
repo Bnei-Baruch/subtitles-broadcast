@@ -31,6 +31,8 @@ const BookContent = ({
         (
           <>
             <div
+              id={`slide_${item.ID}`}
+              source-uid={item.source_uid}
               onClick={() => {
                 console.log(focusSlides);
                 setSearchSlide("");
