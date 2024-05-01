@@ -2,11 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
-import {
-  GetSlideLanguages,
-  SetCustomSlideBySource,
-} from "../Redux/NewSlide/NewSlide";
-
+import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import GetLangaugeCode from "../Utils/Const";
 import GenerateUID from "../Utils/Uid";
 import {
@@ -27,7 +23,7 @@ const NewSlides = () => {
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState("");
-  const [slideLanguageOptions, setSlideLanguageOptions] = useState([]);
+  const [slideLanguageOptions, setSlideLanguageOptions] = useState(["Hebrew", "Russian", "English", "Spanish"]);
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
@@ -57,17 +53,11 @@ const NewSlides = () => {
   }, [AutocompleteList]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await dispatch(GetSlideLanguages());
-        setSlideLanguageOptions(response.payload.data);
-      } catch (error) {
-        throw new Error(`Error fetching slide languages`, error);
-      }
-    };
-
-    fetchData();
-  }, [dispatch]);
+    setSelectedOptions({
+      label: appContextlData.broadcastLang.label,
+      value: languages[appContextlData.broadcastLang.label],
+    });
+  }, [appContextlData.broadcastLang.label]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,14 +88,17 @@ const NewSlides = () => {
         slideLanguageOptions.length > 0
       ) {
         let languages = [];
-        selectedOptions?.forEach((option) => {
-          languages.push(option.value);
-        });
+        if (Array.isArray(selectedOptions)) {
+          selectedOptions?.forEach((option) => {
+            languages.push(option.value);
+          });
+        } else {
+          languages.push(selectedOptions.value);
+        }
         request.languages = languages;
       }
       try {
         const response = await dispatch(SetCustomSlideBySource(request));
-        console.log(response);
         if (response.payload.error !== "") {
           if (response.payload.error.includes("SQLSTATE 22021")) {
             alert("Wrong request. File is not a txt file. Please check your upload file");
@@ -313,12 +306,10 @@ const NewSlides = () => {
                 isMulti
                 options={
                   slideLanguageOptions.map((slideLanguage) => {
-                    if (slideLanguage !== languages[appContextlData.broadcastLang.label]) {
+                    if (languages[slideLanguage] !== languages[appContextlData.broadcastLang.label]) {
                       return {
-                        label: Object.keys(languages).find(
-                          (key) => languages[key] === slideLanguage
-                        ),
-                        value: slideLanguage,
+                        label: slideLanguage,
+                        value: languages[slideLanguage],
                       };
                     } else {
                       return null; // Skip the undesired option

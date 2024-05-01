@@ -44,7 +44,6 @@ const DraggableItem = ({
   };
   return (
     <div
-      onClick={() => handleBookMarkClick(fileUid)}
       className="d-flex justify-content-between cursor-pointer"
       ref={(node) => ref(drop(node))}
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
