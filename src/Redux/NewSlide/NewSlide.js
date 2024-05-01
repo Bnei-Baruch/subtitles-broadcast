@@ -4,7 +4,7 @@ import axios from "axios";
 const API = process.env.REACT_APP_API_BASE_URL;
 
 const API_URL = {
-  SetCustomSlideBySource: "custom_slide_by_source",
+  SetCustomSlideBySource: "custom_slide_by_source"
 //  GetSlideLanguages: "slide_language",
 };
 
