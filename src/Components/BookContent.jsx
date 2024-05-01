@@ -32,6 +32,7 @@ const BookContent = ({
           <>
             <div
               onClick={() => {
+                console.log(focusSlides);
                 setSearchSlide("");
                 setActivatedTab(+item?.order_number);
                 localStorage.setItem("activatedTabData", +item?.order_number);
@@ -47,8 +48,8 @@ const BookContent = ({
                   })
                 );
               }}
-              ref={+activatedTab === item.order_number ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${+activatedTab === item.order_number && "activeSlide"
+              ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
+              className={`box-content d-flex  cursor-pointer  ${+activatedTab === item.order_number + 1 && "activeSlide"
                 }`}
             >
               {/* <bdo
