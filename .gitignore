@@ -4,3 +4,6 @@ node_modules
 *.swo
 
 .env
+.env.development
+.env.staging
+.env.production
