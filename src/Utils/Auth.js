@@ -7,19 +7,17 @@ import ErrorLogin from "../Pages/Views/ErrorLogin";
 import LoadingScreen from "../Pages/Views/LoadingScreen";
 import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 import PropTypes from "prop-types";
-import AppContext from "../AppContext";
 
 const Auth = ({ children }) => {
   const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
-  const appContextlData = useContext(AppContext);
 
   useEffect(() => {
     const keycloak = new Keycloak({
-      realm: "master",
+      realm: process.env.REACT_APP_KEYCLOAK_REALM,
       url: process.env.REACT_APP_KEYCLOAK_URL,
-      clientId: "kolman-dev",
+      clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID,
     });
     keycloak
       .init({
@@ -28,9 +26,8 @@ const Auth = ({ children }) => {
         // redirectUri: window.location.origin,
       })
       .then((authenticated) => {
-        if (keycloak.realmAccess.roles.includes("admin")) {
-          setAccess(true);
-        }
+        determineAccess(keycloak, setAccess);
+
         keycloak.loadUserProfile().then(function () {
           const profile = {
             username: keycloak.profile.username,
@@ -50,8 +47,6 @@ const Auth = ({ children }) => {
             authenticated,
             profile,
           });
-
-          parseBroadcastLanguage(keycloak, appContextlData);
         });
       });
   }, [dispatch]);
@@ -77,23 +72,19 @@ Auth.propTypes = {
   children: PropTypes.func.isRequired, // PropTypes validation for children prop
 };
 
-function parseBroadcastLanguage(keycloak, appContextlData) {
-  if (keycloak && keycloak.realmAccess && keycloak.realmAccess.roles) {
-    const broadCastLangRex = new RegExp("subtitles_language_(?<language>.*)");
+function determineAccess(keycloak, setAccess) {
+  if (keycloak && keycloak.realmAccess) {
+    const subtitlesRoleRex = new RegExp(
+      "subtitles_(?<role>.*)|(?<admin_role>admin)"
+    );
 
     for (let index = 0; index < keycloak.realmAccess.roles.length; index++) {
       const role = keycloak.realmAccess.roles[index];
-      const bcLangMatchRes = role.match(broadCastLangRex);
+      const subtitlesRoleMatchRes = role.match(subtitlesRoleRex);
 
-      if (
-        bcLangMatchRes &&
-        bcLangMatchRes.groups &&
-        bcLangMatchRes.groups.language
-      ) {
-        localStorage.setItem(
-          "broadcastLanguage",
-          bcLangMatchRes.groups.language
-        );
+      if (subtitlesRoleMatchRes && subtitlesRoleMatchRes.groups) {
+        setAccess(true);
+        break;
       }
     }
   }

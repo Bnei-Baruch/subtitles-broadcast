@@ -15,7 +15,7 @@
     "fs": "^0.0.1-security",
     "html-react-parser": "^5.1.2",
     "json-server": "^0.17.3",
-    "keycloak-js": "^20.0.3",
+    "keycloak-js": "^24.0.3",
     "mqtt": "^5.3.6",
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.4",
