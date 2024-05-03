@@ -569,6 +569,12 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 
 func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
+	language := ctx.Query("language")
+	if len(language) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Query language is missing", "Query language is missing"))
+		return
+	}
 	result := []struct {
 		Slide_Id     uint   `json:"slide_id"`
 		BookmarkId   uint   `json:"bookmark_id"`
@@ -581,7 +587,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages").
+		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages AND ? = ANY(files.languages)", language).
 		Where("bookmarks.user_id = ?", userId).
 		Order("bookmarks.order_number").
 		Find(&result)
@@ -718,18 +724,18 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
 }
 
-func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
-	var result []string
-	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
-		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
-	if query.Error != nil {
-		log.Error(query.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
-}
+// func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
+// 	var result []string
+// 	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
+// 		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
+// 	if query.Error != nil {
+// 		log.Error(query.Error)
+// 		ctx.JSON(http.StatusInternalServerError,
+// 			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
+// 		return
+// 	}
+// 	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
+// }
 
 // Unnecessary handler at this moment. If need, will be used
 
