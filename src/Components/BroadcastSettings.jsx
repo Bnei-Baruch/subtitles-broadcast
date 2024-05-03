@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
@@ -11,6 +11,7 @@ import {
   broadcastLangMapObj,
 } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
+import AppContext from "../AppContext";
 
 const leftColSize = 4;
 const rightColSize = 8;
@@ -57,6 +58,7 @@ const styles = {
 };
 
 export function BroadcastSettings({ props }) {
+  const appContextlData = useContext(AppContext);
   const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
     return sessionStorage.getItem("isBroadcastSettingsShown") === "true"
       ? false
@@ -74,6 +76,7 @@ export function BroadcastSettings({ props }) {
   const handleClose = () => {
     sessionStorage.setItem("isBroadcastSettingsShown", true);
     setShowBroadcastSettings(false);
+    appContextlData.setBroadcastLang(broadcastLang);
   };
   const handleShow = () => setShowBroadcastSettings(true);
 
@@ -82,6 +85,11 @@ export function BroadcastSettings({ props }) {
     "broadcastProgrammObj",
     JSON.stringify(broadcastProgramm)
   );
+  if (!appContextlData.broadcastLang) {
+    appContextlData.broadcastLang = broadcastLang;
+    appContextlData.setBroadcastLang(broadcastLang);
+  }
+
 
   return (
     <>
