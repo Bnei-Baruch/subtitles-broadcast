@@ -8,6 +8,7 @@ import MainRoutes from "./Routes/Routes";
 import HeaderBar from "./Layout/HeaderBar";
 import useMqtt from "./Utils/UseMqttUtils";
 import { publishEvent, subscribeEvent, unSubscribeEvent } from "./Utils/Events";
+import AppContext from "./AppContext";
 
 const App = ({ auth }) => {
   const { mqttUnSubscribe, mqttSubscribe, mqttPublush, isConnected, payload } =
@@ -104,6 +105,8 @@ const App = ({ auth }) => {
     unSubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
   };
 
+  const [broadcastLang, setBroadcastLang] = useState();
+
   useEffect(() => {
     subscribeAppEvents();
 
@@ -143,11 +146,18 @@ const App = ({ auth }) => {
   return (
     <BrowserRouter>
       <div className="app">
+      <AppContext.Provider
+          value={{
+            broadcastLang,
+            setBroadcastLang,
+          }}
+        >
         <SideNavBar />
         <div style={{ backgroundColor: "#eeee" }} className="main-content">
           <HeaderBar logout={auth?.keycloak} />
           <MainRoutes logout={auth?.keycloak} />
         </div>
+      </AppContext.Provider>
       </div>
     </BrowserRouter>
   );

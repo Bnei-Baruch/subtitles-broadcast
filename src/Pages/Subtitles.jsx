@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
-import { getAllBookAddedByUser } from "../Redux/Subtitle/SubtitleSlice";
+import {
+  getAllBookAddedByUser,
+  clearAllBookmarks
+} from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
   BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
-  BookmarkSlide,
+  BookmarkSlide
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { useSelector } from "react-redux";
@@ -22,12 +25,13 @@ import {
   broadcastLanguages,
 } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
+import AppContext from "../AppContext";
 
 const Subtitles = () => {
+  const appContextlData = useContext(AppContext);
   const [isSubTitleMode, setIsSubTitleMode] = useState(true);
   const btnSubtitelsRef = React.createRef();
   const btnQuestionsRef = React.createRef();
-
   const dispatch = useDispatch();
   const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
@@ -73,16 +77,18 @@ const Subtitles = () => {
     };
   }, []);
   useEffect(() => {
-    dispatch(UserBookmarkList());
-  }, [dispatch]);
+    dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
+    dispatch(clearAllBookmarks());
+  }, [dispatch, appContextlData.broadcastLang.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
-    GetAllBookmarkList?.length > 0 && setItems(GetAllBookmarkList);
+    setItems(GetAllBookmarkList);
   }, [GetAllBookmarkList]);
   useEffect(() => {
     const file_uid = localStorage.getItem("fileUid");
     file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+    localStorage.setItem("fileUid", "");
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {
@@ -202,9 +208,12 @@ const Subtitles = () => {
                   );
                   dispatch(
                     BookmarkSlide({
-                      file_uid: file_uid,
-                      slide_id: slideID?.ID,
-                      update: true,
+                      data: {
+                        file_uid: file_uid,
+                        slide_id: slideID?.ID,
+                        update: true
+                      },
+                      language: appContextlData.broadcastLang.label
                     })
                   );
                   setActivatedTab(+activatedTab - 1);
@@ -275,9 +284,12 @@ const Subtitles = () => {
                   );
                   dispatch(
                     BookmarkSlide({
-                      file_uid: file_uid,
-                      slide_id: slideID?.ID,
-                      update: true,
+                      data: {
+                        file_uid: file_uid,
+                        slide_id: slideID?.ID,
+                        update: true
+                      },
+                      language: appContextlData.broadcastLang.label
                     })
                   );
                 }

@@ -42,6 +42,14 @@ export const RemoveSubtitleData = createAsyncThunk(
     return response.data;
   }
 );
+
+export const clearAllBookmarks = createAsyncThunk(
+  'Subtitle/clearAllBookmarks',
+  async () => {
+    return [];
+  }
+);
+
 const SubtitleSlice = createSlice({
   name: "Subtitle",
   initialState,
@@ -57,9 +65,15 @@ const SubtitleSlice = createSlice({
         contentList: action?.payload,
       };
     });
+    builder.addCase(clearAllBookmarks.fulfilled, (state, action) => {
+      return {
+        ...state,
+        contentList: action.payload,
+      };
+    });
   },
 });
-export const { StoreFocusSlideId } = SubtitleSlice.actions;
+export const { StoreFocusSlideId } = SubtitleSlice.actions
 
 export const getAllArchiveList = (state) =>
   state?.ArchiveList?.archiveList?.data;

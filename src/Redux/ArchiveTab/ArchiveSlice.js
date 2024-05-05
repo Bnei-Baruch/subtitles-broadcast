@@ -28,6 +28,9 @@ const API_URL = {
 export const GetAllArchiveData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
+    if (data.language) {
+      data.language = langauges[data.language];
+    }
     const response = await axios.get(`${API}${API_URL.GetALL}`, {
       params: data,
     });
@@ -57,10 +60,10 @@ export const DeleteArchive = createAsyncThunk(
   `DeleteArchive`,
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}${API_URL.Delete}`, {
-      data,
+      slide_ids: data.slide_ids
     });
 
-    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
 
     return response.data;
   }
@@ -76,7 +79,7 @@ export const ArchiveAutoComplete = createAsyncThunk(
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}bookmark`, { params: {} });
+    const response = await axios.get(`${API}bookmark`, { params: { language: langauges[data.language] } });
     return response.data;
   }
 );
@@ -107,8 +110,8 @@ export const BookmarkSlide = createAsyncThunk(
   "/BookmarkSlide",
   async (data, thunkAPI) => {
     try {
-      const response = await axios.post(`${API}bookmark`, data);
-      thunkAPI.dispatch(UserBookmarkList());
+      const response = await axios.post(`${API}bookmark`, data.data);
+      thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
       return response.data;
     } catch (error) {
       return error.response.data.description; // This will be available as action.error.message
@@ -119,9 +122,9 @@ export const BookmarkSlideFromArchivePage = createAsyncThunk(
   "/BookmarkSlideFromArchivePage",
   async (data, thunkAPI) => {
     try {
-      const response = await axios.post(`${API}bookmark`, data);
-      thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")], ...data.params }));
-      thunkAPI.dispatch(UserBookmarkList());
+      const response = await axios.post(`${API}bookmark`, data.data);
+      thunkAPI.dispatch(GetAllArchiveData({ language: data.language, ...data.params }));
+      thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
       return response.data;
     } catch (error) {
       return error.response.data.description; // This will be available as action.error.message
@@ -149,9 +152,9 @@ export const BookmarksSlide = createAsyncThunk(
 export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}bookmark/${data}`);
-    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
-    thunkAPI.dispatch(UserBookmarkList());
+    const response = await axios.delete(`${API}bookmark/${data.bookmark_id}`);
+    thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
+    thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
     return response.data;
   }
 );
@@ -168,9 +171,9 @@ export const SlideListWithFildeUid = createAsyncThunk(
 export const addNewSlide = createAsyncThunk(
   "addNewSlide",
   async (data, thunkAPI) => {
-    const response = await axios.post(`${API}slide`, data);
+    const response = await axios.post(`${API}slide`, data.list);
     response.data.success && toast.success(response.data.description);
-    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
     return response.data;
   }
 );
@@ -178,8 +181,8 @@ export const addNewSlide = createAsyncThunk(
 export const deleteNewSlide = createAsyncThunk(
   "deleteNewSlide",
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}slide`, { data });
-    thunkAPI.dispatch(GetAllArchiveData({ language: langauges[localStorage.getItem("subtitleLanguage")] }));
+    const response = await axios.delete(`${API}slide`, data.data);
+    thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
     response.data.success && toast.success(response.data.description);
     return response.data;
   }

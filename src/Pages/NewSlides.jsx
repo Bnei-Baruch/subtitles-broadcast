@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
-import {
-  GetSlideLanguages,
-  SetCustomSlideBySource,
-} from "../Redux/NewSlide/NewSlide";
-
+import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import GetLangaugeCode from "../Utils/Const";
 import GenerateUID from "../Utils/Uid";
 import {
@@ -15,8 +11,10 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import AppContext from "../AppContext";
 
 const NewSlides = () => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const languages = GetLangaugeCode();
@@ -25,7 +23,7 @@ const NewSlides = () => {
   const [tagList, setTagList] = useState([]);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState("");
-  const [slideLanguageOptions, setSlideLanguageOptions] = useState([]);
+  const [slideLanguageOptions, setSlideLanguageOptions] = useState(["Hebrew", "Russian", "English", "Spanish"]);
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
@@ -35,8 +33,8 @@ const NewSlides = () => {
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const [selectedOptions, setSelectedOptions] = useState([
     {
-      label: localStorage.getItem("subtitleLanguage"),
-      value: languages[localStorage.getItem("subtitleLanguage")],
+      label: appContextlData.broadcastLang.label,
+      value: languages[appContextlData.broadcastLang.label],
     },
   ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
@@ -55,17 +53,11 @@ const NewSlides = () => {
   }, [AutocompleteList]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await dispatch(GetSlideLanguages());
-        setSlideLanguageOptions(response.payload.data);
-      } catch (error) {
-        throw new Error(`Error fetching slide languages`, error);
-      }
-    };
-
-    fetchData();
-  }, [dispatch]);
+    setSelectedOptions({
+      label: appContextlData.broadcastLang.label,
+      value: languages[appContextlData.broadcastLang.label],
+    });
+  }, [appContextlData.broadcastLang.label]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,7 +67,7 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        languages: languages[localStorage.getItem("subtitleLanguage")],
+        languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
       if (
@@ -96,15 +88,23 @@ const NewSlides = () => {
         slideLanguageOptions.length > 0
       ) {
         let languages = [];
-        selectedOptions?.forEach((option) => {
-          languages.push(option.value);
-        });
+        if (Array.isArray(selectedOptions)) {
+          selectedOptions?.forEach((option) => {
+            languages.push(option.value);
+          });
+        } else {
+          languages.push(selectedOptions.value);
+        }
         request.languages = languages;
       }
       try {
         const response = await dispatch(SetCustomSlideBySource(request));
-        if (response.error !== undefined && response.error.code === "ERR_BAD_REQUEST") {
-          alert("Wrong request. There is something wrong with your input like same source uid. Please double check your input");
+        if (response.payload.error !== "") {
+          if (response.payload.error.includes("SQLSTATE 22021")) {
+            alert("Wrong request. File is not a txt file. Please check your upload file");
+          } else if (response.payload.error.includes("SQLSTATE 23505")) {
+            alert("Wrong request. The file uid is duplicated. Please check your input");
+          }
           return;
         }
         if (response.payload !== undefined && response.payload.success) {
@@ -124,23 +124,30 @@ const NewSlides = () => {
   }, [updateTagList]);
 
   const handleUpload = () => {
-    const name = document.getElementById("upload_name").value;
-    if (name === "") {
-      alert("Name must be filled");
-      return;
+    try {
+      const name = document.getElementById("upload_name").value;
+      if (name === "") {
+        alert("Name must be filled");
+        return;
+      }
+
+      setSourceUid("upload_" + GenerateUID(8));
+      setFileUid("upload_" + GenerateUID(8));
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const fileContents = event.target.result;
+        const structuredArray = parseFileContents(fileContents);
+        setTagList(structuredArray);
+      };
+      if (selectedFile.name.split('.').pop() !== "txt") {
+        alert("The file must be txt file");
+        return;
+      }
+      // Read the file as text
+      reader.readAsText(selectedFile);
+    } catch (error) {
+      console.error("Error occurred:", error); // Handle any errors
     }
-
-    setSourceUid("upload_" + GenerateUID(8));
-    setFileUid("upload_" + GenerateUID(8));
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const fileContents = event.target.result;
-      const structuredArray = parseFileContents(fileContents);
-      setTagList(structuredArray);
-    };
-
-    // Read the file as text
-    reader.readAsText(selectedFile);
   };
 
   const parseFileContents = (fileContents) => {
@@ -226,7 +233,7 @@ const NewSlides = () => {
               const files = contentUnit["files"];
               files.forEach((file) => {
                 if (
-                  languages[localStorage.getItem("subtitleLanguage")] ===
+                  languages[appContextlData.broadcastLang.label] ===
                   file["language"] && file["type"] === "text"
                   && file["mimetype"] === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 ) {
@@ -299,12 +306,10 @@ const NewSlides = () => {
                 isMulti
                 options={
                   slideLanguageOptions.map((slideLanguage) => {
-                    if (slideLanguage !== languages[localStorage.getItem("subtitleLanguage")]) {
+                    if (languages[slideLanguage] !== languages[appContextlData.broadcastLang.label]) {
                       return {
-                        label: Object.keys(languages).find(
-                          (key) => languages[key] === slideLanguage
-                        ),
-                        value: slideLanguage,
+                        label: slideLanguage,
+                        value: languages[slideLanguage],
                       };
                     } else {
                       return null; // Skip the undesired option
@@ -348,7 +353,7 @@ const NewSlides = () => {
         <>
           <div className="row m-4">
             <label>Language</label>
-            <p>{localStorage.getItem("subtitleLanguage")}</p>
+            <p>{appContextlData.broadcastLang.label}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
               <div className="form-group  autoComplete">

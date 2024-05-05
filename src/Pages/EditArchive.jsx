@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewSlide,
@@ -8,8 +8,10 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
+import AppContext from "../AppContext";
 
 const EditArcive = ({ handleClose }) => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const slideList = useSelector(getEditSlideList);
 
@@ -35,7 +37,10 @@ const EditArcive = ({ handleClose }) => {
         force_delete_bookmarks: shouldForceDelete,
         slide_ids: deleted,
       };
-      dispatch(deleteNewSlide(deleteParams));
+      dispatch(deleteNewSlide({
+        data: deleteParams,
+        language: appContextlData.broadcastLang.label
+      }));
     }
 
     const updateSlideList = slideListData?.map(
@@ -55,7 +60,10 @@ const EditArcive = ({ handleClose }) => {
       }));
 
     if (addNewSlideList?.length > 0) {
-      dispatch(addNewSlide(addNewSlideList));
+      dispatch(addNewSlide({
+        list: addNewSlideList,
+        language: appContextlData.broadcastLang.label
+      }));
     }
 
     if (updateSlideList?.length > 0) {
@@ -198,9 +206,8 @@ const EditArcive = ({ handleClose }) => {
                   }}
                 >
                   <div
-                    className={`adjustable-font box box2 ${
-                      index == selected && "EditActiveSlide"
-                    }`}
+                    className={`adjustable-font box box2 ${index == selected && "EditActiveSlide"
+                      }`}
                   >
                     <textarea
                       value={key?.slide}
@@ -226,7 +233,7 @@ const EditArcive = ({ handleClose }) => {
                       }}
                       key={index}
                       className=""
-                      // style={containerStyle}
+                    // style={containerStyle}
                     />
                     {index == selected && (
                       <i
@@ -267,7 +274,7 @@ const EditArcive = ({ handleClose }) => {
                   <div
                     key={index}
                     className=" adjustable-font"
-                    // style={containerStyle}
+                  // style={containerStyle}
                   >
                     <Slide content={key?.slide} isLtr={true} />
                   </div>

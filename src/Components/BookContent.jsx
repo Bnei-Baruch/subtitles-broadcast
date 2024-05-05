@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { Slide } from "./Slide";
 //import { debounce } from "lodash";
+import AppContext from "../AppContext";
 
 const BookContent = ({
   setActivatedTab,
@@ -12,6 +13,7 @@ const BookContent = ({
   setSearchSlide,
   searchKeyword,
 }) => {
+  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const focusSlides = useRef();
 
@@ -25,26 +27,31 @@ const BookContent = ({
     <>
       {contents?.slides?.length > 0 &&
         +activatedTab >= 0 &&
-        contents?.slides?.map((item, index) => (
+        contents?.slides?.map((item, index) =>
+        (
           <>
             <div
               id={`slide_${item.ID}`}
               source-uid={item.source_uid}
               onClick={() => {
+                console.log(focusSlides);
                 setSearchSlide("");
                 setActivatedTab(+item?.order_number);
                 localStorage.setItem("activatedTabData", +item?.order_number);
 
                 dispatch(
                   BookmarkSlide({
-                    file_uid: item.file_uid,
-                    slide_id: item.ID,
-                    update: true,
+                    data: {
+                      file_uid: item.file_uid,
+                      slide_id: item.ID,
+                      update: true
+                    },
+                    langauge: appContextlData.broadcastLang.label
                   })
                 );
               }}
-              ref={+activatedTab === item.order_number ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${+activatedTab === item.order_number && "activeSlide"
+              ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
+              className={`box-content d-flex  cursor-pointer  ${+activatedTab === item.order_number + 1 && "activeSlide"
                 }`}
             >
               {/* <bdo
@@ -53,7 +60,7 @@ const BookContent = ({
               > */}
               <Slide content={item?.slide} isLtr={isLtr} searchKeyword={searchKeyword}></Slide>
               {/* </bdo> */}
-              <span className="order-number">{+item?.order_number + 1}</span>
+              <span className="order-number">{`${item?.languages.length > 1 ? item?.languages[+item.order_number % 2] : item?.languages[0]} ${+item?.order_number + 1}`}</span>
             </div>
           </>
         ))}
