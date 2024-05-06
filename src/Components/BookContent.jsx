@@ -34,7 +34,6 @@ const BookContent = ({
               id={`slide_${item.ID}`}
               source-uid={item.source_uid}
               onClick={() => {
-                console.log(focusSlides);
                 setSearchSlide("");
                 setActivatedTab(+item?.order_number);
                 localStorage.setItem("activatedTabData", +item?.order_number);
@@ -46,7 +45,7 @@ const BookContent = ({
                       slide_id: item.ID,
                       update: true
                     },
-                    langauge: appContextlData.broadcastLang.label
+                    language: appContextlData.broadcastLang.label
                   })
                 );
               }}
