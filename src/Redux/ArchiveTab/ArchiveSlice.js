@@ -5,7 +5,7 @@ import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
 import GetLangaugeCode from "../../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const langauges = GetLangaugeCode()
+const languages = GetLangaugeCode()
 
 const initialState = {
   archiveList: [],
@@ -29,7 +29,7 @@ export const GetAllArchiveData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     if (data.language) {
-      data.language = langauges[data.language];
+      data.language = languages[data.language];
     }
     const response = await axios.get(`${API}${API_URL.GetALL}`, {
       params: data,
@@ -79,7 +79,8 @@ export const ArchiveAutoComplete = createAsyncThunk(
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}bookmark`, { params: { language: langauges[data.language] } });
+    console.log(data);
+    const response = await axios.get(`${API}bookmark`, { params: { language: languages[data.language] } });
     return response.data;
   }
 );

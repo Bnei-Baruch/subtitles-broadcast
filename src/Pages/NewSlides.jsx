@@ -61,7 +61,7 @@ const NewSlides = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // add name and update langauges
+      // add name and update languages
       let request = {
         name: "KabbalahMedia",
         source_path: contentSource,

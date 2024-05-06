@@ -212,7 +212,7 @@ const Archive = () => {
                                         (k) => k.bookmark_id !== null
                                       )?.length
                                     },
-                                    langauge: appContextlData.broadcastLang.label,
+                                    language: appContextlData.broadcastLang.label,
                                     params: {
                                       page: page.page,
                                       limit: page.limit,
