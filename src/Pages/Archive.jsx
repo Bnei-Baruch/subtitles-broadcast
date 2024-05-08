@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
+  UserBookmarkList,
+  UnBookmarkSlide,
   BookmarkSlideFromArchivePage,
   DeleteArchive,
   GetAllArchiveData,
@@ -22,7 +24,7 @@ const Archive = () => {
   const dispatch = useDispatch();
   const ArchiveList = useSelector(getAllArchiveList);
 
-  // const [delete,setDelete]=useState('')
+  const [unbookmarkAction, setUnbookmarkAction] = useState(false)
   const [page, setPage] = useState({
     page: 1,
     limit: 10,
@@ -121,23 +123,27 @@ const Archive = () => {
   );
 
   const ConfirmationMessage = useMemo(
-    () => (
-      <MessageBox
-        setFinalConfirm={() => {
-          dispatch(
-            BookmarkSlideFromArchivePage({
-              data: bookmarkData,
-              language: appContextlData.broadcastLang.label,
-              params: { page: page.page, limit: page.limit },
-            })
-          );
-        }}
-        message={"Are you sure , you want to bookmark this File slide"}
-        show={confirmation}
-        handleClose={() => setConfirmation(false)}
-      />
-    ),
-    [confirmation, message]
+    () => {
+      if (!unbookmarkAction) {
+        return (
+          <MessageBox
+            setFinalConfirm={() => {
+              dispatch(
+                BookmarkSlideFromArchivePage({
+                  data: bookmarkData,
+                  language: appContextlData.broadcastLang.label,
+                  params: { page: page.page, limit: page.limit },
+                })
+              );
+            }}
+            message={"Are you sure , you want to bookmark this File slide"}
+            show={confirmation}
+            handleClose={() => setConfirmation(false)}
+          />
+        );
+      }
+    },
+    [confirmation, message, unbookmarkAction]
   );
 
   return (
@@ -190,11 +196,18 @@ const Archive = () => {
                           {key.bookmark_id !== null ? (
                             <i
                               onClick={() => {
-                                setConfirmation(true);
+                                setUnbookmarkAction(true);
+                                dispatch(
+                                  UnBookmarkSlide({
+                                    bookmark_id: key.bookmark_id,
+                                    language: appContextlData.broadcastLang.label
+                                  })
+                                );
                                 setBookmarkData({
-                                  file_uid: key?.file_uid,
-                                  slide_id: key?.ID,
-                                  update: true,
+                                  file_uid: "",
+                                  slide_id: "",
+                                  update: "",
+                                  order: "",
                                 });
                               }}
                               className="bi bi-bookmark-check-fill m-2 cursor-pointer "
@@ -202,6 +215,7 @@ const Archive = () => {
                           ) : (
                             <i
                               onClick={() => {
+                                setUnbookmarkAction(false);
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
                                     data: {
@@ -238,6 +252,7 @@ const Archive = () => {
                           <i
                             className="bi bi-pencil m-2 cursor-pointer "
                             onClick={() => {
+                              setUnbookmarkAction(false);
                               dispatch(
                                 SlideListWithFildeUid({
                                   file_uid: key?.file_uid,
@@ -248,6 +263,7 @@ const Archive = () => {
                           />
                           <i
                             onClick={() => {
+                              setUnbookmarkAction(false);
                               setDeleteConfirmationPopup(true);
                               setDeleteId(key.ID);
                             }}
