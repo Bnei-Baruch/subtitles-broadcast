@@ -79,7 +79,6 @@ export const ArchiveAutoComplete = createAsyncThunk(
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
-    console.log(data);
     const response = await axios.get(`${API}bookmark`, { params: { language: languages[data.language] } });
     return response.data;
   }

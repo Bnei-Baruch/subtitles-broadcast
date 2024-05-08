@@ -49,8 +49,8 @@ const BookContent = ({
                   })
                 );
               }}
-              ref={+activatedTab === item.order_number + 1 ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${+activatedTab === item.order_number + 1 && "activeSlide"
+              ref={(+activatedTab === item.order_number + 1) ? focusSlides : null}
+              className={`box-content d-flex  cursor-pointer  ${+activatedTab === (Math.floor((+item.order_number + 1) / item?.languages.length)) + ((+item?.order_number + 1) % item?.languages.length) && "activeSlide"
                 }`}
             >
               {/* <bdo
@@ -59,7 +59,7 @@ const BookContent = ({
               > */}
               <Slide content={item?.slide} isLtr={isLtr} searchKeyword={searchKeyword}></Slide>
               {/* </bdo> */}
-              <span className="order-number">{`${item?.languages.length > 1 ? item?.languages[+item.order_number % 2] : item?.languages[0]} ${+item?.order_number + 1}`}</span>
+              <span className="order-number">{`${item?.languages.length > 1 ? item?.languages[+item.order_number % item?.languages.length] : item?.languages[0]} ${((Math.floor((+item.order_number + 1) / item?.languages.length)) + ((+item?.order_number + 1) % item?.languages.length))}`}</span>
             </div>
           </>
         ))}
