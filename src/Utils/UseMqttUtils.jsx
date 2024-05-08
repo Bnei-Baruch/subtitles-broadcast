@@ -63,6 +63,12 @@ export default function useMqtt() {
             console.log(
               `"useMqtt  Published Topic: ${mqttTopic} Message: ${msgText}`
             );
+            
+            publishEvent("mqttMessagePublished", {
+              mqttTopic: mqttTopic,
+              messageText: msgText,
+            });
+
           }
         }
       );
