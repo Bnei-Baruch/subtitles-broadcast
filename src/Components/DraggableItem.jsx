@@ -38,7 +38,7 @@ const DraggableItem = ({
   });
 
   const handleBookMarkClick = (e) => {
-    setActivatedTab(+text?.split("/")?.at(-1));
+    setActivatedTab((+text?.split("/")?.at(-1)) - 1);
     localStorage.setItem("fileUid", e);
     dispatch(GetSubtitleData({ file_uid: e }));
   };

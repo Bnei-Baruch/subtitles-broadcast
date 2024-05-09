@@ -86,9 +86,11 @@ const Subtitles = () => {
     setItems(GetAllBookmarkList);
   }, [GetAllBookmarkList]);
   useEffect(() => {
-    const file_uid = localStorage.getItem("fileUid");
-    file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
-    localStorage.setItem("fileUid", "");
+    if (searchSlide.length) {
+      const file_uid = localStorage.getItem("fileUid");
+      file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+      localStorage.setItem("fileUid", "");
+    }
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {

@@ -49,8 +49,8 @@ const BookContent = ({
                   })
                 );
               }}
-              ref={(+activatedTab === item.order_number + 1) ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${+activatedTab === (Math.floor((+item.order_number + 1) / item?.languages.length)) + ((+item?.order_number + 1) % item?.languages.length) && "activeSlide"
+              ref={((+activatedTab + 1) === item.order_number + 1) ? focusSlides : null}
+              className={`box-content d-flex  cursor-pointer  ${(+activatedTab + 1) === (Math.floor((+item.order_number + 1) / item?.languages.length)) + ((+item?.order_number + 1) % item?.languages.length) && "activeSlide"
                 }`}
             >
               {/* <bdo
