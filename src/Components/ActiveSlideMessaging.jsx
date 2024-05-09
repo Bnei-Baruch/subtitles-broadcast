@@ -18,7 +18,7 @@ const styles = {
   },
   greenPartContainer: {
     backgroundColor: "green",
-    height: "65%",
+    height: "71.29%",
   },
 };
 
