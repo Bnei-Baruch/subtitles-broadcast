@@ -152,10 +152,10 @@ const App = ({ auth }) => {
             setBroadcastLang,
           }}
         >
-        <SideNavBar />
+        <SideNavBar securityRole={auth? auth.securityRole: null} />
         <div style={{ backgroundColor: "#eeee" }} className="main-content">
           <HeaderBar logout={auth?.keycloak} />
-          <MainRoutes logout={auth?.keycloak} />
+          <MainRoutes logout={auth?.keycloak} securityRole={auth? auth.securityRole: null} />
         </div>
       </AppContext.Provider>
       </div>

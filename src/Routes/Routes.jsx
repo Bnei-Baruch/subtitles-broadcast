@@ -5,17 +5,22 @@ import Archive from "../Pages/Archive";
 import NewSlides from "../Pages/NewSlides";
 import QuestionsModule from "../Pages/QuestionModule";
 
-const MainRoutes = ({ logout }) => {
+const MainRoutes = ({ logout, securityRole }) => {
   return (
     <>
       <Routes>
         {/** Protected Routes */}
         {/** Wrap all Route under ProtectedRoutes element */}
 
-        <Route index element={<Navigate to={"/subtitle"} />} />
-        <Route path="/subtitle" element={<Subtitles />} />
-        <Route path="/archive" element={<Archive />} />
-        <Route path="/new" element={<NewSlides />} />
+        {securityRole && securityRole !== "translator" &&
+          <>
+            <Route index element={<Navigate to={"/subtitle"} />} />
+            <Route path="/subtitle" element={<Subtitles />} />
+            <Route path="/archive" element={<Archive />} />
+            <Route path="/new" element={<NewSlides />} />
+          </>
+        }
+
         <Route path="/question" element={<QuestionsModule />} />
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}
