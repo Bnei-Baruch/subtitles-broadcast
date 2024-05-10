@@ -244,7 +244,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	for idx, slide := range req.Slides {
 		slideData := Slide{
 			Slide:       strings.ReplaceAll(slide, "\n", "\\n"),
-			OrderNumber: idx,
+			OrderNumber: idx / len(req.Languages),
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
