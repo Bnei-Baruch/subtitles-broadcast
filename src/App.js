@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Navigate } from "react-router-dom";
 import "./App.css";
 
 import SideNavBar from "./Layout/SideNavBar";
@@ -159,6 +159,10 @@ const App = ({ auth }) => {
         </div>
       </AppContext.Provider>
       </div>
+
+      {auth && auth.securityRole &&  auth.securityRole === "translator" &&
+          <Navigate to="/question" />
+        }
     </BrowserRouter>
   );
 };

@@ -90,7 +90,6 @@ function determineAccess(keycloak, setAccess) {
         securityRole = subtitlesRoleMatchRes.groups.role?  
           subtitlesRoleMatchRes.groups.role: 
           subtitlesRoleMatchRes.groups.admin_role;
-          securityRole = "translator";  //for testing
         setAccess(true);
         break;
       }
