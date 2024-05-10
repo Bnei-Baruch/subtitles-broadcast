@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./PagesCSS/Questions.css";
 import QuestionMessage from "../Components/QuestionMessage";
 import {
@@ -8,7 +8,7 @@ import {
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm
 } from "../Utils/Common";
-import { publishEvent } from "../Utils/Events";
+import { publishEvent, subscribeEvent, unSubscribeEvent } from "../Utils/Events";
 
 const QuestionModule = () => {
   const mqttClientId = localStorage.getItem("mqttClientId");
@@ -35,8 +35,6 @@ const QuestionModule = () => {
   };
 
   const sendQuestionButtonClickHandler = () => {
-    sethandleSuccess(true);
-
     if (newQuestionTxtRef.current) {
       const qustionTxt = newQuestionTxtRef.current.value;
 
@@ -66,6 +64,36 @@ const QuestionModule = () => {
       }
     }
   };
+
+  
+  let subscribed = false;
+  const compSubscribeEvents = () => {
+    if (!subscribed) {
+      subscribeEvent("mqttMessagePublished", messagePublishedHandling);
+    }
+    subscribed = true;
+  };
+
+  const compUnSubscribeAppEvents = () => {
+    unSubscribeEvent("mqttMessagePublished", messagePublishedHandling);
+  };
+
+  const messagePublishedHandling = ()=>{
+    sethandleSuccess(true);
+  };
+
+  
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      compSubscribeEvents();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      compUnSubscribeAppEvents();
+    };
+  }, []);
+
 
   return (
     <div className="form-Question">

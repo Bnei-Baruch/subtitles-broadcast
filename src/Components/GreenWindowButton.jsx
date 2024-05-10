@@ -34,10 +34,9 @@ const styles = {
   },
   greenPartContainer: {
     backgroundColor: "green",
-    height: "70%",
+    height: "71.29%",
   },
   slidePartContainer: {
-    height: "30%",
     padding: "0",
   },
   cursorNotAllowed: {
