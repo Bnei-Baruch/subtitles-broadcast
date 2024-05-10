@@ -77,7 +77,6 @@ const NewSlides = () => {
         request.name = document.getElementById("upload_name").value;
         request.source_path = document.getElementById("upload_name").value;
       } else {
-        console.log(contentSource)
         if (contentSource.includes("https://kabbalahmedia.info")) {
           let parts = sourceUrl.split("/");
           request.source_path = parts[parts.length - 1]

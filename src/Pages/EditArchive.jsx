@@ -47,7 +47,7 @@ const EditArcive = ({ handleClose }) => {
       ({ ID, slide, order_number }, index) => ({
         slide_id: ID,
         slide,
-        order_number: index,
+        order_number: order_number,
       })
     );
 
