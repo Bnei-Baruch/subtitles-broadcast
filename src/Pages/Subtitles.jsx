@@ -297,17 +297,19 @@ const Subtitles = () => {
                       targetBookmarkSlideID += index;
                     }
                   });
-                  dispatch(
-                    BookmarkSlide({
-                      data: {
-                        file_uid: file_uid,
-                        slide_id: targetBookmarkSlideID,
-                        update: true
-                      },
-                      language: appContextlData.broadcastLang.label
-                    })
-                  );
-                  setActivatedTab(+activatedTab + 1);
+                  if (UserAddedList?.slides[UserAddedList?.slides?.length - 1].ID >= targetBookmarkSlideID) {
+                    dispatch(
+                      BookmarkSlide({
+                        data: {
+                          file_uid: file_uid,
+                          slide_id: targetBookmarkSlideID,
+                          update: true
+                        },
+                        language: appContextlData.broadcastLang.label
+                      })
+                    );
+                    setActivatedTab(+activatedTab + 1);
+                  }
                 }
               }}
               className={` cursor-pointer ${UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
