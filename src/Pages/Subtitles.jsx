@@ -26,6 +26,7 @@ import {
 } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
+import GetLangaugeCode from "../Utils/Const";
 
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
@@ -40,6 +41,7 @@ const Subtitles = () => {
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
+  const languages = GetLangaugeCode();
 
   const handleChange = (selectedOption) => {
     console.log(selectedOption, "selectedOption");
@@ -203,16 +205,22 @@ const Subtitles = () => {
               className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
                 }`}
               onClick={() => {
-                if (activatedTab > 1) {
+                if (activatedTab > 0) {
                   const file_uid = UserAddedList?.slides?.[0]?.file_uid;
                   const slideID = UserAddedList?.slides?.find(
-                    (key) => key?.order_number == +activatedTab
+                    (key) => key?.order_number == +activatedTab - 1
                   );
+                  let targetBookmarkSlideID = slideID.ID;
+                  slideID?.languages.forEach((item, index) => {
+                    if (item === languages[appContextlData.broadcastLang.label]) {
+                      targetBookmarkSlideID += index;
+                    }
+                  });
                   dispatch(
                     BookmarkSlide({
                       data: {
                         file_uid: file_uid,
-                        slide_id: slideID?.ID,
+                        slide_id: targetBookmarkSlideID,
                         update: true
                       },
                       language: appContextlData.broadcastLang.label
@@ -280,20 +288,28 @@ const Subtitles = () => {
                   +activatedTab
                 ) {
                   const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-                  setActivatedTab(+activatedTab + 1);
                   const slideID = UserAddedList?.slides?.find(
-                    (key) => key?.order_number == +activatedTab
+                    (key) => key?.order_number == +activatedTab + 1
                   );
-                  dispatch(
-                    BookmarkSlide({
-                      data: {
-                        file_uid: file_uid,
-                        slide_id: slideID?.ID,
-                        update: true
-                      },
-                      language: appContextlData.broadcastLang.label
-                    })
-                  );
+                  let targetBookmarkSlideID = slideID.ID;
+                  slideID?.languages.forEach((item, index) => {
+                    if (item === languages[appContextlData.broadcastLang.label]) {
+                      targetBookmarkSlideID += index;
+                    }
+                  });
+                  if (UserAddedList?.slides[UserAddedList?.slides?.length - 1].ID >= targetBookmarkSlideID) {
+                    dispatch(
+                      BookmarkSlide({
+                        data: {
+                          file_uid: file_uid,
+                          slide_id: targetBookmarkSlideID,
+                          update: true
+                        },
+                        language: appContextlData.broadcastLang.label
+                      })
+                    );
+                    setActivatedTab(+activatedTab + 1);
+                  }
                 }
               }}
               className={` cursor-pointer ${UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab

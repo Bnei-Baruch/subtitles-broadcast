@@ -174,7 +174,7 @@ const Archive = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {ArchiveList?.slides?.map((key) => (
+                    {ArchiveList?.slides?.map((key, index) => (
                       <tr
                         key={key.ID}
                         className={
@@ -190,7 +190,7 @@ const Archive = () => {
                           style={{ padding: "10px" }}
                           className="text-truncate"
                         >
-                          {key.slide_source_path}
+                          {key.languages.length > 1 ? `(${key.languages[index % key.languages.length]}) ${key.slide_source_path}` : key.slide_source_path}
                         </td>
                         <td style={{ padding: "10px" }}>
                           {key.bookmark_id !== null ? (
