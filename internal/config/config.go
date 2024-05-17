@@ -2,27 +2,49 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-var configuration = Config{}
+var (
+	Configuration = &Config{}
+
+	Version = "Dev"
+	Build   = "Dev"
+	Date    = "Dev"
+)
 
 type Config struct {
 	Port     int       `yaml:"port"`
 	LogLevel string    `yaml:"log_level"`
 	Postgres *Postgres `yaml:"postgres"`
-	Redis    *Redis    `yaml:"redis"`
+	KeyCloak *Keycloak `yaml:"keycloak"`
 }
 
 type Postgres struct {
 	Url string `yaml:"url"`
 }
 
-type Redis struct {
+type Keycloak struct {
 	Url string `yaml:"url"`
+}
+
+func init() {
+	fmt.Printf("Build Date: %s\nBuild Version: %s\nBuild: %s\n\n", Date, Version, Build)
+	err := SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
+	if err != nil {
+		log.Fatal("No BSSVR_PROFILE value. Cannot start the server application")
+	}
+	Configuration = GetConfig()
+	ll, err := log.ParseLevel(Configuration.LogLevel)
+	if err != nil {
+		ll = log.DebugLevel
+	}
+	log.SetLevel(ll)
+	log.SetFormatter(&log.JSONFormatter{})
 }
 
 func SetConfig(profile string) error {
@@ -35,7 +57,7 @@ func SetConfig(profile string) error {
 		return err
 	}
 
-	err = viper.Unmarshal(&configuration)
+	err = viper.Unmarshal(Configuration)
 	if err != err {
 		return err
 	}
@@ -46,7 +68,7 @@ func SetConfig(profile string) error {
 			log.Error(err)
 			return
 		}
-		err = viper.Unmarshal(&configuration)
+		err = viper.Unmarshal(Configuration)
 		if err != nil {
 			log.Error(err)
 			return
@@ -59,5 +81,5 @@ func SetConfig(profile string) error {
 }
 
 func GetConfig() *Config {
-	return &configuration
+	return Configuration
 }
