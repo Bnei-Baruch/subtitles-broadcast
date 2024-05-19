@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/coreos/go-oidc"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/config"
@@ -66,7 +65,7 @@ func GetClaims(ctx context.Context, tokenStr string) (*IDTokenClaims, error) {
 
 	var claims IDTokenClaims
 	if err := token.Claims(&claims); err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 	claims.initRoleMap()
 
