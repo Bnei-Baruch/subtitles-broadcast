@@ -18,13 +18,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	conf    *config.Config
-	Version = "Dev"
-	Build   = "Dev"
-	Date    = "Dev"
-)
-
 const (
 	LanguageCodeEnglish = "en"
 	LanguageCodeSpanish = "es"
@@ -34,23 +27,8 @@ const (
 	SourcePathUpdateTermHour = 6
 )
 
-func init() {
-	fmt.Printf("Build Date: %s\nBuild Version: %s\nBuild: %s\n\n", Date, Version, Build)
-	err := config.SetConfig(fmt.Sprintf("config_%s", os.Getenv("BSSVR_PROFILE")))
-	if err != nil {
-		log.Fatal("No BSSVR_PROFILE value. Cannot start the server application")
-	}
-	conf = config.GetConfig()
-	ll, err := log.ParseLevel(conf.LogLevel)
-	if err != nil {
-		ll = log.DebugLevel
-	}
-	log.SetLevel(ll)
-	log.SetFormatter(&log.JSONFormatter{})
-}
-
 func NewApp(sig chan os.Signal) *http.Server {
-	db, err := database.NewPostgres(conf.Postgres.Url)
+	db, err := database.NewPostgres(config.Configuration.Postgres.Url)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -86,7 +64,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 	}()
 
 	return &http.Server{
-		Addr:    ":" + fmt.Sprintf("%d", conf.Port),
+		Addr:    ":" + fmt.Sprintf("%d", config.Configuration.Port),
 		Handler: NewRouter(NewHandler(db)),
 	}
 }

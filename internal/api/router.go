@@ -10,7 +10,6 @@ func NewRouter(handler *Handler) http.Handler {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 	router.Use(UserRoleHandler())
-	router.Use(UserInfoHandler())
 
 	v1 := router.Group("/api/v1")
 

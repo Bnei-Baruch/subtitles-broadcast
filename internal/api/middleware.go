@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -50,41 +51,15 @@ func UserRoleHandler() gin.HandlerFunc {
 			return
 		}
 		tokenString := authHeader[len(BearerPrefix)+1:]
-		roles, err := auth.GetUserRole(tokenString)
+		claims, err := auth.GetClaims(context.TODO(), tokenString)
 		if err != nil {
 			handleResponse(ctx, http.StatusUnauthorized, err.Error())
 			return
 		}
-		isValidUser := false
-		for _, role := range roles {
-			if _, ok := userRoles[role.Name]; ok {
-				isValidUser = true
-				// userRole = role.Name
-				break
-			}
-		}
-		if !isValidUser {
-			handleResponse(ctx, http.StatusUnauthorized, "The user is not authorized")
-			return
-		}
-		ctx.Next()
-	}
-}
 
-func UserInfoHandler() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		authHeader := ctx.GetHeader("Authorization")
-		if len(authHeader) == 0 {
-			handleResponse(ctx, http.StatusUnauthorized, "there is no authorization token")
-			return
-		}
-		tokenString := authHeader[len("Bearer"):]
-		userInfo, err := auth.GetUserInfo(tokenString)
-		if err != nil {
-			handleResponse(ctx, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx.Set("user_id", userInfo.Sub)
+		// TODO: manage user role
+
+		ctx.Set("user_id", claims.Sub)
 		ctx.Next()
 	}
 }
