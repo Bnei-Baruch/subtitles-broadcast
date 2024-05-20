@@ -8,15 +8,15 @@ services:
       - "${BSSVR_BACKEND_PORT}:8080"
     restart: always
     depends_on:
-      subtitles_db_dev:
+      db:
         condition: service_healthy
     links:
-        - subtitles_db_dev
+        - db
     networks:
       - mynetwork
 
-  subtitles_db_dev:
-    container_name: subtitles_db_dev
+  db:
+    container_name: db
     image: postgres:latest
     environment:
       POSTGRES_USER: ${BSSVR_DB_USER}
