@@ -2,31 +2,28 @@ version: '3.8'
 
 services:
   bssvr:
-    container_name: bssvr
-    image: rocky2017aaa/bssvr
-    environment:
-      BSSVR_PROFILE: test
+    container_name: subtitles
+    image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
     ports:
-      - "8080:8080"
+      - "${SUBTITLES_BACKEND_PORT}:8080"
     restart: always
     depends_on:
-      db:
+      subtitles_db:
         condition: service_healthy
     links:
-        - db
+        - subtitles_db
     networks:
       - mynetwork
 
-
-  db:
-    container_name: db
+  subtitles_db:
+    container_name: subtitles_db
     image: postgres:latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1q2w3e4r
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${SUBTITLES_DB_USER}
+      POSTGRES_PASSWORD: ${SUBTITLES_DB_PASSWORD}
+      POSTGRES_DB: ${SUBTITLES_DB}
     volumes:
-      - $HOME/data/postgres:/var/lib/postgresql/data
+      - ${SUBTITLES_POSTGRES_VOLUME_PATH}:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: always

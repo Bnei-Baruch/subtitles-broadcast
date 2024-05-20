@@ -3,7 +3,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -28,7 +27,7 @@ const (
 )
 
 func NewApp(sig chan os.Signal) *http.Server {
-	db, err := database.NewPostgres(config.Configuration.Postgres.Url)
+	db, err := database.NewPostgres(os.Getenv(config.EnvBssvrPostgresUri))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -64,7 +63,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 	}()
 
 	return &http.Server{
-		Addr:    ":" + fmt.Sprintf("%d", config.Configuration.Port),
+		Addr:    ":" + os.Getenv(config.EnvBssvrPort),
 		Handler: NewRouter(NewHandler(db)),
 	}
 }
