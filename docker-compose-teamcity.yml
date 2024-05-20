@@ -5,7 +5,7 @@ services:
     container_name: subtitles_dev
     image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
     environment:
-      BSSVR_PROFILE: dev
+      BSSVR_PROFILE: test
     ports:
       - "${SUBTITLES_BACKEND_PORT}:8080"
     depends_on:
