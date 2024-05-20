@@ -9,7 +9,7 @@ import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 import PropTypes from "prop-types";
 
 const Auth = ({ children }) => {
-  const [auth, setAuth] = useState({ keycloak: null, authenticated: false });
+  const [auth, setAuth] = useState({ keycloak: null, authenticated: false, securityProfile: null, securityRole: null });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
 
@@ -26,7 +26,7 @@ const Auth = ({ children }) => {
         // redirectUri: window.location.origin,
       })
       .then((authenticated) => {
-        determineAccess(keycloak, setAccess);
+        const securityRole = determineAccess(keycloak, setAccess);
 
         keycloak.loadUserProfile().then(function () {
           const profile = {
@@ -38,6 +38,7 @@ const Auth = ({ children }) => {
 
             // TODO: Add gender to the response
             gender: "male",
+            securityRole: securityRole
           };
           // profile.logout = keycloak.logout;
           dispatch(StoreProfile({ profile }));
@@ -46,6 +47,7 @@ const Auth = ({ children }) => {
             keycloak,
             authenticated,
             profile,
+            securityRole
           });
         });
       });
@@ -73,6 +75,8 @@ Auth.propTypes = {
 };
 
 function determineAccess(keycloak, setAccess) {
+  let securityRole = null;
+
   if (keycloak && keycloak.realmAccess) {
     const subtitlesRoleRex = new RegExp(
       "subtitles_(?<role>.*)|(?<admin_role>admin)"
@@ -83,11 +87,16 @@ function determineAccess(keycloak, setAccess) {
       const subtitlesRoleMatchRes = role.match(subtitlesRoleRex);
 
       if (subtitlesRoleMatchRes && subtitlesRoleMatchRes.groups) {
+        securityRole = subtitlesRoleMatchRes.groups.role?  
+          subtitlesRoleMatchRes.groups.role: 
+          subtitlesRoleMatchRes.groups.admin_role;
         setAccess(true);
         break;
       }
     }
   }
+
+  return securityRole;
 }
 
 export default Auth;
