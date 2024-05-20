@@ -361,17 +361,15 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          {getCurrentBroadcastLanguage().value === "he" && (
-            <div className="Questions whit-s">
-              <div className="top-head d-flex justify-content-between">
-                <h3>Questions</h3>
-              </div>
-              <QuestionMessage
-                mode="subtitle"
-                languagesList={broadcastLanguages}
-              ></QuestionMessage>
+          <div className="Questions whit-s">
+            <div className="top-head d-flex justify-content-between">
+              <h3>Questions</h3>
             </div>
-          )}
+            <QuestionMessage
+              mode="subtitle"
+              languagesList={broadcastLanguages}
+            ></QuestionMessage>
+          </div>
         </div>
       </div>
     </>
