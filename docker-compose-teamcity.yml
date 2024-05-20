@@ -12,7 +12,7 @@ services:
       subtitles_dev_db:
         condition: service_healthy
     links:
-      - subtitles_dev_db:db
+      - subtitles_dev_db
     networks:
       - mynetwork
 
