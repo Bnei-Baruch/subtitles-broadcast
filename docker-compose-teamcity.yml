@@ -5,20 +5,21 @@ services:
     container_name: subtitles_dev
     image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
     environment:
-      BSSVR_PROFILE: test
+      BSSVR_PROFILE: dev
+      GIN_MODE: ${BSSVR_GIN_MODE}
     ports:
       - "${SUBTITLES_BACKEND_PORT}:8080"
     depends_on:
       subtitles_dev_db:
         condition: service_healthy
     links:
-      - subtitles_dev_db:db
+      - subtitles_dev_db
     networks:
       - mynetwork
 
 
   subtitles_dev_db:
-    container_name: subtitle_dev_db
+    container_name: subtitles_dev_db
     image: postgres:latest
     environment:
       POSTGRES_USER: ${SUBTITLES_DB_USER}

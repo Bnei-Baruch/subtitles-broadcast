@@ -2,24 +2,24 @@ version: '3.8'
 
 services:
   bssvr:
-    container_name: subtitles
+    container_name: subtitles_local
     image: bneibaruch/subtitles_backend:${BSSVR_BACKEND_VERSION}
     environment:
-      BSSVR_PROFILE: prod
+      BSSVR_PROFILE: test
       GIN_MODE: ${BSSVR_GIN_MODE}
     ports:
       - "${BSSVR_BACKEND_PORT}:8080"
     restart: always
     depends_on:
-      subtitles_db:
+      db:
         condition: service_healthy
     links:
-        - subtitles_db
+        - db
     networks:
       - mynetwork
 
-  subtitles_db:
-    container_name: subtitles_db
+  db:
+    container_name: db
     image: postgres:latest
     environment:
       POSTGRES_USER: ${BSSVR_DB_USER}
@@ -28,7 +28,7 @@ services:
     volumes:
       - $HOME${BSSVR_POSTGRES_VOLUME_PATH}:/var/lib/postgresql/data
     ports:
-      - "5432"
+      - "5432:5432"
     restart: always
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
