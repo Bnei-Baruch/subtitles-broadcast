@@ -15,10 +15,10 @@ var (
 )
 
 const (
-	EnvBssvrPort        = "SUBTITLES_BACKEND_PORT"
-	EnvBssvrLogLevel    = "SUBTITLES_LOG_LEVEL"
-	EnvBssvrPostgresUri = "SUBTITLES_POSTGRES_URI"
-	EnvBssvrKeycloakUri = "SUBTITLES_KEYCLOAK_URI"
+	EnvBssvrPort        = "BSSVR_BACKEND_PORT"
+	EnvBssvrLogLevel    = "BSSVR_LOG_LEVEL"
+	EnvBssvrPostgresUri = "BSSVR_POSTGRES_URI"
+	EnvBssvrKeycloakUri = "BSSVR_KEYCLOAK_URI"
 )
 
 func init() {
