@@ -5,7 +5,7 @@ services:
     container_name: subtitles_dev
     image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
     environment:
-      BSSVR_PROFILE: test
+      BSSVR_PROFILE: dev
     ports:
       - "${SUBTITLES_BACKEND_PORT}:8080"
     depends_on:
@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${SUBTITLES_DB_PASSWORD}
       POSTGRES_DB: ${SUBTITLES_DB}
     expose:
-      - "5432:5432"
+      - "5432"
     volumes:
       - /root/teamcity/subtitles_backend/data:/var/lib/postgresql/data
     healthcheck:

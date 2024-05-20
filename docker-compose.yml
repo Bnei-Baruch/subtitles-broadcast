@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${BSSVR_DB_PASSWORD}
       POSTGRES_DB: ${BSSVR_DB}
     volumes:
-      - ${BSSVR_POSTGRES_VOLUME_PATH}:/var/lib/postgresql/data
+      - $HOME${BSSVR_POSTGRES_VOLUME_PATH}:/var/lib/postgresql/data
     ports:
       - "5432"
     restart: always
