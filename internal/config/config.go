@@ -19,7 +19,7 @@ const (
 	EnvBssvrLogLevel    = "BSSVR_LOG_LEVEL"
 	EnvBssvrPostgresUri = "BSSVR_POSTGRES_URI"
 	EnvBssvrKeycloakUri = "BSSVR_KEYCLOAK_URI"
-	EnvFile             = ".env"
+	EnvFile             = "bssvr.env"
 )
 
 func init() {
