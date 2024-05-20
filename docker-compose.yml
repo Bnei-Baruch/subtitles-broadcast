@@ -6,6 +6,7 @@ services:
     image: bneibaruch/subtitles_backend:${BSSVR_BACKEND_VERSION}
     environment:
       BSSVR_PROFILE: prod
+      GIN_MODE: ${BSSVR_GIN_MODE}
     ports:
       - "${BSSVR_BACKEND_PORT}:8080"
     restart: always

@@ -6,6 +6,7 @@ services:
     image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
     environment:
       BSSVR_PROFILE: dev
+      GIN_MODE: ${BSSVR_GIN_MODE}
     ports:
       - "${SUBTITLES_BACKEND_PORT}:8080"
     depends_on:
