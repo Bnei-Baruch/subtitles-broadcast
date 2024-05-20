@@ -14,9 +14,9 @@ RUN mkdir /appication
 WORKDIR /appication
 
 COPY --from=base /app/bssvr .
-COPY --from=base /app/.env .
-COPY --from=base /app/.env_test .
-COPY --from=base /app/.env_local .
+COPY --from=base /app/bssvr.env .
+COPY --from=base /app/bssvr.env_test .
+COPY --from=base /app/bssvr.env_local .
 COPY --from=base /app/docker-compose.yml .
 COPY --from=base /app/docker-compose-local.yml .
 COPY --from=base /app/docker-compose-teamcity.yml .
