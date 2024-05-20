@@ -19,13 +19,14 @@ const (
 	EnvBssvrLogLevel    = "BSSVR_LOG_LEVEL"
 	EnvBssvrPostgresUri = "BSSVR_POSTGRES_URI"
 	EnvBssvrKeycloakUri = "BSSVR_KEYCLOAK_URI"
+	EnvFile             = "bssvr.env"
 )
 
 func init() {
 	fmt.Printf("Build Date: %s\nBuild Version: %s\nBuild: %s\n\n", Date, Version, Build)
-	err := godotenv.Load()
+	err := godotenv.Load(EnvFile)
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Fatalf("Error loading %s file: %v", EnvFile, err)
 	}
 	logLevel, err := log.ParseLevel(os.Getenv(EnvBssvrLogLevel))
 	if err != nil {

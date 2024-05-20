@@ -14,7 +14,7 @@ RUN mkdir /appication
 WORKDIR /appication
 
 COPY --from=base /app/bssvr .
-COPY --from=base /app/.env .
+COPY --from=base /app/bssvr.env .
 COPY --from=base /app/script /appication/script
 
 #COPY ./.env /
