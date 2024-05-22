@@ -256,14 +256,33 @@ const EditArcive = ({ handleClose }) => {
                       <i
                         onClick={() => {
                           const cloneSlidedataArray = [...slideListData];
+                          let numberOfPreviousSlides = 0;
+                          for (let i = 0; i < cloneSlidedataArray.length; i++) {
+                            if (key?.ID === cloneSlidedataArray[i].ID) {
+                              numberOfPreviousSlides = i + 1;
+                              break;
+                            }
+                          }
+                          let additionalOrderNumber = 0;
+                          if (numberOfPreviousSlides % key.languages.length === 0) {
+                            additionalOrderNumber += 1;
+                          }
                           cloneSlidedataArray.splice(index + 1, 0, {
                             // slide_id: +key?.ID + 1,
                             file_uid: key?.file_uid,
                             slide: "",
-                            order_number: key?.order_number + 1,
+                            //order_number: key?.order_number + additionalOrderNumber,
                             addedNew: true,
                           });
-                          setSlideListData(cloneSlidedataArray);
+                          const updatedSlideListData = cloneSlidedataArray.map((slide, i) => {
+                            const updatedOrderNumber = Math.floor(i / key.languages.length);
+                            return {
+                              ...slide, // Spread the original slide object to create a new one
+                              order_number: updatedOrderNumber, // Update the order_number property
+                              languages: key.languages
+                            };
+                          });
+                          setSlideListData(updatedSlideListData);
                         }}
                         className="bi bi-plus-circle add-icon "
                       />
