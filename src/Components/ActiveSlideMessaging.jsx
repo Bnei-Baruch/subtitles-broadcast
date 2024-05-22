@@ -45,19 +45,57 @@ export function ActiveSlideMessaging(props) {
     setIsSubTitleMode(props.isSubTitleMode);
   }
 
-  function findActiveSlide(userAddedList, activeSlideOrderNum) {
-    let retSlide;
+  function findActiveSlides(userAddedList, activeSlideOrderNum) {
+    let activeSlideByBroadCustLang;
+    let languageIndex = 0;
+    let otherLangSlides = [];
 
     for (let i = 0; i < userAddedList.slides.length; i++) {
       const lupSlide = userAddedList.slides[i];
 
       if (lupSlide.order_number === activeSlideOrderNum) {
-        retSlide = lupSlide;
-        break;
+        let language = lupSlide.languages[languageIndex];
+
+        if (language === broadcastLangCode) {
+          activeSlideByBroadCustLang = lupSlide;
+        }
+        else {
+          let slide = { ...userAddedList.slides[i], language: lupSlide.languages[languageIndex] };
+          otherLangSlides.push(slide);
+        }
+
+        languageIndex++
+      }
+      else {
+        if (otherLangSlides.length > 0) {
+          break;
+        }
       }
     }
 
-    return retSlide;
+    let retObj = { activeSlideByLang: activeSlideByBroadCustLang, otherSlides: otherLangSlides };
+    return retObj;
+  }
+
+  const publishSlide = (slide, topic) => {
+    const slideJsonMsg = {
+      type: "subtitle",
+      ID: slide.ID,
+      bookmark_id: slide.bookmark_id,
+      file_uid: slide.file_uid,
+      order_number: slide.order_number,
+      slide: slide.slide,
+      source_uid: slide.source_uid,
+      clientId: mqttClientId,
+      date: new Date().toUTCString(),
+    };
+
+    publishEvent("mqttPublush", {
+      mqttTopic: topic,
+      message: JSON.stringify(slideJsonMsg),
+    });
+
+    return slideJsonMsg;
   }
 
   const determinePublishActiveSlide = (userAddedList, activatedTab) => {
@@ -67,7 +105,9 @@ export function ActiveSlideMessaging(props) {
       userAddedList &&
       activatedTab >= 0
     ) {
-      const activeSlide = findActiveSlide(userAddedList, activatedTab);
+      const activeSlideObj = findActiveSlides(userAddedList, activatedTab);
+      const activeSlide = activeSlideObj.activeSlideByLang;
+      const otherSlides = activeSlideObj.otherSlides;
 
       if (activeSlide) {
         if (
@@ -78,34 +118,30 @@ export function ActiveSlideMessaging(props) {
             sessionStorage.getItem("ActiveSlideMessaging")
           );
 
-          var slideJsonMsg = {
-            type: "subtitle",
-            ID: activeSlide.ID,
-            bookmark_id: activeSlide.bookmark_id,
-            file_uid: activeSlide.file_uid,
-            order_number: activeSlide.order_number,
-            slide: activeSlide.slide,
-            source_uid: activeSlide.source_uid,
-            clientId: mqttClientId,
-            date: new Date().toUTCString(),
-          };
-          setSubtitleMqttMessage(slideJsonMsg);
 
           if (
             !lastMqttMessageJson ||
             lastMqttMessageJson.slide !== activeSlide.slide
           ) {
-            publishEvent("mqttPublush", {
-              mqttTopic: subtitleMqttTopic,
-              message: JSON.stringify(slideJsonMsg),
-            });
+            const slideJsonMsg = publishSlide(activeSlide, subtitleMqttTopic);
+            setSubtitleMqttMessage(slideJsonMsg);
 
             sessionStorage.setItem(
               "ActiveSlideMessaging",
               JSON.stringify(slideJsonMsg)
             );
+
+            if (otherSlides) {
+              for (let index = 0; index < otherSlides.length; index++) {
+                const slide = otherSlides[index];
+                const topic = `subtitles_${broadcastProgrammCode}_${slide.language}`;
+
+                publishSlide(slide, topic);
+              }
+            }
           }
         }
+
       }
     }
   };
