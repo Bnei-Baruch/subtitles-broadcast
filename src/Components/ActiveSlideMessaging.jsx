@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Slide } from "../Components/Slide";
 import {
   getCurrentBroadcastLanguage,
@@ -9,6 +9,7 @@ import {
   subscribeEvent,
   unSubscribeEvent,
 } from "../Utils/Events";
+import AppContext from "../AppContext";
 
 const styles = {
   mainContainer: {
@@ -23,6 +24,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
+  const appContextlData = useContext(AppContext);
   const mqttClientId = sessionStorage.getItem("mqttClientId");
   const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
@@ -174,41 +176,63 @@ export function ActiveSlideMessaging(props) {
   }, []);
 
   useEffect(() => {
+    if (broadcastLangCode !== appContextlData.broadcastLang.value) {
+      setBroadcastLangObj(appContextlData.broadcastLang);
+    }
+
+  }, [appContextlData.broadcastLang.value]);
+  
+  useEffect(() => {
+    if (broadcastProgrammCode !== appContextlData.broadcastProgramm.value) {
+      setBroadcastProgrammObj(appContextlData.broadcastProgramm);
+    }
+
+  }, [appContextlData.broadcastProgramm.value]);
+  
+  useEffect(() => {
+    if (broadcastLangCode !== appContextlData.broadcastLang.value) {
+      setBroadcastLangObj(appContextlData.broadcastLang);
+    }
+  }, [appContextlData.broadcastLang.value]);
+
+
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       console.log(
         "ActiveSlideMessaging publishEvent mqttSubscribe",
         subtitleMqttTopic
       );
+
+      compSubscribeEvents();
+
       publishEvent("mqttSubscribe", {
         mqttTopic: subtitleMqttTopic,
       });
       publishEvent("mqttSubscribe", {
         mqttTopic: questionMqttTopic,
       });
-
-      compSubscribeEvents();
     }, 0);
+
 
     return () => {
       clearTimeout(timeoutId);
       compUnSubscribeAppEvents();
     };
-  }, [isSubTitleMode]);
+  }, [isSubTitleMode, subtitleMqttTopic]);
 
   const newMessageHandling = (event) => {
     console.log("ActiveSlideMessaging newMessageHandling", event);
-    const newMessageJson = event.detail.messageJson;
+    const newMessageJson = event.detail.messageJson || event.detail.message;
+    const topic = event.detail.mqttTopic || event.detail.topic;
 
-    if (event.detail.mqttTopic === subtitleMqttTopic) {
+    if (topic === subtitleMqttTopic) {
       const lastMqttMessageJson = JSON.parse(
         sessionStorage.getItem("LastActiveSlidePublishedMessage")
       );
-      const newMsgDateUtcJs = new Date(newMessageJson.date);
 
       if (
         !lastMqttMessageJson ||
-        (lastMqttMessageJson.slide !== newMessageJson.slide &&
-          newMsgDateUtcJs > new Date(lastMqttMessageJson.date))
+        (lastMqttMessageJson.slide !== newMessageJson.slide)
       ) {
         setSubtitleMqttMessage(newMessageJson);
 

@@ -77,7 +77,9 @@ export function BroadcastSettings({ props }) {
     sessionStorage.setItem("isBroadcastSettingsShown", true);
     setShowBroadcastSettings(false);
     appContextlData.setBroadcastLang(broadcastLang);
+    appContextlData.setBroadcastProgramm(broadcastProgramm);
   };
+
   const handleShow = () => setShowBroadcastSettings(true);
 
   sessionStorage.setItem("broadcastLangObj", JSON.stringify(broadcastLang));
@@ -85,9 +87,15 @@ export function BroadcastSettings({ props }) {
     "broadcastProgrammObj",
     JSON.stringify(broadcastProgramm)
   );
+
   if (!appContextlData.broadcastLang) {
     appContextlData.broadcastLang = broadcastLang;
     appContextlData.setBroadcastLang(broadcastLang);
+  }
+
+  if (!appContextlData.broadcastProgramm) {
+    appContextlData.broadcastProgramm = broadcastProgramm;
+    appContextlData.setBroadcastLang(broadcastProgramm);
   }
 
 

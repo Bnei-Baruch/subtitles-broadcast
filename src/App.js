@@ -31,17 +31,18 @@ const App = ({ auth }) => {
   const mqttSubscribeEventHandler = (data) => {
     const mqttTopic = data.detail.mqttTopic;
     let isIncludes = false;
+    let locNotificationList = [];
 
     let msgListStorageArrJsonStr = sessionStorage.getItem(
       "AppNotificationList"
     );
     let msgListStorageJson = JSON.parse(msgListStorageArrJsonStr);
 
-    if (!msgListStorageJson) {
-      msgListStorageJson = notificationList;
+    if (msgListStorageJson) {
+      locNotificationList = msgListStorageJson;
     }
 
-    notificationList.forEach((message, index) => {
+    locNotificationList.forEach((message, index) => {
       if (message.topic === mqttTopic) {
         publishEvent(mqttTopic, message);
 
@@ -53,7 +54,9 @@ const App = ({ auth }) => {
     });
 
     if (!isIncludes) {
-      mqttTopicList.push(mqttTopic);
+      if (!mqttTopicList.includes(mqttTopic)) {
+        mqttTopicList.push(mqttTopic);
+      }
 
       if (isConnected) {
         mqttSubscribe(mqttTopic);
@@ -72,7 +75,11 @@ const App = ({ auth }) => {
       subscribeCandidateList.forEach((topic, index) => {
         if (topic !== mqttTopic) {
           console.log("App mqttSubscribe Candidate DONE", mqttTopic);
-          mqttTopicList.push(mqttTopic);
+
+          if (!mqttTopicList.includes(mqttTopic)) {
+            mqttTopicList.push(mqttTopic);
+          }
+
           mqttSubscribe(topic);
           setSubscribeCandidateList([]);
         }
@@ -89,6 +96,28 @@ const App = ({ auth }) => {
     });
   };
 
+  const mqttNewmessageEventHandler = (data) => {
+    let locNotificationList = [];
+    const mqttTopic = data.detail.mqttTopic;
+    const newMessage = data.detail.messageJson;
+
+    let msgListStorageArrJsonStr = sessionStorage.getItem(
+      "AppNotificationList"
+    );
+
+    let msgListStorageJson = JSON.parse(msgListStorageArrJsonStr);
+    if (msgListStorageJson) {
+      locNotificationList = msgListStorageJson;
+    }
+
+    const newNotif = { topic: mqttTopic, message: newMessage };
+    const notif = [...locNotificationList, newNotif];
+    setNotificationList(notif);
+    const newNotifStr = JSON.stringify(notif);
+    sessionStorage.setItem("AppNotificationList", newNotifStr);
+    console.log("App payload New Message", newNotif);
+  };
+
   let subscribed = false;
 
   const subscribeAppEvents = () => {
@@ -96,6 +125,7 @@ const App = ({ auth }) => {
       subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
       subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
       subscribeEvent("mqttPublush", mqttPublushEventHandler);
+      subscribeEvent("mqttNewmessage", mqttNewmessageEventHandler);
     }
     subscribed = true;
   };
@@ -103,9 +133,11 @@ const App = ({ auth }) => {
     unSubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
     unSubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
     unSubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
+    unSubscribeEvent("mqttNewmessage", mqttNewmessageEventHandler);
   };
 
   const [broadcastLang, setBroadcastLang] = useState();
+  const [broadcastProgramm, setBroadcastProgramm] = useState();
 
   useEffect(() => {
     subscribeAppEvents();
@@ -130,14 +162,6 @@ const App = ({ auth }) => {
   }, [isConnected]);
 
   useEffect(() => {
-    if (payload.message && mqttTopicList.includes(payload.topic)) {
-      const newMessage = JSON.parse(payload.message);
-      const newNotif = { topic: payload.topic, message: newMessage };
-      const notif = [...notificationList, newNotif];
-      setNotificationList(notif);
-      console.log("App payload New Message", newNotif);
-    }
-
     return () => {
       unSubscribeAppEvents();
     };
@@ -146,23 +170,28 @@ const App = ({ auth }) => {
   return (
     <BrowserRouter>
       <div className="app">
-      <AppContext.Provider
+        <AppContext.Provider
           value={{
             broadcastLang,
             setBroadcastLang,
+            broadcastProgramm,
+            setBroadcastProgramm,
           }}
         >
-        <SideNavBar securityRole={auth? auth.securityRole: null} />
-        <div style={{ backgroundColor: "#eeee" }} className="main-content">
-          <HeaderBar logout={auth?.keycloak} />
-          <MainRoutes logout={auth?.keycloak} securityRole={auth? auth.securityRole: null} />
-        </div>
-      </AppContext.Provider>
+          <SideNavBar securityRole={auth ? auth.securityRole : null} />
+          <div style={{ backgroundColor: "#eeee" }} className="main-content">
+            <HeaderBar logout={auth?.keycloak} />
+            <MainRoutes
+              logout={auth?.keycloak}
+              securityRole={auth ? auth.securityRole : null}
+            />
+          </div>
+        </AppContext.Provider>
       </div>
 
-      {auth && auth.securityRole &&  auth.securityRole === "translator" &&
-          <Navigate to="/question" />
-        }
+      {auth && auth.securityRole && auth.securityRole === "translator" && (
+        <Navigate to="/question" />
+      )}
     </BrowserRouter>
   );
 };
