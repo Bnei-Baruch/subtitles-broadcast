@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/pkg/auth"
 )
@@ -85,7 +84,6 @@ func HttpMethodChecker(router *gin.Engine) gin.HandlerFunc {
 }
 
 func handleResponse(ctx *gin.Context, statusCode int, errMsg string) {
-	log.Error(errMsg)
 	ctx.AbortWithStatusJSON(statusCode, gin.H{
 		"success":     true,
 		"data":        "",
