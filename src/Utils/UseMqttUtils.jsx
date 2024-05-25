@@ -140,13 +140,14 @@ export default function useMqtt() {
       mqttClient.on("message", (_topic, message) => {
         const payloadMessage = { topic: _topic, message: message.toString() };
         const newMessage = JSON.parse(payloadMessage.message);
-
-        publishEvent(_topic, {
+        const argData = {
           mqttTopic: _topic,
           clientId: mqttClientId,
           messageJson: newMessage,
-        });
+        }
 
+        publishEvent(_topic, argData);
+        publishEvent("mqttNewmessage",argData);
         setPayload(payloadMessage);
 
         console.log(

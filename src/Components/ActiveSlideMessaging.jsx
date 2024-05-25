@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Slide } from "../Components/Slide";
 import {
   getCurrentBroadcastLanguage,
@@ -9,6 +9,7 @@ import {
   subscribeEvent,
   unSubscribeEvent,
 } from "../Utils/Events";
+import AppContext from "../AppContext";
 
 const styles = {
   mainContainer: {
@@ -23,6 +24,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
+  const appContextlData = useContext(AppContext);
   const mqttClientId = sessionStorage.getItem("mqttClientId");
   const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
@@ -45,19 +47,57 @@ export function ActiveSlideMessaging(props) {
     setIsSubTitleMode(props.isSubTitleMode);
   }
 
-  function findActiveSlide(userAddedList, activeSlideOrderNum) {
-    let retSlide;
+  function findActiveSlides(userAddedList, activeSlideOrderNum) {
+    let activeSlideByBroadCustLang;
+    let languageIndex = 0;
+    let otherLangSlides = [];
 
     for (let i = 0; i < userAddedList.slides.length; i++) {
       const lupSlide = userAddedList.slides[i];
 
       if (lupSlide.order_number === activeSlideOrderNum) {
-        retSlide = lupSlide;
-        break;
+        let language = lupSlide.languages[languageIndex];
+
+        if (language === broadcastLangCode) {
+          activeSlideByBroadCustLang = lupSlide;
+        }
+        else {
+          let slide = { ...userAddedList.slides[i], language: lupSlide.languages[languageIndex] };
+          otherLangSlides.push(slide);
+        }
+
+        languageIndex++
+      }
+      else {
+        if (otherLangSlides.length > 0) {
+          break;
+        }
       }
     }
 
-    return retSlide;
+    let retObj = { activeSlideByLang: activeSlideByBroadCustLang, otherSlides: otherLangSlides };
+    return retObj;
+  }
+
+  const publishSlide = (slide, topic) => {
+    const slideJsonMsg = {
+      type: "subtitle",
+      ID: slide.ID,
+      bookmark_id: slide.bookmark_id,
+      file_uid: slide.file_uid,
+      order_number: slide.order_number,
+      slide: slide.slide,
+      source_uid: slide.source_uid,
+      clientId: mqttClientId,
+      date: new Date().toUTCString(),
+    };
+
+    publishEvent("mqttPublush", {
+      mqttTopic: topic,
+      message: JSON.stringify(slideJsonMsg),
+    });
+
+    return slideJsonMsg;
   }
 
   const determinePublishActiveSlide = (userAddedList, activatedTab) => {
@@ -67,7 +107,9 @@ export function ActiveSlideMessaging(props) {
       userAddedList &&
       activatedTab >= 0
     ) {
-      const activeSlide = findActiveSlide(userAddedList, activatedTab);
+      const activeSlideObj = findActiveSlides(userAddedList, activatedTab);
+      const activeSlide = activeSlideObj.activeSlideByLang;
+      const otherSlides = activeSlideObj.otherSlides;
 
       if (activeSlide) {
         if (
@@ -78,34 +120,30 @@ export function ActiveSlideMessaging(props) {
             sessionStorage.getItem("ActiveSlideMessaging")
           );
 
-          var slideJsonMsg = {
-            type: "subtitle",
-            ID: activeSlide.ID,
-            bookmark_id: activeSlide.bookmark_id,
-            file_uid: activeSlide.file_uid,
-            order_number: activeSlide.order_number,
-            slide: activeSlide.slide,
-            source_uid: activeSlide.source_uid,
-            clientId: mqttClientId,
-            date: new Date().toUTCString(),
-          };
-          setSubtitleMqttMessage(slideJsonMsg);
 
           if (
             !lastMqttMessageJson ||
             lastMqttMessageJson.slide !== activeSlide.slide
           ) {
-            publishEvent("mqttPublush", {
-              mqttTopic: subtitleMqttTopic,
-              message: JSON.stringify(slideJsonMsg),
-            });
+            const slideJsonMsg = publishSlide(activeSlide, subtitleMqttTopic);
+            setSubtitleMqttMessage(slideJsonMsg);
 
             sessionStorage.setItem(
               "ActiveSlideMessaging",
               JSON.stringify(slideJsonMsg)
             );
+
+            if (otherSlides) {
+              for (let index = 0; index < otherSlides.length; index++) {
+                const slide = otherSlides[index];
+                const topic = `subtitles_${broadcastProgrammCode}_${slide.language}`;
+
+                publishSlide(slide, topic);
+              }
+            }
           }
         }
+
       }
     }
   };
@@ -138,41 +176,63 @@ export function ActiveSlideMessaging(props) {
   }, []);
 
   useEffect(() => {
+    if (broadcastLangCode !== appContextlData.broadcastLang.value) {
+      setBroadcastLangObj(appContextlData.broadcastLang);
+    }
+
+  }, [appContextlData.broadcastLang.value]);
+  
+  useEffect(() => {
+    if (broadcastProgrammCode !== appContextlData.broadcastProgramm.value) {
+      setBroadcastProgrammObj(appContextlData.broadcastProgramm);
+    }
+
+  }, [appContextlData.broadcastProgramm.value]);
+  
+  useEffect(() => {
+    if (broadcastLangCode !== appContextlData.broadcastLang.value) {
+      setBroadcastLangObj(appContextlData.broadcastLang);
+    }
+  }, [appContextlData.broadcastLang.value]);
+
+
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       console.log(
         "ActiveSlideMessaging publishEvent mqttSubscribe",
         subtitleMqttTopic
       );
+
+      compSubscribeEvents();
+
       publishEvent("mqttSubscribe", {
         mqttTopic: subtitleMqttTopic,
       });
       publishEvent("mqttSubscribe", {
         mqttTopic: questionMqttTopic,
       });
-
-      compSubscribeEvents();
     }, 0);
+
 
     return () => {
       clearTimeout(timeoutId);
       compUnSubscribeAppEvents();
     };
-  }, [isSubTitleMode]);
+  }, [isSubTitleMode, subtitleMqttTopic]);
 
   const newMessageHandling = (event) => {
     console.log("ActiveSlideMessaging newMessageHandling", event);
-    const newMessageJson = event.detail.messageJson;
+    const newMessageJson = event.detail.messageJson || event.detail.message;
+    const topic = event.detail.mqttTopic || event.detail.topic;
 
-    if (event.detail.mqttTopic === subtitleMqttTopic) {
+    if (topic === subtitleMqttTopic) {
       const lastMqttMessageJson = JSON.parse(
         sessionStorage.getItem("LastActiveSlidePublishedMessage")
       );
-      const newMsgDateUtcJs = new Date(newMessageJson.date);
 
       if (
         !lastMqttMessageJson ||
-        (lastMqttMessageJson.slide !== newMessageJson.slide &&
-          newMsgDateUtcJs > new Date(lastMqttMessageJson.date))
+        (lastMqttMessageJson.slide !== newMessageJson.slide)
       ) {
         setSubtitleMqttMessage(newMessageJson);
 

@@ -97,15 +97,17 @@ export const GreenWindowButton = (props) => {
       clearTimeout(timeoutId);
       compUnSubscribeAppEvents();
     };
-  }, [isSubTitleMode]);
+  }, [isSubTitleMode, broadcastLangCode, broadcastProgrammCode]);
 
   const newMessageHandling = (event) => {
     console.log("GreenWindowButton newMessageHandling", event);
+    const newMessageJson = event.detail.messageJson || event.detail.message;
+    const topic = event.detail.mqttTopic || event.detail.topic;
 
-    if (event.detail.mqttTopic === subtitleMqttTopic) {
-      setSubtitleMqttMessage(event.detail.messageJson);
-    } else if (event.detail.mqttTopic === questionMqttTopic) {
-      setQuestionMqttMessage(event.detail.messageJson);
+    if (topic === subtitleMqttTopic) {
+      setSubtitleMqttMessage(newMessageJson);
+    } else if (topic === questionMqttTopic) {
+      setQuestionMqttMessage(newMessageJson);
     }
   };
 
