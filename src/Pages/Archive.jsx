@@ -58,11 +58,16 @@ const Archive = () => {
     const page = +localPagination?.page || 1;
     const totalRows = +ArchiveList?.pagination?.total_rows || 0;
 
+    let startIndex = (page - 1) * limit + 1;
+    let endIndex = +page * +limit < +totalRows ? page * limit : totalRows;
+    if (startIndex > endIndex) {
+      startIndex = (page - 2) * limit + 1;
+      localPagination.page -= 1;
+    }
     setPageIndex({
-      startIndex: (page - 1) * limit + 1,
-      endIndex: +page * +limit < +totalRows ? page * limit : totalRows,
+      startIndex: startIndex,
+      endIndex: endIndex,
     });
-
     // const startIndex = (page.page - 1) * page.limit + 1;
     // const endIndex = Math.min(
     //   page.page * page.limit,
