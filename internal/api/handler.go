@@ -321,7 +321,7 @@ func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gor
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
-		Order("slides.file_uid").Order("order_number")
+		Order("slides.file_uid").Order("order_number").Order("created_at")
 }
 
 // getPaginationParams extracts pagination parameters from the context
