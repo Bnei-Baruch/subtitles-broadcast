@@ -64,6 +64,9 @@ const Archive = () => {
       startIndex = (page - 2) * limit + 1;
       localPagination.page -= 1;
     }
+    if (startIndex < 0) {
+      startIndex = 0;
+    }
     setPageIndex({
       startIndex: startIndex,
       endIndex: endIndex,
