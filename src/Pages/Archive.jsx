@@ -64,10 +64,14 @@ const Archive = () => {
       startIndex = (page - 2) * limit + 1;
       localPagination.page -= 1;
     }
+    if (startIndex < 0) {
+      startIndex = 0;
+    }
     setPageIndex({
       startIndex: startIndex,
       endIndex: endIndex,
     });
+    console.log(page, startIndex);
     // const startIndex = (page.page - 1) * page.limit + 1;
     // const endIndex = Math.min(
     //   page.page * page.limit,
