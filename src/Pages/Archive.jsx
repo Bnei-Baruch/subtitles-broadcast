@@ -71,7 +71,6 @@ const Archive = () => {
       startIndex: startIndex,
       endIndex: endIndex,
     });
-    console.log(page, startIndex);
     // const startIndex = (page.page - 1) * page.limit + 1;
     // const endIndex = Math.min(
     //   page.page * page.limit,
