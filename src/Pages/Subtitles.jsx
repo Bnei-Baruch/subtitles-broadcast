@@ -38,6 +38,7 @@ const Subtitles = () => {
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const GetAllBookmarkList = useSelector(getAllBookmarkList);
   const [searchSlide, setSearchSlide] = useState("");
+  const [searchSlideFileUid, setSearchSlideFileUid] = useState("");
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
@@ -88,9 +89,12 @@ const Subtitles = () => {
     setItems(GetAllBookmarkList);
   }, [GetAllBookmarkList]);
   useEffect(() => {
+    let file_uid = localStorage.getItem("fileUid")
+    if (file_uid.length) {
+      setSearchSlideFileUid(file_uid);
+    }
     if (searchSlide.length) {
-      const file_uid = localStorage.getItem("fileUid");
-      file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+      searchSlideFileUid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
       localStorage.setItem("fileUid", "");
     }
   }, [searchSlide]);
