@@ -252,7 +252,7 @@ export function ActiveSlideMessaging(props) {
           }
         }
       }
-    } else if (event.detail.mqttTopic === questionMqttTopic) {
+    } else if (topic === questionMqttTopic) {
       setQuestionMqttMessage(newMessageJson);
     }
   };
