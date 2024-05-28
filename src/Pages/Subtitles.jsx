@@ -90,7 +90,7 @@ const Subtitles = () => {
   }, [GetAllBookmarkList]);
   useEffect(() => {
     let file_uid = localStorage.getItem("fileUid")
-    if (file_uid.length) {
+    if (file_uid !== "") {
       setSearchSlideFileUid(file_uid);
     }
     searchSlideFileUid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
