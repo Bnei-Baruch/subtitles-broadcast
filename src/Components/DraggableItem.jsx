@@ -14,7 +14,6 @@ const DraggableItem = ({
   id,
   text,
   index,
-
   moveCard,
   fileUid,
   bookmarkDelete,

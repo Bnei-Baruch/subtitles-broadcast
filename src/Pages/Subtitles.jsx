@@ -60,25 +60,25 @@ const Subtitles = () => {
       setActivatedTab("");
     }
   };
-  const handleKeyPress = (event) => {
-    if (event.key === "n" || event.keyCode === 78) {
-      setActivatedTab((pre) => +pre + 1);
-      localStorage.setItem("activatedTabData", +activatedTab + 1);
-    }
-    if (event.key === "b" || event.keyCode === 66) {
-      setActivatedTab((pre) => +pre - 1);
-      localStorage.setItem("activatedTabData", +activatedTab - 1);
-    }
-  };
-  useEffect(() => {
-    // Add event listener when the component mounts
-    window.addEventListener("keydown", handleKeyPress);
+  // const handleKeyPress = (event) => {
+  //   if (event.key === "n" || event.keyCode === 78) {
+  //     setActivatedTab((pre) => +pre + 1);
+  //     localStorage.setItem("activatedTabData", +activatedTab + 1);
+  //   }
+  //   if (event.key === "b" || event.keyCode === 66) {
+  //     setActivatedTab((pre) => +pre - 1);
+  //     localStorage.setItem("activatedTabData", +activatedTab - 1);
+  //   }
+  // };
+  // useEffect(() => {
+  //   // Add event listener when the component mounts
+  //   window.addEventListener("keydown", handleKeyPress);
 
-    // Remove event listener when the component unmounts
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
-  }, []);
+  //   // Remove event listener when the component unmounts
+  //   return () => {
+  //     window.removeEventListener("keydown", handleKeyPress);
+  //   };
+  // }, []);
   useEffect(() => {
     dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
     dispatch(clearAllBookmarks());
@@ -93,10 +93,8 @@ const Subtitles = () => {
     if (file_uid.length) {
       setSearchSlideFileUid(file_uid);
     }
-    if (searchSlide.length) {
-      searchSlideFileUid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
-      localStorage.setItem("fileUid", "");
-    }
+    searchSlideFileUid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+    localStorage.setItem("fileUid", "");
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {
