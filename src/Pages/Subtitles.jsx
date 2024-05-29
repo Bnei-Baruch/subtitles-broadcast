@@ -38,6 +38,7 @@ const Subtitles = () => {
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const GetAllBookmarkList = useSelector(getAllBookmarkList);
   const [searchSlide, setSearchSlide] = useState("");
+  const [searchSlideFileUid, setSearchSlideFileUid] = useState("");
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [activatedTab, setActivatedTab] = useState(activatedTabData);
@@ -59,25 +60,25 @@ const Subtitles = () => {
       setActivatedTab("");
     }
   };
-  const handleKeyPress = (event) => {
-    if (event.key === "n" || event.keyCode === 78) {
-      setActivatedTab((pre) => +pre + 1);
-      localStorage.setItem("activatedTabData", +activatedTab + 1);
-    }
-    if (event.key === "b" || event.keyCode === 66) {
-      setActivatedTab((pre) => +pre - 1);
-      localStorage.setItem("activatedTabData", +activatedTab - 1);
-    }
-  };
-  useEffect(() => {
-    // Add event listener when the component mounts
-    window.addEventListener("keydown", handleKeyPress);
+  // const handleKeyPress = (event) => {
+  //   if (event.key === "n" || event.keyCode === 78) {
+  //     setActivatedTab((pre) => +pre + 1);
+  //     localStorage.setItem("activatedTabData", +activatedTab + 1);
+  //   }
+  //   if (event.key === "b" || event.keyCode === 66) {
+  //     setActivatedTab((pre) => +pre - 1);
+  //     localStorage.setItem("activatedTabData", +activatedTab - 1);
+  //   }
+  // };
+  // useEffect(() => {
+  //   // Add event listener when the component mounts
+  //   window.addEventListener("keydown", handleKeyPress);
 
-    // Remove event listener when the component unmounts
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
-  }, []);
+  //   // Remove event listener when the component unmounts
+  //   return () => {
+  //     window.removeEventListener("keydown", handleKeyPress);
+  //   };
+  // }, []);
   useEffect(() => {
     dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
     dispatch(clearAllBookmarks());
@@ -88,11 +89,12 @@ const Subtitles = () => {
     setItems(GetAllBookmarkList);
   }, [GetAllBookmarkList]);
   useEffect(() => {
-    if (searchSlide.length) {
-      const file_uid = localStorage.getItem("fileUid");
-      file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
-      localStorage.setItem("fileUid", "");
+    let file_uid = localStorage.getItem("fileUid")
+    if (file_uid !== "") {
+      setSearchSlideFileUid(file_uid);
     }
+    searchSlideFileUid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+    localStorage.setItem("fileUid", "");
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {

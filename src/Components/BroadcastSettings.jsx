@@ -95,9 +95,8 @@ export function BroadcastSettings({ props }) {
 
   if (!appContextlData.broadcastProgramm) {
     appContextlData.broadcastProgramm = broadcastProgramm;
-    appContextlData.setBroadcastLang(broadcastProgramm);
+    appContextlData.setBroadcastProgramm(broadcastProgramm);
   }
-
 
   return (
     <>
