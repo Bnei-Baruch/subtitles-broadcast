@@ -135,17 +135,9 @@ const QuestionMessage = (props) => {
           .map((obj) => (
             <div className="QuestionSection " data-key={obj.ID} key={obj.ID}>
               <div className="d-flex justify-content-between h-auto">
-                <p>{getLanguageName(obj.lang)}</p>
-                <i className="bi bi-eye" />
+              {getLanguageName(obj.lang)}
               </div>
-              <div className="d-flex justify-content-end">
-                <p
-                  className={`${languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                >
-                  {obj.slide}
-                </p>
-              </div>
+               <Slide content={obj.slide} isLtr={props.isLtr}></Slide>
             </div>
           ))}
       </>
