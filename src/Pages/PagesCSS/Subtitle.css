@@ -344,7 +344,7 @@ bdo {
   font-style: normal;
   font-weight: 500;
   font-size: 13px;
-  line-height: 38px;
+  line-height: 20px;
   color: #0c0c0c;
 }
 
@@ -439,8 +439,8 @@ dropdown-toggle {
 }
 
 .QuestionSection {
-  background-color: #f7f7f7;
-  height: 76px;
+  /* background-color: #f7f7f7; */
+  border: 1px solid rgb(204, 204, 204);
   margin: 5px 5px;
 }
 
@@ -465,4 +465,3 @@ dropdown-toggle {
   visibility: hidden;
   transform: translate(0px, 0px);
 }
-

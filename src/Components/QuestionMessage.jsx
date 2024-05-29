@@ -133,19 +133,11 @@ const QuestionMessage = (props) => {
         {notificationList
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
           .map((obj) => (
-            <div className="QuestionSection " data-key={obj.ID} key={obj.ID}>
-              <div className="d-flex justify-content-between h-auto">
-                <p>{getLanguageName(obj.lang)}</p>
-                <i className="bi bi-eye" />
+            <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
+              <div className="d-flex justify-content-between h-auto p-2">
+              {getLanguageName(obj.lang)}
               </div>
-              <div className="d-flex justify-content-end">
-                <p
-                  className={`${languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
-                    }`}
-                >
-                  {obj.slide}
-                </p>
-              </div>
+               <Slide content={obj.slide} isLtr={props.isLtr}></Slide>
             </div>
           ))}
       </>
