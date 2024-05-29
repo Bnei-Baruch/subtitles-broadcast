@@ -133,8 +133,8 @@ const QuestionMessage = (props) => {
         {notificationList
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
           .map((obj) => (
-            <div className="QuestionSection " data-key={obj.ID} key={obj.ID}>
-              <div className="d-flex justify-content-between h-auto">
+            <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
+              <div className="d-flex justify-content-between h-auto p-2">
               {getLanguageName(obj.lang)}
               </div>
                <Slide content={obj.slide} isLtr={props.isLtr}></Slide>

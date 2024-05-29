@@ -338,12 +338,12 @@ const Subtitles = () => {
               isSubTitleMode={isSubTitleMode}
             />
           </div>
-          <div className="book-mark whit-s">
+          <div className="book-mark whit-s overflow-auto" style={{height: "150px"}}>
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
             <DndProvider backend={HTML5Backend}>
-              <div className="">
+              <div>
                 {items?.length > 0 &&
                   items?.map((item, index) => (
                     <DraggableItem
@@ -361,13 +361,14 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s">
+          <div className="Questions whit-s overflow-auto"  style={{maxHeight: "275px"}}>
             <div className="top-head d-flex justify-content-between">
               <h3>Questions</h3>
             </div>
             <QuestionMessage
               mode="subtitle"
               languagesList={broadcastLanguages}
+              isLtr={isLtr}
             ></QuestionMessage>
           </div>
         </div>
