@@ -199,6 +199,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			Select("path").
 			Table(DBTableSourcePaths).
 			Where("source_uid = ?", req.SourcePath).
+			Where("languages = ?", pq.StringArray(req.Languages)).
 			First(&sourcePath)
 		if result.Error != nil {
 			log.Error(result.Error)
