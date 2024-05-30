@@ -14,7 +14,7 @@ const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const slideList = useSelector(getEditSlideList);
-
+  const [isLtr, setIsLtr] = useState(true);
   const [slideListData, setSlideListData] = useState(slideList?.slides);
   const [selected, setSelected] = useState(0);
   const [confirmation, setConfirmation] = useState(false);
@@ -155,6 +155,13 @@ const EditArcive = ({ handleClose }) => {
           <div className="innerhead d-flex justify-content-end align-items-end mb-5">
             <div className="button-box group-new">
               <button
+                type="button"
+                onClick={() => setIsLtr(!isLtr)}
+                className="btn btn-tr"
+              >
+                {isLtr ? "LTR" : "RTL"}
+              </button>
+              <button
                 onClick={() => {
                   const addNewSlides = slideListData
                     ?.filter((key) => key?.addedNew == true)
@@ -233,7 +240,8 @@ const EditArcive = ({ handleClose }) => {
                       }}
                       key={index}
                       className=""
-                    // style={containerStyle}
+                      // style={containerStyle}
+                      style={{ textAlign: isLtr ? 'left' : 'right' }}
                     />
                     {index == selected && (
                       <i
@@ -250,6 +258,7 @@ const EditArcive = ({ handleClose }) => {
                           }
                         }}
                         className="bi bi-trash3 delete-icon "
+                        style={{ [isLtr ? 'right' : 'left']: '5px' }}
                       />
                     )}
                     {index == selected && (
@@ -295,7 +304,7 @@ const EditArcive = ({ handleClose }) => {
                     className=" adjustable-font"
                   // style={containerStyle}
                   >
-                    <Slide content={key?.slide} isLtr={true} />
+                    <Slide content={key?.slide} isLtr={isLtr} />
                   </div>
                 </div>
               </div>
