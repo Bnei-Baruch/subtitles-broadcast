@@ -41,7 +41,7 @@ const NewSlides = () => {
 
   useEffect(() => {
     if (sourceUrl.length > 0) {
-      dispatch(ArchiveAutoComplete({ query: sourceUrl }));
+      dispatch(ArchiveAutoComplete({ query: sourceUrl, language: languages[appContextlData.broadcastLang.label] }));
     }
   }, [sourceUrl]);
 
@@ -241,6 +241,10 @@ const NewSlides = () => {
               });
             }
           });
+        }
+        if (fileUid === undefined) {
+          alert("File not found");
+          return;
         }
         setFileUid("upload_" + fileUid);
         // get contents from fileuid

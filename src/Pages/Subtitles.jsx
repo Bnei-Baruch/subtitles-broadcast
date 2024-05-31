@@ -60,25 +60,27 @@ const Subtitles = () => {
       setActivatedTab("");
     }
   };
-  // const handleKeyPress = (event) => {
-  //   if (event.key === "n" || event.keyCode === 78) {
-  //     setActivatedTab((pre) => +pre + 1);
-  //     localStorage.setItem("activatedTabData", +activatedTab + 1);
-  //   }
-  //   if (event.key === "b" || event.keyCode === 66) {
-  //     setActivatedTab((pre) => +pre - 1);
-  //     localStorage.setItem("activatedTabData", +activatedTab - 1);
-  //   }
-  // };
-  // useEffect(() => {
-  //   // Add event listener when the component mounts
-  //   window.addEventListener("keydown", handleKeyPress);
+  const handleKeyPress = (event) => {
+    //  if (event.key === "n" || event.keyCode === 78) {
+    if (event.keyCode === 40) {
+      setActivatedTab((pre) => +pre + 1);
+      localStorage.setItem("activatedTabData", +activatedTab + 1);
+    }
+    //   if (event.key === "b" || event.keyCode === 66) {
+    if (event.keyCode === 38) {
+      setActivatedTab((pre) => +pre - 1);
+      localStorage.setItem("activatedTabData", +activatedTab - 1);
+    }
+  };
+  useEffect(() => {
+    // Add event listener when the component mounts
+    window.addEventListener("keydown", handleKeyPress);
 
-  //   // Remove event listener when the component unmounts
-  //   return () => {
-  //     window.removeEventListener("keydown", handleKeyPress);
-  //   };
-  // }, []);
+    // Remove event listener when the component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
   useEffect(() => {
     dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
     dispatch(clearAllBookmarks());
@@ -340,7 +342,7 @@ const Subtitles = () => {
               isSubTitleMode={isSubTitleMode}
             />
           </div>
-          <div className="book-mark whit-s overflow-auto" style={{height: "150px"}}>
+          <div className="book-mark whit-s overflow-auto" style={{ height: "150px" }}>
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
@@ -363,7 +365,7 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s overflow-auto"  style={{maxHeight: "275px"}}>
+          <div className="Questions whit-s overflow-auto" style={{ maxHeight: "275px" }}>
             <div className="top-head d-flex justify-content-between">
               <h3>Questions</h3>
             </div>
