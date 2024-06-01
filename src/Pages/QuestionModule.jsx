@@ -55,7 +55,7 @@ const QuestionModule = () => {
         const jsonMsgStr = JSON.stringify(jsonMsg);
         const mqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
 
-        console.log("QuestionModule publishEvent mqttPublush", mqttTopic);
+        // console.log("QuestionModule publishEvent mqttPublush", mqttTopic);
 
         publishEvent("mqttPublush", {
           mqttTopic: mqttTopic,

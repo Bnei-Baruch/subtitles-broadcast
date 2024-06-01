@@ -24,7 +24,7 @@ const App = ({ auth }) => {
 
     if (isConnected) {
       mqttUnSubscribe(mqttTopic);
-      console.log("App mqttUnSubscribed", data);
+      // console.log("App mqttUnSubscribed", data);
     }
   };
 
@@ -46,10 +46,7 @@ const App = ({ auth }) => {
       if (message.topic === mqttTopic) {
         publishEvent(mqttTopic, message);
 
-        console.log(
-          "App mqttSubscribe already subscribed, raised custome event",
-          message
-        );
+        // console.log("App mqttSubscribe already subscribed, raised custome event", message);
       }
     });
 
@@ -61,11 +58,11 @@ const App = ({ auth }) => {
       if (isConnected) {
         mqttSubscribe(mqttTopic);
         subscribeCandidate(mqttTopic);
-        console.log("App mqttSubscribe DONE", mqttTopic);
+        // console.log("App mqttSubscribe DONE", mqttTopic);
       } else {
         const notif = [...subscribeCandidateList, mqttTopic];
         setSubscribeCandidateList(notif);
-        console.log("App mqttSubscribe Candidate", mqttTopic);
+        // console.log("App mqttSubscribe Candidate", mqttTopic);
       }
     }
   };
@@ -74,7 +71,7 @@ const App = ({ auth }) => {
     if (subscribeCandidateList.length > 0) {
       subscribeCandidateList.forEach((topic, index) => {
         if (topic !== mqttTopic) {
-          console.log("App mqttSubscribe Candidate DONE", mqttTopic);
+          // console.log("App mqttSubscribe Candidate DONE", mqttTopic);
 
           if (!mqttTopicList.includes(mqttTopic)) {
             mqttTopicList.push(mqttTopic);
@@ -115,7 +112,7 @@ const App = ({ auth }) => {
     setNotificationList(notif);
     const newNotifStr = JSON.stringify(notif);
     sessionStorage.setItem("AppNotificationList", newNotifStr);
-    console.log("App payload New Message", newNotif);
+    // console.log("App payload New Message", newNotif);
   };
 
   let subscribed = false;
@@ -152,7 +149,7 @@ const App = ({ auth }) => {
       subscribeAppEvents();
       mqttTopicList.forEach((mqttTopic, index) => {
         mqttSubscribe(mqttTopic);
-        console.log("App useEffect mqttSubscribe DONE", mqttTopic);
+        // console.log("App useEffect mqttSubscribe DONE", mqttTopic);
       });
     }
 

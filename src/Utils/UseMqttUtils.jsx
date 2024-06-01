@@ -30,7 +30,7 @@ export default function useMqtt() {
 
   const getClientId = () => {
     const clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-    console.log(`useMqtt Set MQTT Client: ${clientId}`);
+    // console.log(`useMqtt Set MQTT Client: ${clientId}`);
     return clientId;
   };
 
@@ -45,7 +45,7 @@ export default function useMqtt() {
     setMqttClient(clientMqtt);
     setMqttClientId(clientId);
     sessionStorage.setItem("mqttClientId", clientId);
-    console.log("useMqtt mqttclientId", clientId);
+    // console.log("useMqtt mqttclientId", clientId);
   };
 
   const mqttPublush = async (mqttTopic, msgText, mqttClientObj) => {
@@ -60,9 +60,7 @@ export default function useMqtt() {
           if (error) {
             console.log("useMqtt  Publish error:", error);
           } else {
-            console.log(
-              `"useMqtt  Published Topic: ${mqttTopic} Message: ${msgText}`
-            );
+            // console.log(`"useMqtt  Published Topic: ${mqttTopic} Message: ${msgText}`);
             
             publishEvent("mqttMessagePublished", {
               mqttTopic: mqttTopic,
@@ -86,7 +84,7 @@ export default function useMqtt() {
 
   const mqttSubscribe = async (topic) => {
     if (mqttClient) {
-      console.log("useMqtt MQTT subscribe ", topic, mqttClientId);
+      // console.log("useMqtt MQTT subscribe ", topic, mqttClientId);
       const clientMqtt = await mqttClient.subscribe(
         topic,
         {
@@ -128,7 +126,7 @@ export default function useMqtt() {
     if (mqttClient) {
       mqttClient.on("connect", () => {
         setIsConnected(true);
-        console.log("useMqtt MQTT Connected", mqttClientId);
+        // console.log("useMqtt MQTT Connected", mqttClientId);
       });
       mqttClient.on("error", (err) => {
         console.error("useMqtt MQTT Connection error: ", err);
@@ -150,9 +148,7 @@ export default function useMqtt() {
         publishEvent("mqttNewmessage",argData);
         setPayload(payloadMessage);
 
-        console.log(
-          `useMqtt MQTT message: ${message.toString()} \n topic: ${_topic}`
-        );
+        // console.log(`useMqtt MQTT message: ${message.toString()} \n topic: ${_topic}`);
       });
     }
   }, [mqttClient]);

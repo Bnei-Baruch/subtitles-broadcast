@@ -16,7 +16,7 @@ body {
 }
 .side-menu {
   min-height: 100vh; /* Set minimum height to viewport height */
-  overflow-y: auto;
+  /* overflow-y: auto; */ /* This will "hide" the side menu for nerrow screens. */
   background-color: #232f3e;
 }
 .side-menu .admin-main span {

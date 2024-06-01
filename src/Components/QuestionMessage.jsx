@@ -38,7 +38,7 @@ const QuestionMessage = (props) => {
             newMessageHandling(event);
             subscribed = true;
           });
-          console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
+          // console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
         }
       });
 
@@ -51,7 +51,7 @@ const QuestionMessage = (props) => {
   };
 
   useEffect(() => {
-    console.log("QuestionMessage mqttSubscribe");
+    // console.log("QuestionMessage mqttSubscribe");
 
     const timeoutId = setTimeout(() => {
       mqttTopicList.forEach((mqttTopic, index) => {
@@ -78,7 +78,7 @@ const QuestionMessage = (props) => {
   let notificationListTmp = notificationList;
 
   const newMessageHandling = (event) => {
-    console.log("QuestionMessage newMessageHandling", event);
+    // console.log("QuestionMessage newMessageHandling", event);
     const newMessage = event.detail.messageJson;
 
     const currMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
@@ -92,8 +92,8 @@ const QuestionMessage = (props) => {
         notificationListTmp = [...notificationListTmp, newMessage];
         setNotificationList(notificationListTmp);
 
-        console.log("notificationList: ", notificationList);
-        console.log("notificationListTmp: ", notificationListTmp);
+        // console.log("notificationList: ", notificationList);
+        // console.log("notificationListTmp: ", notificationListTmp);
       }
     }
   };
@@ -137,7 +137,7 @@ const QuestionMessage = (props) => {
               <div className="d-flex justify-content-between h-auto p-2">
               {getLanguageName(obj.lang)}
               </div>
-               <Slide content={obj.slide} isLtr={props.isLtr}></Slide>
+               <Slide content={obj.slide} isLtr={languageIsLtr(obj.lang)}></Slide>
             </div>
           ))}
       </>
@@ -149,7 +149,7 @@ const QuestionMessage = (props) => {
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
           .map((obj) => (
             <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
-              <Slide content={obj.slide} isLtr={props.isLtr}></Slide>
+              <Slide content={obj.slide} isLtr={languageIsLtr(obj.lang)}></Slide>
             </div>
           ))}
       </>

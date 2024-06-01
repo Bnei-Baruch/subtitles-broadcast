@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import {
@@ -10,6 +10,7 @@ import {
   BookmarksSlide,
   UserBookmarkList,
   getAllBookmarkList,
+  getAllBookmarkListLoading,
   BookmarkSlide
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
@@ -34,44 +35,91 @@ const Subtitles = () => {
   const btnSubtitelsRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const dispatch = useDispatch();
-  const activatedTabData = +localStorage.getItem("activeSlideFileUid");
   const UserAddedList = useSelector(getAllBookAddedByUser);
-  const GetAllBookmarkList = useSelector(getAllBookmarkList);
+  const maxSlideIndex = UserAddedList?.slides?.at(-1)?.["order_number"];
+  const allBookmarkList = useSelector(getAllBookmarkList);
+  const allBookmarkListLoading = useSelector(getAllBookmarkListLoading);
   const [searchSlide, setSearchSlide] = useState("");
   const [searchSlideFileUid, setSearchSlideFileUid] = useState("");
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const [activatedTab, setActivatedTab] = useState(activatedTabData);
+  const [selectedSlide, setSelectedSlide] = useState(+localStorage.getItem("activeSlideFileUid"));
   const languages = GetLangaugeCode();
 
+  const updateSelectedSlide = (newSelectedSlide) => {
+    if (newSelectedSlide < 0) {
+      newSelectedSlide = 0;
+    } else if (newSelectedSlide > maxSlideIndex) {
+      newSelectedSlide = maxSlideIndex;
+    }
+    const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+    const slideID = UserAddedList?.slides?.find(
+      (key) => key?.order_number == newSelectedSlide
+    );
+    const targetBookmarkSlideID = slideID.ID +
+      slideID?.languages.findIndex(
+        langCode => langCode === languages[appContextlData.broadcastLang.label]) || 0;
+    dispatch(
+      BookmarkSlide({
+        data: {
+          file_uid: file_uid,
+          slide_id: targetBookmarkSlideID,
+          update: true,
+        },
+        language: appContextlData.broadcastLang.label,
+      })
+    );
+    setSelectedSlide(newSelectedSlide);
+    localStorage.setItem("activeSlideFileUid", newSelectedSlide);
+  };
+
   const handleChange = (selectedOption) => {
+    const inputValue = +selectedOption?.label - 1;
+    updateSelectedSlide(inputValue);
+    /*
     console.log(selectedOption, "selectedOption");
     const inputValue = +selectedOption?.label - 1;
-    const maxSlideIndex = +UserAddedList?.slides?.at(-1)?.["order_number"];
     if (inputValue >= 0 && inputValue <= maxSlideIndex) {
       localStorage.setItem("activeSlideFileUid", inputValue);
-      setActivatedTab(inputValue);
+      setSelectedSlide(inputValue);
     } else if (inputValue > maxSlideIndex) {
       // Handle the case when inputValue is greater than maxSlideIndex
       localStorage.setItem("activeSlideFileUid", maxSlideIndex + 1);
-      setActivatedTab(maxSlideIndex + 1);
+      setSelectedSlide(maxSlideIndex + 1);
     } else {
       localStorage.setItem("activeSlideFileUid", 1);
-      setActivatedTab("");
+      setSelectedSlide(1);
     }
+    */
   };
-  const handleKeyPress = (event) => {
+  const handleKeyPress = useCallback((event) => {
     //  if (event.key === "n" || event.keyCode === 78) {
     if (event.keyCode === 40) {
-      setActivatedTab((pre) => +pre + 1);
-      localStorage.setItem("activatedTabData", +activatedTab + 1);
+      updateSelectedSlide(selectedSlide + 1);
+      /*
+      setSelectedSlide((pre) => {
+        console.log(pre, maxSlideIndex);
+        if (+pre <= maxSlideIndex) {
+          return +pre + 1;
+        }
+        return pre;
+      });*/
+      // localStorage.setItem("activatedTabData", selectedSlide + 1);
     }
     //   if (event.key === "b" || event.keyCode === 66) {
     if (event.keyCode === 38) {
-      setActivatedTab((pre) => +pre - 1);
-      localStorage.setItem("activatedTabData", +activatedTab - 1);
+      updateSelectedSlide(selectedSlide - 1);
+      /*
+      setSelectedSlide((pre) => {
+        if (+pre >= 1) {
+          return +pre - 1;
+        }
+        return pre;
+      });
+      localStorage.setItem("activatedTabData", selectedSlide - 1);
+      */
     }
-  };
+  }, [UserAddedList, selectedSlide]);
   useEffect(() => {
     // Add event listener when the component mounts
     window.addEventListener("keydown", handleKeyPress);
@@ -80,7 +128,7 @@ const Subtitles = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, []);
+  }, [handleKeyPress]);
   useEffect(() => {
     dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
     dispatch(clearAllBookmarks());
@@ -88,15 +136,16 @@ const Subtitles = () => {
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
-    setItems(GetAllBookmarkList);
-  }, [GetAllBookmarkList]);
+    if (!allBookmarkListLoading) {
+      setItems(allBookmarkList);
+    }
+  }, [allBookmarkList, allBookmarkListLoading]);
   useEffect(() => {
     let file_uid = localStorage.getItem("fileUid")
     if (file_uid !== "") {
       setSearchSlideFileUid(file_uid);
     }
-    searchSlideFileUid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
-    localStorage.setItem("fileUid", "");
+    file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {
@@ -194,9 +243,9 @@ const Subtitles = () => {
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
-                    setActivatedTab={setActivatedTab}
-                    activatedTab={activatedTab}
-                    targetItemId={activatedTab}
+                    setActivatedTab={setSelectedSlide}
+                    activatedTab={selectedSlide}
+                    targetItemId={selectedSlide}
                     contents={UserAddedList}
                     searchKeyword={searchSlide}
                   />
@@ -206,13 +255,13 @@ const Subtitles = () => {
           </div>
           <div className="d-flex justify-content-center align-items-center mt-2 paginationStyle">
             <i
-              className={`bi bi-chevron-left me-1 cursor-pointer ${activatedTab <= 1 ? "disablecolor" : "custom-pagination"
+              className={`bi bi-chevron-left me-1 cursor-pointer ${selectedSlide <= 1 ? "disablecolor" : "custom-pagination"
                 }`}
               onClick={() => {
-                if (activatedTab > 0) {
-                  const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+                if (selectedSlide > 0) {
+                  /*const file_uid = UserAddedList?.slides?.[0]?.file_uid;
                   const slideID = UserAddedList?.slides?.find(
-                    (key) => key?.order_number == +activatedTab - 1
+                    (key) => key?.order_number == selectedSlide - 1
                   );
                   let targetBookmarkSlideID = slideID.ID;
                   slideID?.languages.forEach((item, index) => {
@@ -230,7 +279,8 @@ const Subtitles = () => {
                       language: appContextlData.broadcastLang.label
                     })
                   );
-                  setActivatedTab(+activatedTab - 1);
+                  setSelectedSlide(selectedSlide - 1);*/
+                  updateSelectedSlide(selectedSlide - 1);
                 }
               }}
             >
@@ -261,25 +311,13 @@ const Subtitles = () => {
                     display: "none", // Hide indicator separator
                   }),
                 }}
-                value={
-                  isNaN(+UserAddedList?.slides?.at(-1)?.["order_number"])
-                    ? { value: "/", label: "- / -" }
-                    : {
-                      value: `${activatedTab}/${+UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                        }`,
-                      label: `${activatedTab + 1}/${+UserAddedList?.slides?.at(-1)?.["order_number"] + 1
-                        }`,
-                    }
+                value={isNaN(+maxSlideIndex) ? { value: "/", label: "- / -" }
+                    : { value: `${selectedSlide}/${+maxSlideIndex + 1 }`, label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`, }
                 }
                 onChange={handleChange}
-                options={[
-                  ...Array(
-                    UserAddedList?.slides?.at(-1)?.["order_number"]
-                  )?.keys(),
-                  UserAddedList?.slides?.at(-1)?.["order_number"],
-                ]?.map((index) => ({
+                options={[...Array(maxSlideIndex)?.keys(), maxSlideIndex]?.map((index) => ({
                   label: index + 1,
-                  value: `${index + 1}/${+UserAddedList?.slides?.at(-1)?.["order_number"] + 1
+                  value: `${index + 1}/${+maxSlideIndex + 1
                     }`,
                 }))}
               />
@@ -287,13 +325,10 @@ const Subtitles = () => {
             </div>
             <span
               onClick={() => {
-                if (
-                  UserAddedList?.slides?.at(-1)?.["order_number"] >
-                  +activatedTab
-                ) {
+                /*if (maxSlideIndex > selectedSlide) {
                   const file_uid = UserAddedList?.slides?.[0]?.file_uid;
                   const slideID = UserAddedList?.slides?.find(
-                    (key) => key?.order_number == +activatedTab + 1
+                    (key) => key?.order_number == selectedSlide + 1
                   );
                   let targetBookmarkSlideID = slideID.ID;
                   slideID?.languages.forEach((item, index) => {
@@ -312,22 +347,14 @@ const Subtitles = () => {
                         language: appContextlData.broadcastLang.label
                       })
                     );
-                    setActivatedTab(+activatedTab + 1);
-                  }
+                    setSelectedSlide(selectedSlide + 1);
+                  }*/
+                  updateSelectedSlide(selectedSlide + 1);
                 }
-              }}
-              className={` cursor-pointer ${UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
-                ? "disablecolor"
-                : "custom-pagination"
-                }`}
-            >
+              }
+              className={` cursor-pointer ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination" }`}>
               Next{" "}
-              <i
-                className={`bi bi-chevron-right  cursor-pointer  ${UserAddedList?.slides?.at(-1)?.["order_number"] < activatedTab
-                  ? "disablecolor"
-                  : "custom-pagination"
-                  }`}
-              />
+              <i className={`bi bi-chevron-right  cursor-pointer  ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination" }`} />
             </span>
           </div>
         </div>
@@ -336,13 +363,13 @@ const Subtitles = () => {
           <div className="first-sec">
             <ActiveSlideMessaging
               userAddedList={UserAddedList}
-              activatedTab={activatedTab}
-              setActivatedTab={setActivatedTab}
+              activatedTab={selectedSlide}
+              setActivatedTab={setSelectedSlide}
               isLtr={isLtr}
               isSubTitleMode={isSubTitleMode}
             />
           </div>
-          <div className="book-mark whit-s overflow-auto" style={{ height: "150px" }}>
+          <div className="book-mark whit-s overflow-auto">
             <div className="top-head">
               <h3>Bookmarks</h3>
             </div>
@@ -353,7 +380,7 @@ const Subtitles = () => {
                     <DraggableItem
                       key={index}
                       id={item.id}
-                      setActivatedTab={setActivatedTab}
+                      setActivatedTab={setSelectedSlide}
                       bookmarkDelete={item.bookmark_id}
                       text={item?.bookmark_path}
                       fileUid={item?.file_uid}
@@ -365,7 +392,7 @@ const Subtitles = () => {
             </DndProvider>
           </div>
 
-          <div className="Questions whit-s overflow-auto" style={{ maxHeight: "275px" }}>
+          <div className="Questions whit-s overflow-auto">
             <div className="top-head d-flex justify-content-between">
               <h3>Questions</h3>
             </div>
