@@ -13,6 +13,7 @@ const initialState = {
   getBookList: [],
   getTitleList: [],
   bookmarkList: [],
+  bookmarkListLoading: false,
   autocomplete: [],
   editSlideList: [],
 };
@@ -219,8 +220,11 @@ const ArchiveSlice = createSlice({
     builder.addCase(GetAllAuthor, (state, { payload }) => {
       return { ...state, authorList: payload };
     });
+    builder.addCase(UserBookmarkList.pending, (state) => {
+      return { ...state, bookmarkListLoading: true };
+    });
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
-      return { ...state, bookmarkList: payload };
+      return { ...state, bookmarkList: payload, bookmarkListLoading: false};
     });
     builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
       return { ...state, bookmarkList: payload };
@@ -248,6 +252,9 @@ export const getAllArchiveList = (state) =>
 
 export const getAllBookmarkList = (state) =>
   state?.ArchiveList?.bookmarkList?.data;
+
+export const getAllBookmarkListLoading = (state) =>
+  state?.ArchiveList?.bookmarkListLoading;
 
 export const getAllAuthorList = (state) =>
   state?.ArchiveList?.getAuthorList?.data;

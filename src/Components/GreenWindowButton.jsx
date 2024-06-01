@@ -83,7 +83,7 @@ export const GreenWindowButton = (props) => {
     : `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
 
   useEffect(() => {
-    console.log("GreenWindowButton useEffect publishEvent ", mqttTopic);
+    // console.log("GreenWindowButton useEffect publishEvent ", mqttTopic);
 
     const timeoutId = setTimeout(() => {
       publishEvent("mqttSubscribe", {
@@ -100,7 +100,7 @@ export const GreenWindowButton = (props) => {
   }, [isSubTitleMode, broadcastLangCode, broadcastProgrammCode]);
 
   const newMessageHandling = (event) => {
-    console.log("GreenWindowButton newMessageHandling", event);
+    // console.log("GreenWindowButton newMessageHandling", event);
     const newMessageJson = event.detail.messageJson || event.detail.message;
     const topic = event.detail.mqttTopic || event.detail.topic;
 
@@ -119,7 +119,7 @@ export const GreenWindowButton = (props) => {
         }
         className={getButtonClassName(showGreenWindow)}
       >
-        Open Green Screen
+        Green Screen
       </button>
       {showGreenWindow && (
         <GreenWindow

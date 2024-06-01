@@ -41,9 +41,11 @@ const DraggableItem = ({
     localStorage.setItem("fileUid", e);
     dispatch(GetSubtitleData({ file_uid: e }));
   };
+
+  const selected = localStorage.getItem("fileUid") === fileUid;
   return (
     <div
-      className="d-flex justify-content-between cursor-pointer"
+      className={"d-flex justify-content-between cursor-pointer" + (selected ? " bookmark-selected" : "")}
       ref={(node) => ref(drop(node))}
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
     >

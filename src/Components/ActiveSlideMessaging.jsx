@@ -153,10 +153,7 @@ export function ActiveSlideMessaging(props) {
     if (!subscribed) {
       subscribeEvent(subtitleMqttTopic, newMessageHandling);
       subscribeEvent(questionMqttTopic, newMessageHandling);
-      console.log(
-        "ActiveSlideMessaging subscribeEvent  DONE mqttTopic: ",
-        subtitleMqttTopic
-      );
+      // console.log("ActiveSlideMessaging subscribeEvent  DONE mqttTopic: ", subtitleMqttTopic);
     }
     subscribed = true;
   };
@@ -198,10 +195,7 @@ export function ActiveSlideMessaging(props) {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log(
-        "ActiveSlideMessaging publishEvent mqttSubscribe",
-        subtitleMqttTopic
-      );
+      // console.log("ActiveSlideMessaging publishEvent mqttSubscribe", subtitleMqttTopic);
 
       compSubscribeEvents();
 
@@ -221,7 +215,7 @@ export function ActiveSlideMessaging(props) {
   }, [isSubTitleMode, subtitleMqttTopic]);
 
   const newMessageHandling = (event) => {
-    console.log("ActiveSlideMessaging newMessageHandling", event);
+    // console.log("ActiveSlideMessaging newMessageHandling", event);
     const newMessageJson = event.detail.messageJson || event.detail.message;
     const topic = event.detail.mqttTopic || event.detail.topic;
 
