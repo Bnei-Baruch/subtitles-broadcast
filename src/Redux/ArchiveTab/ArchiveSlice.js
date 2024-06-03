@@ -61,7 +61,10 @@ export const DeleteArchive = createAsyncThunk(
   `DeleteArchive`,
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}${API_URL.Delete}`, {
-      slide_ids: data.slide_ids
+      data: {
+        force_delete_bookmarks: true,
+        slide_ids: data.slide_ids,
+      }
     });
 
     thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
