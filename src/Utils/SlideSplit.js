@@ -25,7 +25,6 @@ const SlideSplit = ({
       newDiv.className = divIdPrefix + " slide-content";
       newDiv.id = divIdPrefix + "_" + index.current;
       newDiv.style.height = "unset";
-      //newDiv.style.minHeight = "310px";
       newDiv.style.position = "relative";
       newDiv.style.outline = "solid";
       newDiv.style.transform = "scale(0.5)";
@@ -69,31 +68,43 @@ const SlideSplit = ({
           }
           if (numOfRows < 4) {
             nextTag.current = tags.shift();
-            if (nextTag.current.word === "<br/>") {
-              nextTag.current.word = "";
-            }
-            if (nextTag.current.paragraphStart) {
+            if (nextTag.current.word === "===") {
+              if (currentContent.current.length > 0) {
+                slideTags.current = [...slideTags.current, currentContent.current];
+              }
+              if (tags.length > 0) {
+                createNewDiv(tags);
+              }
+            } else {
+              if (nextTag.current.word === "<br/>") {
+                nextTag.current.word = "";
+              }
+              if (nextTag.current.paragraphStart) {
+                if (method === "custom_file") {
+                  currentContent.current = currentContent.current.trim();
+                }
+                currentContent.current += "\r";
+                if (nextTag.current.tagName === "H1") {
+                  nextTag.current.word = "# " + nextTag.current.word;
+                }
+              }
+              currentContent.current += nextTag.current.word;
               if (method === "custom_file") {
-                currentContent.current = currentContent.current.trim();
+                currentContent.current += " ";
               }
-              currentContent.current += "\r";
-              if (nextTag.current.tagName === "H1") {
-                nextTag.current.word = "# " + nextTag.current.word;
+              currentDiv.innerHTML = md.render(currentContent.current);
+              if (tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") {
+                slideTags.current = [...slideTags.current, currentContent.current];
               }
-            }
-            currentContent.current += nextTag.current.word;
-            if (method === "custom_file") {
-              currentContent.current += " ";
-            }
-            currentDiv.innerHTML = md.render(currentContent.current);
-            if (tags.length === 0 && currentContent.current.length > 0) {
-              slideTags.current = [...slideTags.current, currentContent.current];
             }
           } else {
             currentDivHeight = 0;
             numOfRows = 0;
             for (let i=0;i<4;i++) {
               nextTag.current = tags.shift();
+              if (nextTag.current.word === "===") {
+                break;
+              }
               if (nextTag.current.word === "<br/>") {
                 nextTag.current.word = "";
               }
@@ -112,14 +123,15 @@ const SlideSplit = ({
               }
               currentDiv.innerHTML = md.render(currentContent.current);
               if (currentContent.current.trim().endsWith(".")) {
-                console.log(currentContent.current);
                 break;
               }
             }
             if (currentContent.current.length > 0) {
               slideTags.current = [...slideTags.current, currentContent.current];
             }
-            createNewDiv(tags);
+            if (tags.length > 0) {
+              createNewDiv(tags);
+            }
           }
       }
     };
