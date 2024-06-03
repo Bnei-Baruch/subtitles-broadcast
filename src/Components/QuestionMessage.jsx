@@ -88,12 +88,11 @@ const QuestionMessage = (props) => {
 
     if (newMessage) {
       if (newMessage.date) {
-        newMessage.dateUtcJs = new Date(newMessage.date);
-        notificationListTmp = [...notificationListTmp, newMessage];
-        setNotificationList(notificationListTmp);
-
-        // console.log("notificationList: ", notificationList);
-        // console.log("notificationListTmp: ", notificationListTmp);
+        if (!isMessageExist(newMessage, notificationListTmp)){
+          newMessage.dateUtcJs = new Date(newMessage.date);
+          notificationListTmp = [...notificationListTmp, newMessage];
+          setNotificationList(notificationListTmp);
+        }
       }
     }
   };
@@ -125,6 +124,22 @@ const QuestionMessage = (props) => {
     }
 
     return isLeftToRight;
+  };
+  
+
+  const isMessageExist = (newMessage, messageList) => {
+    let exist = false;
+
+    for (let index = 0; index < messageList.length; index++) {
+      const lupMsg = messageList[index];   
+      
+      if (lupMsg.slide === newMessage.slide){
+        exist = true;
+        break;
+      }
+    }
+
+    return exist;
   };
 
   if (props.mode === "subtitle") {
