@@ -12,7 +12,7 @@ const SlideSplit = ({
   let currentDivHeight = 0;
   const index = useRef(0);
   const slideTags = useRef([]);
-  const desiredContainerHeight = 310;
+  const desiredNumberOfRows = 3;
   const divIdPrefix = "slide";
   const divRefs = useRef([]);
   const nextTag = useRef(null);
@@ -34,6 +34,9 @@ const SlideSplit = ({
         newDiv.style.visibility = "hidden";
       }
       nextTag.current = tagList.shift();
+      if (nextTag.current.word === "===") {
+        nextTag.current = tagList.shift();
+      }
       if (method === "custom_file") {
         if (nextTag.current.word === "<br/>") {
           nextTag.current.word = "";
@@ -66,7 +69,7 @@ const SlideSplit = ({
             currentDivHeight = currentDiv.clientHeight;
             numOfRows += 1;
           }
-          if (numOfRows < 4) {
+          if (numOfRows < desiredNumberOfRows) {
             nextTag.current = tags.shift();
             if (nextTag.current.word === "===") {
               if (currentContent.current.length > 0) {
@@ -102,22 +105,24 @@ const SlideSplit = ({
             numOfRows = 0;
             for (let i=0;i<4;i++) {
               nextTag.current = tags.shift();
-              if (nextTag.current.word === "===") {
+              if (nextTag.current != undefined && nextTag.current.word === "===") {
                 break;
               }
-              if (nextTag.current.word === "<br/>") {
+              if (nextTag.current != undefined && nextTag.current.word === "<br/>") {
                 nextTag.current.word = "";
               }
-              if (nextTag.current.paragraphStart) {
+              if (nextTag.current != undefined && nextTag.current.paragraphStart) {
                 if (method === "custom_file") {
                   currentContent.current = currentContent.current.trim();
                 }
                 currentContent.current += "\r";
-                if (nextTag.current.tagName === "H1") {
+                if (nextTag.current != undefined && nextTag.current.tagName === "H1") {
                   nextTag.current.word = "# " + nextTag.current.word;
                 }
               }
-              currentContent.current += nextTag.current.word;
+              if (nextTag.current != undefined){
+                currentContent.current += nextTag.current.word;
+              }
               if (method === "custom_file") {
                 currentContent.current += " ";
               }

@@ -36,6 +36,9 @@ const Archive = () => {
 
   const message = "";
   const [editSlide, setEditSlide] = useState("");
+  const [fileUidForDeleteSlide, setFileUidForDeleteSlide] = useState(
+    queryParams.get("file_uid")
+  );
   const [fileUidForEditSlide, setFileUidForEditSlide] = useState(
     queryParams.get("file_uid")
   );
@@ -92,7 +95,7 @@ const Archive = () => {
     if (finalConfirm === true) {
       dispatch(
         DeleteArchive({
-          slide_ids: [deleteId],
+          file_uid: fileUidForDeleteSlide,
           language: appContextlData.broadcastLang.label
         })
       );
@@ -274,6 +277,7 @@ const Archive = () => {
                               setUnbookmarkAction(false);
                               setDeleteConfirmationPopup(true);
                               setDeleteId(key.ID);
+                              setFileUidForDeleteSlide(key.file_uid);
                             }}
                             className="bi bi-trash3 m-2 cursor-pointer "
                           />
