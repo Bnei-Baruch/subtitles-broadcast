@@ -431,6 +431,51 @@ paths:
         - bearerAuth:
             - read:slides
             - delete:slides
+  /file-slide/{fileUid}:
+    delete:
+      tags:
+        - slide
+      summary: Delete slides in a file
+      description: Delete slides in a file
+      operationId: deleteFileSlide
+      parameters:
+        - in: path
+          name: fileUid
+          schema:
+            type: integer
+          required: true
+          description: file uid to delete
+        - name: force_delete_bookmarks
+          in: query
+          description: boolean value to force deleting bookmarks
+          required: true
+          explode: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+            - delete:slides
   /custom_slide:
     post:
       tags:

@@ -28,6 +28,7 @@ const (
 
 	DBTableSlides    = "slides"
 	DBTableBookmarks = "bookmarks"
+	DBTableFiless    = "files"
 
 	ERR_UNIQUE_VIOLATION_CODE      = "23505"
 	ERR_FOREIGN_KEY_VIOLATION_CODE = "23503"
@@ -499,6 +500,99 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 		return
 	}
 
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
+}
+
+func (h *Handler) DeleteFileSlides(ctx *gin.Context) {
+	queryParams := struct {
+		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
+	}{}
+	if err := ctx.BindQuery(&queryParams); err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+
+	fileUid := ctx.Param("file_uid")
+	var sourceUid string
+	query := h.Database.Debug().WithContext(ctx).
+		Select("source_uid").
+		Table(DBTableFiless).
+		Where("file_uid = ?", fileUid).
+		Find(&sourceUid)
+	if query.Error != nil {
+		log.Error(query.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
+		return
+	}
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	var totalRows int64
+	result := tx.Table(DBTableSlides).
+		Joins("INNER JOIN bookmarks ON slides.id = bookmarks.slide_id").
+		Where("slides.file_uid = ?", fileUid).Count(&totalRows)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+		return
+	}
+	if !queryParams.ForceDeleteBookmarks && totalRows > 0 {
+		errMsg := "There are bookmarks refer to slide(id) in table to delete"
+		log.Error(errMsg)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, errMsg, "Deleting file slide data has failed"))
+		return
+	}
+	result = tx.Where("file_uid = ?", fileUid).Delete(&Slide{})
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, fmt.Sprintf("No file slides with %s", fileUid), fmt.Sprintf("No file slides with %s", fileUid)))
+		return
+	}
+	result = tx.Where("file_uid = ?", fileUid).Delete(&File{})
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, fmt.Sprintf("No file with %s", fileUid), fmt.Sprintf("No file with %s", fileUid)))
+		return
+	}
+	result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, fmt.Sprintf("No source path with file uid %s", fileUid), fmt.Sprintf("No source path with file uid %s", fileUid)))
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting file slide data has failed"))
+		return
+	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
