@@ -8,6 +8,7 @@ const SlideSplit = ({
   updateSplitTags,
   method
 }) => {
+  let terminateCondition = 0
   let numOfRows = 0;
   let currentDivHeight = 0;
   const index = useRef(0);
@@ -35,6 +36,8 @@ const SlideSplit = ({
       }
       nextTag.current = tagList.shift();
       if (nextTag.current.word === "===") {
+        currentDivHeight = 0;
+        numOfRows = 0;
         nextTag.current = tagList.shift();
       }
       if (method === "custom_file") {
@@ -45,7 +48,9 @@ const SlideSplit = ({
         if (nextTag.current.tagName === "H1") {
           nextTag.current.word = "### " + nextTag.current.word;
         }
-        if (nextTag.current.tagName === "H6") {
+        if (nextTag.current.tagName === "H2" || nextTag.current.tagName === "H3"
+      || nextTag.current.tagName === "H4" || nextTag.current.tagName === "H5" ||
+      nextTag.current.tagName === "H6") {
           nextTag.current.word = "# " + nextTag.current.word;
         }
       }
@@ -75,6 +80,8 @@ const SlideSplit = ({
           if (numOfRows < desiredNumberOfRows) {
             nextTag.current = tags.shift();
             if (nextTag.current.word === "===") {
+              currentDivHeight = 0;
+              numOfRows = 0;
               if (currentContent.current.length > 0) {
                 slideTags.current = [...slideTags.current, currentContent.current];
               }
@@ -90,10 +97,21 @@ const SlideSplit = ({
                   currentContent.current = currentContent.current.trim();
                 }
                 currentContent.current += "\r";
+                if (currentContent.current.startsWith('#')) {
+                  if (currentContent.current.length > 0) {
+                    slideTags.current = [...slideTags.current, currentContent.current];
+                  }
+                  tags.unshift(nextTag.current);
+                  if (tags.length > 0) {
+                    createNewDiv(tags);
+                  }
+                }
                 if (nextTag.current.tagName === "H1") {
                   nextTag.current.word = "### " + nextTag.current.word;
                 }
-                if (nextTag.current.tagName === "H6") {
+                if (nextTag.current.tagName === "H2" || nextTag.current.tagName === "H3"
+                || nextTag.current.tagName === "H4" || nextTag.current.tagName === "H5" ||
+                nextTag.current.tagName === "H6") {
                   nextTag.current.word = "# " + nextTag.current.word;
                 }
               }
@@ -102,8 +120,9 @@ const SlideSplit = ({
                 currentContent.current += " ";
               }
               currentDiv.innerHTML = md.render(currentContent.current);
-              if (tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") {
+              if (terminateCondition === tags.length && tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") { 
                 slideTags.current = [...slideTags.current, currentContent.current];
+                terminateCondition = terminateCondition-1;
               }
             }
           } else {
@@ -111,7 +130,6 @@ const SlideSplit = ({
             numOfRows = 0;
             for (let i=0;i<4;i++) {
               nextTag.current = tags.shift();
-              console.log(nextTag.current);
               if (nextTag.current != undefined && nextTag.current.word === "===") {
                 break;
               }
@@ -123,7 +141,16 @@ const SlideSplit = ({
                   currentContent.current = currentContent.current.trim();
                 }
                 currentContent.current += "\r";
+                if (currentContent.current.startsWith('#')) {
+                  tags.unshift(nextTag.current);
+                  break;
+                }
                 if (nextTag.current != undefined && nextTag.current.tagName === "H1") {
+                  nextTag.current.word = "### " + nextTag.current.word;
+                }
+                if (nextTag.current != undefined && (nextTag.current.tagName === "H2" || nextTag.current.tagName === "H3"
+                || nextTag.current.tagName === "H4" || nextTag.current.tagName === "H5" ||
+                nextTag.current.tagName === "H6")) {
                   nextTag.current.word = "# " + nextTag.current.word;
                 }
               }

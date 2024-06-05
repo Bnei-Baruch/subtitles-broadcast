@@ -168,7 +168,7 @@ const NewSlides = () => {
   const loadSlides = async (sourceData) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(sourceData, "text/html");
-    const contentElements = doc.querySelectorAll("h1,h6,p");
+    const contentElements = doc.querySelectorAll("h1,h2,h3,h4,h5,h6,p");
     const paragraphArray = Array.from(contentElements).map((element) => ({
       tag: element.tagName,
       content: element.outerHTML,
