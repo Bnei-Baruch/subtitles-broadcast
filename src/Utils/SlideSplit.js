@@ -43,6 +43,9 @@ const SlideSplit = ({
         }
       } else if (method === "source_url") {
         if (nextTag.current.tagName === "H1") {
+          nextTag.current.word = "### " + nextTag.current.word;
+        }
+        if (nextTag.current.tagName === "H6") {
           nextTag.current.word = "# " + nextTag.current.word;
         }
       }
@@ -88,6 +91,9 @@ const SlideSplit = ({
                 }
                 currentContent.current += "\r";
                 if (nextTag.current.tagName === "H1") {
+                  nextTag.current.word = "### " + nextTag.current.word;
+                }
+                if (nextTag.current.tagName === "H6") {
                   nextTag.current.word = "# " + nextTag.current.word;
                 }
               }
@@ -105,6 +111,7 @@ const SlideSplit = ({
             numOfRows = 0;
             for (let i=0;i<4;i++) {
               nextTag.current = tags.shift();
+              console.log(nextTag.current);
               if (nextTag.current != undefined && nextTag.current.word === "===") {
                 break;
               }
