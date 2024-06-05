@@ -19,6 +19,12 @@ const HeaderBar = ({ logout }) => {
   const [freeText, setFreeText] = useState("");
   const DebouncingFreeText = useDebounce(freeText, 500);
   useEffect(() => {
+    if (param.pathname !== "/archive") {
+      setFreeText("");
+    }
+  }, [param.pathname]);
+
+  useEffect(() => {
     if (param.pathname === "/archive") {
       localStorage.setItem(
         "pagination",
@@ -53,6 +59,7 @@ const HeaderBar = ({ logout }) => {
                   );
               }}
               onChange={(e) => {
+                localStorage.setItem("headerSearchKeyword", e.target.value);
                 setFreeText(e.target.value);
               }}
               type="text"

@@ -95,6 +95,7 @@ const Archive = () => {
     if (finalConfirm === true) {
       dispatch(
         DeleteArchive({
+          search_keyword: localStorage.getItem("headerSearchKeyword"),
           file_uid: fileUidForDeleteSlide,
           language: appContextlData.broadcastLang.label
         })
@@ -103,6 +104,7 @@ const Archive = () => {
     }
     if (toggle) {
       dispatch(BookmarkSlideFromArchivePage({
+        search_keyword: localStorage.getItem("headerSearchKeyword"),
         data: deleteId,
         language: appContextlData.broadcastLang.label
       }));
@@ -210,6 +212,7 @@ const Archive = () => {
                                 setUnbookmarkAction(true);
                                 dispatch(
                                   UnBookmarkSlide({
+                                    search_keyword: localStorage.getItem("headerSearchKeyword"),
                                     bookmark_id: key.bookmark_id,
                                     language: appContextlData.broadcastLang.label
                                   })
@@ -229,6 +232,7 @@ const Archive = () => {
                                 setUnbookmarkAction(false);
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
+                                    search_keyword: localStorage.getItem("headerSearchKeyword"),
                                     data: {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.ID,

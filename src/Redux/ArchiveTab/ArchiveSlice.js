@@ -63,7 +63,7 @@ export const DeleteArchive = createAsyncThunk(
     const response = await axios.delete(`${API}${API_URL.Delete+"/"+data.file_uid+"?force_delete_bookmarks=true"}`, {
     });
 
-    thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: data.language, keyword: data.search_keyword }));
 
     return response.data;
   }
@@ -123,7 +123,7 @@ export const BookmarkSlideFromArchivePage = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await axios.post(`${API}bookmark`, data.data);
-      thunkAPI.dispatch(GetAllArchiveData({ language: data.language, ...data.params }));
+      thunkAPI.dispatch(GetAllArchiveData({ language: data.language, ...data.params, keyword:data.search_keyword }));
       thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
       return response.data;
     } catch (error) {
@@ -153,7 +153,7 @@ export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}bookmark/${data.bookmark_id}`);
-    thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
+    thunkAPI.dispatch(GetAllArchiveData({ language: data.language, keyword: data.search_keyword }));
     thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
     return response.data;
   }
