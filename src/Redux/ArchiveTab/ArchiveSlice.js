@@ -23,7 +23,7 @@ const API_URL = {
   GetByID: "",
   Create: "",
   Update: "",
-  Delete: "slide",
+  Delete: "file-slide",
 };
 
 export const GetAllArchiveData = createAsyncThunk(
@@ -60,8 +60,7 @@ export const AddToSubtitleList = createAsyncThunk(
 export const DeleteArchive = createAsyncThunk(
   `DeleteArchive`,
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}${API_URL.Delete}`, {
-      slide_ids: data.slide_ids
+    const response = await axios.delete(`${API}${API_URL.Delete+"/"+data.file_uid+"?force_delete_bookmarks=true"}`, {
     });
 
     thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));

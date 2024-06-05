@@ -8,14 +8,15 @@ const SlideSplit = ({
   updateSplitTags,
   method
 }) => {
+  let numOfRows = 0;
+  let currentDivHeight = 0;
   const index = useRef(0);
   const slideTags = useRef([]);
-  const desiredContainerHeight = 310;
+  const desiredNumberOfRows = 3;
   const divIdPrefix = "slide";
   const divRefs = useRef([]);
   const nextTag = useRef(null);
   const currentContent = useRef("");
-  const previousParagraphStartsWithIntent = useRef("");
 
   useEffect(() => {
     const md = markdownit({ html: true });
@@ -24,7 +25,6 @@ const SlideSplit = ({
       newDiv.className = divIdPrefix + " slide-content";
       newDiv.id = divIdPrefix + "_" + index.current;
       newDiv.style.height = "unset";
-      newDiv.style.minHeight = "310px";
       newDiv.style.position = "relative";
       newDiv.style.outline = "solid";
       newDiv.style.transform = "scale(0.5)";
@@ -34,6 +34,9 @@ const SlideSplit = ({
         newDiv.style.visibility = "hidden";
       }
       nextTag.current = tagList.shift();
+      if (nextTag.current.word === "===") {
+        nextTag.current = tagList.shift();
+      }
       if (method === "custom_file") {
         if (nextTag.current.word === "<br/>") {
           nextTag.current.word = "";
@@ -62,46 +65,79 @@ const SlideSplit = ({
     };
     const checkAndAddText = (currentDiv, tags) => {
       while (tags.length > 0) {
-        if (currentDiv.clientHeight <= desiredContainerHeight) {
-          nextTag.current = tags.shift();
-          if (nextTag.current.word === "<br/>") {
-            nextTag.current.word = "";
+          if (currentDiv.clientHeight > 100 && currentDivHeight < currentDiv.clientHeight) {
+            currentDivHeight = currentDiv.clientHeight;
+            numOfRows += 1;
           }
-          if (nextTag.current.paragraphStart) {
-            if (method === "custom_file") {
-              currentContent.current = currentContent.current.trim();
+          if (numOfRows < desiredNumberOfRows) {
+            nextTag.current = tags.shift();
+            if (nextTag.current.word === "===") {
+              if (currentContent.current.length > 0) {
+                slideTags.current = [...slideTags.current, currentContent.current];
+              }
+              if (tags.length > 0) {
+                createNewDiv(tags);
+              }
+            } else {
+              if (nextTag.current.word === "<br/>") {
+                nextTag.current.word = "";
+              }
+              if (nextTag.current.paragraphStart) {
+                if (method === "custom_file") {
+                  currentContent.current = currentContent.current.trim();
+                }
+                currentContent.current += "\r";
+                if (nextTag.current.tagName === "H1") {
+                  nextTag.current.word = "# " + nextTag.current.word;
+                }
+              }
+              currentContent.current += nextTag.current.word;
+              if (method === "custom_file") {
+                currentContent.current += " ";
+              }
+              currentDiv.innerHTML = md.render(currentContent.current);
+              if (tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") {
+                slideTags.current = [...slideTags.current, currentContent.current];
+              }
             }
-            currentContent.current += "\r";
-            if (nextTag.current.tagName === "H1") {
-              nextTag.current.word = "# " + nextTag.current.word;
+          } else {
+            currentDivHeight = 0;
+            numOfRows = 0;
+            for (let i=0;i<4;i++) {
+              nextTag.current = tags.shift();
+              if (nextTag.current != undefined && nextTag.current.word === "===") {
+                break;
+              }
+              if (nextTag.current != undefined && nextTag.current.word === "<br/>") {
+                nextTag.current.word = "";
+              }
+              if (nextTag.current != undefined && nextTag.current.paragraphStart) {
+                if (method === "custom_file") {
+                  currentContent.current = currentContent.current.trim();
+                }
+                currentContent.current += "\r";
+                if (nextTag.current != undefined && nextTag.current.tagName === "H1") {
+                  nextTag.current.word = "# " + nextTag.current.word;
+                }
+              }
+              if (nextTag.current != undefined){
+                currentContent.current += nextTag.current.word;
+              }
+              if (method === "custom_file") {
+                currentContent.current += " ";
+              }
+              currentDiv.innerHTML = md.render(currentContent.current);
+              if (currentContent.current.trim().endsWith(".")) {
+                break;
+              }
+            }
+            if (currentContent.current.length > 0) {
+              slideTags.current = [...slideTags.current, currentContent.current];
+            }
+            if (tags.length > 0) {
+              createNewDiv(tags);
             }
           }
-          currentContent.current += nextTag.current.word;
-          if (method === "custom_file") {
-            currentContent.current += " ";
-          }
-          currentDiv.innerHTML = md.render(currentContent.current);
-          if (tags.length === 0 && currentContent.current.length > 0) {
-            slideTags.current = [...slideTags.current, currentContent.current];
-          }
-        } else {
-          // If the height limit is reached, create a new div
-          let lengthToRemove = nextTag.current.word.length;
-          if (method === "custom_file") {
-            lengthToRemove += 1;
-          }
-          currentContent.current = currentContent.current.slice(
-            0,
-            -lengthToRemove
-          );
-          let slideContentArrary = currentContent.current.split("\r");
-          previousParagraphStartsWithIntent.current =
-            slideContentArrary[slideContentArrary.length - 1];
-          currentDiv.innerHTML = md.render(currentContent.current);
-          slideTags.current = [...slideTags.current, currentContent.current];
-          tags.unshift(nextTag.current);
-          createNewDiv(tags);
-        }
       }
     };
 
