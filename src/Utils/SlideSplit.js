@@ -48,9 +48,7 @@ const SlideSplit = ({
         if (nextTag.current.tagName === "H1") {
           nextTag.current.word = "### " + nextTag.current.word;
         }
-        if (nextTag.current.tagName === "H2" || nextTag.current.tagName === "H3"
-      || nextTag.current.tagName === "H4" || nextTag.current.tagName === "H5" ||
-      nextTag.current.tagName === "H6") {
+        if (nextTag.current.tagName.match(/^(H[2-6])$/)) {
           nextTag.current.word = "# " + nextTag.current.word;
         }
       }
@@ -109,9 +107,7 @@ const SlideSplit = ({
                 if (nextTag.current.tagName === "H1") {
                   nextTag.current.word = "### " + nextTag.current.word;
                 }
-                if (nextTag.current.tagName === "H2" || nextTag.current.tagName === "H3"
-                || nextTag.current.tagName === "H4" || nextTag.current.tagName === "H5" ||
-                nextTag.current.tagName === "H6") {
+                if (nextTag.current.tagName.match(/^(H[2-6])$/)) {
                   nextTag.current.word = "# " + nextTag.current.word;
                 }
               }
@@ -148,9 +144,7 @@ const SlideSplit = ({
                 if (nextTag.current != undefined && nextTag.current.tagName === "H1") {
                   nextTag.current.word = "### " + nextTag.current.word;
                 }
-                if (nextTag.current != undefined && (nextTag.current.tagName === "H2" || nextTag.current.tagName === "H3"
-                || nextTag.current.tagName === "H4" || nextTag.current.tagName === "H5" ||
-                nextTag.current.tagName === "H6")) {
+                if (nextTag.current != undefined && nextTag.current.tagName.match(/^(H[2-6])$/)) {
                   nextTag.current.word = "# " + nextTag.current.word;
                 }
               }
