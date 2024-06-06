@@ -117,6 +117,7 @@ const Archive = () => {
       dispatch(
         SlideListWithFildeUid({
           file_uid: fileUidForEditSlide,
+          limit: 2000,
         })
       ).then((response) => {
         setEditSlide(response.payload.data.slides[0].ID);
@@ -271,6 +272,7 @@ const Archive = () => {
                               dispatch(
                                 SlideListWithFildeUid({
                                   file_uid: key?.file_uid,
+                                  limit: 2000,
                                 })
                               );
                               setEditSlide(key.ID);
