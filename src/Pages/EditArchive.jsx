@@ -241,7 +241,7 @@ const EditArcive = ({ handleClose }) => {
                       key={index}
                       className=""
                       // style={containerStyle}
-                      style={{ textAlign: isLtr ? 'left' : 'right' }}
+                      style={{ direction: isLtr ? 'ltr' : 'rtl' }}
                     />
                     {index == selected && (
                       <i
