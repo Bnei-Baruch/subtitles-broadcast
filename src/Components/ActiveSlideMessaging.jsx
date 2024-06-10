@@ -228,7 +228,10 @@ export function ActiveSlideMessaging(props) {
 
       if (
         !lastMqttMessageJson ||
-        (lastMqttMessageJson.slide !== newMessageJson.slide)
+       ( lastMqttMessageJson.source_uid === newMessageJson.source_uid && 
+        lastMqttMessageJson.bookmark_id === newMessageJson.bookmark_id && 
+        lastMqttMessageJson.file_uid === newMessageJson.file_uid && 
+        lastMqttMessageJson.slide !== newMessageJson.slide)
       ) {
         setSubtitleMqttMessage(newMessageJson);
 
@@ -237,14 +240,16 @@ export function ActiveSlideMessaging(props) {
           JSON.stringify(newMessageJson)
         );
 
-        const targetSlide = document.getElementById(
-          `slide_${newMessageJson.ID}`
-        );
-
-        if (targetSlide) {
-          if (!targetSlide.classList.contains("activeSlide")) {
-            targetSlide.focus();
-            targetSlide.click();
+        if (isSubTitleMode){
+          const targetSlide = document.getElementById(
+            `slide_${newMessageJson.ID}`
+          );
+  
+          if (targetSlide) {
+            if (!targetSlide.classList.contains("activeSlide")) {
+              targetSlide.focus();
+              targetSlide.click();
+            }
           }
         }
       }
