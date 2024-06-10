@@ -460,3 +460,17 @@ dropdown-toggle {
 .bookmark-selected {
   background-color: lightgray;
 }
+
+.bi-eye-fill,
+.bi-eye-slash-fill {
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+.bi-eye-fill {
+  color: #33cc33;
+}
+
+.bi-eye-slash-fill {
+  color: red;
+}

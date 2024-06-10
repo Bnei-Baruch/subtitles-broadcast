@@ -27,6 +27,7 @@ export default function useMqtt() {
   const [isConnected, setIsConnected] = useState(false);
   const [payload, setPayload] = useState({});
   const [mqttClientId, setMqttClientId] = useState(false);
+  let tmpMqttClient = null;
 
   const getClientId = () => {
     const clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
@@ -42,6 +43,7 @@ export default function useMqtt() {
       ...setting.config,
     };
     const clientMqtt = await mqtt.connect(url, options);
+    tmpMqttClient = clientMqtt;
     setMqttClient(clientMqtt);
     setMqttClientId(clientId);
     sessionStorage.setItem("mqttClientId", clientId);
@@ -49,7 +51,8 @@ export default function useMqtt() {
   };
 
   const mqttPublush = async (mqttTopic, msgText, mqttClientObj) => {
-    const trgMqttClient = mqttClient ? mqttClient : mqttClientObj;
+    const trgMqttClient = mqttClient ? mqttClient : 
+      mqttClientObj? mqttClientObj: tmpMqttClient;
 
     if (trgMqttClient) {
       trgMqttClient.publish(

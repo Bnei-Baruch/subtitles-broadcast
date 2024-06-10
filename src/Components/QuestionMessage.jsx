@@ -88,7 +88,17 @@ const QuestionMessage = (props) => {
 
     if (newMessage) {
       if (newMessage.date) {
-        if (!isMessageExist(newMessage, notificationListTmp)){
+        const msgExistObj = isMessageExist(newMessage, notificationListTmp);
+        
+        if (msgExistObj.isExit){
+          if (msgExistObj.message.visible !==  newMessage.visible){
+            msgExistObj.message.visible = newMessage.visible? true: false;
+            newMessage.dateUtcJs = new Date(newMessage.date);
+            notificationListTmp = [...notificationListTmp];
+            setNotificationList(notificationListTmp);
+          }
+        }
+        else{
           newMessage.dateUtcJs = new Date(newMessage.date);
           notificationListTmp = [...notificationListTmp, newMessage];
           setNotificationList(notificationListTmp);
@@ -129,17 +139,31 @@ const QuestionMessage = (props) => {
 
   const isMessageExist = (newMessage, messageList) => {
     let exist = false;
+    let retMsg = null;
 
     for (let index = 0; index < messageList.length; index++) {
       const lupMsg = messageList[index];   
       
-      if (lupMsg.slide === newMessage.slide){
+      if (lupMsg.slide === newMessage.slide ){
         exist = true;
+        retMsg = lupMsg;
         break;
       }
     }
 
-    return exist;
+    return {isExit: exist, message: retMsg} ;
+  };
+  
+
+  const sendQuestionButtonClickHandler = (questionMsg) => {       
+    const mqttTopic = `${questionMsg.lang}_questions_${broadcastProgrammCode}`;    
+    questionMsg.visible = !questionMsg.visible;
+    const jsonMsgStr = JSON.stringify(questionMsg);
+
+    publishEvent("mqttPublush", {
+      mqttTopic: mqttTopic,
+      message: jsonMsgStr,
+    });
   };
 
   if (props.mode === "subtitle") {
@@ -147,10 +171,12 @@ const QuestionMessage = (props) => {
       <>
         {notificationList
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
-          .map((obj) => (
+          .map((obj) => ( 
             <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
-              <div className="d-flex justify-content-between h-auto p-2">
-              {getLanguageName(obj.lang)}
+              <div className="d-flex h-auto p-2">
+                <i className={obj.visible? "bi bi-eye-fill": "bi bi-eye-slash-fill"}  
+                  onClick={() => sendQuestionButtonClickHandler(obj)} />
+                <span>{getLanguageName(obj.lang)}</span>
               </div>
                <Slide content={obj.slide} isLtr={languageIsLtr(obj.lang)}></Slide>
             </div>
