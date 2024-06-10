@@ -4,7 +4,9 @@ import { Slide } from "./Slide";
 
 import {
   getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm
+  getCurrentBroadcastProgramm,
+  getSubtitleMqttTopic,
+  getQuestionMqttTopic,
 } from "../Utils/Common";
 import {
   publishEvent,
@@ -54,8 +56,8 @@ export const GreenWindowButton = (props) => {
   const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [isSubTitleMode, setIsSubTitleMode] = useState(props.isSubTitleMode);
-  const subtitleMqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
-  const questionMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+  const subtitleMqttTopic = getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode);
+  const questionMqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) ;
 
   const contextMqttMessage = isSubTitleMode
     ? subtitleMqttMessage
@@ -79,8 +81,8 @@ export const GreenWindowButton = (props) => {
   };
 
   const mqttTopic = isSubTitleMode
-    ? `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`
-    : `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+    ?  getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode)
+    : getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
 
   useEffect(() => {
     // console.log("GreenWindowButton useEffect publishEvent ", mqttTopic);

@@ -4,7 +4,8 @@ import {
 } from "../Utils/Const";
 import {
   getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm
+  getCurrentBroadcastProgramm,
+  getQuestionMqttTopic,
 } from "../Utils/Common";
 import {
   publishEvent,
@@ -25,7 +26,7 @@ const QuestionMessage = (props) => {
   const [notificationList, setNotificationList] = useState([]);
   const langList = props.languagesList;
   const mqttTopicList = langList.map((langItem, index) => {
-    const mqttTopic = `${langItem.value}_questions_${broadcastProgrammCode}`;
+    const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, langItem.value) ;
     return mqttTopic;
   });
 
@@ -80,8 +81,8 @@ const QuestionMessage = (props) => {
   const newMessageHandling = (event) => {
     // console.log("QuestionMessage newMessageHandling", event);
     const newMessage = event.detail.messageJson;
+    const currMqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
 
-    const currMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
     if (event.detail.mqttTopic === currMqttTopic) {
       sessionStorage.setItem("currentBroadcastquestions", newMessage);
     }
@@ -156,7 +157,7 @@ const QuestionMessage = (props) => {
   
 
   const sendQuestionButtonClickHandler = (questionMsg) => {       
-    const mqttTopic = `${questionMsg.lang}_questions_${broadcastProgrammCode}`;    
+    const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, questionMsg.lang) ;    
     questionMsg.visible = !questionMsg.visible;
     const jsonMsgStr = JSON.stringify(questionMsg);
 
@@ -223,9 +224,5 @@ const QuestionMessage = (props) => {
     );
   }
 };
-
-// QuestionMessage.propTypes = {
-//   languageCode: PropTypes.string.isRequired,
-// };
 
 export default QuestionMessage;

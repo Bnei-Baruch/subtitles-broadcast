@@ -6,7 +6,9 @@ import {
 } from "../Utils/Const";
 import {
   getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm
+  getCurrentBroadcastProgramm,
+  getSubtitleMqttTopic,
+  getQuestionMqttTopic,
 } from "../Utils/Common";
 import { publishEvent, subscribeEvent, unSubscribeEvent } from "../Utils/Events";
 
@@ -53,7 +55,7 @@ const QuestionModule = () => {
         };
 
         const jsonMsgStr = JSON.stringify(jsonMsg);
-        const mqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+        const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
 
         // console.log("QuestionModule publishEvent mqttPublush", mqttTopic);
 
