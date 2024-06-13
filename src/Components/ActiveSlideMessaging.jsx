@@ -2,7 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import { Slide } from "../Components/Slide";
 import {
   getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm
+  getCurrentBroadcastProgramm,
+  getSubtitleMqttTopic,
+  getQuestionMqttTopic,
 } from "../Utils/Common";
 import {
   publishEvent,
@@ -36,8 +38,8 @@ export function ActiveSlideMessaging(props) {
   });
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
-  const subtitleMqttTopic = `subtitles_${broadcastProgrammCode}_${broadcastLangCode}`;
-  const questionMqttTopic = `${broadcastLangCode}_questions_${broadcastProgrammCode}`;
+  const subtitleMqttTopic = getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode) ;
+  const questionMqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) ;
   const [isSubTitleMode, setIsSubTitleMode] = useState(props.isSubTitleMode);
   const contextMqttMessage = isSubTitleMode
     ? subtitleMqttMessage
@@ -136,7 +138,7 @@ export function ActiveSlideMessaging(props) {
             if (otherSlides) {
               for (let index = 0; index < otherSlides.length; index++) {
                 const slide = otherSlides[index];
-                const topic = `subtitles_${broadcastProgrammCode}_${slide.language}`;
+                const topic = getSubtitleMqttTopic(broadcastProgrammCode, slide.language) ;
 
                 publishSlide(slide, topic);
               }
@@ -226,7 +228,10 @@ export function ActiveSlideMessaging(props) {
 
       if (
         !lastMqttMessageJson ||
-        (lastMqttMessageJson.slide !== newMessageJson.slide)
+       ( lastMqttMessageJson.source_uid === newMessageJson.source_uid && 
+        lastMqttMessageJson.bookmark_id === newMessageJson.bookmark_id && 
+        lastMqttMessageJson.file_uid === newMessageJson.file_uid && 
+        lastMqttMessageJson.slide !== newMessageJson.slide)
       ) {
         setSubtitleMqttMessage(newMessageJson);
 
@@ -235,14 +240,16 @@ export function ActiveSlideMessaging(props) {
           JSON.stringify(newMessageJson)
         );
 
-        const targetSlide = document.getElementById(
-          `slide_${newMessageJson.ID}`
-        );
-
-        if (targetSlide) {
-          if (!targetSlide.classList.contains("activeSlide")) {
-            targetSlide.focus();
-            targetSlide.click();
+        if (isSubTitleMode){
+          const targetSlide = document.getElementById(
+            `slide_${newMessageJson.ID}`
+          );
+  
+          if (targetSlide) {
+            if (!targetSlide.classList.contains("activeSlide")) {
+              targetSlide.focus();
+              targetSlide.click();
+            }
           }
         }
       }
