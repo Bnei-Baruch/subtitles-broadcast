@@ -1,15 +1,15 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
-  UserBookmarkList,
-  UnBookmarkSlide,
   BookmarkSlideFromArchivePage,
   DeleteArchive,
   GetAllArchiveData,
   SlideListWithFildeUid,
+  UnBookmarkSlide,
+  UserBookmarkList,
+  getAllArchiveList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllArchiveList } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
 import EditArcive from "./EditArchive";
@@ -22,17 +22,22 @@ const Archive = () => {
   const appContextlData = useContext(AppContext);
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
-  const ArchiveList = useSelector(getAllArchiveList);
+  const archiveList = useSelector(getAllArchiveList);
 
   const [unbookmarkAction, setUnbookmarkAction] = useState(false)
-  const [page, setPage] = useState({
-    page: 1,
-    limit: 10,
-  });
-  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
   const localPagination = localStorage?.getItem("pagination")
     ? JSON?.parse(localStorage?.getItem("pagination"))
-    : page;
+    : { page: 1, limit: 10 };
+  const [page, setPage] = useState(localPagination);
+  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
+  const updatePage = (page, limit) => {
+    localStorage.setItem("pagination", JSON.stringify({ page, limit }));
+    setPage({ page, limit });
+    setPageIndex({
+      startIndex: ((page - 1) * limit) + 1,
+      endIndex: Math.min((page) * limit, archiveList?.pagination?.total_rows, Number.MAX_VALUE),
+    });
+  };
 
   const message = "";
   const [editSlide, setEditSlide] = useState("");
@@ -55,31 +60,6 @@ const Archive = () => {
     order: "",
   });
   // const [bookmarkId, setBookmarkId] = useState();
-  useEffect(() => {
-    setPage(localPagination);
-    const limit = +localPagination?.limit || 10;
-    const page = +localPagination?.page || 1;
-    const totalRows = +ArchiveList?.pagination?.total_rows || 0;
-
-    let startIndex = (page - 1) * limit + 1;
-    let endIndex = +page * +limit < +totalRows ? page * limit : totalRows;
-    if (startIndex > endIndex) {
-      startIndex = (page - 2) * limit + 1;
-      localPagination.page -= 1;
-    }
-    if (startIndex < 0) {
-      startIndex = 0;
-    }
-    setPageIndex({
-      startIndex: startIndex,
-      endIndex: endIndex,
-    });
-    // const startIndex = (page.page - 1) * page.limit + 1;
-    // const endIndex = Math.min(
-    //   page.page * page.limit,
-    //   ArchiveList?.pagination?.total_rows
-    // );
-  }, [localPagination.page, localPagination.limit, ArchiveList]);
 
   useEffect(() => {
     dispatch(
@@ -87,6 +67,7 @@ const Archive = () => {
         language: appContextlData.broadcastLang.label,
         page: page.page,
         limit: page.limit,
+        keyword: localStorage?.getItem("free-text"),
       })
     );
   }, [page.page, page.limit, appContextlData.broadcastLang.label]);
@@ -168,8 +149,8 @@ const Archive = () => {
         <EditArcive handleClose={() => setEditSlide(false)} />
       ) : (
         <div className="archiveBackground  bg-light Edit">
-          <div className="card" style={{ border: "none" }}>
-            {ArchiveList ? (
+          <div className="card" style={{ border: "none", height: "calc(100vh - 175px)" }}>
+            {archiveList ? (
               <div style={{ overflowX: "auto" }}>
                 <table
                   className=""
@@ -188,7 +169,7 @@ const Archive = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {ArchiveList?.slides?.map((key, index) => (
+                    {archiveList?.slides?.map((key, index) => (
                       <tr
                         key={key.ID}
                         className={
@@ -196,7 +177,7 @@ const Archive = () => {
                         }
                       >
                         <td style={{ padding: "10px" }}>
-                          <div className="" style={{ outline: "solid" }}>
+                          <div className="" style={{ outline: "solid", position: "relative" }}>
                             <Slide content={key.slide} isLtr={true} />
                           </div>
                         </td>
@@ -238,7 +219,7 @@ const Archive = () => {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.ID,
                                       update: false,
-                                      order: ArchiveList?.slides?.find(
+                                      order: archiveList?.slides?.find(
                                         (k) => k.bookmark_id !== null
                                       )?.length
                                     },
@@ -303,16 +284,12 @@ const Archive = () => {
             <div
               className="flex-box-start"
               onChange={(e) => {
-                localStorage.setItem(
-                  "pagination",
-                  JSON.stringify({ page: page.page, limit: e.target.value })
-                );
-                setPage({ page: 1, limit: e.target.value });
+                updatePage(1, +e.target.value);
               }}
             >
               <span>Row per page:</span>
               <select
-                value={localPagination?.limit || page.limit}
+                value={/*localPagination?.limit ||*/ page.limit}
                 className="ms-2"
               >
                 <option value={10}>10</option>
@@ -320,21 +297,17 @@ const Archive = () => {
                 <option value={30}>30</option>
               </select>{" "}
               &nbsp; &nbsp; &nbsp;
-              <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${ArchiveList?.pagination?.total_rows} `}</span>
+              <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
             </div>
 
             <div className="flex-box-center">
               {/* Content for the second flex box centered */}
               <ReactPaginate
-                pageCount={ArchiveList?.pagination?.total_pages}
+                pageCount={archiveList?.pagination?.total_pages}
                 onPageChange={(e) => {
                   const selectedPage = e.selected + 1;
-                  if (selectedPage <= ArchiveList?.pagination?.total_pages) {
-                    setPage({ ...page, page: selectedPage });
-                    localStorage.setItem(
-                      "pagination",
-                      JSON.stringify({ page: selectedPage, limit: page.limit })
-                    );
+                  if (selectedPage <= archiveList?.pagination?.total_pages) {
+                    updatePage(selectedPage, page.limit);
                   }
                 }}
                 forcePage={page.page - 1}
@@ -356,11 +329,11 @@ const Archive = () => {
                     style={{
                       fontSize: "40px",
                       cursor:
-                        page.page === ArchiveList?.pagination?.total_pages
+                        page.page === archiveList?.pagination?.total_pages
                           ? "not-allowed"
                           : "pointer",
                       color:
-                        page.page === ArchiveList?.pagination?.total_pages
+                        page.page === archiveList?.pagination?.total_pages
                           ? "#6c757d"
                           : "black",
                     }}
