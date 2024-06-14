@@ -16,11 +16,16 @@ const HeaderBar = ({ logout }) => {
   const localPagination = localStorage?.getItem("pagination")
     ? JSON?.parse(localStorage?.getItem("pagination"))
     : { page: 1, limit: 10 };
-  const [freeText, setFreeText] = useState("");
+  const localFreeText = localStorage?.getItem("free-text") && "";
+  const [freeText, setFreeText] = useState(localFreeText);
+  const updateFreeText = (t) => {
+    setFreeText(t);
+    localStorage?.setItem("free-text", t);
+  }
   const DebouncingFreeText = useDebounce(freeText, 500);
   useEffect(() => {
     if (param.pathname !== "/archive") {
-      setFreeText("");
+      updateFreeText("");
     }
   }, [param.pathname]);
 
@@ -33,8 +38,8 @@ const HeaderBar = ({ logout }) => {
       dispatch(
         GetAllArchiveData({
           language: appContextlData.broadcastLang.label,
-          limit: localPagination?.limit || 10,
-          page: 1,
+          limit: localPagination.limit,
+          page: localPagination.page,
           keyword: freeText,
         })
       );
@@ -54,13 +59,15 @@ const HeaderBar = ({ logout }) => {
                   dispatch(
                     GetAllArchiveData({
                       language: appContextlData.broadcastLang.label,
+                      limit: localPagination.limit,
+                      page: localPagination.page,
                       keyword: freeText,
                     })
                   );
               }}
               onChange={(e) => {
                 localStorage.setItem("headerSearchKeyword", e.target.value);
-                setFreeText(e.target.value);
+                updateFreeText(e.target.value);
               }}
               type="text"
               className="form-control input"
