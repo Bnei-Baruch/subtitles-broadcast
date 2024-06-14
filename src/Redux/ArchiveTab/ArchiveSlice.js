@@ -181,7 +181,9 @@ export const addNewSlide = createAsyncThunk(
 export const deleteNewSlide = createAsyncThunk(
   "deleteNewSlide",
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}slide`, data.data);
+    const response = await axios.delete(`${API}slide`, {
+      data: data.data
+    })
     thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
     response.data.success && toast.success(response.data.description);
     return response.data;
