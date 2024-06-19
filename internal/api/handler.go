@@ -864,53 +864,52 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 // 			"", "Getting data has succeeded"))
 // }
 
-// func (h *Handler) GetSourcePath(ctx *gin.Context) {
-// 	slideId := ctx.Query("slide_id")
-// 	sourceUid := ctx.Query("source_uid")
-// 	slideIdLength := len(slideId)
-// 	sourceUidLength := len(sourceUid)
-// 	if slideIdLength == 0 && sourceUidLength == 0 {
-// 		ctx.JSON(http.StatusBadRequest,
-// 			getResponse(false, nil, "", "Either the slide_id or source_uid is needed"))
-// 		return
-// 	}
-// 	path := SourcePath{}
-// 	if slideIdLength > 0 {
-// 		slideIdInt, err := strconv.Atoi(slideId)
-// 		if err != nil {
-// 			ctx.JSON(http.StatusBadRequest,
-// 				getResponse(false, nil, err.Error(), "The slide id must be an integer"))
-// 			return
-// 		}
-// 		err = h.Database.Debug().WithContext(ctx).
-// 			Select("source_paths.path || ' / ' || slides.id AS path").
-// 			Table("slides").
-// 			Joins("INNER JOIN files on slides.file_uid = files.file_uid").
-// 			Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages").
-// 			Where("slides.id = ?", slideIdInt).First(&path).Error
-// 		if err != nil {
-// 				ctx.JSON(http.StatusInternalServerError,
-// 					getResponse(false, nil, err.Error(), "Getting slide source path has failed"))
-// 			return
-// 		}
-// 	} else if sourceUidLength > 0 {
-// 		err := h.Database.Debug().WithContext(ctx).
-// 			Select("path").
-// 			Table("source_paths").
-// 			Where("source_uid = ?", sourceUid).First(&path).Error
-// 		if err != nil {
-// 			if !errors.Is(err, gorm.ErrRecordNotFound) {
-// 				ctx.JSON(http.StatusInternalServerError,
-// 					getResponse(false, nil, err.Error(), "Getting source path has failed"))
-// 			return
-// 		}
-// 	}
+func (h *Handler) GetSourcePath(ctx *gin.Context) {
+	language := ctx.Query("language")
+	languageLength := len(language)
+	if languageLength == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "", "language is needed"))
+		return
+	}
+	keyword := ctx.Query("keyword")
+	page, listLimit, offset, err := getPaginationParams(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	var totalRows int64
+	paths := []*SourcePath{}
 
-// 	ctx.JSON(http.StatusOK,
-// 		getResponse(true,
-// 			path,
-// 			"", "Getting data has succeeded"))
-// }
+	result := h.Database.Debug().WithContext(ctx).
+		Select("source.id AS id,source_paths.source_uid AS source_uid, source_paths.languages AS languages, source_paths.path AS path").
+		Table("slides").
+		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid").
+		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages").
+		Where("? = ANY(files.languages)", language).Where("slides.slide LIKE ?", "%"+keyword+"%").
+		Order("source_paths.source_uid").Count(&totalRows).Limit(listLimit).Offset(offset).Find(&paths)
+	if result.Error != nil {
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Getting slide source path has failed"))
+		return
+	}
+	sourcePathList := struct {
+		Pagination *Pagination   `json:"pagination"`
+		Paths      []*SourcePath `json:"paths"`
+	}{
+		Pagination: &Pagination{
+			Limit:      listLimit,
+			Page:       page,
+			TotalRows:  totalRows,
+			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
+		},
+		Paths: paths,
+	}
+	ctx.JSON(http.StatusOK,
+		getResponse(true,
+			sourcePathList,
+			"", "Getting data has succeeded"))
+}
 
 // For checking user role verification for the permissions (need to define user roles soon)
 
