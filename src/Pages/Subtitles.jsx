@@ -141,12 +141,14 @@ const Subtitles = () => {
     }
   }, [allBookmarkList, allBookmarkListLoading]);
   useEffect(() => {
-    let file_uid = localStorage.getItem("fileUid")
+    let file_uid = localStorage.getItem("fileUid");
     if (file_uid !== "") {
       setSearchSlideFileUid(file_uid);
+      dispatch(GetSubtitleData({ file_uid, keyword: searchSlide })).then((response) => {
+        console.log(response)
+        setIsLtr(response?.payload?.data?.slides[0]?.left_to_right);
+      });
     }
-    file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
-    setIsLtr(UserAddedList?.slides[0]?.left_to_right ? !(UserAddedList?.slides[0]?.left_to_right) : !isLtr);
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {
@@ -387,6 +389,8 @@ const Subtitles = () => {
                       fileUid={item?.file_uid}
                       index={index}
                       moveCard={moveCard}
+                      isLtr={item.left_to_right}
+                      setIsLtr={setIsLtr}
                     />
                   ))}
               </div>

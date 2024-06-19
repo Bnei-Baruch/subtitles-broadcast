@@ -18,6 +18,8 @@ const DraggableItem = ({
   fileUid,
   bookmarkDelete,
   setActivatedTab,
+  isLtr,
+  setIsLtr
 }) => {
   const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
@@ -40,6 +42,7 @@ const DraggableItem = ({
     setActivatedTab((+text?.split("/")?.at(-1)) - 1);
     localStorage.setItem("fileUid", e);
     dispatch(GetSubtitleData({ file_uid: e }));
+    setIsLtr(isLtr)
   };
 
   const selected = localStorage.getItem("fileUid") === fileUid;
