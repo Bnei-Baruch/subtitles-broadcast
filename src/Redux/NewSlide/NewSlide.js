@@ -24,6 +24,7 @@ export const SetCustomSlideBySource = createAsyncThunk(
       source_path: data.source_path,
       source_uid: data.source_uid,
       file_uid: data.file_uid,
+      left_to_right: data.left_to_right,
       slides: data.slides,
     };
     try {

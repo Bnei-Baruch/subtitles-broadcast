@@ -146,6 +146,7 @@ const Subtitles = () => {
       setSearchSlideFileUid(file_uid);
     }
     file_uid && dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+    setIsLtr(UserAddedList?.slides[0]?.left_to_right ? !(UserAddedList?.slides[0]?.left_to_right) : !isLtr);
   }, [searchSlide]);
 
   const moveCard = (fromIndex, toIndex) => {
@@ -312,7 +313,7 @@ const Subtitles = () => {
                   }),
                 }}
                 value={isNaN(+maxSlideIndex) ? { value: "/", label: "- / -" }
-                    : { value: `${selectedSlide}/${+maxSlideIndex + 1 }`, label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`, }
+                  : { value: `${selectedSlide}/${+maxSlideIndex + 1}`, label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`, }
                 }
                 onChange={handleChange}
                 options={[...Array(maxSlideIndex)?.keys(), maxSlideIndex]?.map((index) => ({
@@ -349,12 +350,12 @@ const Subtitles = () => {
                     );
                     setSelectedSlide(selectedSlide + 1);
                   }*/
-                  updateSelectedSlide(selectedSlide + 1);
-                }
+                updateSelectedSlide(selectedSlide + 1);
               }
-              className={` cursor-pointer ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination" }`}>
+              }
+              className={` cursor-pointer ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination"}`}>
               Next{" "}
-              <i className={`bi bi-chevron-right  cursor-pointer  ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination" }`} />
+              <i className={`bi bi-chevron-right  cursor-pointer  ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination"}`} />
             </span>
           </div>
         </div>

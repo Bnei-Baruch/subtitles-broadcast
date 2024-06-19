@@ -67,9 +67,11 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
+        left_to_right: (languages[appContextlData.broadcastLang.label] === "he") ? false : true,
         languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
+      console.log(request)
       if (
         document.getElementById("upload_name") &&
         document.getElementById("upload_name").value.length > 0

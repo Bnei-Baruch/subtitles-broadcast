@@ -178,7 +178,7 @@ const Archive = () => {
                       >
                         <td style={{ padding: "10px" }}>
                           <div className="" style={{ outline: "solid", position: "relative" }}>
-                            <Slide content={key.slide} isLtr={true} />
+                            <Slide content={key.slide} isLtr={key.left_to_right} />
                           </div>
                         </td>
                         <td
@@ -194,7 +194,7 @@ const Archive = () => {
                                 setUnbookmarkAction(true);
                                 dispatch(
                                   UnBookmarkSlide({
-                                    search_keyword: localStorage.getItem("headerSearchKeyword"),
+                                    search_keyword: localStorage.getItem("free-text"),
                                     bookmark_id: key.bookmark_id,
                                     language: appContextlData.broadcastLang.label
                                   })
@@ -214,7 +214,7 @@ const Archive = () => {
                                 setUnbookmarkAction(false);
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
-                                    search_keyword: localStorage.getItem("headerSearchKeyword"),
+                                    search_keyword: localStorage.getItem("free-text"),
                                     data: {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.ID,
@@ -299,7 +299,6 @@ const Archive = () => {
               &nbsp; &nbsp; &nbsp;
               <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
             </div>
-
             <div className="flex-box-center">
               {/* Content for the second flex box centered */}
               <ReactPaginate
