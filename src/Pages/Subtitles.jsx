@@ -145,7 +145,6 @@ const Subtitles = () => {
     if (file_uid !== "") {
       setSearchSlideFileUid(file_uid);
       dispatch(GetSubtitleData({ file_uid, keyword: searchSlide })).then((response) => {
-        console.log(response)
         setIsLtr(response?.payload?.data?.slides[0]?.left_to_right);
       });
     }
