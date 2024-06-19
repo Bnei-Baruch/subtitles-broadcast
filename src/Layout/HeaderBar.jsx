@@ -73,6 +73,29 @@ const HeaderBar = ({ logout }) => {
               className="form-control input"
             />
           }
+          {param.pathname === "/source" &&
+            <input
+              placeholder="Search"
+              value={freeText}
+              onKeyDown={(e) => {
+                e.key === "Enter" &&
+                  dispatch(
+                    GetAllArchiveData({
+                      language: appContextlData.broadcastLang.label,
+                      limit: localPagination.limit,
+                      page: localPagination.page,
+                      keyword: freeText,
+                    })
+                  );
+              }}
+              onChange={(e) => {
+                localStorage.setItem("headerSearchKeyword", e.target.value);
+                updateFreeText(e.target.value);
+              }}
+              type="text"
+              className="form-control input"
+            />
+          }
           <div></div>
         </div >
         <div className="d-flex aligne-item-center">

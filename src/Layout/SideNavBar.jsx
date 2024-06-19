@@ -41,6 +41,14 @@ const SideNavBar = ({ logout, securityRole }) => (
 
           {securityRole && securityRole !== "translator" &&
             <li>
+              <NavLink to={"/source"} className="nav-link text-white">
+                <img alt="folder" src="image/folder-special.svg" /> Source
+              </NavLink>
+            </li>
+          }
+
+          {securityRole && securityRole !== "translator" &&
+            <li>
               <NavLink to={"/new"} className="nav-link text-white">
                 <img alt="queue" src="image/queue.svg" /> New
               </NavLink>
