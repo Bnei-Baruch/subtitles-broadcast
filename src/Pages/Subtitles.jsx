@@ -141,12 +141,13 @@ const Subtitles = () => {
     }
   }, [allBookmarkList, allBookmarkListLoading]);
   useEffect(() => {
-    let file_uid = localStorage.getItem("fileUid");
-    if (file_uid !== "") {
-      setSearchSlideFileUid(file_uid);
-      dispatch(GetSubtitleData({ file_uid, keyword: searchSlide })).then((response) => {
-        setIsLtr(response?.payload?.data?.slides[0]?.left_to_right);
-      });
+    if (searchSlide.length > 0) {
+      let file_uid = localStorage.getItem("fileUid");
+      if (file_uid !== "") {
+        setSearchSlideFileUid(file_uid);
+        dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+        setIsLtr(UserAddedList?.slides[0]?.left_to_right);
+      }
     }
   }, [searchSlide]);
 
@@ -388,7 +389,6 @@ const Subtitles = () => {
                       fileUid={item?.file_uid}
                       index={index}
                       moveCard={moveCard}
-                      isLtr={item.left_to_right}
                       setIsLtr={setIsLtr}
                     />
                   ))}
