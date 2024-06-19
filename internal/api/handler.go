@@ -131,6 +131,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		FileUid     string `json:"file_uid"`
 		Slide       string `json:"slide"`
 		OrderNumber int    `json:"order_number"`
+		LeftToRight bool   `json:"left_to_right"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -150,7 +151,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		if err = tx.Create(&Slide{
 			FileUid:     req.FileUid,
 			Slide:       req.Slide,
-			OrderNumber: req.OrderNumber,
+			LeftToRight: req.LeftToRight,
 		}).Error; err != nil {
 			tx.Rollback()
 			log.Error(err)
@@ -170,12 +171,13 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 
 func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	req := struct {
-		FileName   string   `json:"file_name"`
-		SourcePath string   `json:"source_path"`
-		Languages  []string `json:"languages"`
-		SourceUid  string   `json:"source_uid"`
-		FileUid    string   `json:"file_uid"`
-		Slides     []string `json:"slides"`
+		FileName    string   `json:"file_name"`
+		SourcePath  string   `json:"source_path"`
+		Languages   []string `json:"languages"`
+		SourceUid   string   `json:"source_uid"`
+		FileUid     string   `json:"file_uid"`
+		Slides      []string `json:"slides"`
+		LeftToRight bool     `json:"left_to_right"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -242,11 +244,11 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Creating file data has failed"))
 		return
 	}
-
 	for idx, slide := range req.Slides {
 		slideData := Slide{
 			Slide:       strings.ReplaceAll(slide, "\n", "\\n"),
 			OrderNumber: idx / len(req.Languages),
+			LeftToRight: req.LeftToRight,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
@@ -376,6 +378,7 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 		SlideID     uint   `json:"slide_id"`
 		Slide       string `json:"slide"`
 		OrderNumber int    `json:"order_number"`
+		LeftToRight bool   `json:"left_to_right"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -390,21 +393,21 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	updateQuery := "UPDATE slides AS s SET slide = r.slide, order_number = r.order_number, updated_at = ? "
+	updateQuery := "UPDATE slides AS s SET slide = r.slide, order_number = r.order_number, left_to_right = r.left_to_right, updated_at = ? "
 	whereQuery := "WHERE s.id = r.slide_id"
 	valuesQuery := []string{}
 	placeholders := []interface{}{}
 
 	for _, req := range reqs {
 		// Use a placeholder for req.Slide and escape any special characters
-		value := fmt.Sprintf("(%d, ?, %d)", req.SlideID, req.OrderNumber)
+		value := fmt.Sprintf("(%d, ?, %d, %t)", req.SlideID, req.OrderNumber, req.LeftToRight)
 		valuesQuery = append(valuesQuery, value)
 
 		// Append Slide value to placeholders
 		placeholders = append(placeholders, req.Slide)
 	}
 
-	withQuery := "WITH reqs(slide_id, slide, order_number) AS (VALUES " + strings.Join(valuesQuery, ", ") + ") "
+	withQuery := "WITH reqs(slide_id, slide, order_number, left_to_right) AS (VALUES " + strings.Join(valuesQuery, ", ") + ") "
 	query := withQuery + updateQuery + "FROM reqs AS r " + whereQuery
 
 	// Append the timestamp placeholder to the placeholders slice
