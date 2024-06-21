@@ -6,8 +6,8 @@ import {
   DeleteArchive,
   SlideListWithFildeUid,
   UnBookmarkSlide,
-  getAllArchiveList,
-} from "../Redux/SourceTab/SourceList";
+  getAllSourcePathList,
+} from "../Redux/SourceTab/SourceSlice";
 import { useDispatch, useSelector } from "react-redux";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
@@ -15,12 +15,13 @@ import EditArcive from "./EditArchive";
 import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
 import AppContext from "../AppContext";
+import GetFileUid from "../Utils/Source";
 
 const Source = () => {
   const appContextlData = useContext(AppContext);
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
-  const archiveList = useSelector(getAllArchiveList);
+  const sourcePathList = useSelector(getAllSourcePathList);
 
   const [unbookmarkAction, setUnbookmarkAction] = useState(false)
   const localPagination = localStorage?.getItem("pagination")
@@ -33,7 +34,7 @@ const Source = () => {
     setPage({ page, limit });
     setPageIndex({
       startIndex: ((page - 1) * limit) + 1,
-      endIndex: Math.min((page) * limit, archiveList?.pagination?.total_rows, Number.MAX_VALUE),
+      endIndex: Math.min((page) * limit, sourcePathList?.pagination?.total_rows, Number.MAX_VALUE),
     });
   };
 
@@ -53,9 +54,7 @@ const Source = () => {
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
-    slide_id: "",
     update: "",
-    order: "",
   });
   // const [bookmarkId, setBookmarkId] = useState();
 
@@ -147,7 +146,7 @@ const Source = () => {
       ) : (
         <div className="archiveBackground  bg-light Edit">
           <div className="card" style={{ border: "none", height: "calc(100vh - 175px)" }}>
-            {archiveList ? (
+            {sourcePathList ? (
               <div style={{ overflowX: "auto" }}>
                 <table
                   className=""
@@ -164,7 +163,7 @@ const Source = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {archiveList?.slides?.map((key, index) => (
+                    {sourcePathList?.paths?.map((key, index) => (
                       <tr
                         key={key.ID}
                         className={
@@ -175,7 +174,7 @@ const Source = () => {
                           style={{ padding: "10px" }}
                           className="text-truncate"
                         >
-                          {key.languages.length > 1 ? `(${key.languages[index % key.languages.length]}) ${key.slide_source_path}` : key.slide_source_path}
+                          {key.path}
                         </td>
                         <td style={{ padding: "10px" }}>
                           {key.bookmark_id !== null ? (
@@ -191,9 +190,7 @@ const Source = () => {
                                 );
                                 setBookmarkData({
                                   file_uid: "",
-                                  slide_id: "",
                                   update: "",
-                                  order: "",
                                 });
                               }}
                               className="bi bi-bookmark-check-fill m-2 cursor-pointer "
@@ -209,7 +206,7 @@ const Source = () => {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.ID,
                                       update: false,
-                                      order: archiveList?.slides?.find(
+                                      order: sourcePathList?.paths?.find(
                                         (k) => k.bookmark_id !== null
                                       )?.length
                                     },
@@ -226,7 +223,6 @@ const Source = () => {
                                   ) {
                                     setBookmarkData({
                                       file_uid: key?.file_uid,
-                                      slide_id: key?.ID,
                                       update: true,
                                     });
                                     setConfirmation(true);
@@ -287,16 +283,16 @@ const Source = () => {
                 <option value={30}>30</option>
               </select>{" "}
               &nbsp; &nbsp; &nbsp;
-              <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
+              <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${sourcePathList?.pagination?.total_rows} `}</span>
             </div>
 
             <div className="flex-box-center">
               {/* Content for the second flex box centered */}
               <ReactPaginate
-                pageCount={archiveList?.pagination?.total_pages}
+                pageCount={sourcePathList?.pagination?.total_pages}
                 onPageChange={(e) => {
                   const selectedPage = e.selected + 1;
-                  if (selectedPage <= archiveList?.pagination?.total_pages) {
+                  if (selectedPage <= sourcePathList?.pagination?.total_pages) {
                     updatePage(selectedPage, page.limit);
                   }
                 }}
@@ -319,11 +315,11 @@ const Source = () => {
                     style={{
                       fontSize: "40px",
                       cursor:
-                        page.page === archiveList?.pagination?.total_pages
+                        page.page === sourcePathList?.pagination?.total_pages
                           ? "not-allowed"
                           : "pointer",
                       color:
-                        page.page === archiveList?.pagination?.total_pages
+                        page.page === sourcePathList?.pagination?.total_pages
                           ? "#6c757d"
                           : "black",
                     }}

@@ -8,7 +8,7 @@ const API = process.env.REACT_APP_API_BASE_URL;
 const languages = GetLangaugeCode()
 
 const initialState = {
-  archiveList: [],
+  sourcePathList: [],
   getAuthorList: [],
   getBookList: [],
   getTitleList: [],
@@ -198,8 +198,8 @@ export const updateNewSlide = createAsyncThunk(
     return response.data;
   }
 );
-const ArchiveSlice = createSlice({
-  name: "Archive",
+const SourceSlice = createSlice({
+  name: "Source",
   initialState,
   reducers: {
     emptyAutoComplete: (state, { payload }) => {
@@ -208,7 +208,7 @@ const ArchiveSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(GetAllSourcePathData.fulfilled, (state, action) => {
-      return { ...state, archiveList: action?.payload };
+      return { ...state, sourcePathList: action?.payload };
     });
     builder.addCase(DeleteArchive.rejected, (state, action) => {
       toast.error("Something went wrong");
@@ -242,22 +242,22 @@ const ArchiveSlice = createSlice({
     });
   },
 });
-export const { emptyAutoComplete } = ArchiveSlice.actions;
+export const { emptyAutoComplete } = SourceSlice.actions;
 
 export const getEditSlideList = (state) =>
-  state?.ArchiveList?.editSlideList?.data;
+  state?.SourceList?.editSlideList?.data;
 export const getAutocompleteSuggetion = (state) =>
-  state?.ArchiveList?.autocomplete?.data;
-export const getAllArchiveList = (state) =>
-  state?.ArchiveList?.archiveList?.data;
+  state?.SourceList?.autocomplete?.data;
+export const getAllSourcePathList = (state) =>
+  state?.SourceList?.sourcePathList?.data;
 
 export const getAllBookmarkList = (state) =>
-  state?.ArchiveList?.bookmarkList?.data;
+  state?.SourceList?.bookmarkList?.data;
 
 export const getAllBookmarkListLoading = (state) =>
-  state?.ArchiveList?.bookmarkListLoading;
+  state?.SourceList?.bookmarkListLoading;
 
 export const getAllAuthorList = (state) =>
-  state?.ArchiveList?.getAuthorList?.data;
+  state?.SourceList?.getAuthorList?.data;
 
-export default ArchiveSlice.reducer;
+export default SourceSlice.reducer;

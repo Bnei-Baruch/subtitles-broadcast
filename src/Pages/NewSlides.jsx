@@ -2,9 +2,10 @@ import React, { useContext, useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import SlideSplit from "../Utils/SlideSplit";
+import GenerateUID from "../Utils/Uid";
 import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import GetLangaugeCode from "../Utils/Const";
-import GenerateUID from "../Utils/Uid";
+import GetFileUid from "../Utils/Source";
 import {
   ArchiveAutoComplete,
   getAutocompleteSuggetion,
@@ -217,31 +218,9 @@ const NewSlides = () => {
             return
           }
         }
-        sourceUrl = `https://kabbalahmedia.info/backend/content_units?id=${sourceUidStr}&with_files=true`;
         setSourceUid("upload_" + sourceUidStr);
-        const sourceResponse = await fetch(sourceUrl);
-        if (!sourceResponse.ok) {
-          throw new Error(`Fetch failed with status ${sourceResponse.status}`);
-        }
-        const sourceData = await sourceResponse.json();
-        let fileUid;
-        if (sourceData.hasOwnProperty("content_units")) {
-          const contentUnits = sourceData["content_units"];
-          contentUnits.forEach((contentUnit) => {
-            if (contentUnit.hasOwnProperty("files")) {
-              const files = contentUnit["files"];
-              files.forEach((file) => {
-                if (
-                  languages[appContextlData.broadcastLang.label] ===
-                  file["language"] && file["type"] === "text"
-                  && file["mimetype"] === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                ) {
-                  fileUid = file["id"];
-                }
-              });
-            }
-          });
-        }
+        let fileUid = await GetFileUid(languages[appContextlData.broadcastLang.label], sourceUidStr);
+        console.log(fileUid);
         if (fileUid === undefined) {
           alert("File not found");
           return;
