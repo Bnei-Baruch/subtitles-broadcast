@@ -882,11 +882,10 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	paths := []*SourcePath{}
 
 	result := h.Database.Debug().WithContext(ctx).
-		Select("source.id AS id,source_paths.source_uid AS source_uid, source_paths.languages AS languages, source_paths.path AS path").
-		Table("slides").
-		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid").
-		Joins("INNER JOIN source_paths on files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages").
-		Where("? = ANY(files.languages)", language).Where("slides.slide LIKE ?", "%"+keyword+"%").
+		Select("source_paths.id AS id,source_paths.source_uid AS source_uid, source_paths.languages AS languages, source_paths.path AS path").
+		Table("files").
+		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
+		Where("? = ANY(files.languages)", language).Where("source_paths.path LIKE ?", "%"+keyword+"%").
 		Order("source_paths.source_uid").Count(&totalRows).Limit(listLimit).Offset(offset).Find(&paths)
 	if result.Error != nil {
 		ctx.JSON(http.StatusInternalServerError,
