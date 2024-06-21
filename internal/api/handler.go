@@ -151,6 +151,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		if err = tx.Create(&Slide{
 			FileUid:     req.FileUid,
 			Slide:       req.Slide,
+			OrderNumber: req.OrderNumber,
 			LeftToRight: req.LeftToRight,
 		}).Error; err != nil {
 			tx.Rollback()
