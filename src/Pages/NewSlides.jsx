@@ -67,7 +67,7 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        left_to_right: IsLanguageLtr(languages[appContextlData.broadcastLang.label]),
+        left_to_right: IsLangLtr(languages[appContextlData.broadcastLang.label]),
         languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
@@ -124,7 +124,7 @@ const NewSlides = () => {
     }
   }, [updateTagList]);
 
-  const IsLanguageLtr = (languageCode) => {
+  const IsLangLtr = (languageCode) => {
     switch (languageCode) {
       case 'he':
         return false;
