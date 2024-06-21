@@ -66,11 +66,7 @@ const HeaderBar = ({ logout }) => {
                   );
               }}
               onChange={(e) => {
-                if (e.target.value.length === 0) {
-                  localStorage.setItem("headerSearchKeyword", "");
-                } else {
-                  localStorage.setItem("headerSearchKeyword", e.target.value);
-                }
+                localStorage.setItem("headerSearchKeyword", e.target.value);
                 updateFreeText(e.target.value);
               }}
               type="text"

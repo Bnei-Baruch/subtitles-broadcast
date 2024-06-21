@@ -67,7 +67,7 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        left_to_right: (languages[appContextlData.broadcastLang.label] === "he") ? false : true,
+        left_to_right: IsLanguageLtr(languages[appContextlData.broadcastLang.label]),
         languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
@@ -123,6 +123,17 @@ const NewSlides = () => {
       fetchData();
     }
   }, [updateTagList]);
+
+  const IsLanguageLtr = (languageCode) => {
+    switch (languageCode) {
+      case 'he':
+        return false;
+      case 'ar':
+        return false;
+      default:
+        return true;
+    }
+  }
 
   const handleUpload = () => {
     try {
