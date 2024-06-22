@@ -986,7 +986,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	}
 	paths := []*SourcePathData{}
 	result := h.Database.Debug().WithContext(ctx).
-		Select("DISTINCT ON (source_paths.source_uid) slides.id AS slide_id, "+
+		Select("DISTINCT ON (source_paths.path) slides.id AS slide_id, "+
 			"bookmarks.id AS bookmark_id, "+
 			"source_paths.source_uid AS source_uid, "+
 			"files.file_uid AS file_uid, "+
