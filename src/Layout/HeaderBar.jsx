@@ -16,15 +16,9 @@ const HeaderBar = ({ logout }) => {
   const dispatch = useDispatch();
   const param = useLocation();
 
-  if (param.pathname === "/archive") {
-    const localPagination = localStorage?.getItem("pagination")
-      ? JSON?.parse(localStorage?.getItem("pagination"))
-      : { page: 1, limit: 10 };
-  } else if (param.pathname === "/source") {
-    const localPagination = localStorage?.getItem("source_pagination")
-      ? JSON?.parse(localStorage?.getItem("source_pagination"))
-      : { page: 1, limit: 10 };
-  }
+  const localPagination = localStorage?.getItem("pagination")
+    ? JSON?.parse(localStorage?.getItem("pagination"))
+    : { page: 1, limit: 10 };
   const localFreeText = localStorage?.getItem("free-text") && "";
   const [freeText, setFreeText] = useState(localFreeText);
   const updateFreeText = (t) => {
