@@ -42,6 +42,7 @@ type Slide struct {
 	FileUid     string    `json:"file_uid"`
 	Slide       string    `json:"slide"`
 	OrderNumber int       `json:"order_number"`
+	LeftToRight bool      `json:"left_to_right"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
