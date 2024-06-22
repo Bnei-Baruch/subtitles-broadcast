@@ -809,6 +809,10 @@ components:
           type: integer
           description: slide order number
           example: 0
+        left_to_right:
+          type: boolean
+          description: slide text direction
+          example: true
         created_at:
           type: string
           description: created time
