@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
 import GetLangaugeCode from "../../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
@@ -9,20 +8,13 @@ const languages = GetLangaugeCode()
 
 const initialState = {
   sourcePathList: [],
-  getAuthorList: [],
   getBookList: [],
   getTitleList: [],
   bookmarkList: [],
   bookmarkListLoading: false,
-  autocomplete: [],
-  editSlideList: [],
 };
 const API_URL = {
-  AddData: "selected-content",
   GetALL: "source_path",
-  GetByID: "",
-  Create: "",
-  Update: "",
   Delete: "source-slide",
 };
 
@@ -52,33 +44,6 @@ export const DeleteSource = createAsyncThunk(
   }
 );
 
-export const GetAllAuthorList = createAsyncThunk(
-  `/GetAllAuthorList`,
-  async (data, thunkAPI) => {
-    const response = await axios.get(`${API}author`, {
-      params: data,
-    });
-
-    return response.data;
-  }
-);
-export const AddToSubtitleList = createAsyncThunk(
-  `/${API_URL.GetALL}`,
-  async (data, thunkAPI) => {
-    const response = await axios.post(`${API}${API_URL.AddData}`, data);
-    thunkAPI.dispatch(GetSubtitleData());
-    return response.data;
-  }
-);
-
-export const ArchiveAutoComplete = createAsyncThunk(
-  `ArchiveAutoComplete`,
-  async (data, thunkAPI) => {
-    const response = await axios.get(`${API}auto_complete`, { params: data });
-
-    return response.data;
-  }
-);
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
@@ -87,20 +52,6 @@ export const UserBookmarkList = createAsyncThunk(
   }
 );
 
-export const GetAllAuthor = createAsyncThunk(
-  `/${API_URL.GetALL}`,
-  async (data, thunkAPI) => {
-    const response = await axios.get(`${API}/author`);
-    return response.data;
-  }
-);
-export const GetAllBook = createAsyncThunk(
-  `/${API_URL.GetALL}`,
-  async (data, thunkAPI) => {
-    const response = await axios.get(`${API}${API_URL.GetALL}`);
-    return response.data;
-  }
-);
 export const GetAllTitle = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
@@ -171,36 +122,6 @@ export const SlideListWithFildeUid = createAsyncThunk(
   }
 );
 
-export const addNewSlide = createAsyncThunk(
-  "addNewSlide",
-  async (data, thunkAPI) => {
-    const response = await axios.post(`${API}slide`, data.list);
-    response.data.success && toast.success(response.data.description);
-    thunkAPI.dispatch(GetAllSourcePathData({ language: data.language }));
-    return response.data;
-  }
-);
-
-export const deleteNewSlide = createAsyncThunk(
-  "deleteNewSlide",
-  async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}slide`, {
-      data: data.data
-    })
-    thunkAPI.dispatch(GetAllSourcePathData({ language: data.language }));
-    response.data.success && toast.success(response.data.description);
-    return response.data;
-  }
-);
-export const updateNewSlide = createAsyncThunk(
-  "updateNewSlide",
-  async (data, thunkAPI) => {
-    const response = await axios.patch(`${API}slide`, data.updateSlideList);
-    response.data.success && toast.success(response.data.description);
-    thunkAPI.dispatch(GetAllSourcePathData({ file_uid: data.file_uid }));
-    return response.data;
-  }
-);
 const SourceSlice = createSlice({
   name: "Source",
   initialState,
@@ -221,9 +142,6 @@ const SourceSlice = createSlice({
       toast.success("Successfully deleted");
       return state;
     });
-    builder.addCase(GetAllAuthor, (state, { payload }) => {
-      return { ...state, authorList: payload };
-    });
     builder.addCase(UserBookmarkList.pending, (state) => {
       return { ...state, bookmarkListLoading: true };
     });
@@ -234,12 +152,6 @@ const SourceSlice = createSlice({
       return { ...state, bookmarkList: payload };
     });
 
-    builder.addCase(GetAllAuthorList.fulfilled, (state, { payload }) => {
-      return { ...state, getAuthorList: payload };
-    });
-    builder.addCase(ArchiveAutoComplete.fulfilled, (state, { payload }) => {
-      return { ...state, autocomplete: payload };
-    });
     builder.addCase(SlideListWithFildeUid.fulfilled, (state, { payload }) => {
       return { ...state, editSlideList: payload };
     });
@@ -247,10 +159,6 @@ const SourceSlice = createSlice({
 });
 export const { emptyAutoComplete } = SourceSlice.actions;
 
-export const getEditSlideList = (state) =>
-  state?.SourceList?.editSlideList?.data;
-export const getAutocompleteSuggetion = (state) =>
-  state?.SourceList?.autocomplete?.data;
 export const getAllSourcePathList = (state) =>
   state?.SourceList?.sourcePathList?.data;
 
@@ -259,8 +167,5 @@ export const getAllBookmarkList = (state) =>
 
 export const getAllBookmarkListLoading = (state) =>
   state?.SourceList?.bookmarkListLoading;
-
-export const getAllAuthorList = (state) =>
-  state?.SourceList?.getAuthorList?.data;
 
 export default SourceSlice.reducer;
