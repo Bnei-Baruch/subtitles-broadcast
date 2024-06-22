@@ -3,7 +3,7 @@ import "./PagesCSS/Archive.css";
 import {
   GetAllSourcePathData,
   BookmarkSlideFromArchivePage,
-  DeleteArchive,
+  DeleteSource,
   SlideListWithFildeUid,
   UnBookmarkSlide,
   getAllSourcePathList,
@@ -15,7 +15,7 @@ import EditArcive from "./EditArchive";
 import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
 import AppContext from "../AppContext";
-import GetFileUid from "../Utils/Source";
+import GetLangaugeCode from "../Utils/Const";
 
 const Source = () => {
   const appContextlData = useContext(AppContext);
@@ -40,8 +40,8 @@ const Source = () => {
 
   const message = "";
   const [editSlide, setEditSlide] = useState("");
-  const [fileUidForDeleteSlide, setFileUidForDeleteSlide] = useState(
-    queryParams.get("file_uid")
+  const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
+    queryParams.get("source_uid")
   );
   const [fileUidForEditSlide, setFileUidForEditSlide] = useState(
     queryParams.get("file_uid")
@@ -56,6 +56,7 @@ const Source = () => {
     file_uid: "",
     update: "",
   });
+  const languages = GetLangaugeCode();
   // const [bookmarkId, setBookmarkId] = useState();
 
   useEffect(() => {
@@ -71,9 +72,9 @@ const Source = () => {
   useEffect(() => {
     if (finalConfirm === true) {
       dispatch(
-        DeleteArchive({
+        DeleteSource({
           search_keyword: localStorage.getItem("headerSearchKeyword"),
-          file_uid: fileUidForDeleteSlide,
+          source_uid: SourceUidForDeleteSlide,
           language: appContextlData.broadcastLang.label
         })
       );
@@ -204,8 +205,8 @@ const Source = () => {
                                     search_keyword: localStorage.getItem("headerSearchKeyword"),
                                     data: {
                                       file_uid: key?.file_uid,
-                                      slide_id: key?.ID,
-                                      update: false,
+                                      slide_id: key?.slide_id,
+                                      update: true,
                                       order: sourcePathList?.paths?.find(
                                         (k) => k.bookmark_id !== null
                                       )?.length
@@ -250,7 +251,7 @@ const Source = () => {
                               setUnbookmarkAction(false);
                               setDeleteConfirmationPopup(true);
                               setDeleteId(key.ID);
-                              setFileUidForDeleteSlide(key.file_uid);
+                              setSourceUidForDeleteSlide(key.source_uid);
                             }}
                             className="bi bi-trash3 m-2 cursor-pointer "
                           />

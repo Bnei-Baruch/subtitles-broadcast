@@ -233,7 +233,6 @@ const NewSlides = () => {
         }
         setSourceUid("upload_" + sourceUidStr);
         let fileUid = await GetFileUid(languages[appContextlData.broadcastLang.label], sourceUidStr);
-        console.log(fileUid);
         if (fileUid === undefined) {
           alert("File not found");
           return;

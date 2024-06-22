@@ -23,7 +23,7 @@ const API_URL = {
   GetByID: "",
   Create: "",
   Update: "",
-  Delete: "file-slide",
+  Delete: "source-slide",
 };
 
 export const GetAllSourcePathData = createAsyncThunk(
@@ -39,6 +39,19 @@ export const GetAllSourcePathData = createAsyncThunk(
     return response.data;
   }
 );
+
+export const DeleteSource = createAsyncThunk(
+  `DeleteSource`,
+  async (data, thunkAPI) => {
+    const response = await axios.delete(`${API}${API_URL.Delete+"/"+data.source_uid+"?force_delete_bookmarks=true"}`, {
+    });
+
+    thunkAPI.dispatch(GetAllSourcePathData({ language: data.language, keyword: data.search_keyword }));
+
+    return response.data;
+  }
+);
+
 export const GetAllAuthorList = createAsyncThunk(
   `/GetAllAuthorList`,
   async (data, thunkAPI) => {
@@ -57,17 +70,7 @@ export const AddToSubtitleList = createAsyncThunk(
     return response.data;
   }
 );
-export const DeleteArchive = createAsyncThunk(
-  `DeleteArchive`,
-  async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}${API_URL.Delete+"/"+data.file_uid+"?force_delete_bookmarks=true"}`, {
-    });
 
-    thunkAPI.dispatch(GetAllSourcePathData({ language: data.language, keyword: data.search_keyword }));
-
-    return response.data;
-  }
-);
 export const ArchiveAutoComplete = createAsyncThunk(
   `ArchiveAutoComplete`,
   async (data, thunkAPI) => {
@@ -210,11 +213,11 @@ const SourceSlice = createSlice({
     builder.addCase(GetAllSourcePathData.fulfilled, (state, action) => {
       return { ...state, sourcePathList: action?.payload };
     });
-    builder.addCase(DeleteArchive.rejected, (state, action) => {
+    builder.addCase(DeleteSource.rejected, (state, action) => {
       toast.error("Something went wrong");
       return state;
     });
-    builder.addCase(DeleteArchive.fulfilled, (state, action) => {
+    builder.addCase(DeleteSource.fulfilled, (state, action) => {
       toast.success("Successfully deleted");
       return state;
     });
