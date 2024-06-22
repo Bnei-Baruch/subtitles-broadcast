@@ -11,11 +11,11 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
-import EditArcive from "./EditArchive";
 import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
 import AppContext from "../AppContext";
 import GetLangaugeCode from "../Utils/Const";
+import { useNavigate } from "react-router-dom";
 
 const Source = () => {
   const appContextlData = useContext(AppContext);
@@ -54,6 +54,7 @@ const Source = () => {
     update: "",
   });
   const languages = GetLangaugeCode();
+  const navigate = useNavigate();
   // const [bookmarkId, setBookmarkId] = useState();
 
   useEffect(() => {
@@ -218,13 +219,7 @@ const Source = () => {
                           className="bi bi-pencil m-2 cursor-pointer "
                           onClick={() => {
                             setUnbookmarkAction(false);
-                            dispatch(
-                              SlideListWithFildeUid({
-                                file_uid: key?.file_uid,
-                                limit: 2000,
-                              })
-                            );
-                            setEditSlide(key.ID);
+                            navigate("/archive?file_uid=" + key?.file_uid);
                           }}
                         />
                         <i

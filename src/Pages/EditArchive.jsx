@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import {
   addNewSlide,
   deleteNewSlide,
@@ -23,8 +24,10 @@ const EditArcive = ({ handleClose }) => {
   const [deleted, setDeleted] = useState([]);
   const outerRef = useRef();
   const slideRef = useRef();
+  const param = useLocation();
 
   useEffect(() => {
+    console.log(param.pathname)
     setIsLtr(slideList?.slides[0].left_to_right);
     setSlideListData(slideList?.slides);
 
