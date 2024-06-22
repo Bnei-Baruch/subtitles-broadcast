@@ -976,25 +976,34 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	}
 	var totalRows int64
 	type SourcePathData struct {
-		SlideID    uint           `json:"slide_id"`
-		BookmarkID *string        `json:"bookmark_id"`
-		SourceUID  string         `json:"source_uid"`
-		FileUID    string         `json:"file_uid"`
-		Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
-		Path       string         `json:"path"`
+		SlideID       uint           `json:"slide_id"`
+		BookmarkID    *string        `json:"bookmark_id"`
+		BookmarkCount int            `json:"bookmark_count"`
+		SourceUID     string         `json:"source_uid"`
+		FileUID       string         `json:"file_uid"`
+		Languages     pq.StringArray `json:"languages" gorm:"type:text[]"`
+		Path          string         `json:"path"`
 	}
 	paths := []*SourcePathData{}
 	result := h.Database.Debug().WithContext(ctx).
-		Select("DISTINCT ON (source_paths.source_uid) slides.id AS slide_id, bookmarks.id AS bookmark_id, files.file_uid AS file_uid, source_paths.source_uid AS source_uid, source_paths.languages AS languages, source_paths.path AS path").
+		Select("DISTINCT ON (source_paths.source_uid) slides.id AS slide_id, "+
+			"bookmarks.id AS bookmark_id, "+
+			"source_paths.source_uid AS source_uid, "+
+			"files.file_uid AS file_uid, "+
+			"source_paths.languages AS languages, "+
+			"source_paths.path AS path, "+
+			"COALESCE(bookmarks_count.bookmarks_count, 0) AS bookmark_count").
 		Table("slides").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
-		Where("? = ANY(files.languages)", language).Where("source_paths.path LIKE ?", "%"+keyword+"%").
-		Order("source_paths.source_uid, slides.id").Count(&totalRows).Limit(listLimit).Offset(offset).Find(&paths)
+		Joins("LEFT JOIN (SELECT slide_id, COUNT(*) AS bookmarks_count FROM bookmarks WHERE user_id = ? GROUP BY slide_id) AS bookmarks_count ON slides.id = bookmarks_count.slide_id", userId).
+		Where("? = ANY(files.languages) AND source_paths.path LIKE ?", language, "%"+keyword+"%").
+		Order("source_paths.source_uid, slides.id").Count(&totalRows).Limit(listLimit).Offset(offset).Scan(&paths)
 	if result.Error != nil {
+		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Getting slide source path has failed"))
+			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
 	sourcePathList := struct {
