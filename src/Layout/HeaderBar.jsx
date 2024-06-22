@@ -7,6 +7,9 @@ import {
 import useDebounce from "../Services/useDebounce";
 import BroadcastSettings from "../Components/BroadcastSettings";
 import AppContext from "../AppContext";
+import {
+  GetAllSourcePathData,
+} from "../Redux/SourceTab/SourceSlice";
 
 const HeaderBar = ({ logout }) => {
   const appContextlData = useContext(AppContext);
@@ -43,6 +46,19 @@ const HeaderBar = ({ logout }) => {
           keyword: freeText,
         })
       );
+    } else if (param.pathname === "/source") {
+      localStorage.setItem(
+        "pagination",
+        JSON.stringify({ page: 1, limit: localPagination?.limit })
+      );
+      dispatch(
+        GetAllSourcePathData({
+          language: appContextlData.broadcastLang.label,
+          limit: localPagination.limit,
+          page: localPagination.page,
+          keyword: freeText,
+        })
+      );
     }
   }, [DebouncingFreeText, dispatch, freeText, param.pathname]);
 
@@ -66,6 +82,7 @@ const HeaderBar = ({ logout }) => {
                   );
               }}
               onChange={(e) => {
+                console.log("hi");
                 localStorage.setItem("headerSearchKeyword", e.target.value);
                 updateFreeText(e.target.value);
               }}
@@ -80,7 +97,7 @@ const HeaderBar = ({ logout }) => {
               onKeyDown={(e) => {
                 e.key === "Enter" &&
                   dispatch(
-                    GetAllArchiveData({
+                    GetAllSourcePathData({
                       language: appContextlData.broadcastLang.label,
                       limit: localPagination.limit,
                       page: localPagination.page,
@@ -89,6 +106,7 @@ const HeaderBar = ({ logout }) => {
                   );
               }}
               onChange={(e) => {
+                console.log("hi2");
                 localStorage.setItem("headerSearchKeyword", e.target.value);
                 updateFreeText(e.target.value);
               }}
