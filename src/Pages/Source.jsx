@@ -24,8 +24,8 @@ const Source = () => {
   const sourcePathList = useSelector(getAllSourcePathList);
 
   const [unbookmarkAction, setUnbookmarkAction] = useState(false)
-  const localPagination = localStorage?.getItem("pagination")
-    ? JSON?.parse(localStorage?.getItem("pagination"))
+  const localPagination = localStorage?.getItem("source_pagination")
+    ? JSON?.parse(localStorage?.getItem("source_pagination"))
     : { page: 1, limit: 10 };
   const [page, setPage] = useState(localPagination);
   const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
