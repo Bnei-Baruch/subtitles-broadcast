@@ -25,7 +25,9 @@ const EditArcive = ({ handleClose }) => {
   const slideRef = useRef();
 
   useEffect(() => {
+    setIsLtr(slideList?.slides[0].left_to_right);
     setSlideListData(slideList?.slides);
+
   }, [slideList?.slides]);
 
   const handleSubmit = () => {
@@ -47,6 +49,7 @@ const EditArcive = ({ handleClose }) => {
       ({ ID, slide, order_number }, index) => ({
         slide_id: ID,
         slide,
+        left_to_right: isLtr,
         order_number: order_number,
       })
     );
@@ -56,6 +59,7 @@ const EditArcive = ({ handleClose }) => {
       ?.map(({ slide, order_number }) => ({
         slide,
         order_number,
+        left_to_right: isLtr,
         file_uid: slideListData[0]?.file_uid,
       }));
 
@@ -73,7 +77,7 @@ const EditArcive = ({ handleClose }) => {
       };
       dispatch(updateNewSlide(updateSlideListRequest));
     }
-
+    setIsLtr(isLtr);
     setDeleted([]);
     handleClose();
   };
