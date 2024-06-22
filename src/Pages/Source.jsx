@@ -188,7 +188,7 @@ const Source = () => {
                                   data: {
                                     file_uid: key?.file_uid,
                                     slide_id: key?.slide_id,
-                                    update: true,
+                                    update: (key?.bookmark_count > 0),
                                     order: sourcePathList?.paths?.find(
                                       (k) => k.bookmark_id !== null
                                     )?.length
