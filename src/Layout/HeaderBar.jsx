@@ -53,6 +53,7 @@ const HeaderBar = ({ logout }) => {
           keyword: freeText,
         })
       );
+      localStorage.setItem("headerSearchKeyword", "");
     } else if (param.pathname === "/source") {
       localStorage.setItem(
         "source_pagination",
@@ -66,6 +67,7 @@ const HeaderBar = ({ logout }) => {
           keyword: freeText,
         })
       );
+      localStorage.setItem("headerSearchKeywordSource", "");
     }
   }, [DebouncingFreeText, dispatch, freeText, param.pathname]);
 
