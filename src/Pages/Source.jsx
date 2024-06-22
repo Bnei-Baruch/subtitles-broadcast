@@ -71,7 +71,7 @@ const Source = () => {
     if (finalConfirm === true) {
       dispatch(
         DeleteSource({
-          search_keyword: localStorage.getItem("headerSearchKeyword"),
+          search_keyword: localStorage.getItem("headerSearchKeywordSource"),
           source_uid: SourceUidForDeleteSlide,
           language: appContextlData.broadcastLang.label
         })
@@ -80,7 +80,7 @@ const Source = () => {
     }
     if (toggle) {
       dispatch(BookmarkSlideFromArchivePage({
-        search_keyword: localStorage.getItem("headerSearchKeyword"),
+        search_keyword: localStorage.getItem("headerSearchKeywordSource"),
         data: deleteId,
         language: appContextlData.broadcastLang.label
       }));
@@ -166,7 +166,7 @@ const Source = () => {
                               setUnbookmarkAction(true);
                               dispatch(
                                 UnBookmarkSlide({
-                                  search_keyword: localStorage.getItem("headerSearchKeyword"),
+                                  search_keyword: localStorage.getItem("headerSearchKeywordSource"),
                                   bookmark_id: key.bookmark_id,
                                   language: appContextlData.broadcastLang.label
                                 })
@@ -184,7 +184,7 @@ const Source = () => {
                               setUnbookmarkAction(false);
                               dispatch(
                                 BookmarkSlideFromArchivePage({
-                                  search_keyword: localStorage.getItem("headerSearchKeyword"),
+                                  search_keyword: localStorage.getItem("headerSearchKeywordSource"),
                                   data: {
                                     file_uid: key?.file_uid,
                                     slide_id: key?.slide_id,

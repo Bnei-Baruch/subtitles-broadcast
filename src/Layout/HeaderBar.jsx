@@ -80,6 +80,7 @@ const HeaderBar = ({ logout }) => {
                       keyword: freeText,
                     })
                   );
+                localStorage.setItem("headerSearchKeyword", "");
               }}
               onChange={(e) => {
                 console.log("hi");
@@ -104,10 +105,10 @@ const HeaderBar = ({ logout }) => {
                       keyword: freeText,
                     })
                   );
+                localStorage.setItem("headerSearchKeywordSource", "");
               }}
               onChange={(e) => {
-                console.log("hi2");
-                localStorage.setItem("headerSearchKeyword", e.target.value);
+                localStorage.setItem("headerSearchKeywordSource", e.target.value);
                 updateFreeText(e.target.value);
               }}
               type="text"
