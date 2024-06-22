@@ -600,6 +600,97 @@ func (h *Handler) DeleteFileSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
+func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
+	queryParams := struct {
+		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
+	}{}
+	if err := ctx.BindQuery(&queryParams); err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+
+	sourceUid := ctx.Param("source_uid")
+	tx := h.Database.Debug().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		log.Error(tx.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
+		return
+	}
+	fileUids := []string{}
+	query := tx.Select("DISTINCT ON (slides.file_uid) slides.file_uid AS file_uid").
+		Table(DBTableSlides).
+		Joins("INNER JOIN files ON files.file_uid = slides.file_uid AND files.source_uid = ?", sourceUid)
+	if !queryParams.ForceDeleteBookmarks {
+		result := query.Joins("INNER JOIN bookmarks ON slides.id = bookmarks.slide_id").Find(&fileUids)
+		if result.Error != nil {
+			log.Error(result.Error)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+			return
+		}
+		if len(fileUids) > 0 {
+			errMsg := "There are bookmarks refer to slide(id) in table to delete"
+			log.Error(errMsg)
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, errMsg, "Deleting file slide data has failed"))
+			return
+		}
+	}
+	result := query.Find(&fileUids)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+		return
+	}
+	result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, fmt.Sprintf("No file slides in source %s", sourceUid), fmt.Sprintf("No file slides in source %s", sourceUid)))
+		return
+	}
+	result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, fmt.Sprintf("No file with %s", sourceUid), fmt.Sprintf("No file with %s", sourceUid)))
+		return
+	}
+	result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	if result.RowsAffected == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, fmt.Sprintf("No source path with souruce uid %s", sourceUid), fmt.Sprintf("No source path with source uid %s", sourceUid)))
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, err.Error(), "Deleting file slide data has failed"))
+		return
+	}
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
+}
+
 func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	req := struct {
@@ -869,6 +960,7 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 // }
 
 func (h *Handler) GetSourcePath(ctx *gin.Context) {
+	userId, _ := ctx.Get("user_id")
 	language := ctx.Query("language")
 	languageLength := len(language)
 	if languageLength == 0 {
@@ -883,22 +975,31 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		return
 	}
 	var totalRows int64
-	paths := []*SourcePath{}
-
+	type SourcePathData struct {
+		SlideID    uint           `json:"slide_id"`
+		BookmarkID *string        `json:"bookmark_id"`
+		SourceUID  string         `json:"source_uid"`
+		FileUID    string         `json:"file_uid"`
+		Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
+		Path       string         `json:"path"`
+	}
+	paths := []*SourcePathData{}
 	result := h.Database.Debug().WithContext(ctx).
-		Select("source_paths.id AS id,source_paths.source_uid AS source_uid, source_paths.languages AS languages, source_paths.path AS path").
-		Table("files").
+		Select("DISTINCT ON (source_paths.source_uid) slides.id AS slide_id, bookmarks.id AS bookmark_id, files.file_uid AS file_uid, source_paths.source_uid AS source_uid, source_paths.languages AS languages, source_paths.path AS path").
+		Table("slides").
+		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
+		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Where("? = ANY(files.languages)", language).Where("source_paths.path LIKE ?", "%"+keyword+"%").
-		Order("source_paths.source_uid").Count(&totalRows).Limit(listLimit).Offset(offset).Find(&paths)
+		Order("source_paths.source_uid, slides.id").Count(&totalRows).Limit(listLimit).Offset(offset).Find(&paths)
 	if result.Error != nil {
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Getting slide source path has failed"))
 		return
 	}
 	sourcePathList := struct {
-		Pagination *Pagination   `json:"pagination"`
-		Paths      []*SourcePath `json:"paths"`
+		Pagination *Pagination       `json:"pagination"`
+		Paths      []*SourcePathData `json:"paths"`
 	}{
 		Pagination: &Pagination{
 			Limit:      listLimit,
