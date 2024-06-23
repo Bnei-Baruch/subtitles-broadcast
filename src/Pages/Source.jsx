@@ -4,7 +4,7 @@ import {
   GetAllSourcePathData,
   BookmarkSlideFromArchivePage,
   DeleteSource,
-  SlideListWithFildeUid,
+  UserBookmarkList,
   UnBookmarkSlide,
   getAllSourcePathList,
 } from "../Redux/SourceTab/SourceSlice";
@@ -183,33 +183,47 @@ const Source = () => {
                             onClick={() => {
                               setUnbookmarkAction(false);
                               dispatch(
-                                BookmarkSlideFromArchivePage({
-                                  search_keyword: localStorage.getItem("headerSearchKeywordSource"),
-                                  data: {
-                                    file_uid: key?.file_uid,
-                                    slide_id: key?.slide_id,
-                                    update: (key?.bookmark_count > 0),
-                                    order: sourcePathList?.paths?.find(
-                                      (k) => k.bookmark_id !== null
-                                    )?.length
-                                  },
+                                UserBookmarkList({
                                   language: appContextlData.broadcastLang.label,
-                                  params: {
-                                    page: page.page,
-                                    limit: page.limit,
-                                  },
                                 })
                               ).then((res) => {
-                                if (
-                                  res.payload ===
-                                  "The bookmark with the same file exists"
-                                ) {
-                                  setBookmarkData({
-                                    file_uid: key?.file_uid,
-                                    update: true,
-                                  });
-                                  setConfirmation(true);
+                                console.log(res);
+                                let update = false;
+                                for (let i = 0; i < res.payload.data.length; i++) {
+                                  if (res.payload.data[i].slide_id === key?.slide_id) {
+                                    update = true;
+                                    break
+                                  }
                                 }
+                                dispatch(
+                                  BookmarkSlideFromArchivePage({
+                                    search_keyword: localStorage.getItem("headerSearchKeywordSource"),
+                                    data: {
+                                      file_uid: key?.file_uid,
+                                      slide_id: key?.slide_id,
+                                      update: update,
+                                      order: sourcePathList?.paths?.find(
+                                        (k) => k.bookmark_id !== null
+                                      )?.length
+                                    },
+                                    language: appContextlData.broadcastLang.label,
+                                    params: {
+                                      page: page.page,
+                                      limit: page.limit,
+                                    },
+                                  })
+                                ).then((res) => {
+                                  if (
+                                    res.payload ===
+                                    "The bookmark with the same file exists"
+                                  ) {
+                                    setBookmarkData({
+                                      file_uid: key?.file_uid,
+                                      update: true,
+                                    });
+                                    setConfirmation(true);
+                                  }
+                                });
                               });
                             }}
                             className="bi bi-bookmark m-2 cursor-pointer "
