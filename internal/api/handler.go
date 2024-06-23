@@ -976,30 +976,27 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	}
 	var totalRows int64
 	type SourcePathData struct {
-		SlideID       uint           `json:"slide_id"`
-		BookmarkID    *string        `json:"bookmark_id"`
-		BookmarkCount int            `json:"bookmark_count"`
-		SourceUID     string         `json:"source_uid"`
-		FileUID       string         `json:"file_uid"`
-		Languages     pq.StringArray `json:"languages" gorm:"type:text[]"`
-		Path          string         `json:"path"`
+		SlideID    uint           `json:"slide_id"`
+		BookmarkID *string        `json:"bookmark_id"`
+		SourceUID  string         `json:"source_uid"`
+		FileUID    string         `json:"file_uid"`
+		Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
+		Path       string         `json:"path"`
 	}
 	paths := []*SourcePathData{}
 	result := h.Database.Debug().WithContext(ctx).
-		Select("DISTINCT ON (source_paths.path) slides.id AS slide_id, "+
+		Select("DISTINCT ON (source_paths.path, source_paths.source_uid) slides.id AS slide_id, "+
 			"bookmarks.id AS bookmark_id, "+
 			"source_paths.source_uid AS source_uid, "+
 			"files.file_uid AS file_uid, "+
 			"source_paths.languages AS languages, "+
-			"source_paths.path AS path, "+
-			"COALESCE(bookmarks_count.bookmarks_count, 0) AS bookmark_count").
+			"source_paths.path AS path").
 		Table("slides").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
-		Joins("LEFT JOIN (SELECT slide_id, COUNT(*) AS bookmarks_count FROM bookmarks WHERE user_id = ? GROUP BY slide_id) AS bookmarks_count ON slides.id = bookmarks_count.slide_id", userId).
 		Where("? = ANY(files.languages) AND source_paths.path LIKE ?", language, "%"+keyword+"%").
-		Order("source_paths.path").Count(&totalRows).Limit(listLimit).Offset(offset).Scan(&paths)
+		Order("source_paths.source_uid, source_paths.path, slides.id").Limit(listLimit).Offset(offset).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -1013,7 +1010,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Pagination: &Pagination{
 			Limit:      listLimit,
 			Page:       page,
-			TotalRows:  totalRows,
+			TotalRows:  int64(len(paths)),
 			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
 		},
 		Paths: paths,
