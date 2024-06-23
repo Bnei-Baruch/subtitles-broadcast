@@ -996,7 +996,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Where("? = ANY(files.languages) AND source_paths.path LIKE ?", language, "%"+keyword+"%").
-		Order("source_paths.source_uid, source_paths.path, slides.id").Limit(listLimit).Offset(offset).Scan(&paths)
+		Order("source_paths.path, source_paths.source_uid, slides.id").Limit(listLimit).Offset(offset).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
