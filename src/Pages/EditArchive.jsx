@@ -9,6 +9,7 @@ import {
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
+import SlideSplit from "../Utils/SlideSplit";
 
 const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
@@ -21,14 +22,22 @@ const EditArcive = ({ handleClose }) => {
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
+  const [slideTextList, setSlideTextList] = useState([]);
+  const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
   const outerRef = useRef();
-  const slideRef = useRef();
+  const [reRun, setReRun] = useState(false);
 
   useEffect(() => {
     setIsLtr(slideList?.slides[0].left_to_right);
     setSlideListData(slideList?.slides);
 
   }, [slideList?.slides]);
+
+  useEffect(() => {
+    setReRun(false)
+    console.log(slideList)
+    console.log(updatedSlideTextList)
+  }, [updatedSlideTextList]);
 
   const handleSubmit = () => {
     const shouldDelete = deleted?.length > 0;
@@ -157,6 +166,13 @@ const EditArcive = ({ handleClose }) => {
             </div>
           </div>
           <div className="innerhead d-flex justify-content-end align-items-end mb-5">
+            <button
+              type="button"
+              onClick={() => { setReRun(true); }}
+              className="btn btn-tr"
+            >
+              Re-run
+            </button>
             <div className="button-box group-new">
               <button
                 type="button"
@@ -308,11 +324,27 @@ const EditArcive = ({ handleClose }) => {
                     className=" adjustable-font"
                   // style={containerStyle}
                   >
-                    <Slide content={key?.slide} isLtr={isLtr} />
+                    <Slide
+                      content={key?.slide}
+                      isLtr={isLtr}
+                      mode="edit"
+                      slideTextList={slideTextList}
+                      setSlideTextList={setSlideTextList}
+                    />
                   </div>
                 </div>
               </div>
             ))}
+          <div>
+            {reRun && (
+              <SlideSplit
+                tags={slideTextList}
+                visible={false}
+                updateSplitTags={setUpdatedSlideTextList}
+                method={"custom_file"}
+              />
+            )}
+          </div>
         </div>
       </div>
     </>
