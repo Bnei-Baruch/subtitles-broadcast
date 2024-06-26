@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import markdownit from "markdown-it";
 
-export const Slide = ({ content, isLtr, searchKeyword, mode, slideTextList }) => {
+export const Slide = ({ content, isLtr, searchKeyword }) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const md = markdownit({ html: true });
@@ -35,30 +35,8 @@ export const Slide = ({ content, isLtr, searchKeyword, mode, slideTextList }) =>
       const regex = new RegExp(escapedKeyword, 'g');
       content = content.replace(regex, `<span style="background-color: ${backgroundColor};">$&</span>`);
     }
-    if (mode !== undefined && mode === "edit") {
-      const words = parseFileContents(content);
-      for (let word of words) {
-        slideTextList.push(word);
-      }
-    }
     slideRef.current.innerHTML = md.render(content);
   }, [content, md]);
-
-  const parseFileContents = (fileContents) => {
-    const wordsArray = fileContents.replace(/\r/g, " <br/> ").split(/\s+/);
-    let structuredArray = [];
-    let previousWord = "";
-    wordsArray.forEach((word, index) => {
-      const elementObject = {
-        paragraphStart: previousWord === "<br/>" && word !== "<br/>",
-        tagName: "",
-        word: word,
-      };
-      structuredArray.push(elementObject);
-      previousWord = word;
-    });
-    return structuredArray;
-  };
 
   return (
     <div ref={outerRef} className="slide-container">

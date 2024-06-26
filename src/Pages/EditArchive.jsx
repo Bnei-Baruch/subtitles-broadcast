@@ -45,36 +45,43 @@ const EditArcive = ({ handleClose }) => {
     });
   }, []);
 
+  useEffect(() => {
+    console.log(slideListData)
+  }, [slideListData]);
+
   // useEffect(() => {
   //   setIsLtr(slideList?.slides[0].left_to_right);
   //   setSlideListData(slideList?.slides);
   // }, [slideList?.slides]);
 
   useEffect(() => {
+    if (reRun === true) {
+      console.log(slideTextList)
+      console.log(updatedSlideTextList)
+      // let slideListToUpdate = [];
+      // let newArray = [...updatedSlideTextList];
+      // for (let i = 0; i < slideTextListCopy.length; i++) {
+      //   for (let j = 0; j < newArray.length; j++) {
+      //     if (slideTextListCopy[i].slide === newArray[j]) {
+      //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
+      //       j -= 1;
+      //     } else if (longestCommonSubstring(slideTextListCopy[i].slide, newArray[j]) > 0) {
+      //       slideListToUpdate.push(newArray[j]);
+      //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
+      //       j -= 1;
+      //     }
+      //   }
+      // }
+      // let slideListToDelete = newArray;
+
+
+      // console.log(slideListToUpdate)
+      // console.log(slideListToDelete)
+    } else {
+      setSlideTextList(updatedSlideTextList);
+      setUpdatedSlideTextList([]);
+    }
     setReRun(false);
-    console.log(slideTextListCopy)
-    console.log(updatedSlideTextList)
-    // setUpdatedSlideTextList([]);
-    // setSlideTextList(slideTextListCopy);
-    // let slideListToUpdate = [];
-    // let newArray = [...updatedSlideTextList];
-    // for (let i = 0; i < slideTextListCopy.length; i++) {
-    //   for (let j = 0; j < newArray.length; j++) {
-    //     if (slideTextListCopy[i].slide === newArray[j]) {
-    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
-    //       j -= 1;
-    //     } else if (longestCommonSubstring(slideTextListCopy[i].slide, newArray[j]) > 0) {
-    //       slideListToUpdate.push(newArray[j]);
-    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
-    //       j -= 1;
-    //     }
-    //   }
-    // }
-    // let slideListToDelete = newArray;
-
-
-    // console.log(slideListToUpdate)
-    // console.log(slideListToDelete)
   }, [reRun]);
 
   const handleSubmit = () => {
@@ -198,6 +205,22 @@ const EditArcive = ({ handleClose }) => {
     return maxSubStr;
   }
 
+  const parseFileContents = (fileContents) => {
+    const wordsArray = fileContents.replace(/\r/g, " <br/> ").split(/\s+/);
+    let structuredArray = [];
+    let previousWord = "";
+    wordsArray.forEach((word, index) => {
+      const elementObject = {
+        paragraphStart: previousWord === "<br/>" && word !== "<br/>",
+        tagName: "",
+        word: word,
+      };
+      structuredArray.push(elementObject);
+      previousWord = word;
+    });
+    return structuredArray;
+  };
+
   return (
     <>
       {ForceDeleteBookmark}
@@ -233,7 +256,17 @@ const EditArcive = ({ handleClose }) => {
           <div className="innerhead d-flex justify-content-end align-items-end mb-5">
             <button
               type="button"
-              onClick={() => { setReRun(true); setMode("rerun"); }}
+              onClick={() => {
+                let newSlideTextList = [];
+                for (let i = 0; i < slideListData.length; i++) {
+                  const words = parseFileContents(slideListData[i].slide);
+                  for (let word of words) {
+                    newSlideTextList.push(word);
+                  }
+                }
+                setSlideTextList(newSlideTextList);
+                setReRun(true);
+              }}
               className="btn btn-tr"
             >
               Re-run
@@ -392,8 +425,6 @@ const EditArcive = ({ handleClose }) => {
                     <Slide
                       content={key?.slide}
                       isLtr={isLtr}
-                      mode={mode}
-                      slideTextList={slideTextList}
                     />
                   </div>
                 </div>
