@@ -995,7 +995,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
-		Where("? = ANY(files.languages) AND source_paths.path LIKE ?", language, "%"+keyword+"%").
+		Where("? = ANY(files.languages) AND source_paths.path ILIKE ?", language, "%"+keyword+"%").
 		Order("source_paths.path, source_paths.source_uid, slides.id").Limit(listLimit).Offset(offset).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
