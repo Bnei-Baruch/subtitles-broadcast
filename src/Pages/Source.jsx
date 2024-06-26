@@ -71,7 +71,7 @@ const Source = () => {
     if (finalConfirm === true) {
       dispatch(
         DeleteSource({
-          search_keyword: localStorage.getItem("headerSearchKeywordSource"),
+          search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           source_uid: SourceUidForDeleteSlide,
           language: appContextlData.broadcastLang.label
         })
@@ -80,7 +80,7 @@ const Source = () => {
     }
     if (toggle) {
       dispatch(BookmarkSlideFromArchivePage({
-        search_keyword: localStorage.getItem("headerSearchKeywordSource"),
+        search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
         data: deleteId,
         language: appContextlData.broadcastLang.label
       }));
@@ -166,7 +166,7 @@ const Source = () => {
                               setUnbookmarkAction(true);
                               dispatch(
                                 UnBookmarkSlide({
-                                  search_keyword: localStorage.getItem("headerSearchKeywordSource"),
+                                  search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
                                   bookmark_id: key.bookmark_id,
                                   language: appContextlData.broadcastLang.label
                                 })
@@ -187,7 +187,6 @@ const Source = () => {
                                   language: appContextlData.broadcastLang.label,
                                 })
                               ).then((res) => {
-                                console.log(res);
                                 let update = false;
                                 for (let i = 0; i < res.payload.data.length; i++) {
                                   if (res.payload.data[i].slide_id === key?.slide_id) {
@@ -197,7 +196,7 @@ const Source = () => {
                                 }
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
-                                    search_keyword: localStorage.getItem("headerSearchKeywordSource"),
+                                    search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
                                     data: {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.slide_id,

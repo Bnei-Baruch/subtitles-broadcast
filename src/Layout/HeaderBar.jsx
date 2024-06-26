@@ -67,7 +67,7 @@ const HeaderBar = ({ logout }) => {
           keyword: freeText,
         })
       );
-      localStorage.setItem("headerSearchKeywordSource", "");
+      //sessionStorage.setItem("headerSearchKeywordSource", "");
     }
   }, [DebouncingFreeText, dispatch, freeText, param.pathname]);
 
@@ -89,11 +89,11 @@ const HeaderBar = ({ logout }) => {
                       keyword: freeText,
                     })
                   );
-                localStorage.setItem("headerSearchKeyword", "");
+                sessionStorage.setItem("headerSearchKeyword", "");
               }}
               onChange={(e) => {
                 console.log("hi");
-                localStorage.setItem("headerSearchKeyword", e.target.value);
+                sessionStorage.setItem("headerSearchKeyword", e.target.value);
                 updateFreeText(e.target.value);
               }}
               type="text"
@@ -114,10 +114,10 @@ const HeaderBar = ({ logout }) => {
                       keyword: freeText,
                     })
                   );
-                localStorage.setItem("headerSearchKeywordSource", "");
+                //sessionStorage.setItem("headerSearchKeywordSource", "");
               }}
               onChange={(e) => {
-                localStorage.setItem("headerSearchKeywordSource", e.target.value);
+                sessionStorage.setItem("headerSearchKeywordSource", e.target.value);
                 updateFreeText(e.target.value);
               }}
               type="text"
