@@ -10,34 +10,72 @@ import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
 import SlideSplit from "../Utils/SlideSplit";
+import {
+  GetAllArchiveData,
+} from "../Redux/ArchiveTab/ArchiveSlice";
 
 const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
-  const slideList = useSelector(getEditSlideList);
+  //const slideList = useSelector(getEditSlideList);
   const [isLtr, setIsLtr] = useState(true);
-  const [slideListData, setSlideListData] = useState(slideList?.slides);
+  //const [slideListData, setSlideListData] = useState(slideList?.slides);
+  const [slideListData, setSlideListData] = useState([]);
   const [selected, setSelected] = useState(0);
   const [confirmation, setConfirmation] = useState(false);
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
   const [slideTextList, setSlideTextList] = useState([]);
+  const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
-  const outerRef = useRef();
   const [reRun, setReRun] = useState(false);
+  const [mode, setMode] = useState("edit");
 
   useEffect(() => {
-    setIsLtr(slideList?.slides[0].left_to_right);
-    setSlideListData(slideList?.slides);
+    dispatch(
+      GetAllArchiveData({
+        language: appContextlData.broadcastLang.label,
+      })
+    ).then((response) => {
+      if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
+        setSlideListData(response.payload.data.slides);
+        setSlideTextListCopy(response.payload.data.slides)
+      }
+    });
+  }, []);
 
-  }, [slideList?.slides]);
+  // useEffect(() => {
+  //   setIsLtr(slideList?.slides[0].left_to_right);
+  //   setSlideListData(slideList?.slides);
+  // }, [slideList?.slides]);
 
   useEffect(() => {
-    setReRun(false)
-    console.log(slideList)
+    setReRun(false);
+    console.log(slideTextListCopy)
     console.log(updatedSlideTextList)
-  }, [updatedSlideTextList]);
+    // setUpdatedSlideTextList([]);
+    // setSlideTextList(slideTextListCopy);
+    // let slideListToUpdate = [];
+    // let newArray = [...updatedSlideTextList];
+    // for (let i = 0; i < slideTextListCopy.length; i++) {
+    //   for (let j = 0; j < newArray.length; j++) {
+    //     if (slideTextListCopy[i].slide === newArray[j]) {
+    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
+    //       j -= 1;
+    //     } else if (longestCommonSubstring(slideTextListCopy[i].slide, newArray[j]) > 0) {
+    //       slideListToUpdate.push(newArray[j]);
+    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
+    //       j -= 1;
+    //     }
+    //   }
+    // }
+    // let slideListToDelete = newArray;
+
+
+    // console.log(slideListToUpdate)
+    // console.log(slideListToDelete)
+  }, [reRun]);
 
   const handleSubmit = () => {
     const shouldDelete = deleted?.length > 0;
@@ -133,6 +171,33 @@ const EditArcive = ({ handleClose }) => {
     [forceDeleteConfirm]
   );
 
+  const longestCommonSubstring = (str1, str2) => {
+    let maxSubStr = '';
+    let table = Array(str1.length).fill(null).map(() => Array(str2.length).fill(0));
+    let longestLength = 0;
+    let longestEndPos = 0;
+
+    for (let i = 0; i < str1.length; i++) {
+      for (let j = 0; j < str2.length; j++) {
+        if (str1[i] === str2[j]) {
+          if (i === 0 || j === 0) {
+            table[i][j] = 1;
+          } else {
+            table[i][j] = table[i - 1][j - 1] + 1;
+          }
+
+          if (table[i][j] > longestLength) {
+            longestLength = table[i][j];
+            longestEndPos = i;
+          }
+        }
+      }
+    }
+
+    maxSubStr = str1.slice(longestEndPos - longestLength + 1, longestEndPos + 1);
+    return maxSubStr;
+  }
+
   return (
     <>
       {ForceDeleteBookmark}
@@ -168,7 +233,7 @@ const EditArcive = ({ handleClose }) => {
           <div className="innerhead d-flex justify-content-end align-items-end mb-5">
             <button
               type="button"
-              onClick={() => { setReRun(true); }}
+              onClick={() => { setReRun(true); setMode("rerun"); }}
               className="btn btn-tr"
             >
               Re-run
@@ -225,7 +290,7 @@ const EditArcive = ({ handleClose }) => {
         <div className="container">
           {slideListData?.length > 0 &&
             slideListData?.map((key, index) => (
-              <div className="row">
+              < div className="row" >
                 <div
                   className={`col-md-6 mb-2`}
                   onClick={() => {
@@ -327,26 +392,25 @@ const EditArcive = ({ handleClose }) => {
                     <Slide
                       content={key?.slide}
                       isLtr={isLtr}
-                      mode="edit"
+                      mode={mode}
                       slideTextList={slideTextList}
-                      setSlideTextList={setSlideTextList}
                     />
                   </div>
                 </div>
               </div>
             ))}
-          <div>
-            {reRun && (
-              <SlideSplit
-                tags={slideTextList}
-                visible={false}
-                updateSplitTags={setUpdatedSlideTextList}
-                method={"custom_file"}
-              />
-            )}
-          </div>
         </div>
-      </div>
+        <div>
+          {reRun && (
+            <SlideSplit
+              tags={slideTextList}
+              visible={false}
+              updateSplitTags={setUpdatedSlideTextList}
+              method={"custom_file"}
+            />
+          )}
+        </div>
+      </div >
     </>
   );
 };

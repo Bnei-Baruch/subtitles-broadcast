@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import markdownit from "markdown-it";
 
-export const Slide = ({ content, isLtr, searchKeyword, mode, slideTextList, setSlideTextList, orderNumber }) => {
+export const Slide = ({ content, isLtr, searchKeyword, mode, slideTextList }) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const md = markdownit({ html: true });
@@ -36,22 +36,9 @@ export const Slide = ({ content, isLtr, searchKeyword, mode, slideTextList, setS
       content = content.replace(regex, `<span style="background-color: ${backgroundColor};">$&</span>`);
     }
     if (mode !== undefined && mode === "edit") {
-      if (slideTextList.length > 0 && orderNumber !== undefined && slideTextList[orderNumber] !== content) {
-        slideTextList[orderNumber] = content;
-        let newSlideTextList = []
-        for (let slide of slideTextList) {
-          const words = parseFileContents(slide);
-          for (let word of words) {
-            newSlideTextList.push(word);
-          }
-        }
-        setSlideTextList(newSlideTextList);
-      } else {
-        const words = parseFileContents(content);
-        for (let word of words) {
-          slideTextList.push(word);
-        }
-        setSlideTextList(slideTextList);
+      const words = parseFileContents(content);
+      for (let word of words) {
+        slideTextList.push(word);
       }
     }
     slideRef.current.innerHTML = md.render(content);
