@@ -56,8 +56,20 @@ const EditArcive = ({ handleClose }) => {
   useEffect(() => {
     setReRun(false);
     if (reRun === false) {
-      console.log(slideTextList)
+      console.log(slideTextListCopy)
       console.log(updatedSlideTextList)
+      let i = 0;
+      for (; i < slideTextListCopy.length; i++) {
+        if (slideTextListCopy[i].slide !== updatedSlideTextList[i]) {
+          break;
+        }
+      }
+      console.log(i)
+      if (i < slideTextListCopy.length) {
+        // update updated slides from i to the last
+        // if updated slides longger than original, add
+        // if updated slides shorter than original, remove
+      }
       // let slideListToUpdate = [];
       // let newArray = [...updatedSlideTextList];
       // for (let i = 0; i < slideTextListCopy.length; i++) {
@@ -260,7 +272,8 @@ const EditArcive = ({ handleClose }) => {
               onClick={() => {
                 let newSlideTextList = [];
                 for (let i = 0; i < slideListData.length; i++) {
-                  const words = parseFileContents(slideListData[i].slide);
+                  let words = parseFileContents(slideListData[i].slide);
+                  words[0].paragraphStart = true;
                   for (let word of words) {
                     newSlideTextList.push(word);
                   }
