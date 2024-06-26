@@ -30,7 +30,6 @@ const EditArcive = ({ handleClose }) => {
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
   const [reRun, setReRun] = useState(false);
-  const [mode, setMode] = useState("edit");
 
   useEffect(() => {
     dispatch(
@@ -55,7 +54,8 @@ const EditArcive = ({ handleClose }) => {
   // }, [slideList?.slides]);
 
   useEffect(() => {
-    if (reRun === true) {
+    setReRun(false);
+    if (reRun === false) {
       console.log(slideTextList)
       console.log(updatedSlideTextList)
       // let slideListToUpdate = [];
@@ -77,11 +77,12 @@ const EditArcive = ({ handleClose }) => {
 
       // console.log(slideListToUpdate)
       // console.log(slideListToDelete)
-    } else {
-      setSlideTextList(updatedSlideTextList);
-      setUpdatedSlideTextList([]);
     }
-    setReRun(false);
+    //  else {
+    //   setSlideTextList(updatedSlideTextList);
+    //   setUpdatedSlideTextList([]);
+    // }
+
   }, [reRun]);
 
   const handleSubmit = () => {
@@ -337,30 +338,37 @@ const EditArcive = ({ handleClose }) => {
                     <textarea
                       value={key?.slide}
                       onChange={(e) => {
-                        //1) check object is new or having slideid if having slide_id, change slide data only and add to updata slide array, If it is new add in new slide array
-                        const cloneSlidedataArray = [...slideListData];
+                        let newValue = e.target.value;
+
+                        // Perform any special handling for \r if needed
+                        if (newValue.includes('\n')) {
+                          newValue = newValue.replace(/\n/g, '\r'); // Example: replace \r with a visible string representation
+                        }
+
+                        const cloneSlideDataArray = [...slideListData];
+
                         if (key.addedNew) {
-                          cloneSlidedataArray?.splice(index, 1);
-                          cloneSlidedataArray?.splice(index, 0, {
+                          cloneSlideDataArray.splice(index, 1);
+                          cloneSlideDataArray.splice(index, 0, {
                             ...key,
-                            slide: e.target.value,
+                            slide: newValue,
                           });
-                          setSlideListData(cloneSlidedataArray);
+                          setSlideListData(cloneSlideDataArray);
                         } else {
-                          cloneSlidedataArray?.splice(index, 1);
-                          cloneSlidedataArray?.splice(index, 0, {
+                          cloneSlideDataArray.splice(index, 1);
+                          cloneSlideDataArray.splice(index, 0, {
                             ...key,
-                            slide: e.target.value,
+                            slide: newValue,
                             updateSlide: true,
                           });
-                          setSlideListData(cloneSlidedataArray);
+                          setSlideListData(cloneSlideDataArray);
                         }
                       }}
                       key={index}
                       className=""
-                      // style={containerStyle}
                       style={{ direction: isLtr ? 'ltr' : 'rtl' }}
                     />
+
                     {index == selected && (
                       <i
                         onClick={() => {
