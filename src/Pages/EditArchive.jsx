@@ -4,6 +4,7 @@ import {
   addNewSlide,
   deleteNewSlide,
   updateNewSlide,
+  getEditSlideList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
@@ -43,13 +44,14 @@ const EditArcive = ({ handleClose }) => {
     });
   }, []);
 
-  useEffect(() => {
-    console.log(slideListData)
-  }, [slideListData]);
+  // useEffect(() => {
+  //   console.log(slideListData)
+  // }, [slideListData]);
 
   // useEffect(() => {
   //   setIsLtr(slideList?.slides[0].left_to_right);
   //   setSlideListData(slideList?.slides);
+  //   setSlideTextListCopy(slideList?.slides)
   // }, [slideList?.slides]);
 
   useEffect(() => {

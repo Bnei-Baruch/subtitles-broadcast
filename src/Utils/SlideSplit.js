@@ -81,7 +81,7 @@ const SlideSplit = ({
               currentDivHeight = 0;
               numOfRows = 0;
               if (currentContent.current.length > 0) {
-                slideTags.current = [...slideTags.current, currentContent.current];
+                slideTags.current = [...slideTags.current, currentContent.current.trim()];
               }
               if (tags.length > 0) {
                 createNewDiv(tags);
@@ -98,7 +98,7 @@ const SlideSplit = ({
                 currentContent.current += "\r";
                 // if (currentContent.current.startsWith('#')) {
                 //   if (currentContent.current.length > 0) {
-                //     slideTags.current = [...slideTags.current, currentContent.current];
+                //     slideTags.current = [...slideTags.current, currentContent.current.trim()];
                 //   }
                 //   tags.unshift(nextTag.current);
                 //   if (tags.length > 0) {
@@ -118,7 +118,7 @@ const SlideSplit = ({
               }
               currentDiv.innerHTML = md.render(currentContent.current);
               if (terminateCondition === tags.length && tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") { 
-                slideTags.current = [...slideTags.current, currentContent.current];
+                slideTags.current = [...slideTags.current, currentContent.current.trim()];
                 terminateCondition = terminateCondition-1;
               }
             }
@@ -164,7 +164,7 @@ const SlideSplit = ({
               }
             }
             if (currentContent.current.length > 0) {
-              slideTags.current = [...slideTags.current, currentContent.current];
+              slideTags.current = [...slideTags.current, currentContent.current.trim()];
             }
             if (tags.length > 0) {
               createNewDiv(tags);
