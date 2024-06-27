@@ -55,8 +55,7 @@ const EditArcive = ({ handleClose }) => {
   // }, [slideList?.slides]);
 
   useEffect(() => {
-    setReRun(false);
-    if (reRun === false) {
+    const performUpdates = async () => {
       // console.log(slideTextListCopy)
       // console.log(updatedSlideTextList)
 
@@ -85,7 +84,7 @@ const EditArcive = ({ handleClose }) => {
           updateSlideList: updateSlideList,
           file_uid: mutableSlideTextListCopy[0].file_uid,
         };
-        dispatch(updateNewSlide(updateSlideListRequest));
+        await dispatch(updateNewSlide(updateSlideListRequest));
 
         if (mutableSlideTextListCopy.length < updatedSlideTextList.length) {
           // Add
@@ -100,7 +99,7 @@ const EditArcive = ({ handleClose }) => {
             addNewSlideList.push(slideData)
           }
           if (addNewSlideList.length > 0) {
-            dispatch(addNewSlide({
+            await dispatch(addNewSlide({
               list: addNewSlideList,
               language: appContextlData.broadcastLang.label
             }));
@@ -116,39 +115,28 @@ const EditArcive = ({ handleClose }) => {
               force_delete_bookmarks: true,
               slide_ids: deleteSlideIds
             }
-            dispatch(deleteNewSlide({
+            await dispatch(deleteNewSlide({
               data: deleteParams,
               language: appContextlData.broadcastLang.label
             }));
           }
         }
       }
+      await dispatch(
+        GetAllArchiveData({
+          language: appContextlData.broadcastLang.label,
+        })
+      ).then((response) => {
+        if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
+          setSlideListData(response.payload.data.slides);
+          setSlideTextListCopy(response.payload.data.slides)
+        }
+      });
     }
-    // let slideListToUpdate = [];
-    // let newArray = [...updatedSlideTextList];
-    // for (let i = 0; i < slideTextListCopy.length; i++) {
-    //   for (let j = 0; j < newArray.length; j++) {
-    //     if (slideTextListCopy[i].slide === newArray[j]) {
-    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
-    //       j -= 1;
-    //     } else if (longestCommonSubstring(slideTextListCopy[i].slide, newArray[j]) > 0) {
-    //       slideListToUpdate.push(newArray[j]);
-    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
-    //       j -= 1;
-    //     }
-    //   }
-    // }
-    // let slideListToDelete = newArray;
-
-
-    // console.log(slideListToUpdate)
-    // console.log(slideListToDelete)
-
-    //  else {
-    //   setSlideTextList(updatedSlideTextList);
-    //   setUpdatedSlideTextList([]);
-    // }
-
+    setReRun(false);
+    if (reRun === false) {
+      performUpdates();
+    }
   }, [reRun]);
 
   const handleSubmit = () => {
