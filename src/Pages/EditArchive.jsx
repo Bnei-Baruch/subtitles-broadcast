@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   addNewSlide,
   deleteNewSlide,
-  getEditSlideList,
   updateNewSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
@@ -56,40 +55,86 @@ const EditArcive = ({ handleClose }) => {
   useEffect(() => {
     setReRun(false);
     if (reRun === false) {
-      console.log(slideTextListCopy)
-      console.log(updatedSlideTextList)
       let i = 0;
-      for (; i < slideTextListCopy.length; i++) {
-        if (slideTextListCopy[i].slide !== updatedSlideTextList[i]) {
+      // Create a mutable copy of the array and its objects
+      let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
+      for (; i < mutableSlideTextListCopy.length; i++) {
+        if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
           break;
         }
       }
-      console.log(i)
-      if (i < slideTextListCopy.length) {
-        // update updated slides from i to the last
-        // if updated slides longger than original, add
-        // if updated slides shorter than original, remove
+      // Update
+      let updateSlideList = [];
+      if (i < mutableSlideTextListCopy.length) {
+        // Update slides from i to the last
+        for (let j = i; j < mutableSlideTextListCopy.length; j++) {
+          const slideData = {
+            slide_id: mutableSlideTextListCopy[j].ID,
+            slide: updatedSlideTextList[j],
+            order_number: mutableSlideTextListCopy[j].order_number,
+            left_to_right: mutableSlideTextListCopy[j].left_to_right
+          };
+          updateSlideList.push(slideData);
+        }
+        const updateSlideListRequest = {
+          updateSlideList: updateSlideList,
+          file_uid: mutableSlideTextListCopy[0].file_uid,
+        };
+        dispatch(updateNewSlide(updateSlideListRequest));
+
+        if (mutableSlideTextListCopy.length < updatedSlideTextList.length) {
+          // Add
+          let addNewSlideList = [];
+          for (let j = mutableSlideTextListCopy.length; j < updatedSlideTextList.length; j++) {
+            const slideData = {
+              file_uid: mutableSlideTextListCopy[0].file_uid,
+              slide: updatedSlideTextList[j],
+              order_number: mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1].order_number + (j - mutableSlideTextListCopy.length - 1),
+              left_to_right: mutableSlideTextListCopy[0].left_to_right
+            }
+            addNewSlideList.push(slideData)
+          }
+          dispatch(addNewSlide({
+            list: addNewSlideList,
+            language: appContextlData.broadcastLang.label
+          }));
+        } else {
+          // Delete
+          let deleteSlideIds = [];
+          for (let j = updatedSlideTextList.length; j < mutableSlideTextListCopy.length; j++) {
+            deleteSlideIds.push(mutableSlideTextListCopy[j].ID);
+          }
+          const deleteParams = {
+            force_delete_bookmarks: true,
+            slide_ids: deleteSlideIds
+          }
+          dispatch(deleteNewSlide({
+            data: deleteParams,
+            language: appContextlData.broadcastLang.label
+          }));
+        }
       }
-      // let slideListToUpdate = [];
-      // let newArray = [...updatedSlideTextList];
-      // for (let i = 0; i < slideTextListCopy.length; i++) {
-      //   for (let j = 0; j < newArray.length; j++) {
-      //     if (slideTextListCopy[i].slide === newArray[j]) {
-      //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
-      //       j -= 1;
-      //     } else if (longestCommonSubstring(slideTextListCopy[i].slide, newArray[j]) > 0) {
-      //       slideListToUpdate.push(newArray[j]);
-      //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
-      //       j -= 1;
-      //     }
-      //   }
-      // }
-      // let slideListToDelete = newArray;
-
-
-      // console.log(slideListToUpdate)
-      // console.log(slideListToDelete)
     }
+    // let slideListToUpdate = [];
+    // let newArray = [...updatedSlideTextList];
+    // for (let i = 0; i < slideTextListCopy.length; i++) {
+    //   for (let j = 0; j < newArray.length; j++) {
+    //     if (slideTextListCopy[i].slide === newArray[j]) {
+    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
+    //       j -= 1;
+    //     } else if (longestCommonSubstring(slideTextListCopy[i].slide, newArray[j]) > 0) {
+    //       slideListToUpdate.push(newArray[j]);
+    //       newArray = newArray.slice(0, j).concat(newArray.slice(j + 1));
+    //       j -= 1;
+    //     }
+    //   }
+    // }
+    // let slideListToDelete = newArray;
+
+
+    // console.log(slideListToUpdate)
+    // console.log(slideListToDelete)
+
     //  else {
     //   setSlideTextList(updatedSlideTextList);
     //   setUpdatedSlideTextList([]);
@@ -191,32 +236,32 @@ const EditArcive = ({ handleClose }) => {
     [forceDeleteConfirm]
   );
 
-  const longestCommonSubstring = (str1, str2) => {
-    let maxSubStr = '';
-    let table = Array(str1.length).fill(null).map(() => Array(str2.length).fill(0));
-    let longestLength = 0;
-    let longestEndPos = 0;
+  // const longestCommonSubstring = (str1, str2) => {
+  //   let maxSubStr = '';
+  //   let table = Array(str1.length).fill(null).map(() => Array(str2.length).fill(0));
+  //   let longestLength = 0;
+  //   let longestEndPos = 0;
 
-    for (let i = 0; i < str1.length; i++) {
-      for (let j = 0; j < str2.length; j++) {
-        if (str1[i] === str2[j]) {
-          if (i === 0 || j === 0) {
-            table[i][j] = 1;
-          } else {
-            table[i][j] = table[i - 1][j - 1] + 1;
-          }
+  //   for (let i = 0; i < str1.length; i++) {
+  //     for (let j = 0; j < str2.length; j++) {
+  //       if (str1[i] === str2[j]) {
+  //         if (i === 0 || j === 0) {
+  //           table[i][j] = 1;
+  //         } else {
+  //           table[i][j] = table[i - 1][j - 1] + 1;
+  //         }
 
-          if (table[i][j] > longestLength) {
-            longestLength = table[i][j];
-            longestEndPos = i;
-          }
-        }
-      }
-    }
+  //         if (table[i][j] > longestLength) {
+  //           longestLength = table[i][j];
+  //           longestEndPos = i;
+  //         }
+  //       }
+  //     }
+  //   }
 
-    maxSubStr = str1.slice(longestEndPos - longestLength + 1, longestEndPos + 1);
-    return maxSubStr;
-  }
+  //   maxSubStr = str1.slice(longestEndPos - longestLength + 1, longestEndPos + 1);
+  //   return maxSubStr;
+  // }
 
   const parseFileContents = (fileContents) => {
     const wordsArray = fileContents.replace(/\r/g, " <br/> ").split(/\s+/);
