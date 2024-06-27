@@ -55,6 +55,9 @@ const EditArcive = ({ handleClose }) => {
   useEffect(() => {
     setReRun(false);
     if (reRun === false) {
+      // console.log(slideTextListCopy)
+      // console.log(updatedSlideTextList)
+
       let i = 0;
       // Create a mutable copy of the array and its objects
       let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
@@ -89,29 +92,33 @@ const EditArcive = ({ handleClose }) => {
             const slideData = {
               file_uid: mutableSlideTextListCopy[0].file_uid,
               slide: updatedSlideTextList[j],
-              order_number: mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1].order_number + (j - mutableSlideTextListCopy.length - 1),
+              order_number: mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1].order_number + (j - mutableSlideTextListCopy.length + 1),
               left_to_right: mutableSlideTextListCopy[0].left_to_right
             }
             addNewSlideList.push(slideData)
           }
-          dispatch(addNewSlide({
-            list: addNewSlideList,
-            language: appContextlData.broadcastLang.label
-          }));
+          if (addNewSlideList.length > 0) {
+            dispatch(addNewSlide({
+              list: addNewSlideList,
+              language: appContextlData.broadcastLang.label
+            }));
+          }
         } else {
           // Delete
           let deleteSlideIds = [];
           for (let j = updatedSlideTextList.length; j < mutableSlideTextListCopy.length; j++) {
             deleteSlideIds.push(mutableSlideTextListCopy[j].ID);
           }
-          const deleteParams = {
-            force_delete_bookmarks: true,
-            slide_ids: deleteSlideIds
+          if (deleteSlideIds.length > 0) {
+            const deleteParams = {
+              force_delete_bookmarks: true,
+              slide_ids: deleteSlideIds
+            }
+            dispatch(deleteNewSlide({
+              data: deleteParams,
+              language: appContextlData.broadcastLang.label
+            }));
           }
-          dispatch(deleteNewSlide({
-            data: deleteParams,
-            language: appContextlData.broadcastLang.label
-          }));
         }
       }
     }

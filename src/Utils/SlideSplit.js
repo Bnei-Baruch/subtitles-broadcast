@@ -91,19 +91,20 @@ const SlideSplit = ({
                 nextTag.current.word = "";
               }
               if (nextTag.current.paragraphStart) {
-                if (method === "custom_file") {
-                  currentContent.current = currentContent.current.trim();
-                }
+                // if (method === "custom_file") {
+                //   //currentContent.current = currentContent.current.trim();
+                //   currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
+                // }
                 currentContent.current += "\r";
-                if (currentContent.current.startsWith('#')) {
-                  if (currentContent.current.length > 0) {
-                    slideTags.current = [...slideTags.current, currentContent.current];
-                  }
-                  tags.unshift(nextTag.current);
-                  if (tags.length > 0) {
-                    createNewDiv(tags);
-                  }
-                }
+                // if (currentContent.current.startsWith('#')) {
+                //   if (currentContent.current.length > 0) {
+                //     slideTags.current = [...slideTags.current, currentContent.current];
+                //   }
+                //   tags.unshift(nextTag.current);
+                //   if (tags.length > 0) {
+                //     createNewDiv(tags);
+                //   }
+                // }
                 if (nextTag.current.tagName === "H1") {
                   nextTag.current.word = "### " + nextTag.current.word;
                 }
@@ -133,9 +134,10 @@ const SlideSplit = ({
                 nextTag.current.word = "";
               }
               if (nextTag.current != undefined && nextTag.current.paragraphStart) {
-                if (method === "custom_file") {
-                  currentContent.current = currentContent.current.trim();
-                }
+                // if (method === "custom_file") {
+                //   //currentContent.current = currentContent.current.trim();
+                //   currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
+                // }
                 currentContent.current += "\r";
                 if (currentContent.current.startsWith('#')) {
                   tags.unshift(nextTag.current);
@@ -155,7 +157,9 @@ const SlideSplit = ({
                 currentContent.current += " ";
               }
               currentDiv.innerHTML = md.render(currentContent.current);
-              if (currentContent.current.trim().endsWith(".")) {
+              //if (currentContent.current.trim().endsWith(".")) {
+              // currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
+              if (currentContent.current.endsWith(".")) {
                 break;
               }
             }
