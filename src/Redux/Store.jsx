@@ -5,6 +5,7 @@ import storage from "redux-persist/lib/storage";
 import ArchiveSlice from "./ArchiveTab/ArchiveSlice";
 import UserProfileSlice from "./UserProfile/UserProfileSlice";
 import SubtitleSlice from "./Subtitle/SubtitleSlice";
+import SourceSlice from "./SourceTab/SourceSlice";
 
 const persistConfig = {
   key: "root",
@@ -15,6 +16,7 @@ const RootReducer = combineReducers({
   ArchiveList: ArchiveSlice,
   UserProfile: UserProfileSlice,
   SubtitleData: SubtitleSlice,
+  SourceList: SourceSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, RootReducer);
