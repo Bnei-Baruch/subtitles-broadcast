@@ -62,6 +62,10 @@ const EditArcive = ({ handleClose }) => {
       let i = 0;
       // Create a mutable copy of the array and its objects
       let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
+      let currentSlide = parseInt(localStorage.getItem("myIndex"), 10)
+      mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
+      // console.log(mutableSlideTextListCopy)
+      // console.log(updatedSlideTextList)
       for (; i < mutableSlideTextListCopy.length; i++) {
         if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
           break;
@@ -313,7 +317,7 @@ const EditArcive = ({ handleClose }) => {
               type="button"
               onClick={() => {
                 let newSlideTextList = [];
-                for (let i = 0; i < slideListData.length; i++) {
+                for (let i = localStorage.getItem("myIndex"); i < slideListData.length; i++) {
                   let words = parseFileContents(slideListData[i].slide);
                   words[0].paragraphStart = true;
                   for (let word of words) {
@@ -384,6 +388,7 @@ const EditArcive = ({ handleClose }) => {
                   className={`col-md-6 mb-2`}
                   onClick={() => {
                     setSelected(index);
+                    localStorage.setItem("myIndex", index);
                   }}
                 >
                   <div
