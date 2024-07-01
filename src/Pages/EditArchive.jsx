@@ -35,6 +35,7 @@ const EditArcive = ({ handleClose }) => {
     dispatch(
       GetAllArchiveData({
         language: appContextlData.broadcastLang.label,
+        limit: 2000,
       })
     ).then((response) => {
       if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
@@ -44,28 +45,13 @@ const EditArcive = ({ handleClose }) => {
     });
   }, []);
 
-  // useEffect(() => {
-  //   console.log(slideListData)
-  // }, [slideListData]);
-
-  // useEffect(() => {
-  //   setIsLtr(slideList?.slides[0].left_to_right);
-  //   setSlideListData(slideList?.slides);
-  //   setSlideTextListCopy(slideList?.slides)
-  // }, [slideList?.slides]);
-
   useEffect(() => {
     const performUpdates = async () => {
-      // console.log(slideTextListCopy)
-      // console.log(updatedSlideTextList)
-
       let i = 0;
       // Create a mutable copy of the array and its objects
       let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
       let currentSlide = parseInt(localStorage.getItem("myIndex"), 10)
       mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
-      // console.log(mutableSlideTextListCopy)
-      // console.log(updatedSlideTextList)
       for (; i < mutableSlideTextListCopy.length; i++) {
         if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
           break;
@@ -129,6 +115,7 @@ const EditArcive = ({ handleClose }) => {
       await dispatch(
         GetAllArchiveData({
           language: appContextlData.broadcastLang.label,
+          limit: 2000,
         })
       ).then((response) => {
         if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
@@ -236,33 +223,6 @@ const EditArcive = ({ handleClose }) => {
     ),
     [forceDeleteConfirm]
   );
-
-  // const longestCommonSubstring = (str1, str2) => {
-  //   let maxSubStr = '';
-  //   let table = Array(str1.length).fill(null).map(() => Array(str2.length).fill(0));
-  //   let longestLength = 0;
-  //   let longestEndPos = 0;
-
-  //   for (let i = 0; i < str1.length; i++) {
-  //     for (let j = 0; j < str2.length; j++) {
-  //       if (str1[i] === str2[j]) {
-  //         if (i === 0 || j === 0) {
-  //           table[i][j] = 1;
-  //         } else {
-  //           table[i][j] = table[i - 1][j - 1] + 1;
-  //         }
-
-  //         if (table[i][j] > longestLength) {
-  //           longestLength = table[i][j];
-  //           longestEndPos = i;
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   maxSubStr = str1.slice(longestEndPos - longestLength + 1, longestEndPos + 1);
-  //   return maxSubStr;
-  // }
 
   const parseFileContents = (fileContents) => {
     const wordsArray = fileContents.replace(/\r/g, " <br/> ").split(/\s+/);
