@@ -476,6 +476,51 @@ paths:
         - bearerAuth:
             - read:slides
             - delete:slides
+  /source-slide/{sourceUid}:
+    delete:
+      tags:
+        - slide
+      summary: Delete slides in files in source
+      description: Delete slides in files in source
+      operationId: deleteSourceSlide
+      parameters:
+        - in: path
+          name: sourceUid
+          schema:
+            type: integer
+          required: true
+          description: source uid to delete
+        - name: force_delete_bookmarks
+          in: query
+          description: boolean value to force deleting bookmarks
+          required: true
+          explode: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+            - delete:slides
   /custom_slide:
     post:
       tags:
@@ -750,42 +795,70 @@ paths:
       security:
         - bearerAuth:
             - read:authors
-  # /slide_language:
-  #   get:
-  #     tags:
-  #       - slide_language
-  #     summary: Get slide language names
-  #     description: Get slide language names
-  #     operationId: getSlideLanguages
-  #     responses:
-  #       '200':
-  #         description: successful operation
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #               - $ref: '#/components/schemas/BasicResponse'
-  #               - type: object
-  #                 required:
-  #                   - data
-  #                 properties:
-  #                   data:
-  #                     type: array
-  #                     items:
-  #                       type: string
-  #                       description: slide language name list
-  #                       example: ["English", "Spanish"]
-  #       '401':
-  #         description: Invalid request jwt token
-  #       '400':
-  #         description: Invalid request query
-  #       '405':
-  #         description: Invalid http method
-  #       '500':
-  #         description: Internal error
-  #     security:
-  #       - bearerAuth:
-  #           - read:authors
+  /source_path:
+    get:
+      tags:
+        - source_path
+      summary: Get source path with related slide data
+      description: Get source path with related slide data
+      operationId: GetSourcePaths
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    type: array
+                      items:
+                        type: object
+                        properties:
+                            slide_id:
+                              type: integer
+                              description: first slide id in the source with source uid 
+                              example: 123
+                            bookmark_id:
+                              type: integer
+                              description: If the slide id is bookmarked then show bookmark id
+                              example: 10
+                            bookmark_count:
+                              type: integer
+                              description: number of user bookmark in the source with source uid to judge update or create bookmark 
+                              example: 10
+                            source_uid:
+                              type: string
+                              description: source_uid
+                              example: upload_cL1dKbT6
+                            file_uid:
+                              type: string
+                              description: the file uid has slides in the source uid
+                              example: upload_lfZCWSKO
+                            languages:
+                              type: array
+                              items:
+                                type: string
+                                description: languages from custom slides
+                                example: ["en", "es", "he", "ru"]
+                            path:
+                              type: string
+                              description: source path name
+                              example: test2    
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
 components:
   schemas:
     Slide:
