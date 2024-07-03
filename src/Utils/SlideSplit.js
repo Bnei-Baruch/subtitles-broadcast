@@ -42,7 +42,8 @@ const SlideSplit = ({
       }
       if (method === "custom_file") {
         if (nextTag.current.word === "<br/>") {
-          nextTag.current.word = "";
+          //nextTag.current.word = "";
+          nextTag.current = tagList.shift();
         }
       } else if (method === "source_url") {
         if (nextTag.current.tagName === "H1") {
@@ -81,7 +82,7 @@ const SlideSplit = ({
               currentDivHeight = 0;
               numOfRows = 0;
               if (currentContent.current.length > 0) {
-                slideTags.current = [...slideTags.current, currentContent.current.trim()];
+                slideTags.current = [...slideTags.current, currentContent.current.trim().replace("  ", " ")];
               }
               if (tags.length > 0) {
                 createNewDiv(tags);
@@ -120,6 +121,7 @@ const SlideSplit = ({
               if (method === "custom_file") {
                 currentContent.current += " ";
               }
+              currentContent.current = currentContent.current.replace("  ", " ");
               currentDiv.innerHTML = md.render(currentContent.current);
               if (terminateCondition === tags.length && tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") { 
                 slideTags.current = [...slideTags.current, currentContent.current.trim()];
@@ -136,6 +138,7 @@ const SlideSplit = ({
               }
               if (nextTag.current != undefined && nextTag.current.word === "<br/>") {
                 nextTag.current.word = "";
+                nextTag.current = tags.shift();
               }
               if (nextTag.current != undefined && nextTag.current.paragraphStart) {
                 // if (method === "custom_file") {
@@ -145,6 +148,8 @@ const SlideSplit = ({
                 const lastRIndex = currentContent.current.lastIndexOf('\r');
                 if (nextTag.current.word.startsWith("#")||currentContent.current.trim().endsWith(".")||currentContent.current[lastRIndex + 1] === '#') {
                   currentContent.current += "\r";
+                  tags.unshift(nextTag.current);
+                  break;
                 }
                 if (currentContent.current.startsWith('#')) {
                   tags.unshift(nextTag.current);
@@ -160,15 +165,16 @@ const SlideSplit = ({
               if (nextTag.current != undefined){
                 currentContent.current += nextTag.current.word;
               }
-              if (method === "custom_file") {
-                currentContent.current += " ";
-              }
-              currentDiv.innerHTML = md.render(currentContent.current);
-              //if (currentContent.current.trim().endsWith(".")) {
-              // currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
               if (currentContent.current.endsWith(".")) {
                 break;
               }
+              if (method === "custom_file") {
+                currentContent.current += " ";
+              }
+              currentContent.current = currentContent.current.replace("  ", " ");
+              currentDiv.innerHTML = md.render(currentContent.current);
+              //if (currentContent.current.trim().endsWith(".")) {
+              // currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
             }
             if (currentContent.current.length > 0) {
               slideTags.current = [...slideTags.current, currentContent.current.trim()];

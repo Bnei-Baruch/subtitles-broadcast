@@ -57,7 +57,6 @@ const EditArcive = ({ handleClose }) => {
       mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
       for (; i < mutableSlideTextListCopy.length; i++) {
         if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
-          console.log(mutableSlideTextListCopy[i])
           break;
         }
       }

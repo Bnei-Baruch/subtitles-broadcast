@@ -73,7 +73,6 @@ const NewSlides = () => {
         languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
-      console.log(request)
       if (
         document.getElementById("upload_name") &&
         document.getElementById("upload_name").value.length > 0
@@ -189,43 +188,43 @@ const NewSlides = () => {
       }
     });
 
-    turndownService.addRule('h1', {
+    turndownService.addRule('h2', {
       filter: 'h2',
       replacement: function (content) {
         return '# ' + content.trim() + "\n";
       }
     });
 
-    turndownService.addRule('h1', {
+    turndownService.addRule('h3', {
       filter: 'h3',
       replacement: function (content) {
         return '# ' + content.trim() + "\n";
       }
     });
 
-    turndownService.addRule('h1', {
+    turndownService.addRule('h4', {
       filter: 'h4',
       replacement: function (content) {
         return '# ' + content.trim() + "\n";
       }
     });
-    turndownService.addRule('h1', {
+    turndownService.addRule('h5', {
       filter: 'h5',
       replacement: function (content) {
         return '# ' + content.trim() + "\n";
       }
     });
-    turndownService.addRule('h1', {
+    turndownService.addRule('h6', {
       filter: 'h6',
       replacement: function (content) {
-        return '# ' + content.trim() + "\n\n";
+        return '# ' + content.trim() + "\n";
       }
     });
 
     turndownService.addRule('paragraph', {
       filter: 'p',
       replacement: function (content) {
-        return content.trim() + "\r\r";
+        return content.trim() + "\n";
       }
     });
 
