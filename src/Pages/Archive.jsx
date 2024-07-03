@@ -252,7 +252,7 @@ const Archive = () => {
                             className="bi bi-pencil m-2 cursor-pointer "
                             onClick={() => {
                               setUnbookmarkAction(false);
-                              //localStorage.setItem("file_uid_for_edit_slide", key?.file_uid)
+                              localStorage.setItem("file_uid_for_edit_slide", key?.file_uid)
                               dispatch(
                                 SlideListWithFildeUid({
                                   file_uid: key?.file_uid,
