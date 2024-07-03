@@ -33,7 +33,6 @@ const EditArcive = ({ handleClose }) => {
   const [reRun, setReRun] = useState(false);
 
   useEffect(() => {
-    console.log(localStorage.getItem("file_uid_for_edit_slide"))
     dispatch(
       GetAllArchiveData({
         file_uid: localStorage.getItem("file_uid_for_edit_slide"),
@@ -44,6 +43,7 @@ const EditArcive = ({ handleClose }) => {
       if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
         setSlideListData(response.payload.data.slides);
         setSlideTextListCopy(response.payload.data.slides)
+
       }
     });
   }, []);
@@ -57,9 +57,11 @@ const EditArcive = ({ handleClose }) => {
       mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
       for (; i < mutableSlideTextListCopy.length; i++) {
         if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
+          console.log(mutableSlideTextListCopy[i])
           break;
         }
       }
+
       // Update
       let updateSlideList = [];
       if (i < mutableSlideTextListCopy.length) {

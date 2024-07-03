@@ -13,6 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import AppContext from "../AppContext";
+import TurndownService from 'turndown';
 
 const NewSlides = () => {
   const appContextlData = useContext(AppContext);
@@ -180,33 +181,91 @@ const NewSlides = () => {
   };
 
   const loadSlides = async (sourceData) => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(sourceData, "text/html");
-    const contentElements = doc.querySelectorAll("h1,h2,h3,h4,h5,h6,p");
-    const paragraphArray = Array.from(contentElements).map((element) => ({
-      tag: element.tagName,
-      content: element.outerHTML,
-    }));
-    let tags = [];
-    paragraphArray.forEach((elementInfo) => {
-      const tagName = elementInfo.tag;
-      const wordArray = elementInfo.content
-        .replace(/<[^>]*>/g, "")
-        .replace(/\n/g, "")
-        .trim()
-        .split("  ")
-        .join(" ")
-        .split(/(\s+)/);
-      wordArray.forEach((word, index) => {
-        const elementObject = {
-          paragraphStart: index === 0,
-          tagName: tagName,
-          word: word,
-        };
-        tags.push(elementObject);
-      });
+    const turndownService = new TurndownService();
+    turndownService.addRule('h1', {
+      filter: 'h1',
+      replacement: function (content) {
+        return '### ' + content.trim() + "\n";
+      }
     });
-    setTagList(tags);
+
+    turndownService.addRule('h1', {
+      filter: 'h2',
+      replacement: function (content) {
+        return '# ' + content.trim() + "\n";
+      }
+    });
+
+    turndownService.addRule('h1', {
+      filter: 'h3',
+      replacement: function (content) {
+        return '# ' + content.trim() + "\n";
+      }
+    });
+
+    turndownService.addRule('h1', {
+      filter: 'h4',
+      replacement: function (content) {
+        return '# ' + content.trim() + "\n";
+      }
+    });
+    turndownService.addRule('h1', {
+      filter: 'h5',
+      replacement: function (content) {
+        return '# ' + content.trim() + "\n";
+      }
+    });
+    turndownService.addRule('h1', {
+      filter: 'h6',
+      replacement: function (content) {
+        return '# ' + content.trim() + "\n\n";
+      }
+    });
+
+    turndownService.addRule('paragraph', {
+      filter: 'p',
+      replacement: function (content) {
+        return content.trim() + "\r\r";
+      }
+    });
+
+    turndownService.addRule('em', {
+      filter: 'em',
+      replacement: function (content) {
+        return '*' + content.trim() + '*';
+      }
+    });
+
+    const convertedMarkdown = turndownService.turndown(sourceData);
+    let parse = parseFileContents(convertedMarkdown);
+    setTagList(parse);
+    // const parser = new DOMParser();
+    // const doc = parser.parseFromString(sourceData, "text/html");
+    // const contentElements = doc.querySelectorAll("h1,h2,h3,h4,h5,h6,p");
+    // const paragraphArray = Array.from(contentElements).map((element) => ({
+    //   tag: element.tagName,
+    //   content: element.outerHTML,
+    // }));
+    // let tags = [];
+    // paragraphArray.forEach((elementInfo) => {
+    //   const tagName = elementInfo.tag;
+    //   const wordArray = elementInfo.content
+    //     .replace(/<[^>]*>/g, "")
+    //     .replace(/\n/g, "")
+    //     .trim()
+    //     .split("  ")
+    //     .join(" ")
+    //     .split(/(\s+)/);
+    //   wordArray.forEach((word, index) => {
+    //     const elementObject = {
+    //       paragraphStart: index === 0,
+    //       tagName: tagName,
+    //       word: word,
+    //     };
+    //     tags.push(elementObject);
+    //   });
+    // });
+    // setTagList(tags);
   };
 
   const loadSource = () => {
@@ -397,7 +456,7 @@ const NewSlides = () => {
                 tags={tagList}
                 visible={false}
                 updateSplitTags={setUpdateTagList}
-                method={insertMethod}
+                method={"custom_file"}
               />
             </div>
           </div >
