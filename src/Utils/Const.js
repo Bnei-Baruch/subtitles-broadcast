@@ -40,4 +40,6 @@ export const brodcastProgrammArr = [
   { value: "brodcast_3", label: "Brodcast 3" },
 ];
 
+export const subtitlesDisplayMode = "subtitles_display_mode";
+
 export default GetLangaugeCode;
