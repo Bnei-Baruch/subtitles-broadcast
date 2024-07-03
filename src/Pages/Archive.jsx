@@ -96,7 +96,6 @@ const Archive = () => {
   useEffect(() => {
     if (fileUidForEditSlide !== null) {
       localStorage.setItem("file_uid_for_edit_slide", fileUidForEditSlide);
-      console.log(localStorage.getItem("file_uid_for_edit_slide"))
       dispatch(
         SlideListWithFildeUid({
           file_uid: fileUidForEditSlide,
