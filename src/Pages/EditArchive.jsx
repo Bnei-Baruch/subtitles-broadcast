@@ -34,6 +34,7 @@ const EditArcive = ({ handleClose }) => {
   useEffect(() => {
     dispatch(
       GetAllArchiveData({
+        file_uid: localStorage.getItem("file_uid_for_edit_slide"),
         language: appContextlData.broadcastLang.label,
         limit: 2000,
       })
@@ -116,6 +117,7 @@ const EditArcive = ({ handleClose }) => {
         GetAllArchiveData({
           language: appContextlData.broadcastLang.label,
           limit: 2000,
+          file_uid: localStorage.getItem("file_uid_for_edit_slide"),
         })
       ).then((response) => {
         if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
