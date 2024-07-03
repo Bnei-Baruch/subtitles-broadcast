@@ -95,7 +95,11 @@ const SlideSplit = ({
                 //   //currentContent.current = currentContent.current.trim();
                 //   currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
                 // }
-                currentContent.current += "\r";
+                const lastRIndex = currentContent.current.lastIndexOf('\r');
+                if (nextTag.current.word.startsWith("#")||currentContent.current.trim().endsWith(".")||currentContent.current[lastRIndex + 1] === '#') {
+                  currentContent.current += "\r";
+                }
+                
                 // if (currentContent.current.startsWith('#')) {
                 //   if (currentContent.current.length > 0) {
                 //     slideTags.current = [...slideTags.current, currentContent.current.trim()];
@@ -138,7 +142,10 @@ const SlideSplit = ({
                 //   //currentContent.current = currentContent.current.trim();
                 //   currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
                 // }
-                currentContent.current += "\r";
+                const lastRIndex = currentContent.current.lastIndexOf('\r');
+                if (nextTag.current.word.startsWith("#")||currentContent.current.trim().endsWith(".")||currentContent.current[lastRIndex + 1] === '#') {
+                  currentContent.current += "\r";
+                }
                 if (currentContent.current.startsWith('#')) {
                   tags.unshift(nextTag.current);
                   break;
