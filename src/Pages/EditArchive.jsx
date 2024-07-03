@@ -33,6 +33,7 @@ const EditArcive = ({ handleClose }) => {
   const [reRun, setReRun] = useState(false);
 
   useEffect(() => {
+    console.log(localStorage.getItem("file_uid_for_edit_slide"))
     dispatch(
       GetAllArchiveData({
         file_uid: localStorage.getItem("file_uid_for_edit_slide"),
