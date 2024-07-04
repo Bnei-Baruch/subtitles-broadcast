@@ -275,7 +275,7 @@ bdo {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
-.innerhead .right-sec .btn.btn-tr {
+.innerhead .right-sec .btn {
   border-radius: 4px !important;
   margin-left: 10px !important ;
 }

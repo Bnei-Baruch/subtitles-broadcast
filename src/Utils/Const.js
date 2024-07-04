@@ -23,8 +23,8 @@ function GetLangaugeCode() {
 
 export const broadcastLanguages = [
   { value: "he", label: "Hebrew", isLtr: false },
-  { value: "ru", label: "Russian", isLtr: true },
   { value: "en", label: "English", isLtr: true },
+  { value: "ru", label: "Russian", isLtr: true },
   { value: "es", label: "Spanish", isLtr: true },
 ];
 
@@ -39,7 +39,5 @@ export const brodcastProgrammArr = [
   { value: "brodcast_2", label: "Brodcast 2" },
   { value: "brodcast_3", label: "Brodcast 3" },
 ];
-
-export const subtitlesDisplayMode = "subtitles_display_mode";
 
 export default GetLangaugeCode;

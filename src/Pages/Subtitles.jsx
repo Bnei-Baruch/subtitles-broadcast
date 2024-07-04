@@ -3,7 +3,7 @@ import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import {
   getAllBookAddedByUser,
-  clearAllBookmarks
+  clearAllBookmarks,
 } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
 import {
@@ -11,7 +11,7 @@ import {
   UserBookmarkList,
   getAllBookmarkList,
   getAllBookmarkListLoading,
-  BookmarkSlide
+  BookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { useSelector } from "react-redux";
@@ -22,18 +22,17 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import {
-  broadcastLanguages,
-} from "../Utils/Const";
+import { broadcastLanguages } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
 import GetLangaugeCode from "../Utils/Const";
 
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
-  const [isSubTitleMode, setIsSubTitleMode] = useState(true);
+  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("sources");
   const btnSubtitelsRef = React.createRef();
   const btnQuestionsRef = React.createRef();
+  const btnNoneRef = React.createRef();
   const dispatch = useDispatch();
   const UserAddedList = useSelector(getAllBookAddedByUser);
   const maxSlideIndex = UserAddedList?.slides?.at(-1)?.["order_number"];
@@ -43,7 +42,9 @@ const Subtitles = () => {
   const [searchSlideFileUid, setSearchSlideFileUid] = useState("");
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const [selectedSlide, setSelectedSlide] = useState(+localStorage.getItem("activeSlideFileUid"));
+  const [selectedSlide, setSelectedSlide] = useState(
+    +localStorage.getItem("activeSlideFileUid"),
+  );
   const languages = GetLangaugeCode();
 
   const updateSelectedSlide = (newSelectedSlide) => {
@@ -54,11 +55,14 @@ const Subtitles = () => {
     }
     const file_uid = UserAddedList?.slides?.[0]?.file_uid;
     const slideID = UserAddedList?.slides?.find(
-      (key) => key?.order_number == newSelectedSlide
+      (key) => key?.order_number == newSelectedSlide,
     );
-    const targetBookmarkSlideID = slideID.ID +
-      slideID?.languages.findIndex(
-        langCode => langCode === languages[appContextlData.broadcastLang.label]) || 0;
+    const targetBookmarkSlideID =
+      slideID.ID +
+        slideID?.languages.findIndex(
+          (langCode) =>
+            langCode === languages[appContextlData.broadcastLang.label],
+        ) || 0;
     dispatch(
       BookmarkSlide({
         data: {
@@ -67,7 +71,7 @@ const Subtitles = () => {
           update: true,
         },
         language: appContextlData.broadcastLang.label,
-      })
+      }),
     );
     setSelectedSlide(newSelectedSlide);
     localStorage.setItem("activeSlideFileUid", newSelectedSlide);
@@ -92,11 +96,12 @@ const Subtitles = () => {
     }
     */
   };
-  const handleKeyPress = useCallback((event) => {
-    //  if (event.key === "n" || event.keyCode === 78) {
-    if (event.keyCode === 40) {
-      updateSelectedSlide(selectedSlide + 1);
-      /*
+  const handleKeyPress = useCallback(
+    (event) => {
+      //  if (event.key === "n" || event.keyCode === 78) {
+      if (event.keyCode === 40) {
+        updateSelectedSlide(selectedSlide + 1);
+        /*
       setSelectedSlide((pre) => {
         console.log(pre, maxSlideIndex);
         if (+pre <= maxSlideIndex) {
@@ -104,12 +109,12 @@ const Subtitles = () => {
         }
         return pre;
       });*/
-      // localStorage.setItem("activatedTabData", selectedSlide + 1);
-    }
-    //   if (event.key === "b" || event.keyCode === 66) {
-    if (event.keyCode === 38) {
-      updateSelectedSlide(selectedSlide - 1);
-      /*
+        // localStorage.setItem("activatedTabData", selectedSlide + 1);
+      }
+      //   if (event.key === "b" || event.keyCode === 66) {
+      if (event.keyCode === 38) {
+        updateSelectedSlide(selectedSlide - 1);
+        /*
       setSelectedSlide((pre) => {
         if (+pre >= 1) {
           return +pre - 1;
@@ -118,8 +123,10 @@ const Subtitles = () => {
       });
       localStorage.setItem("activatedTabData", selectedSlide - 1);
       */
-    }
-  }, [UserAddedList, selectedSlide]);
+      }
+    },
+    [UserAddedList, selectedSlide],
+  );
   useEffect(() => {
     // Add event listener when the component mounts
     window.addEventListener("keydown", handleKeyPress);
@@ -130,7 +137,9 @@ const Subtitles = () => {
     };
   }, [handleKeyPress]);
   useEffect(() => {
-    dispatch(UserBookmarkList({ language: appContextlData.broadcastLang.label }));
+    dispatch(
+      UserBookmarkList({ language: appContextlData.broadcastLang.label }),
+    );
     dispatch(clearAllBookmarks());
   }, [dispatch, appContextlData.broadcastLang.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
@@ -163,15 +172,25 @@ const Subtitles = () => {
   function questionsBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
     btnSubtitelsRef.current.classList.remove("btn-success");
+    btnNoneRef.current.classList.remove("btn-success");
 
-    setIsSubTitleMode(false);
+    setSubtitlesDisplayMode("questions");
   }
 
   function subtitelsBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
+    btnNoneRef.current.classList.remove("btn-success");
 
-    setIsSubTitleMode(true);
+    setSubtitlesDisplayMode("sources");
+  }
+
+  function noneBtnOnClick(evt) {
+    evt.target.classList.add("btn-success");
+    btnSubtitelsRef.current.classList.remove("btn-success");
+    btnQuestionsRef.current.classList.remove("btn-success");
+
+    setSubtitlesDisplayMode("none");
   }
 
   return (
@@ -194,7 +213,7 @@ const Subtitles = () => {
                 ref={btnSubtitelsRef}
                 id="btnSubtitels"
                 type="button"
-                className={isSubTitleMode ? "btn btn-success" : "btn"}
+                className={`btn${subtitlesDisplayMode === "sources" ? " btn-success" : ""}`}
                 onClick={(evt) => subtitelsBtnOnClick(evt)}
               >
                 Subtitels
@@ -203,10 +222,19 @@ const Subtitles = () => {
                 ref={btnQuestionsRef}
                 id="btnQuestions"
                 type="button"
-                className={isSubTitleMode ? "btn" : "btn btn-success"}
+                className={`btn${subtitlesDisplayMode === "questions" ? " btn-success" : ""}`}
                 onClick={(evt) => questionsBtnOnClick(evt)}
               >
                 Questions
+              </button>
+              <button
+                ref={btnNoneRef}
+                id="btnNone"
+                type="button"
+                className={`btn${subtitlesDisplayMode === "none" ? " btn-success" : ""}`}
+                onClick={(evt) => noneBtnOnClick(evt)}
+              >
+                None
               </button>
             </div>
             <div className="right-sec">
@@ -216,7 +244,7 @@ const Subtitles = () => {
                 aria-label="Basic mixed styles example"
               ></div>
               <GreenWindowButton
-                isSubTitleMode={isSubTitleMode}
+                subtitlesDisplayMode={subtitlesDisplayMode}
                 isLtr={isLtr}
               />
               <button
@@ -258,8 +286,9 @@ const Subtitles = () => {
           </div>
           <div className="d-flex justify-content-center align-items-center mt-2 paginationStyle">
             <i
-              className={`bi bi-chevron-left me-1 cursor-pointer ${selectedSlide <= 1 ? "disablecolor" : "custom-pagination"
-                }`}
+              className={`bi bi-chevron-left me-1 cursor-pointer ${
+                selectedSlide <= 1 ? "disablecolor" : "custom-pagination"
+              }`}
               onClick={() => {
                 if (selectedSlide > 0) {
                   /*const file_uid = UserAddedList?.slides?.[0]?.file_uid;
@@ -314,15 +343,21 @@ const Subtitles = () => {
                     display: "none", // Hide indicator separator
                   }),
                 }}
-                value={isNaN(+maxSlideIndex) ? { value: "/", label: "- / -" }
-                  : { value: `${selectedSlide}/${+maxSlideIndex + 1}`, label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`, }
+                value={
+                  isNaN(+maxSlideIndex)
+                    ? { value: "/", label: "- / -" }
+                    : {
+                        value: `${selectedSlide}/${+maxSlideIndex + 1}`,
+                        label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`,
+                      }
                 }
                 onChange={handleChange}
-                options={[...Array(maxSlideIndex)?.keys(), maxSlideIndex]?.map((index) => ({
-                  label: index + 1,
-                  value: `${index + 1}/${+maxSlideIndex + 1
-                    }`,
-                }))}
+                options={[...Array(maxSlideIndex)?.keys(), maxSlideIndex]?.map(
+                  (index) => ({
+                    label: index + 1,
+                    value: `${index + 1}/${+maxSlideIndex + 1}`,
+                  }),
+                )}
               />
               <div className="underline"></div>
             </div>
@@ -353,11 +388,13 @@ const Subtitles = () => {
                     setSelectedSlide(selectedSlide + 1);
                   }*/
                 updateSelectedSlide(selectedSlide + 1);
-              }
-              }
-              className={` cursor-pointer ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination"}`}>
+              }}
+              className={` cursor-pointer ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination"}`}
+            >
               Next{" "}
-              <i className={`bi bi-chevron-right  cursor-pointer  ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination"}`} />
+              <i
+                className={`bi bi-chevron-right  cursor-pointer  ${maxSlideIndex < selectedSlide ? "disablecolor" : "custom-pagination"}`}
+              />
             </span>
           </div>
         </div>
@@ -369,7 +406,7 @@ const Subtitles = () => {
               activatedTab={selectedSlide}
               setActivatedTab={setSelectedSlide}
               isLtr={isLtr}
-              isSubTitleMode={isSubTitleMode}
+              subtitlesDisplayMode={subtitlesDisplayMode}
             />
           </div>
           <div className="book-mark whit-s overflow-auto">

@@ -22,7 +22,7 @@ export function getCurrentBroadcastLanguage() {
 export function getCurrentBroadcastProgramm() {
   let bcProgrammObj;
   const broadcastProgrammObjStr = sessionStorage.getItem(
-    "broadcastProgrammObj"
+    "broadcastProgrammObj",
   );
   if (broadcastProgrammObjStr) {
     bcProgrammObj = JSON.parse(broadcastProgrammObjStr);
@@ -57,3 +57,5 @@ export function getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode) {
 export function getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) {
   return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/question`;
 }
+
+export const subtitlesDisplayModeTopic = "subtitles_display_mode";
