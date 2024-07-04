@@ -230,6 +230,15 @@ export function ActiveSlideMessaging(props) {
       });
 
       compSubscribeEvents();
+
+      if (props.subtitlesDisplayMode) {
+        if (
+          !subtitlesDisplayModeMsg ||
+          props.subtitlesDisplayMode !== subtitlesDisplayModeMsg.slide
+        ) {
+          publishSubtitlesDisplayMode(subtitlesDisplayMode);
+        }
+      }
     }, 0);
 
     return () => {
@@ -237,6 +246,25 @@ export function ActiveSlideMessaging(props) {
       compUnSubscribeAppEvents();
     };
   }, [subtitlesDisplayMode, subtitleMqttTopic]);
+
+  useEffect(() => {
+    if (subtitlesDisplayModeMsg && subtitlesDisplayModeMsg.slide) {
+      const displayModeElmCol = document.getElementsByClassName(
+        `${subtitlesDisplayModeMsg.slide}-mod`,
+      );
+
+      if (displayModeElmCol.length) {
+        const trgDisplayModeElm = displayModeElmCol[0];
+
+        if (trgDisplayModeElm) {
+          if (!trgDisplayModeElm.classList.contains("display-mod-selected")) {
+            trgDisplayModeElm.focus();
+            trgDisplayModeElm.click();
+          }
+        }
+      }
+    }
+  }, [subtitlesDisplayModeMsg]);
 
   const subtitleNewMessageHandling = (event, topic, newMessageJson) => {
     const lastMqttMessageJson = JSON.parse(
@@ -281,6 +309,10 @@ export function ActiveSlideMessaging(props) {
         setQuestionMqttMessage(newMessageJson);
         break;
       case displayModeTopic:
+        if (newMessageJson && !newMessageJson.slide) {
+          newMessageJson.slide = "none";
+        }
+
         setSubtitlesDisplayModeMsg(newMessageJson);
         break;
       default:

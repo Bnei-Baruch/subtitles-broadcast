@@ -29,7 +29,7 @@ import GetLangaugeCode from "../Utils/Const";
 
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
-  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("sources");
+  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("");
   const btnSubtitelsRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
@@ -213,7 +213,7 @@ const Subtitles = () => {
                 ref={btnSubtitelsRef}
                 id="btnSubtitels"
                 type="button"
-                className={`btn${subtitlesDisplayMode === "sources" ? " btn-success" : ""}`}
+                className={`btn sources-mod${subtitlesDisplayMode === "sources" ? " btn-success display-mod-selected" : ""}`}
                 onClick={(evt) => subtitelsBtnOnClick(evt)}
               >
                 Subtitels
@@ -222,7 +222,7 @@ const Subtitles = () => {
                 ref={btnQuestionsRef}
                 id="btnQuestions"
                 type="button"
-                className={`btn${subtitlesDisplayMode === "questions" ? " btn-success" : ""}`}
+                className={`btn questions-mod${subtitlesDisplayMode === "questions" ? " btn-success display-mod-selected" : ""}`}
                 onClick={(evt) => questionsBtnOnClick(evt)}
               >
                 Questions
@@ -231,7 +231,7 @@ const Subtitles = () => {
                 ref={btnNoneRef}
                 id="btnNone"
                 type="button"
-                className={`btn${subtitlesDisplayMode === "none" ? " btn-success" : ""}`}
+                className={`btn none-mod${subtitlesDisplayMode === "none" ? " btn-success display-mod-selected" : ""}`}
                 onClick={(evt) => noneBtnOnClick(evt)}
               >
                 None
