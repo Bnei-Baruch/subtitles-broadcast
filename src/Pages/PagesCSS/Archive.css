@@ -161,7 +161,7 @@ table {
   top: 13px;
 }
 
-.Edit h4 {
+/* .Edit h4 {
   color: rgba(0, 0, 0, 0.87);
   font-feature-settings:
     "clig" off,
@@ -170,11 +170,12 @@ table {
   font-size: 20px;
   font-style: normal;
   font-weight: 400;
-  line-height: 23.561px; /* 117.806% */
-  letter-spacing: 0.058px;
+  line-height: 23.561px; *//* 117.806% */
+  /*letter-spacing: 0.058px;
   text-transform: capitalize;
-}
-.Edit h6 {
+} */
+
+/* .Edit h6 {
   color: rgba(0, 0, 0, 0.87);
   font-feature-settings:
     "clig" off,
@@ -183,9 +184,9 @@ table {
   font-size: 16px;
   font-style: normal;
   font-weight: 700;
-  line-height: 23.561px; /* 147.258% */
-  letter-spacing: 0.058px;
-}
+  line-height: 23.561px;*/ /* 147.258% */
+  /*letter-spacing: 0.058px;
+} */
 .btn.btn-white {
   border-radius: 4px;
   background: #fff;
@@ -202,7 +203,7 @@ table {
   margin-bottom: 20px;
 }
 
-.Edit h2 {
+/* .Edit h2 {
   color: rgba(0, 0, 0, 0.87);
   font-feature-settings:
     "clig" off,
@@ -211,9 +212,9 @@ table {
   font-size: 16px;
   font-style: normal;
   font-weight: 700;
-  line-height: 23.561px; /* 147.258% */
-  letter-spacing: 0.058px;
-}
+  line-height: 23.561px;*/ /* 147.258% */
+  /*letter-spacing: 0.058px;
+} */
 
 .table td:last-child {
   width: 150px;

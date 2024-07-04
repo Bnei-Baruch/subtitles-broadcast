@@ -20,7 +20,7 @@ const SlideSplit = ({
   const currentContent = useRef("");
 
   useEffect(() => {
-    const md = markdownit({ html: true });
+    const md = markdownit({ html: true }).disable(['lheading']);;
     const createNewDiv = (tagList) => {
       const newDiv = document.createElement("div");
       newDiv.className = divIdPrefix + " slide-content";
