@@ -474,3 +474,12 @@ dropdown-toggle {
 .bi-eye-slash-fill {
   color: red;
 }
+
+.green-part-cont {
+  background-color: green;
+  height: 71.29%;
+}
+
+.green-part-cont.display-mode-none {
+  height: 101%;
+}
