@@ -30,7 +30,6 @@ const EditArcive = ({ handleClose }) => {
   const [slideTextList, setSlideTextList] = useState([]);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
-  const [reRun, setReRun] = useState(false);
 
   useEffect(() => {
     dispatch(
@@ -43,7 +42,6 @@ const EditArcive = ({ handleClose }) => {
       if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
         setSlideListData(response.payload.data.slides);
         setSlideTextListCopy(response.payload.data.slides)
-
       }
     });
   }, []);
@@ -129,11 +127,9 @@ const EditArcive = ({ handleClose }) => {
         }
       });
     }
-    setReRun(false);
-    if (reRun === false) {
-      performUpdates();
-    }
-  }, [reRun]);
+
+    performUpdates();
+  }, [updatedSlideTextList]);
 
   const handleSubmit = () => {
     const shouldDelete = deleted?.length > 0;
@@ -282,7 +278,7 @@ const EditArcive = ({ handleClose }) => {
               type="button"
               onClick={() => {
                 let newSlideTextList = [];
-                for (let i = localStorage.getItem("myIndex"); i < slideListData.length; i++) {
+                for (let i = parseInt(localStorage.getItem("myIndex"), 10); i < slideListData.length; i++) {
                   let words = parseFileContents(slideListData[i].slide);
                   words[0].paragraphStart = true;
                   for (let word of words) {
@@ -290,7 +286,6 @@ const EditArcive = ({ handleClose }) => {
                   }
                 }
                 setSlideTextList(newSlideTextList);
-                setReRun(true);
               }}
               className="btn btn-tr"
             >
@@ -465,14 +460,12 @@ const EditArcive = ({ handleClose }) => {
             ))}
         </div>
         <div>
-          {reRun && (
-            <SlideSplit
-              tags={slideTextList}
-              visible={false}
-              updateSplitTags={setUpdatedSlideTextList}
-              method={"custom_file"}
-            />
-          )}
+          <SlideSplit
+            tags={slideTextList}
+            visible={false}
+            updateSplitTags={setUpdatedSlideTextList}
+            method={"custom_file"}
+          />
         </div>
       </div >
     </>
