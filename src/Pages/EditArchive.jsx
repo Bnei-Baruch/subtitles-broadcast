@@ -41,7 +41,8 @@ const EditArcive = ({ handleClose }) => {
     ).then((response) => {
       if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
         setSlideListData(response.payload.data.slides);
-        setSlideTextListCopy(response.payload.data.slides)
+        setSlideTextListCopy(response.payload.data.slides);
+        setIsLtr(response.payload.data.slides[0].left_to_right);
       }
     });
   }, []);
@@ -277,8 +278,24 @@ const EditArcive = ({ handleClose }) => {
             <button
               type="button"
               onClick={() => {
+                let index = parseInt(localStorage.getItem("myIndex"), 10);
+                let updateSlideList = [];
+                for (let i = 0; i < index; i++) {
+                  const slideData = {
+                    slide_id: slideListData[i].ID,
+                    slide: slideListData[i].slide,
+                    order_number: slideListData[i].order_number,
+                    left_to_right: slideListData[i].left_to_right
+                  };
+                  updateSlideList.push(slideData);
+                }
+                const updateSlideListRequest = {
+                  updateSlideList: updateSlideList,
+                  file_uid: slideListData[0].file_uid,
+                };
+                dispatch(updateNewSlide(updateSlideListRequest));
                 let newSlideTextList = [];
-                for (let i = parseInt(localStorage.getItem("myIndex"), 10); i < slideListData.length; i++) {
+                for (let i = index; i < slideListData.length; i++) {
                   let words = parseFileContents(slideListData[i].slide);
                   words[0].paragraphStart = true;
                   for (let word of words) {
