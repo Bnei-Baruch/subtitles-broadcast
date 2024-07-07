@@ -166,13 +166,13 @@ export const GreenWindowButton = (props) => {
         >
           <div style={styles.mainContainer}>
             <div
-              className={`green-part-cont${!contextMqttMessage.slide ? " display-mode-none" : ""}`}
+              className={`green-part-cont${!contextMqttMessage || !contextMqttMessage.slide ? " display-mode-none" : ""}`}
             ></div>
             <div
-              className={`slide-part-cont${!contextMqttMessage.slide ? " display-mode-none" : ""}`}
+              className={`slide-part-cont${!contextMqttMessage || !contextMqttMessage.slide ? " display-mode-none" : ""}`}
               style={styles.slidePartContainer}
             >
-              {contextMqttMessage && (
+              {contextMqttMessage && contextMqttMessage.slide && (
                 <Slide
                   content={
                     contextMqttMessage.slide

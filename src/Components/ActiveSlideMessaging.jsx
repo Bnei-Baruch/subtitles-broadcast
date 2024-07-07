@@ -342,12 +342,12 @@ export function ActiveSlideMessaging(props) {
     <>
       <div style={styles.mainContainer}>
         <div
-          className={`green-part-cont${!contextMqttMessage.slide ? " display-mode-none" : ""}`}
+          className={`green-part-cont${!contextMqttMessage || !contextMqttMessage.slide ? " display-mode-none" : ""}`}
         >
           &nbsp;{" "}
         </div>
         <div className="slide-part-cont">
-          {contextMqttMessage && (
+          {contextMqttMessage && contextMqttMessage.slide && (
             <Slide
               data-key={contextMqttMessage.ID}
               key={contextMqttMessage.ID}
