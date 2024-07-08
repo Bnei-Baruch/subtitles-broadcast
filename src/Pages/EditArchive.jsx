@@ -49,6 +49,7 @@ const EditArcive = ({ handleClose }) => {
 
   useEffect(() => {
     const performUpdates = async () => {
+      console.log('performUpdates');
       let i = 0;
       // Create a mutable copy of the array and its objects
       let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
@@ -124,6 +125,7 @@ const EditArcive = ({ handleClose }) => {
       ).then((response) => {
         if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
           setSlideListData(response.payload.data.slides);
+          console.log('Got slides after update');
           setSlideTextListCopy(response.payload.data.slides)
         }
       });
@@ -479,7 +481,7 @@ const EditArcive = ({ handleClose }) => {
         <div>
           <SlideSplit
             tags={slideTextList}
-            visible={false}
+            visible={true}
             updateSplitTags={setUpdatedSlideTextList}
             method={"custom_file"}
           />

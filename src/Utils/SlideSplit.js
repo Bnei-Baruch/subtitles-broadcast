@@ -2,18 +2,41 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import { useRef, useEffect } from "react";
 import markdownit from "markdown-it";
 
+const SourceToMarkdown = (simpleHtml) => {
+  return simpleHtml;
+};
+
+const SplitToSlides = (markdown, updateSlides, visible = false) => {
+  const divRef = useRef(null);
+
+  useEffect(() => {
+    updateSlides([markdown]);
+  }, [markdown, updateSlides]);
+
+  return (
+    <>
+      <div ref={divRef}>
+        {markdown}
+      </div>
+    </>
+  );
+};
+
 const SlideSplit = ({
   tags,
   visible,
   updateSplitTags,
   method
 }) => {
+  console.log('tags');
+  tags.forEach((tag) => console.log(tag));
   let terminateCondition = 0
   let numOfRows = 0;
+  // let prevDivHeight = 0;
   let currentDivHeight = 0;
   const index = useRef(0);
   const slideTags = useRef([]);
-  const desiredNumberOfRows = 3;
+  const desiredNumberOfRows = 4;
   const divIdPrefix = "slide";
   const divRefs = useRef([]);
   const nextTag = useRef(null);
@@ -22,6 +45,7 @@ const SlideSplit = ({
   useEffect(() => {
     const md = markdownit({ html: true }).disable(['lheading']);;
     const createNewDiv = (tagList) => {
+      console.log('createNewDiv', tagList);
       const newDiv = document.createElement("div");
       newDiv.className = divIdPrefix + " slide-content";
       newDiv.id = divIdPrefix + "_" + index.current;
@@ -36,6 +60,7 @@ const SlideSplit = ({
       }
       nextTag.current = tagList.shift();
       if (nextTag.current.word === "===") {
+        // prevDivHeight = 0;
         currentDivHeight = 0;
         numOfRows = 0;
         nextTag.current = tagList.shift();
@@ -71,14 +96,20 @@ const SlideSplit = ({
       }
     };
     const checkAndAddText = (currentDiv, tags) => {
+      console.log('checkAndAddText', tags);
       while (tags.length > 0) {
-          if (currentDiv.clientHeight > 100 && currentDivHeight < currentDiv.clientHeight) {
+          console.log('Is next row', currentDiv.clientHeight - currentDivHeight > 30, currentDivHeight, currentDiv.clientHeight);
+          /* If height changes such that it is a new line. */
+          if (/*currentDiv.clientHeight > 100 &&*/currentDiv.clientHeight - currentDivHeight > 30) {
+            // prevDivHeight = currentDivHeight
             currentDivHeight = currentDiv.clientHeight;
             numOfRows += 1;
           }
-          if (numOfRows < desiredNumberOfRows) {
+          console.log('numOfRows < desiredNumberOfRows && currentDivHeight <= 310', numOfRows, desiredNumberOfRows, currentDivHeight);
+          if (numOfRows < desiredNumberOfRows && currentDivHeight <= 310) {
             nextTag.current = tags.shift();
             if (nextTag.current.word === "===") {
+              // prevDivHeight = 0
               currentDivHeight = 0;
               numOfRows = 0;
               if (currentContent.current.length > 0) {
@@ -129,6 +160,7 @@ const SlideSplit = ({
               }
             }
           } else {
+            // prevDivHeight = 0;
             currentDivHeight = 0;
             numOfRows = 0;
             for (let i=0;i<4;i++) {

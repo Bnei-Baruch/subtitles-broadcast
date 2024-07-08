@@ -184,6 +184,7 @@ const NewSlides = () => {
     turndownService.addRule('h1', {
       filter: 'h1',
       replacement: function (content) {
+        console.log('h1 ' + content);
         return '### ' + content.trim() + "\n";
       }
     });
@@ -218,6 +219,14 @@ const NewSlides = () => {
       filter: 'h6',
       replacement: function (content) {
         return '# ' + content.trim() + "\n";
+      }
+    });
+
+    turndownService.addRule('hr', {
+      filter: 'hr',
+      replacement: function (content) {
+        console.log('hr ', content);
+        return '--- ' + content.trim() + "\n";
       }
     });
 
