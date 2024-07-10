@@ -194,8 +194,16 @@ export function ActiveSlideMessaging(props) {
       sessionStorage.removeItem("LastActiveSlidePublishedMessage");
     };
 
+    const timeoutId = setTimeout(() => {
+      if (!subtitlesDisplayModeMsg) {
+        const slideJsonMsg = publishSubtitlesDisplayMode("sources");
+        setSubtitlesDisplayModeMsg(slideJsonMsg);
+      }
+    }, 0);
+
     return () => {
       window.onbeforeunload = null;
+      clearTimeout(timeoutId);
     };
   }, []);
 
