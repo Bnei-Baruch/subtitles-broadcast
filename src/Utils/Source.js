@@ -16,7 +16,6 @@ async function GetFileUid(languageCode, sourceUid) {
                         && file["type"] === "text"
                         && file["mimetype"] === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
                             fileUid = file["id"];
-                            console.log(file["id"]);
                         }
                 });
             }

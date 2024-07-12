@@ -20,7 +20,7 @@ const SlideSplit = ({
   const currentContent = useRef("");
 
   useEffect(() => {
-    const md = markdownit({ html: true });
+    const md = markdownit({ html: true }).disable(['lheading']);;
     const createNewDiv = (tagList) => {
       const newDiv = document.createElement("div");
       newDiv.className = divIdPrefix + " slide-content";
@@ -42,7 +42,8 @@ const SlideSplit = ({
       }
       if (method === "custom_file") {
         if (nextTag.current.word === "<br/>") {
-          nextTag.current.word = "";
+          //nextTag.current.word = "";
+          nextTag.current = tagList.shift();
         }
       } else if (method === "source_url") {
         if (nextTag.current.tagName === "H1") {
@@ -81,7 +82,7 @@ const SlideSplit = ({
               currentDivHeight = 0;
               numOfRows = 0;
               if (currentContent.current.length > 0) {
-                slideTags.current = [...slideTags.current, currentContent.current];
+                slideTags.current = [...slideTags.current, currentContent.current.trim().replace("  ", " ")];
               }
               if (tags.length > 0) {
                 createNewDiv(tags);
@@ -91,19 +92,24 @@ const SlideSplit = ({
                 nextTag.current.word = "";
               }
               if (nextTag.current.paragraphStart) {
-                if (method === "custom_file") {
-                  currentContent.current = currentContent.current.trim();
+                // if (method === "custom_file") {
+                //   //currentContent.current = currentContent.current.trim();
+                //   currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
+                // }
+                const lastRIndex = currentContent.current.lastIndexOf('\r');
+                if (nextTag.current.word.startsWith("#")||currentContent.current.trim().endsWith(".")||currentContent.current[lastRIndex + 1] === '#') {
+                  currentContent.current += "\r";
                 }
-                currentContent.current += "\r";
-                if (currentContent.current.startsWith('#')) {
-                  if (currentContent.current.length > 0) {
-                    slideTags.current = [...slideTags.current, currentContent.current];
-                  }
-                  tags.unshift(nextTag.current);
-                  if (tags.length > 0) {
-                    createNewDiv(tags);
-                  }
-                }
+                
+                // if (currentContent.current.startsWith('#')) {
+                //   if (currentContent.current.length > 0) {
+                //     slideTags.current = [...slideTags.current, currentContent.current.trim()];
+                //   }
+                //   tags.unshift(nextTag.current);
+                //   if (tags.length > 0) {
+                //     createNewDiv(tags);
+                //   }
+                // }
                 if (nextTag.current.tagName === "H1") {
                   nextTag.current.word = "### " + nextTag.current.word;
                 }
@@ -115,9 +121,10 @@ const SlideSplit = ({
               if (method === "custom_file") {
                 currentContent.current += " ";
               }
+              currentContent.current = currentContent.current.replace("  ", " ");
               currentDiv.innerHTML = md.render(currentContent.current);
               if (terminateCondition === tags.length && tags.length === 0 && currentContent.current.length > 0 && currentContent.current !== "\r ") { 
-                slideTags.current = [...slideTags.current, currentContent.current];
+                slideTags.current = [...slideTags.current, currentContent.current.trim()];
                 terminateCondition = terminateCondition-1;
               }
             }
@@ -131,12 +138,19 @@ const SlideSplit = ({
               }
               if (nextTag.current != undefined && nextTag.current.word === "<br/>") {
                 nextTag.current.word = "";
+                nextTag.current = tags.shift();
               }
               if (nextTag.current != undefined && nextTag.current.paragraphStart) {
-                if (method === "custom_file") {
-                  currentContent.current = currentContent.current.trim();
+                // if (method === "custom_file") {
+                //   //currentContent.current = currentContent.current.trim();
+                //   currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
+                // }
+                const lastRIndex = currentContent.current.lastIndexOf('\r');
+                if (nextTag.current.word.startsWith("#")||currentContent.current.trim().endsWith(".")||currentContent.current[lastRIndex + 1] === '#') {
+                  currentContent.current += "\r";
+                  tags.unshift(nextTag.current);
+                  break;
                 }
-                currentContent.current += "\r";
                 if (currentContent.current.startsWith('#')) {
                   tags.unshift(nextTag.current);
                   break;
@@ -151,16 +165,19 @@ const SlideSplit = ({
               if (nextTag.current != undefined){
                 currentContent.current += nextTag.current.word;
               }
+              if (currentContent.current.endsWith(".")) {
+                break;
+              }
               if (method === "custom_file") {
                 currentContent.current += " ";
               }
+              currentContent.current = currentContent.current.replace("  ", " ");
               currentDiv.innerHTML = md.render(currentContent.current);
-              if (currentContent.current.trim().endsWith(".")) {
-                break;
-              }
+              //if (currentContent.current.trim().endsWith(".")) {
+              // currentContent.current = currentContent.current.replace(/^[^\S\r]+|[^\S\r]+$/g, '');
             }
             if (currentContent.current.length > 0) {
-              slideTags.current = [...slideTags.current, currentContent.current];
+              slideTags.current = [...slideTags.current, currentContent.current.trim()];
             }
             if (tags.length > 0) {
               createNewDiv(tags);

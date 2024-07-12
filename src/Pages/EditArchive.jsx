@@ -4,34 +4,133 @@ import { useLocation } from "react-router-dom";
 import {
   addNewSlide,
   deleteNewSlide,
-  getEditSlideList,
   updateNewSlide,
+  getEditSlideList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
+import SlideSplit from "../Utils/SlideSplit";
+import {
+  GetAllArchiveData,
+} from "../Redux/ArchiveTab/ArchiveSlice";
 
 const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
-  const slideList = useSelector(getEditSlideList);
+  //const slideList = useSelector(getEditSlideList);
   const [isLtr, setIsLtr] = useState(true);
-  const [slideListData, setSlideListData] = useState(slideList?.slides);
+  //const [slideListData, setSlideListData] = useState(slideList?.slides);
+  const [slideListData, setSlideListData] = useState([]);
   const [selected, setSelected] = useState(0);
   const [confirmation, setConfirmation] = useState(false);
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
-  const outerRef = useRef();
-  const slideRef = useRef();
-  const param = useLocation();
+  const [slideTextList, setSlideTextList] = useState([]);
+  const [slideTextListCopy, setSlideTextListCopy] = useState([]);
+  const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
 
   useEffect(() => {
-    console.log(param.pathname)
-    setIsLtr(slideList?.slides[0].left_to_right);
-    setSlideListData(slideList?.slides);
+    dispatch(
+      GetAllArchiveData({
+        file_uid: localStorage.getItem("file_uid_for_edit_slide"),
+        language: appContextlData.broadcastLang.label,
+        limit: 2000,
+      })
+    ).then((response) => {
+      if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
+        setSlideListData(response.payload.data.slides);
+        setSlideTextListCopy(response.payload.data.slides);
+        setIsLtr(response.payload.data.slides[0].left_to_right);
+      }
+    });
+  }, []);
 
-  }, [slideList?.slides]);
+  useEffect(() => {
+    const performUpdates = async () => {
+      let i = 0;
+      // Create a mutable copy of the array and its objects
+      let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
+      let currentSlide = parseInt(localStorage.getItem("myIndex"), 10)
+      mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
+      for (; i < mutableSlideTextListCopy.length; i++) {
+        if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
+          break;
+        }
+      }
+
+      // Update
+      let updateSlideList = [];
+      if (i < mutableSlideTextListCopy.length) {
+        // Update slides from i to the last
+        for (let j = i; j < mutableSlideTextListCopy.length; j++) {
+          const slideData = {
+            slide_id: mutableSlideTextListCopy[j].ID,
+            slide: updatedSlideTextList[j],
+            order_number: mutableSlideTextListCopy[j].order_number,
+            left_to_right: mutableSlideTextListCopy[j].left_to_right
+          };
+          updateSlideList.push(slideData);
+        }
+        const updateSlideListRequest = {
+          updateSlideList: updateSlideList,
+          file_uid: mutableSlideTextListCopy[0].file_uid,
+        };
+        await dispatch(updateNewSlide(updateSlideListRequest));
+
+        if (mutableSlideTextListCopy.length < updatedSlideTextList.length) {
+          // Add
+          let addNewSlideList = [];
+          for (let j = mutableSlideTextListCopy.length; j < updatedSlideTextList.length; j++) {
+            const slideData = {
+              file_uid: mutableSlideTextListCopy[0].file_uid,
+              slide: updatedSlideTextList[j],
+              order_number: mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1].order_number + (j - mutableSlideTextListCopy.length + 1),
+              left_to_right: mutableSlideTextListCopy[0].left_to_right
+            }
+            addNewSlideList.push(slideData)
+          }
+          if (addNewSlideList.length > 0) {
+            await dispatch(addNewSlide({
+              list: addNewSlideList,
+              language: appContextlData.broadcastLang.label
+            }));
+          }
+        } else {
+          // Delete
+          let deleteSlideIds = [];
+          for (let j = updatedSlideTextList.length; j < mutableSlideTextListCopy.length; j++) {
+            deleteSlideIds.push(mutableSlideTextListCopy[j].ID);
+          }
+          if (deleteSlideIds.length > 0) {
+            const deleteParams = {
+              force_delete_bookmarks: true,
+              slide_ids: deleteSlideIds
+            }
+            await dispatch(deleteNewSlide({
+              data: deleteParams,
+              language: appContextlData.broadcastLang.label
+            }));
+          }
+        }
+      }
+      await dispatch(
+        GetAllArchiveData({
+          language: appContextlData.broadcastLang.label,
+          limit: 2000,
+          file_uid: localStorage.getItem("file_uid_for_edit_slide"),
+        })
+      ).then((response) => {
+        if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
+          setSlideListData(response.payload.data.slides);
+          setSlideTextListCopy(response.payload.data.slides)
+        }
+      });
+    }
+
+    performUpdates();
+  }, [updatedSlideTextList]);
 
   const handleSubmit = () => {
     const shouldDelete = deleted?.length > 0;
@@ -127,6 +226,22 @@ const EditArcive = ({ handleClose }) => {
     [forceDeleteConfirm]
   );
 
+  const parseFileContents = (fileContents) => {
+    const wordsArray = fileContents.replace(/\r/g, " <br/> ").split(/\s+/);
+    let structuredArray = [];
+    let previousWord = "";
+    wordsArray.forEach((word, index) => {
+      const elementObject = {
+        paragraphStart: previousWord === "<br/>" && word !== "<br/>",
+        tagName: "",
+        word: word,
+      };
+      structuredArray.push(elementObject);
+      previousWord = word;
+    });
+    return structuredArray;
+  };
+
   return (
     <>
       {ForceDeleteBookmark}
@@ -160,6 +275,39 @@ const EditArcive = ({ handleClose }) => {
             </div>
           </div>
           <div className="innerhead d-flex justify-content-end align-items-end mb-5">
+            <button
+              type="button"
+              onClick={() => {
+                let index = parseInt(localStorage.getItem("myIndex"), 10);
+                let updateSlideList = [];
+                for (let i = 0; i < index; i++) {
+                  const slideData = {
+                    slide_id: slideListData[i].ID,
+                    slide: slideListData[i].slide,
+                    order_number: slideListData[i].order_number,
+                    left_to_right: slideListData[i].left_to_right
+                  };
+                  updateSlideList.push(slideData);
+                }
+                const updateSlideListRequest = {
+                  updateSlideList: updateSlideList,
+                  file_uid: slideListData[0].file_uid,
+                };
+                dispatch(updateNewSlide(updateSlideListRequest));
+                let newSlideTextList = [];
+                for (let i = index; i < slideListData.length; i++) {
+                  let words = parseFileContents(slideListData[i].slide);
+                  words[0].paragraphStart = true;
+                  for (let word of words) {
+                    newSlideTextList.push(word);
+                  }
+                }
+                setSlideTextList(newSlideTextList);
+              }}
+              className="btn btn-tr"
+            >
+              Re-run
+            </button>
             <div className="button-box group-new">
               <button
                 type="button"
@@ -212,11 +360,12 @@ const EditArcive = ({ handleClose }) => {
         <div className="container">
           {slideListData?.length > 0 &&
             slideListData?.map((key, index) => (
-              <div className="row">
+              < div className="row" >
                 <div
                   className={`col-md-6 mb-2`}
                   onClick={() => {
                     setSelected(index);
+                    localStorage.setItem("myIndex", index);
                   }}
                 >
                   <div
@@ -226,30 +375,37 @@ const EditArcive = ({ handleClose }) => {
                     <textarea
                       value={key?.slide}
                       onChange={(e) => {
-                        //1) check object is new or having slideid if having slide_id, change slide data only and add to updata slide array, If it is new add in new slide array
-                        const cloneSlidedataArray = [...slideListData];
+                        let newValue = e.target.value;
+
+                        // Perform any special handling for \r if needed
+                        if (newValue.includes('\n')) {
+                          newValue = newValue.replace(/\n/g, '\r'); // Example: replace \r with a visible string representation
+                        }
+
+                        const cloneSlideDataArray = [...slideListData];
+
                         if (key.addedNew) {
-                          cloneSlidedataArray?.splice(index, 1);
-                          cloneSlidedataArray?.splice(index, 0, {
+                          cloneSlideDataArray.splice(index, 1);
+                          cloneSlideDataArray.splice(index, 0, {
                             ...key,
-                            slide: e.target.value,
+                            slide: newValue,
                           });
-                          setSlideListData(cloneSlidedataArray);
+                          setSlideListData(cloneSlideDataArray);
                         } else {
-                          cloneSlidedataArray?.splice(index, 1);
-                          cloneSlidedataArray?.splice(index, 0, {
+                          cloneSlideDataArray.splice(index, 1);
+                          cloneSlideDataArray.splice(index, 0, {
                             ...key,
-                            slide: e.target.value,
+                            slide: newValue,
                             updateSlide: true,
                           });
-                          setSlideListData(cloneSlidedataArray);
+                          setSlideListData(cloneSlideDataArray);
                         }
                       }}
                       key={index}
                       className=""
-                      // style={containerStyle}
                       style={{ direction: isLtr ? 'ltr' : 'rtl' }}
                     />
+
                     {index == selected && (
                       <i
                         onClick={() => {
@@ -311,13 +467,24 @@ const EditArcive = ({ handleClose }) => {
                     className=" adjustable-font"
                   // style={containerStyle}
                   >
-                    <Slide content={key?.slide} isLtr={isLtr} />
+                    <Slide
+                      content={key?.slide}
+                      isLtr={isLtr}
+                    />
                   </div>
                 </div>
               </div>
             ))}
         </div>
-      </div>
+        <div>
+          <SlideSplit
+            tags={slideTextList}
+            visible={false}
+            updateSplitTags={setUpdatedSlideTextList}
+            method={"custom_file"}
+          />
+        </div>
+      </div >
     </>
   );
 };
