@@ -58,4 +58,4 @@ export function getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) {
   return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/question`;
 }
 
-export const subtitlesDisplayModeTopic = "subtitles_display_mode";
+export const subtitlesDisplayModeTopic = "subtitles/display_mode";
