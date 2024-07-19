@@ -13,6 +13,7 @@ import {
   unSubscribeEvent,
 } from "../Utils/Events";
 import AppContext from "../AppContext";
+import { broadcastLanguages } from "../Utils/Const";
 
 const styles = {
   mainContainer: {
@@ -51,14 +52,24 @@ export function ActiveSlideMessaging(props) {
   const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState(
     props.isSubTitleMode,
   );
-  const contextMqttMessage =
-    subtitlesDisplayMode === "sources"
+  const [contextMqttMessage, setContextMqttMessage] = useState(() => {
+    return subtitlesDisplayMode === "sources"
       ? subtitleMqttMessage
       : subtitlesDisplayMode === "questions"
         ? questionMqttMessage
         : "";
-
+  });
   const displayModeTopic = subtitlesDisplayModeTopic;
+  const [otherQuestionMsgCol, setOtherQuestionMsgCol] = useState([]);
+  const [otherQstColIndex, setOtherQstColIndex] = useState(0);
+
+  const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
+    const mqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      langItem.value,
+    );
+    return mqttTopic;
+  });
 
   if (props.subtitlesDisplayMode !== subtitlesDisplayMode) {
     setSubtitlesDisplayMode(props.subtitlesDisplayMode);
@@ -177,16 +188,24 @@ export function ActiveSlideMessaging(props) {
   let subscribed = false;
   const compSubscribeEvents = () => {
     if (!subscribed) {
-      subscribeEvent(subtitleMqttTopic, newMessageHandling);
-      subscribeEvent(questionMqttTopic, newMessageHandling);
       subscribeEvent(displayModeTopic, newMessageHandling);
+      subscribeEvent(subtitleMqttTopic, newMessageHandling);
+
+      qstMqttTopicList.forEach((mqttTopic, index) => {
+        subscribeEvent(mqttTopic, (event) => {
+          newMessageHandling(event);
+        });
+      });
     }
     subscribed = true;
   };
   const compUnSubscribeAppEvents = () => {
-    unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
-    unSubscribeEvent(questionMqttTopic, newMessageHandling);
     unSubscribeEvent(displayModeTopic, newMessageHandling);
+    unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
+
+    qstMqttTopicList.forEach((mqttTopic, index) => {
+      unSubscribeEvent(mqttTopic, newMessageHandling);
+    });
   };
 
   useEffect(() => {
@@ -274,6 +293,80 @@ export function ActiveSlideMessaging(props) {
     }
   }, [subtitlesDisplayModeMsg]);
 
+  useEffect(() => {
+    let contextMessage;
+
+    switch (subtitlesDisplayMode) {
+      case "sources":
+        contextMessage = subtitleMqttMessage;
+        break;
+      case "questions":
+        contextMessage = questionMqttMessage; //JSON.parse(JSON.stringify(questionMqttMessage));
+        break;
+      case "none":
+        contextMessage = "";
+        break;
+      default:
+        contextMessage = subtitleMqttMessage;
+        break;
+    }
+
+    setContextMqttMessage(contextMessage);
+  }, [
+    otherQuestionMsgCol,
+    subtitlesDisplayMode,
+    subtitleMqttMessage,
+    questionMqttMessage,
+    otherQstColIndex,
+  ]);
+
+  useEffect(() => {
+    let timeoutId;
+
+    if (subtitlesDisplayMode === "questions") {
+      timeoutId = setInterval(() => {
+        let newIndex = otherQstColIndex;
+
+        if (newIndex > otherQuestionMsgCol.length) {
+          newIndex = 0;
+        }
+
+        const contextMessage = questionMqttMessage; //JSON.parse(JSON.stringify(questionMqttMessage));
+
+        if (otherQuestionMsgCol && otherQuestionMsgCol.length > 0) {
+          const curOtherQstMsg = otherQuestionMsgCol[newIndex];
+
+          if (curOtherQstMsg && curOtherQstMsg.visible) {
+            let slideTextArr = contextMessage.slide.split(" <hr/>");
+            contextMessage.slide = `${
+              slideTextArr[0] + " <hr/> " + curOtherQstMsg.slide
+            }`;
+          }
+          setContextMqttMessage(contextMessage);
+        }
+
+        setOtherQstColIndex(newIndex + 1);
+      }, 10000);
+    } else {
+      setOtherQstColIndex(0);
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [
+    subtitlesDisplayMode,
+    otherQstColIndex,
+    otherQuestionMsgCol,
+    questionMqttMessage,
+  ]);
+
   const subtitleNewMessageHandling = (event, topic, newMessageJson) => {
     const lastMqttMessageJson = JSON.parse(
       sessionStorage.getItem("LastActiveSlidePublishedMessage"),
@@ -305,6 +398,41 @@ export function ActiveSlideMessaging(props) {
     }
   };
 
+  function otherQstMessageHandling(event, topic, newMessageJson) {
+    if (newMessageJson && newMessageJson.lang !== broadcastLangCode) {
+      if (broadcastLangCode === "he") {
+        let otherQstMsgArrStr = sessionStorage.getItem("OtherQstMsgJsonList");
+        let otherQstMsgArr;
+
+        try {
+          otherQstMsgArr = JSON.parse(otherQstMsgArrStr);
+        } catch (error) {
+          otherQstMsgArr = [];
+        }
+
+        if (!Array.isArray(otherQstMsgArr)) {
+          otherQstMsgArr = [];
+        }
+
+        let newOtherQuestionMsgCol = [];
+
+        newOtherQuestionMsgCol.push(newMessageJson);
+
+        for (let index = 0; index < otherQstMsgArr.length; index++) {
+          const curQuestionMqttMessage = otherQstMsgArr[index];
+
+          if (curQuestionMqttMessage.lang !== newMessageJson.lang) {
+            newOtherQuestionMsgCol.push(curQuestionMqttMessage);
+          }
+        }
+        setOtherQuestionMsgCol(newOtherQuestionMsgCol);
+
+        const otherQstMsgJsonListStr = JSON.stringify(newOtherQuestionMsgCol);
+        sessionStorage.setItem("OtherQstMsgJsonList", otherQstMsgJsonListStr);
+      }
+    }
+  }
+
   const newMessageHandling = (event) => {
     const newMessageJson = event.detail.messageJson || event.detail.message;
     const topic = event.detail.mqttTopic || event.detail.topic;
@@ -324,6 +452,7 @@ export function ActiveSlideMessaging(props) {
         setSubtitlesDisplayModeMsg(newMessageJson);
         break;
       default:
+        otherQstMessageHandling(event, topic, newMessageJson);
         break;
     }
   };
@@ -350,7 +479,11 @@ export function ActiveSlideMessaging(props) {
     <>
       <div style={styles.mainContainer}>
         <div
-          className={`green-part-cont${!contextMqttMessage || !contextMqttMessage.slide ? " display-mode-none" : ""}`}
+          className={`green-part-cont${
+            !contextMqttMessage || !contextMqttMessage.slide
+              ? " display-mode-none"
+              : ""
+          }`}
         >
           &nbsp;{" "}
         </div>
