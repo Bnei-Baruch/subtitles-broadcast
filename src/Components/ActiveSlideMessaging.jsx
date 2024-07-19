@@ -337,9 +337,15 @@ export function ActiveSlideMessaging(props) {
           const curOtherQstMsg = otherQuestionMsgCol[newIndex];
 
           if (curOtherQstMsg && curOtherQstMsg.visible) {
-            let slideTextArr = contextMessage.slide.split(" <hr/>");
+            let slideTextArr = contextMessage.slide.split(
+              "<div id='qstSpliter'></div>",
+            );
             contextMessage.slide = `${
-              slideTextArr[0] + " <hr/> " + curOtherQstMsg.slide
+              slideTextArr[0] +
+              "<div id='qstSpliter'></div>" +
+              "<div class='ChangeToLtr'>" +
+              curOtherQstMsg.slide +
+              "</div>"
             }`;
           }
           setContextMqttMessage(contextMessage);

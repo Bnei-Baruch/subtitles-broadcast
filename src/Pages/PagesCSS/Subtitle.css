@@ -483,3 +483,10 @@ dropdown-toggle {
 .green-part-cont.display-mode-none {
   height: 101%;
 }
+
+#qstSpliter {
+  margin-top: 25px;
+  margin-bottom: 25px;
+  height: 1px;
+  background-color: black;
+}
