@@ -30,6 +30,7 @@ const styles = {
 
 export function ActiveSlideMessaging(props) {
   const qstSwapTime = 10000; //10 sec.
+  const qstSwapTimeToReset = qstSwapTime * 1.3;
   const appContextlData = useContext(AppContext);
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
@@ -296,12 +297,14 @@ export function ActiveSlideMessaging(props) {
             if (subtitlesDisplayModeMsg.slide === "questions") {
               if (subtitlesDisplayModeMsg.clientId !== mqttClientId) {
                 if (questionMqttMessage) {
-                  const curDate = new Date();
-                  const qstDateUtcJs = new Date(questionMqttMessage.date);
-                  const dateTicketsDif =
-                    curDate.getTime() - qstDateUtcJs.getTime();
+                  const isTimeExceeded =
+                    determineTimeDiffExceeded(questionMqttMessage);
+                  // const curDate = new Date();
+                  // const qstDateUtcJs = new Date(questionMqttMessage.date);
+                  // const dateTicketsDif =
+                  //   curDate.getTime() - qstDateUtcJs.getTime();
 
-                  if (dateTicketsDif > qstSwapTime * 2) {
+                  if (isTimeExceeded) {
                     publishSlide(questionMqttMessage, questionMqttTopic, true);
                   }
                 }
@@ -357,7 +360,11 @@ export function ActiveSlideMessaging(props) {
         const curOtherQstMsg = otherQuestionMsgCol[newIndex];
 
         if (curOtherQstMsg && curOtherQstMsg.visible) {
-          if (contextMessage && contextMessage.clientId === mqttClientId) {
+          if (
+            contextMessage &&
+            (contextMessage.clientId === mqttClientId ||
+              determineTimeDiffExceeded(contextMessage))
+          ) {
             let orgSlideContext = contextMessage.orgSlide
               ? contextMessage.orgSlide
               : contextMessage.slide;
@@ -524,6 +531,15 @@ export function ActiveSlideMessaging(props) {
 
     return slideJsonMsg;
   };
+
+  function determineTimeDiffExceeded(qstMqttMsg) {
+    const curDate = new Date();
+    const qstDateUtcJs = new Date(qstMqttMsg.date);
+    const dateTicketsDif = curDate.getTime() - qstDateUtcJs.getTime();
+    const exceeded = dateTicketsDif > qstSwapTimeToReset;
+
+    return exceeded;
+  }
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
 
