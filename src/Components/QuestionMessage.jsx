@@ -146,8 +146,12 @@ const QuestionMessage = (props) => {
 
     for (let index = 0; index < messageList.length; index++) {
       const lupMsg = messageList[index];
+      const lupMsgSlide = lupMsg.orgSlide ? lupMsg.orgSlide : lupMsg.slide;
+      const newMsgSlide = newMessage.orgSlide
+        ? newMessage.orgSlide
+        : newMessage.slide;
 
-      if (lupMsg.slide === newMessage.slide) {
+      if (lupMsgSlide === newMsgSlide) {
         exist = true;
         retMsg = lupMsg;
         break;
