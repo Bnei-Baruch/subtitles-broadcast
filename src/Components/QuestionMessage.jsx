@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  broadcastLangMapObj,
-} from "../Utils/Const";
+import { broadcastLangMapObj } from "../Utils/Const";
 import {
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm,
@@ -26,7 +24,10 @@ const QuestionMessage = (props) => {
   const [notificationList, setNotificationList] = useState([]);
   const langList = props.languagesList;
   const mqttTopicList = langList.map((langItem, index) => {
-    const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, langItem.value) ;
+    const mqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      langItem.value,
+    );
     return mqttTopic;
   });
 
@@ -81,7 +82,10 @@ const QuestionMessage = (props) => {
   const newMessageHandling = (event) => {
     // console.log("QuestionMessage newMessageHandling", event);
     const newMessage = event.detail.messageJson;
-    const currMqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
+    const currMqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      broadcastLangCode,
+    );
 
     if (event.detail.mqttTopic === currMqttTopic) {
       sessionStorage.setItem("currentBroadcastquestions", newMessage);
@@ -90,16 +94,15 @@ const QuestionMessage = (props) => {
     if (newMessage) {
       if (newMessage.date) {
         const msgExistObj = isMessageExist(newMessage, notificationListTmp);
-        
-        if (msgExistObj.isExit){
-          if (msgExistObj.message.visible !==  newMessage.visible){
-            msgExistObj.message.visible = newMessage.visible? true: false;
+
+        if (msgExistObj.isExit) {
+          if (msgExistObj.message.visible !== newMessage.visible) {
+            msgExistObj.message.visible = newMessage.visible ? true : false;
             newMessage.dateUtcJs = new Date(newMessage.date);
             notificationListTmp = [...notificationListTmp];
             setNotificationList(notificationListTmp);
           }
-        }
-        else{
+        } else {
           newMessage.dateUtcJs = new Date(newMessage.date);
           notificationListTmp = [...notificationListTmp, newMessage];
           setNotificationList(notificationListTmp);
@@ -136,28 +139,29 @@ const QuestionMessage = (props) => {
 
     return isLeftToRight;
   };
-  
 
   const isMessageExist = (newMessage, messageList) => {
     let exist = false;
     let retMsg = null;
 
     for (let index = 0; index < messageList.length; index++) {
-      const lupMsg = messageList[index];   
-      
-      if (lupMsg.slide === newMessage.slide ){
+      const lupMsg = messageList[index];
+
+      if (lupMsg.slide === newMessage.slide) {
         exist = true;
         retMsg = lupMsg;
         break;
       }
     }
 
-    return {isExit: exist, message: retMsg} ;
+    return { isExit: exist, message: retMsg };
   };
-  
 
-  const sendQuestionButtonClickHandler = (questionMsg) => {       
-    const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, questionMsg.lang) ;    
+  const sendQuestionButtonClickHandler = (questionMsg) => {
+    const mqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      questionMsg.lang,
+    );
     questionMsg.visible = !questionMsg.visible;
     const jsonMsgStr = JSON.stringify(questionMsg);
 
@@ -172,14 +176,21 @@ const QuestionMessage = (props) => {
       <>
         {notificationList
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
-          .map((obj) => ( 
+          .map((obj) => (
             <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
               <div className="d-flex h-auto p-2">
-                <i className={obj.visible? "bi bi-eye-fill": "bi bi-eye-slash-fill"}  
-                  onClick={() => sendQuestionButtonClickHandler(obj)} />
+                <i
+                  className={
+                    obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
+                  }
+                  onClick={() => sendQuestionButtonClickHandler(obj)}
+                />
                 <span>{getLanguageName(obj.lang)}</span>
               </div>
-               <Slide content={obj.slide} isLtr={languageIsLtr(obj.lang)}></Slide>
+              <Slide
+                content={obj.orgSlide ? obj.orgSlide : obj.slide}
+                isLtr={languageIsLtr(obj.lang)}
+              ></Slide>
             </div>
           ))}
       </>
@@ -191,7 +202,10 @@ const QuestionMessage = (props) => {
           .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
           .map((obj) => (
             <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
-              <Slide content={obj.slide} isLtr={languageIsLtr(obj.lang)}></Slide>
+              <Slide
+                content={obj.slide}
+                isLtr={languageIsLtr(obj.lang)}
+              ></Slide>
             </div>
           ))}
       </>
@@ -210,10 +224,11 @@ const QuestionMessage = (props) => {
                   </span>
                   <br />
                   <div
-                    className={`message ${languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
-                      }`}
+                    className={`message ${
+                      languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
+                    }`}
                   >
-                    {obj.slide}
+                    {obj.orgSlide ? obj.orgSlide : obj.slide}
                   </div>
                 </li>
                 <hr />
