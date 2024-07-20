@@ -59,3 +59,17 @@ export function getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) {
 }
 
 export const subtitlesDisplayModeTopic = "subtitles/display_mode";
+
+export const getMqttClientId = () => {
+  let clientId;
+  const ssMqttClientId = sessionStorage.getItem("mqttClientId");
+
+  if (ssMqttClientId) {
+    clientId = ssMqttClientId;
+  } else {
+    clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
+    sessionStorage.setItem("mqttClientId", clientId);
+  }
+
+  return clientId;
+};

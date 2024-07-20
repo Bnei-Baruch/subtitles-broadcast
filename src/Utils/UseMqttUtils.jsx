@@ -5,6 +5,7 @@ import {
   unsubscribeEvent,
   publishEvent,
 } from "../Utils/Events";
+import { getMqttClientId } from "../Utils/Common";
 
 const mqttUrl = process.env.REACT_APP_MQTT_URL;
 const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
@@ -22,6 +23,8 @@ const setting = {
   },
 };
 
+const clientId = getMqttClientId();
+
 export default function useMqtt() {
   const [mqttClient, setMqttClient] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -29,14 +32,7 @@ export default function useMqtt() {
   const [mqttClientId, setMqttClientId] = useState(false);
   let tmpMqttClient = null;
 
-  const getClientId = () => {
-    const clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-    // console.log(`useMqtt Set MQTT Client: ${clientId}`);
-    return clientId;
-  };
-
   const mqttConnect = async () => {
-    const clientId = getClientId();
     const url = setting.url;
     const options = {
       clientId,
@@ -51,8 +47,11 @@ export default function useMqtt() {
   };
 
   const mqttPublush = async (mqttTopic, msgText, mqttClientObj) => {
-    const trgMqttClient = mqttClient ? mqttClient : 
-      mqttClientObj? mqttClientObj: tmpMqttClient;
+    const trgMqttClient = mqttClient
+      ? mqttClient
+      : mqttClientObj
+        ? mqttClientObj
+        : tmpMqttClient;
 
     if (trgMqttClient) {
       trgMqttClient.publish(
@@ -64,14 +63,13 @@ export default function useMqtt() {
             console.log("useMqtt  Publish error:", error);
           } else {
             // console.log(`"useMqtt  Published Topic: ${mqttTopic} Message: ${msgText}`);
-            
+
             publishEvent("mqttMessagePublished", {
               mqttTopic: mqttTopic,
               messageText: msgText,
             });
-
           }
-        }
+        },
       );
     }
   };
@@ -100,7 +98,7 @@ export default function useMqtt() {
             console.log("useMqtt MQTT Subscribe to topics error", error);
             return;
           }
-        }
+        },
       );
       setMqttClient(clientMqtt);
     }
@@ -145,10 +143,10 @@ export default function useMqtt() {
           mqttTopic: _topic,
           clientId: mqttClientId,
           messageJson: newMessage,
-        }
+        };
 
         publishEvent(_topic, argData);
-        publishEvent("mqttNewmessage",argData);
+        publishEvent("mqttNewmessage", argData);
         setPayload(payloadMessage);
 
         // console.log(`useMqtt MQTT message: ${message.toString()} \n topic: ${_topic}`);
