@@ -29,7 +29,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
-  const qstSwapTime = 10000; //10 sec.
+  const qstSwapTime = 7000; //7 sec.
   const qstSwapTimeToReset = qstSwapTime * 1.3;
   const appContextlData = useContext(AppContext);
   const [mqttClientId] = useState(() => {
@@ -299,10 +299,6 @@ export function ActiveSlideMessaging(props) {
                 if (questionMqttMessage) {
                   const isTimeExceeded =
                     determineTimeDiffExceeded(questionMqttMessage);
-                  // const curDate = new Date();
-                  // const qstDateUtcJs = new Date(questionMqttMessage.date);
-                  // const dateTicketsDif =
-                  //   curDate.getTime() - qstDateUtcJs.getTime();
 
                   if (isTimeExceeded) {
                     publishSlide(questionMqttMessage, questionMqttTopic, true);
@@ -346,49 +342,114 @@ export function ActiveSlideMessaging(props) {
     otherQstColIndex,
   ]);
 
+  function findNextVisibleQstMsg(questionMsgCol, startIndex) {
+    let retObj = null;
+    let currentIndex = (startIndex + 1) % questionMsgCol.length;
+
+    while (currentIndex !== startIndex) {
+      let qstMsg = questionMsgCol[currentIndex];
+
+      if (qstMsg.visible) {
+        retObj = { index: currentIndex, message: qstMsg };
+        break;
+      }
+
+      currentIndex = (currentIndex + 1) % questionMsgCol.length;
+    }
+
+    return retObj;
+  }
+
   useEffect(() => {
     function publishComplexQstMsg() {
+      let isPublishOrgSlide = true;
       let newIndex = otherQstColIndex;
 
-      if (newIndex > otherQuestionMsgCol.length) {
+      if (isNaN(newIndex) || newIndex > otherQuestionMsgCol.length) {
         newIndex = 0;
       }
 
       const contextMessage = JSON.parse(JSON.stringify(questionMqttMessage));
 
-      if (otherQuestionMsgCol && otherQuestionMsgCol.length > 0) {
-        const curOtherQstMsg = otherQuestionMsgCol[newIndex];
+      if (
+        contextMessage.visible &&
+        otherQuestionMsgCol &&
+        otherQuestionMsgCol.length > 0
+      ) {
+        let curOtherQstMsg = otherQuestionMsgCol[newIndex];
 
-        if (curOtherQstMsg && curOtherQstMsg.visible) {
+        if (curOtherQstMsg) {
+          if (!curOtherQstMsg.visible) {
+            //Find other visble message id exist
+            const otherVisbleQstMsgObj = findNextVisibleQstMsg(
+              otherQuestionMsgCol,
+              newIndex,
+            );
+
+            if (otherVisbleQstMsgObj) {
+              curOtherQstMsg = otherVisbleQstMsgObj.message;
+              newIndex = curOtherQstMsg.index;
+            }
+          }
+
+          if (curOtherQstMsg.visible) {
+            if (
+              contextMessage &&
+              (contextMessage.clientId === mqttClientId ||
+                determineTimeDiffExceeded(contextMessage))
+            ) {
+              let orgSlideContext = contextMessage.orgSlide
+                ? contextMessage.orgSlide
+                : contextMessage.slide;
+
+              contextMessage.orgSlide = orgSlideContext;
+
+              const newSlideContext = `${
+                "<div class='d-flex justify-content-center ChangeToLtr'>" +
+                curOtherQstMsg.slide +
+                "</div>" +
+                "<div id='qstSpliter'></div>" +
+                "<div class='org-slide-context-cont d-flex justify-content-center ChangeToRtl'>" +
+                orgSlideContext +
+                "</div>"
+              }`;
+
+              contextMessage.slide = newSlideContext;
+              publishSlide(contextMessage, questionMqttTopic, true);
+              isPublishOrgSlide = false;
+            }
+          }
+        }
+      }
+
+      if (isPublishOrgSlide) {
+        if (contextMessage.visible) {
           if (
-            contextMessage &&
-            (contextMessage.clientId === mqttClientId ||
-              determineTimeDiffExceeded(contextMessage))
+            contextMessage.orgSlide &&
+            contextMessage.orgSlide !== contextMessage.slide
           ) {
-            let orgSlideContext = contextMessage.orgSlide
-              ? contextMessage.orgSlide
-              : contextMessage.slide;
+            contextMessage.slide = contextMessage.orgSlide;
+            publishSlide(contextMessage, questionMqttTopic, true);
+          }
+        } else {
+          if (!contextMessage.orgSlide) {
+            contextMessage.orgSlide = contextMessage.slide;
+          }
 
-            contextMessage.orgSlide = orgSlideContext;
-
-            const newSlideContext = `${
-              "<div class='ChangeToLtr'>" +
-              curOtherQstMsg.slide +
-              "</div>" +
-              "<div id='qstSpliter'></div>" +
-              "<div class='org-slide-context-cont'>" +
-              orgSlideContext +
-              "</div>"
-            }`;
-
-            contextMessage.slide = newSlideContext;
+          if (contextMessage.slide) {
+            contextMessage.slide = "";
             publishSlide(contextMessage, questionMqttTopic, true);
           }
         }
-        //setContextMqttMessage(contextMessage);
       }
 
-      setOtherQstColIndex(newIndex + 1);
+      newIndex++;
+
+      if (newIndex >= otherQuestionMsgCol.length) {
+        newIndex = 0;
+      }
+
+      setOtherQstColIndex(newIndex);
     }
     let timeoutId;
 
@@ -416,16 +477,6 @@ export function ActiveSlideMessaging(props) {
     questionMqttMessage,
   ]);
 
-  useEffect(() => {
-    if (subtitlesDisplayMode === "questions") {
-      //Publish Question
-    }
-  }, [subtitlesDisplayMode]);
-
-  // useEffect(() => {
-  //   //
-  //   setMqttClientId(sessionStorage.getItem("mqttClientId"));
-  // }, []);
   const subtitleNewMessageHandling = (event, topic, newMessageJson) => {
     const lastMqttMessageJson = JSON.parse(
       sessionStorage.getItem("LastActiveSlidePublishedMessage"),
