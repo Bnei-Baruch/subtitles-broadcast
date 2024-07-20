@@ -301,7 +301,7 @@ export function ActiveSlideMessaging(props) {
                   const dateTicketsDif =
                     curDate.getTime() - qstDateUtcJs.getTime();
 
-                  if (dateTicketsDif > qstSwapTime * 3) {
+                  if (dateTicketsDif > qstSwapTime * 2) {
                     publishSlide(questionMqttMessage, questionMqttTopic, true);
                   }
                 }
