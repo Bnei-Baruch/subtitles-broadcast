@@ -10,7 +10,7 @@ import {
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
-import SlideSplit from "../Utils/SlideSplit";
+import { SplitToSlides } from "../Utils/SlideSplit";
 import {
   GetAllArchiveData,
 } from "../Redux/ArchiveTab/ArchiveSlice";
@@ -28,6 +28,8 @@ const EditArcive = ({ handleClose }) => {
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
   const [slideTextList, setSlideTextList] = useState([]);
+  const [wholeText, setWholeText] = useState("");
+  const [split, setSplit] = useState(false);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
 
@@ -295,13 +297,17 @@ const EditArcive = ({ handleClose }) => {
                 };
                 dispatch(updateNewSlide(updateSlideListRequest));
                 let newSlideTextList = [];
+                const parts = [];
                 for (let i = index; i < slideListData.length; i++) {
                   let words = parseFileContents(slideListData[i].slide);
+                  parts.push(slideListData[i].slide);
                   words[0].paragraphStart = true;
                   for (let word of words) {
                     newSlideTextList.push(word);
                   }
                 }
+                setWholeText(parts.join('\r'));
+                setSplit(true);
                 setSlideTextList(newSlideTextList);
               }}
               className="btn btn-tr"
@@ -477,11 +483,11 @@ const EditArcive = ({ handleClose }) => {
             ))}
         </div>
         <div>
-          <SlideSplit
-            tags={slideTextList}
+          <SplitToSlides
+            markdown={wholeText}
             visible={false}
-            updateSplitTags={setUpdatedSlideTextList}
-            method={"custom_file"}
+            active={split}
+            updateSlides={(slides) => {setSplit(false); setUpdatedSlideTextList(slides);}}
           />
         </div>
       </div >
