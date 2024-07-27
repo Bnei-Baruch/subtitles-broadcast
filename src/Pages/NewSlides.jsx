@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
-import SlideSplit from "../Utils/SlideSplit";
+import {SplitToSlides, sourceToMarkdown} from "../Utils/SlideSplit";
 import GenerateUID from "../Utils/Uid";
 import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import GetLangaugeCode from "../Utils/Const";
@@ -13,7 +13,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import AppContext from "../AppContext";
-import TurndownService from 'turndown';
 
 const NewSlides = () => {
   const appContextlData = useContext(AppContext);
@@ -23,13 +22,15 @@ const NewSlides = () => {
   const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
   const [tagList, setTagList] = useState([]);
+  const [wholeText, setWholeText] = useState("");
+  const [splitActive, setSplitActive] = useState(false);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState("");
   const [slideLanguageOptions, setSlideLanguageOptions] = useState(["Hebrew", "Russian", "English", "Spanish"]);
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
-  const [selectedFile, setSelectedFile] = useState("");
+  const [customText, setCustomText] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
@@ -136,31 +137,36 @@ const NewSlides = () => {
     }
   }
 
-  const handleUpload = () => {
-    try {
-      const name = document.getElementById("upload_name").value;
-      if (name === "") {
-        alert("Name must be filled");
-        return;
-      }
-
-      setSourceUid("upload_" + GenerateUID(8));
-      setFileUid("upload_" + GenerateUID(8));
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const fileContents = event.target.result;
-        const structuredArray = parseFileContents(fileContents);
-        setTagList(structuredArray);
-      };
-      if (selectedFile.name.split('.').pop() !== "txt") {
-        alert("The file must be txt file");
-        return;
-      }
-      // Read the file as text
-      reader.readAsText(selectedFile);
-    } catch (error) {
-      console.error("Error occurred:", error); // Handle any errors
+  const uploadFile = (filename) => {
+    // Read from file.
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCustomText(event.target.result);
+      document.getElementById('custom-textarea').value = event.target.result;
+    };
+    if (filename.name.split('.').pop() !== "txt") {
+      alert("The file must be txt file");
+      return;
     }
+    try {
+      reader.readAsText(filename);
+    } catch (error) {
+      console.error("Error reading input fileoccurred:", error);
+    }
+  }
+
+  const addSlidesFromCustomText = () => {
+    const name = document.getElementById("upload_name").value;
+    if (name === "") {
+      alert("Name must be filled");
+      return;
+    }
+    setSourceUid("upload_" + GenerateUID(8));
+    setFileUid("upload_" + GenerateUID(8));
+    const structuredArray = parseFileContents(customText);
+    setTagList(structuredArray);
+    setWholeText(customText);
+    setSplitActive(true);
   };
 
   const parseFileContents = (fileContents) => {
@@ -180,73 +186,11 @@ const NewSlides = () => {
   };
 
   const loadSlides = async (sourceData) => {
-    const turndownService = new TurndownService();
-    turndownService.addRule('h1', {
-      filter: 'h1',
-      replacement: function (content) {
-        console.log('h1 ' + content);
-        return '### ' + content.trim() + "\n";
-      }
-    });
-
-    turndownService.addRule('h2', {
-      filter: 'h2',
-      replacement: function (content) {
-        return '# ' + content.trim() + "\n";
-      }
-    });
-
-    turndownService.addRule('h3', {
-      filter: 'h3',
-      replacement: function (content) {
-        return '# ' + content.trim() + "\n";
-      }
-    });
-
-    turndownService.addRule('h4', {
-      filter: 'h4',
-      replacement: function (content) {
-        return '# ' + content.trim() + "\n";
-      }
-    });
-    turndownService.addRule('h5', {
-      filter: 'h5',
-      replacement: function (content) {
-        return '# ' + content.trim() + "\n";
-      }
-    });
-    turndownService.addRule('h6', {
-      filter: 'h6',
-      replacement: function (content) {
-        return '# ' + content.trim() + "\n";
-      }
-    });
-
-    turndownService.addRule('hr', {
-      filter: 'hr',
-      replacement: function (content) {
-        console.log('hr ', content);
-        return '--- ' + content.trim() + "\n";
-      }
-    });
-
-    turndownService.addRule('paragraph', {
-      filter: 'p',
-      replacement: function (content) {
-        return content.trim() + "\n";
-      }
-    });
-
-    turndownService.addRule('em', {
-      filter: 'em',
-      replacement: function (content) {
-        return '*' + content.trim() + '*';
-      }
-    });
-
-    const convertedMarkdown = turndownService.turndown(sourceData);
-    let parse = parseFileContents(convertedMarkdown);
+    const markdown = sourceToMarkdown(sourceData)
+    let parse = parseFileContents(markdown);
     setTagList(parse);
+    setWholeText(markdown);
+    setSplitActive(true);
     // const parser = new DOMParser();
     // const doc = parser.parseFromString(sourceData, "text/html");
     // const contentElements = doc.querySelectorAll("h1,h2,h3,h4,h5,h6,p");
@@ -385,28 +329,30 @@ const NewSlides = () => {
             </div>
           </div>
           <div className="row m-4">
-            <div>
+            <div className="input-box col-7">
               <input
                 type="file"
                 onChange={(event) => {
-                  setSelectedFile(event.target.files[0]);
+                  uploadFile(event.target.files[0]);
                 }}
               />
+              <textarea id="custom-textarea" style={{marginTop: '1em', marginBottom: '1em', height: '500px', width: '500px'}}
+                  onChange={(event) => { setCustomText(event.target.value)}} />
               <button
                 className="btn btn-light rounded-pill col-4"
-                onClick={handleUpload}
-                disabled={!selectedFile}
+                onClick={addSlidesFromCustomText}
+                disabled={!customText}
               >
                 Add
               </button>
             </div>
           </div>
           <div>
-            <SlideSplit
-              tags={tagList}
+            <SplitToSlides
+              markdown={wholeText}
+              active={splitActive}
               visible={false}
-              updateSplitTags={setUpdateTagList}
-              method={insertMethod}
+              updateSlides={(slides) => {setSplitActive(false); setUpdateTagList(slides);}}
             />
           </div>
         </>
@@ -417,7 +363,7 @@ const NewSlides = () => {
             <p>{appContextlData.broadcastLang.label}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
-              <div className="form-group  autoComplete">
+              <div className="form-group autoComplete">
                 <input
                   className="form-control"
                   type="type"
@@ -460,11 +406,11 @@ const NewSlides = () => {
               Add Source
             </button>
             <div>
-              <SlideSplit
-                tags={tagList}
+              <SplitToSlides
+                markdown={wholeText}
+                active={splitActive}
                 visible={false}
-                updateSplitTags={setUpdateTagList}
-                method={"custom_file"}
+                updateSlides={(slides) => {setSplitActive(false); setUpdateTagList(slides);}}
               />
             </div>
           </div >

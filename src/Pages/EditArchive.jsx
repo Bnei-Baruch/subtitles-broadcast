@@ -10,7 +10,7 @@ import {
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
-import SlideSplit from "../Utils/SlideSplit";
+import { SplitToSlides } from "../Utils/SlideSplit";
 import {
   GetAllArchiveData,
 } from "../Redux/ArchiveTab/ArchiveSlice";
@@ -28,6 +28,8 @@ const EditArcive = ({ handleClose }) => {
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
   const [slideTextList, setSlideTextList] = useState([]);
+  const [wholeText, setWholeText] = useState("");
+  const [split, setSplit] = useState(false);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
 
@@ -49,7 +51,6 @@ const EditArcive = ({ handleClose }) => {
 
   useEffect(() => {
     const performUpdates = async () => {
-      console.log('performUpdates');
       let i = 0;
       // Create a mutable copy of the array and its objects
       let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
@@ -125,7 +126,6 @@ const EditArcive = ({ handleClose }) => {
       ).then((response) => {
         if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
           setSlideListData(response.payload.data.slides);
-          console.log('Got slides after update');
           setSlideTextListCopy(response.payload.data.slides)
         }
       });
@@ -297,13 +297,17 @@ const EditArcive = ({ handleClose }) => {
                 };
                 dispatch(updateNewSlide(updateSlideListRequest));
                 let newSlideTextList = [];
+                const parts = [];
                 for (let i = index; i < slideListData.length; i++) {
                   let words = parseFileContents(slideListData[i].slide);
+                  parts.push(slideListData[i].slide);
                   words[0].paragraphStart = true;
                   for (let word of words) {
                     newSlideTextList.push(word);
                   }
                 }
+                setWholeText(parts.join('\r'));
+                setSplit(true);
                 setSlideTextList(newSlideTextList);
               }}
               className="btn btn-tr"
@@ -479,11 +483,11 @@ const EditArcive = ({ handleClose }) => {
             ))}
         </div>
         <div>
-          <SlideSplit
-            tags={slideTextList}
-            visible={true}
-            updateSplitTags={setUpdatedSlideTextList}
-            method={"custom_file"}
+          <SplitToSlides
+            markdown={wholeText}
+            visible={false}
+            active={split}
+            updateSlides={(slides) => {setSplit(false); setUpdatedSlideTextList(slides);}}
           />
         </div>
       </div >
