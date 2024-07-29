@@ -150,7 +150,73 @@ const Archive = () => {
         <EditArcive handleClose={() => setEditSlide(false)} />
       ) : (
         <div className="archiveBackground  bg-light Edit">
-          <div className="card" style={{ border: "none", height: "calc(100vh - 175px)" }}>
+          <div className="flex-container">
+            <div className="flex-box-center" style={{marginLeft: "10px", marginRight: "10px"}}>
+              {/* Content for the second flex box centered */}
+              <ReactPaginate
+                pageCount={archiveList?.pagination?.total_pages}
+                onPageChange={(e) => {
+                  const selectedPage = e.selected + 1;
+                  if (selectedPage <= archiveList?.pagination?.total_pages) {
+                    updatePage(selectedPage, page.limit);
+                  }
+                }}
+                forcePage={page.page - 1}
+                containerClassName="pagination"
+                pageClassName="pagination-item"
+                previousLabel={
+                  <i
+                    className="bi bi-chevron-left"
+                    style={{
+                      fontSize: "30px",
+                      cursor: page.page === 1 ? "not-allowed" : "pointer",
+                      color: page.page === 1 ? "#6c757d" : "black",
+                    }}
+                  />
+                }
+                nextLabel={
+                  <i
+                    className="bi bi-chevron-right"
+                    style={{
+                      fontSize: "30px",
+                      cursor:
+                        page.page === archiveList?.pagination?.total_pages
+                          ? "not-allowed"
+                          : "pointer",
+                      color:
+                        page.page === archiveList?.pagination?.total_pages
+                          ? "#6c757d"
+                          : "black",
+                    }}
+                  />
+                }
+                activeClassName="active"
+                disabledClassName="disabled"
+                breakLabel={null}
+                pageRangeDisplayed={0}
+                marginPagesDisplayed={0}
+              />
+            </div>
+            <div
+              className="flex-box-center"
+              onChange={(e) => {
+                updatePage(1, +e.target.value);
+              }}
+            >
+              <span>Row per page:</span>
+              <select
+                value={/*localPagination?.limit ||*/ page.limit}
+                className="ms-2"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+              </select>{" "}
+              &nbsp; &nbsp; &nbsp;
+              <span style={{width: '200px'}}>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
+            </div>
+          </div>
+          <div className="card" style={{ border: "none" }}>
             {archiveList ? (
               <div style={{ overflowX: "auto" }}>
                 <table
@@ -159,9 +225,9 @@ const Archive = () => {
                 >
                   <thead>
                     <colgroup>
-                      <col style={{ width: "65%" }} />
+                      <col style={{ width: "75%" }} />
                       <col style={{ width: "20%" }} />
-                      <col style={{ width: "15%" }} />
+                      <col style={{ width: "5%" }} />
                     </colgroup>
                     <tr>
                       <th style={{ width: "65%", padding: "10px" }}>Text</th>
@@ -281,72 +347,6 @@ const Archive = () => {
                 <div>NO Data</div>
               </div>
             )}
-          </div>
-          <div className="flex-container">
-            <div
-              className="flex-box-start"
-              onChange={(e) => {
-                updatePage(1, +e.target.value);
-              }}
-            >
-              <span>Row per page:</span>
-              <select
-                value={/*localPagination?.limit ||*/ page.limit}
-                className="ms-2"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-              </select>{" "}
-              &nbsp; &nbsp; &nbsp;
-              <span>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
-            </div>
-            <div className="flex-box-center">
-              {/* Content for the second flex box centered */}
-              <ReactPaginate
-                pageCount={archiveList?.pagination?.total_pages}
-                onPageChange={(e) => {
-                  const selectedPage = e.selected + 1;
-                  if (selectedPage <= archiveList?.pagination?.total_pages) {
-                    updatePage(selectedPage, page.limit);
-                  }
-                }}
-                forcePage={page.page - 1}
-                containerClassName="pagination"
-                pageClassName="pagination-item"
-                previousLabel={
-                  <i
-                    className="bi bi-chevron-left"
-                    style={{
-                      fontSize: "40px",
-                      cursor: page.page === 1 ? "not-allowed" : "pointer",
-                      color: page.page === 1 ? "#6c757d" : "black",
-                    }}
-                  />
-                }
-                nextLabel={
-                  <i
-                    className="bi bi-chevron-right"
-                    style={{
-                      fontSize: "40px",
-                      cursor:
-                        page.page === archiveList?.pagination?.total_pages
-                          ? "not-allowed"
-                          : "pointer",
-                      color:
-                        page.page === archiveList?.pagination?.total_pages
-                          ? "#6c757d"
-                          : "black",
-                    }}
-                  />
-                }
-                activeClassName="active"
-                disabledClassName="disabled"
-                breakLabel={null}
-                pageRangeDisplayed={0}
-                marginPagesDisplayed={0}
-              />
-            </div>
           </div>
         </div>
       )}
