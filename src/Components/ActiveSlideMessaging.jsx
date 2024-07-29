@@ -29,7 +29,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
-  const qstSwapTime = 10000; //10 sec.
+  const qstSwapTime = 7000; //7 sec.
   const appContextlData = useContext(AppContext);
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
@@ -232,7 +232,7 @@ export function ActiveSlideMessaging(props) {
 
     const timeoutId = setTimeout(() => {
       publishComplexQstMsg();
-    }, 100);
+    }, 500);
 
     return () => {
       window.onbeforeunload = null;
@@ -302,8 +302,11 @@ export function ActiveSlideMessaging(props) {
             if (subtitlesDisplayModeMsg.slide === "questions") {
               if (subtitlesDisplayModeMsg.clientId !== mqttClientId) {
                 if (questionMqttMessage) {
-                  const isTimeExceeded =
-                    determineTimeDiffExceeded(questionMqttMessage);
+                  const isTimeExceeded = determineTimeDiffExceeded(
+                    questionMqttMessage,
+                    qstSwapTime,
+                    2,
+                  );
 
                   if (isTimeExceeded) {
                     publishSlide(questionMqttMessage, questionMqttTopic, true);
@@ -498,11 +501,11 @@ export function ActiveSlideMessaging(props) {
     return slideJsonMsg;
   };
 
-  function determineTimeDiffExceeded(qstMqttMsg) {
+  function determineTimeDiffExceeded(qstMqttMsg, swapTime = 0, ratio = 1) {
     const curDate = new Date();
     const qstDateUtcJs = new Date(qstMqttMsg.date);
     const dateTicketsDif = curDate.getTime() - qstDateUtcJs.getTime();
-    const qstSwapTimeToReset = qstSwapTime * 1.3;
+    const qstSwapTimeToReset = swapTime * ratio;
     const exceeded = dateTicketsDif > qstSwapTimeToReset;
 
     return exceeded;
@@ -521,8 +524,14 @@ export function ActiveSlideMessaging(props) {
     }
 
     const contextMessage = JSON.parse(JSON.stringify(questionMqttMessage));
+    const isTimeExceeded = determineTimeDiffExceeded(
+      contextMessage,
+      qstSwapTime,
+      4,
+    );
 
     if (
+      !isTimeExceeded &&
       contextMessage.visible &&
       otherQuestionMsgCol &&
       otherQuestionMsgCol.length > 0
@@ -544,11 +553,7 @@ export function ActiveSlideMessaging(props) {
         }
 
         if (curOtherQstMsg.visible) {
-          if (
-            contextMessage &&
-            (contextMessage.clientId === mqttClientId ||
-              determineTimeDiffExceeded(contextMessage))
-          ) {
+          if (contextMessage && contextMessage.clientId === mqttClientId) {
             if (curOtherQstMsg.orgSlide) {
               contextMessage.slide = contextMessage.orgSlide;
               contextMessage.lang = contextMessage.orgLang;
@@ -574,9 +579,10 @@ export function ActiveSlideMessaging(props) {
       if (contextMessage.visible) {
         if (
           contextMessage.orgSlide &&
-          contextMessage.orgSlide !== contextMessage.slide
+          (isTimeExceeded || contextMessage.orgSlide !== contextMessage.slide)
         ) {
           contextMessage.slide = contextMessage.orgSlide;
+          contextMessage.lang = contextMessage.orgLang;
           publishSlide(contextMessage, questionMqttTopic, true);
         }
       } else {
