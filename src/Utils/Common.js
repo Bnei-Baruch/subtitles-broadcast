@@ -73,3 +73,34 @@ export const getMqttClientId = () => {
 
   return clientId;
 };
+
+export function languageIsLtr(langCode) {
+  let isLeftToRight = true;
+
+  if (langCode) {
+    const lnagObj = broadcastLangMapObj[langCode];
+
+    if (lnagObj) {
+      isLeftToRight = !(lnagObj.isLtr === false);
+    }
+  }
+
+  return isLeftToRight;
+}
+
+export function messageIsLtr(message) {
+  let isLeftToRight = true;
+
+  if (message) {
+    if (typeof message.isLtr !== "undefined") {
+      isLeftToRight = !(message.isLtr === false);
+    } else if (typeof message.lang !== "undefined") {
+      isLeftToRight = languageIsLtr(message.lang);
+    } else {
+      const langObj = getCurrentBroadcastLanguage();
+      isLeftToRight = languageIsLtr(langObj.value);
+    }
+  }
+
+  return isLeftToRight;
+}
