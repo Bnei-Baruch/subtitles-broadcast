@@ -39,7 +39,6 @@ const Source = () => {
   };
 
   const message = "";
-  const [editSlide, setEditSlide] = useState("");
   const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
     queryParams.get("source_uid")
   );
@@ -218,6 +217,7 @@ const Source = () => {
                                   ) {
                                     setBookmarkData({
                                       file_uid: key?.file_uid,
+                                      slide_id: key?.slide_id,
                                       update: true,
                                     });
                                     setConfirmation(true);

@@ -18,9 +18,7 @@ import {
 const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
-  //const slideList = useSelector(getEditSlideList);
   const [isLtr, setIsLtr] = useState(true);
-  //const [slideListData, setSlideListData] = useState(slideList?.slides);
   const [slideListData, setSlideListData] = useState([]);
   const [selected, setSelected] = useState(0);
   const [confirmation, setConfirmation] = useState(false);
@@ -380,6 +378,41 @@ const EditArcive = ({ handleClose }) => {
                   >
                     <textarea
                       value={key?.slide}
+                      onKeyDown={(e) => {
+                        const textArea = e.target;
+                        let textAreaParent = textArea.parentElement;
+                        if (e.keyCode === 8 && textArea.selectionStart === 0 && index > 0) {
+                          // Move first line to previous text-area
+                          while (!!textAreaParent && !textAreaParent.className.includes('row')) {
+                            textAreaParent = textAreaParent.parentElement;
+                          }
+                          if (textAreaParent && textAreaParent.previousElementSibling) {
+                            const prevTextArea = textAreaParent.previousElementSibling.querySelector('textarea');
+                            if (prevTextArea) {
+                              const cloneSlideDataArray = [...slideListData];
+                              const prevKey = slideListData[index-1];
+                              let lines = key.slide.split(/[\r\n]/);
+                              let offset = 0;
+                              if (lines.length > 0) {
+                                offset = lines[0].length;
+                                cloneSlideDataArray[index-1] = {
+                                  ...prevKey,
+                                  slide: cloneSlideDataArray[index-1].slide + '\n' + lines[0] + ' ',
+                                };
+                                cloneSlideDataArray[index] = {
+                                  ...key,
+                                  slide: key.slide.slice(offset+1),
+                                }
+
+                                setSlideListData(cloneSlideDataArray);
+                              }
+                              setSelected(index-1);
+                              prevTextArea.focus();
+                              prevTextArea.selectionStart = prevTextArea.value.length;
+                            }
+                          }
+                        }
+                      }}
                       onChange={(e) => {
                         let newValue = e.target.value;
 
