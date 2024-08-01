@@ -29,7 +29,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
-  const qstSwapTime = 7000; //7 sec.
+  const qstSwapTime = 5000; //7 sec.
   const appContextlData = useContext(AppContext);
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
@@ -443,6 +443,12 @@ export function ActiveSlideMessaging(props) {
           otherQstMsgArr = [];
         }
 
+        newMessageJson.isLtr =
+          typeof newMessageJson.isLtr === "boolean"
+            ? newMessageJson.isLtr
+            : newMessageJson.lang === "he"
+              ? false
+              : true;
         newOtherQuestionMsgCol.push(newMessageJson);
 
         for (let index = 0; index < otherQstMsgArr.length; index++) {
@@ -548,7 +554,7 @@ export function ActiveSlideMessaging(props) {
 
           if (otherVisbleQstMsgObj) {
             curOtherQstMsg = otherVisbleQstMsgObj.message;
-            newIndex = curOtherQstMsg.index;
+            newIndex = otherVisbleQstMsgObj.index;
           }
         }
 
@@ -568,8 +574,10 @@ export function ActiveSlideMessaging(props) {
               contextMessage.slide = curOtherQstMsg.slide;
             }
 
+            contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
             publishSlide(contextMessage, questionMqttTopic, true);
             isPublishOrgSlide = false;
+            setQuestionMqttMessage(contextMessage);
           }
         }
       }
@@ -626,7 +634,11 @@ export function ActiveSlideMessaging(props) {
               data-key={contextMqttMessage.ID}
               key={contextMqttMessage.ID}
               content={contextMqttMessage.slide}
-              isLtr={props.isLtr}
+              isLtr={
+                typeof contextMqttMessage.isLtr === "boolean"
+                  ? contextMqttMessage.isLtr
+                  : props.isLtr
+              }
             ></Slide>
           )}
         </div>
