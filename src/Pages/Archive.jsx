@@ -284,7 +284,7 @@ const Archive = () => {
                                     search_keyword: localStorage.getItem("free-text"),
                                     data: {
                                       file_uid: key?.file_uid,
-                                      slide_id: key?.slide_id,
+                                      slide_id: key?.ID,
                                       update: false,
                                       order: archiveList?.slides?.find(
                                         (k) => k.bookmark_id !== null
