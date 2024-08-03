@@ -113,7 +113,12 @@ export const GreenWindowButton = (props) => {
 
   useEffect(() => {
     determinecontextMqttMessage(subtitlesDisplayMode);
-  }, [subtitlesDisplayMode, subtitlesDisplayModeMsg, subtitleMqttMessage]);
+  }, [
+    subtitlesDisplayMode,
+    subtitlesDisplayModeMsg,
+    subtitleMqttMessage,
+    questionMqttMessage,
+  ]);
 
   const newMessageHandling = (event) => {
     const newMessageJson = event.detail.messageJson || event.detail.message;
@@ -166,10 +171,18 @@ export const GreenWindowButton = (props) => {
         >
           <div style={styles.mainContainer}>
             <div
-              className={`green-part-cont${!contextMqttMessage || !contextMqttMessage.slide ? " display-mode-none" : ""}`}
+              className={`green-part-cont${
+                !contextMqttMessage || !contextMqttMessage.slide
+                  ? " display-mode-none"
+                  : ""
+              }`}
             ></div>
             <div
-              className={`slide-part-cont${!contextMqttMessage || !contextMqttMessage.slide ? " display-mode-none" : ""}`}
+              className={`slide-part-cont${
+                !contextMqttMessage || !contextMqttMessage.slide
+                  ? " display-mode-none"
+                  : ""
+              }`}
               style={styles.slidePartContainer}
             >
               {contextMqttMessage && contextMqttMessage.slide && (
@@ -179,8 +192,12 @@ export const GreenWindowButton = (props) => {
                       ? contextMqttMessage.slide
                       : contextMqttMessage.context
                   }
-                  isLtr={props.isLtr}
                   parentElement={elementRef}
+                  isLtr={
+                    typeof contextMqttMessage.isLtr === "boolean"
+                      ? contextMqttMessage.isLtr
+                      : props.isLtr
+                  }
                 ></Slide>
               )}
             </div>

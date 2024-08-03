@@ -7,12 +7,13 @@ import {
 import {
   getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm,
-  getSubtitleMqttTopic,
   getQuestionMqttTopic,
+  languageIsLtr,
 } from "../Utils/Common";
 import { publishEvent, subscribeEvent, unSubscribeEvent } from "../Utils/Events";
 
 const QuestionModule = () => {
+  const curBroadcastLanguage = getCurrentBroadcastLanguage();
   const mqttClientId = localStorage.getItem("mqttClientId");
 
   const newQuestionTxtRef = React.createRef();
@@ -22,10 +23,13 @@ const QuestionModule = () => {
     return getCurrentBroadcastProgramm();
   });
   const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
-    return getCurrentBroadcastLanguage();
+    return curBroadcastLanguage;
   });
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
+  const [isLtr, setIsLtr] = useState(()=>{
+    return languageIsLtr(broadcastLangCode)
+  });
 
   const clearButtonClickHandler = () => {
     sethandleSuccess(false);
@@ -52,12 +56,11 @@ const QuestionModule = () => {
           slide: qustionTxt,
           date: new Date().toUTCString(),
           visible: true,
+          isLtr: isLtr,
         };
 
         const jsonMsgStr = JSON.stringify(jsonMsg);
         const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
-
-        // console.log("QuestionModule publishEvent mqttPublush", mqttTopic);
 
         publishEvent("mqttPublush", {
           mqttTopic: mqttTopic,
@@ -65,6 +68,8 @@ const QuestionModule = () => {
         });
       }
     }
+    
+    newQuestionTxtRef.current.focus();
   };
 
   
@@ -85,9 +90,14 @@ const QuestionModule = () => {
   };
 
   
-  useEffect(() => {
+  useEffect(() => {  
+    if (newQuestionTxtRef.current) {
+      newQuestionTxtRef.current.focus();
+    }
+    
     const timeoutId = setTimeout(() => {
       compSubscribeEvents();
+    
     }, 0);
 
     return () => {
@@ -95,21 +105,52 @@ const QuestionModule = () => {
       compUnSubscribeAppEvents();
     };
   }, []);
+  
+  useEffect(() => {     
+    const timeoutId = setTimeout(() => {
+      if (newQuestionTxtRef.current) {
+        newQuestionTxtRef.current.focus();
+      }    
+    }, 300);
 
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [curBroadcastLanguage]);
+
+  const setLtrClickHandler = ()=>{
+    setIsLtr(!isLtr);
+    
+    if (newQuestionTxtRef.current) {
+      newQuestionTxtRef.current.focus();
+    }
+  };
+
+  if (curBroadcastLanguage.value !== broadcastLangObj.value){
+    setBroadcastLangObj(curBroadcastLanguage) ;   
+    setIsLtr(languageIsLtr(curBroadcastLanguage.value));    
+  }
 
   return (
     <div className="form-Question">
       <p className="QutionTitle">Workshop question</p>
       <div className="d-flex flex-column  h-auto">
-        <div className=" d-flex justify-content-end  p-0">
+        <div className=" d-flex justify-content-end  p-0 mb-2">
           <button
-            className="btn btn-light btn-sm ms-3 my-1"
-            onClick={clearButtonClickHandler}
+            type="button"
+            onClick={() => setLtrClickHandler(!isLtr)}
+            className="btn btn-info mx-1"
           >
-            clear
+            {isLtr ? "LTR" : "RTL"}
           </button>
           <button
-            className="btn btn-primary btn-sm ms-3 my-1"
+            className="btn btn-secondary mx-1"
+            onClick={clearButtonClickHandler}
+          >
+            Clear
+          </button>
+          <button
+            className="btn btn-success mx-1"
             onClick={() => sendQuestionButtonClickHandler()}
           >
             Send question
@@ -128,10 +169,11 @@ const QuestionModule = () => {
           )}
           <textarea
             ref={newQuestionTxtRef}
-            className="new-question-txt form-control"
+            className={"new-question-txt form-control"}
             id="new_question_txt"
             rows="8"
             placeholder="New Question typing"
+            dir={isLtr ? "ltr" : "rtl"}
           ></textarea>
         </div>
       </div>
