@@ -991,7 +991,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			"files.file_uid AS file_uid, "+
 			"source_paths.languages AS languages, "+
 			"source_paths.path AS path," +
-      "RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id) rank_number").
+      "RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number").
 		Table("slides").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
