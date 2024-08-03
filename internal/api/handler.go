@@ -990,13 +990,14 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			"source_paths.source_uid AS source_uid, "+
 			"files.file_uid AS file_uid, "+
 			"source_paths.languages AS languages, "+
-			"source_paths.path AS path").
+			"source_paths.path AS path," +
+      "RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id) rank_number").
 		Table("slides").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Where("? = ANY(files.languages) AND source_paths.path ILIKE ?", language, "%"+keyword+"%").
-		Order("source_paths.path, source_paths.source_uid, slides.id").Limit(listLimit).Offset(offset).Scan(&paths)
+		Order("source_paths.path, source_paths.source_uid").Limit(listLimit).Offset(offset).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
