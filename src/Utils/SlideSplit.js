@@ -250,7 +250,7 @@ const CutNonVisibleEndings = (slideText) => {
 
 export const SplitToSlides = ({markdown, updateSlides, active = false, visible = false}) => {
   const divRef = useRef(null);
-  const md = markdownit({ html: true }).disable(['lheading']);;
+  const md = markdownit({ html: true, breaks: true }).disable(['lheading']);;
   // console.log('markdown', markdown);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import markdownit from "markdown-it";
 export const Slide = ({ content, isLtr, searchKeyword }) => {
   const outerRef = useRef();
   const slideRef = useRef();
-  const md = markdownit({ html: true }).disable(['lheading']);;
+  const md = markdownit({ html: true, breaks: true }).disable(['lheading']);;
   const backgroundColor = "#01cd27";
 
   const handleResize = () => {
