@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import {
@@ -27,6 +27,14 @@ import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
 import GetLangaugeCode from "../Utils/Const";
 
+function usePrevious(value) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
+
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
   const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("");
@@ -39,7 +47,7 @@ const Subtitles = () => {
   const allBookmarkList = useSelector(getAllBookmarkList);
   const allBookmarkListLoading = useSelector(getAllBookmarkListLoading);
   const [searchSlide, setSearchSlide] = useState("");
-  const [searchSlideFileUid, setSearchSlideFileUid] = useState("");
+  const previousSearch = usePrevious(searchSlide);
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
   const [selectedSlide, setSelectedSlide] = useState(
@@ -80,21 +88,6 @@ const Subtitles = () => {
   const handleChange = (selectedOption) => {
     const inputValue = +selectedOption?.label - 1;
     updateSelectedSlide(inputValue);
-    /*
-    console.log(selectedOption, "selectedOption");
-    const inputValue = +selectedOption?.label - 1;
-    if (inputValue >= 0 && inputValue <= maxSlideIndex) {
-      localStorage.setItem("activeSlideFileUid", inputValue);
-      setSelectedSlide(inputValue);
-    } else if (inputValue > maxSlideIndex) {
-      // Handle the case when inputValue is greater than maxSlideIndex
-      localStorage.setItem("activeSlideFileUid", maxSlideIndex + 1);
-      setSelectedSlide(maxSlideIndex + 1);
-    } else {
-      localStorage.setItem("activeSlideFileUid", 1);
-      setSelectedSlide(1);
-    }
-    */
   };
   const handleKeyPress = useCallback(
     (event) => {
@@ -150,15 +143,14 @@ const Subtitles = () => {
     }
   }, [allBookmarkList, allBookmarkListLoading]);
   useEffect(() => {
-    if (searchSlide.length > 0) {
+    if (searchSlide.length > 0 || searchSlide !== previousSearch) {
       let file_uid = localStorage.getItem("fileUid");
       if (file_uid !== "") {
-        setSearchSlideFileUid(file_uid);
         dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
     }
-  }, [searchSlide]);
+  }, [searchSlide, previousSearch]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedItems = [...items];
