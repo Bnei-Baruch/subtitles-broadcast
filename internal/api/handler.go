@@ -207,9 +207,9 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			First(&sourcePath)
 		if result.Error != nil {
 			log.Error(result.Error)
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
-			return
+      // Some Likutim or new sources might not have source path.
+      // TODO: Allow renaming source path for any loaded material.
+      sourcePath.Path = "Unknown"
 		}
 		req.SourcePath = sourcePath.Path
 	}
