@@ -48,14 +48,14 @@ export function ActiveSlideMessaging(props) {
   const broadcastLangCode = broadcastLangObj.value;
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode,
+    broadcastLangCode
   );
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode,
+    broadcastLangCode
   );
   const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState(
-    props.isSubTitleMode,
+    props.isSubTitleMode
   );
   const [contextMqttMessage, setContextMqttMessage] = useState(() => {
     return subtitlesDisplayMode === "sources"
@@ -71,7 +71,7 @@ export function ActiveSlideMessaging(props) {
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      langItem.value,
+      langItem.value
     );
     return mqttTopic;
   });
@@ -165,7 +165,7 @@ export function ActiveSlideMessaging(props) {
           subtitleMqttMessage.slide !== activeSlide.slide
         ) {
           const lastMqttMessageJson = JSON.parse(
-            sessionStorage.getItem("ActiveSlideMessaging"),
+            sessionStorage.getItem("ActiveSlideMessaging")
           );
 
           if (
@@ -177,7 +177,7 @@ export function ActiveSlideMessaging(props) {
 
             sessionStorage.setItem(
               "ActiveSlideMessaging",
-              JSON.stringify(slideJsonMsg),
+              JSON.stringify(slideJsonMsg)
             );
 
             if (otherSlides) {
@@ -185,7 +185,7 @@ export function ActiveSlideMessaging(props) {
                 const slide = otherSlides[index];
                 const topic = getSubtitleMqttTopic(
                   broadcastProgrammCode,
-                  slide.language,
+                  slide.language
                 );
 
                 publishSlide(slide, topic);
@@ -291,7 +291,7 @@ export function ActiveSlideMessaging(props) {
   useEffect(() => {
     if (subtitlesDisplayModeMsg && subtitlesDisplayModeMsg.slide) {
       const displayModeElmCol = document.getElementsByClassName(
-        `${subtitlesDisplayModeMsg.slide}-mod`,
+        `${subtitlesDisplayModeMsg.slide}-mod`
       );
 
       if (displayModeElmCol.length) {
@@ -305,7 +305,7 @@ export function ActiveSlideMessaging(props) {
                   const isTimeExceeded = determineTimeDiffExceeded(
                     questionMqttMessage,
                     qstSwapTime,
-                    2,
+                    2
                   );
 
                   if (isTimeExceeded) {
@@ -397,7 +397,7 @@ export function ActiveSlideMessaging(props) {
 
   const subtitleNewMessageHandling = (event, topic, newMessageJson) => {
     const lastMqttMessageJson = JSON.parse(
-      sessionStorage.getItem("LastActiveSlidePublishedMessage"),
+      sessionStorage.getItem("LastActiveSlidePublishedMessage")
     );
 
     if (
@@ -408,7 +408,7 @@ export function ActiveSlideMessaging(props) {
 
       sessionStorage.setItem(
         "LastActiveSlidePublishedMessage",
-        JSON.stringify(newMessageJson),
+        JSON.stringify(newMessageJson)
       );
     }
 
@@ -533,7 +533,7 @@ export function ActiveSlideMessaging(props) {
     const isTimeExceeded = determineTimeDiffExceeded(
       contextMessage,
       qstSwapTime,
-      4,
+      4
     );
 
     if (
@@ -549,7 +549,7 @@ export function ActiveSlideMessaging(props) {
           //Find other visble message id exist
           const otherVisbleQstMsgObj = findNextVisibleQstMsg(
             otherQuestionMsgCol,
-            newIndex,
+            newIndex
           );
 
           if (otherVisbleQstMsgObj) {
@@ -574,6 +574,7 @@ export function ActiveSlideMessaging(props) {
               contextMessage.slide = curOtherQstMsg.slide;
             }
 
+            contextMessage.slide = `<div class="d-flex justify-content-center">${contextMessage.slide}<div>`;
             contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
             publishSlide(contextMessage, questionMqttTopic, true);
             isPublishOrgSlide = false;
