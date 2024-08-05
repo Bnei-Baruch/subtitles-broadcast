@@ -22,10 +22,10 @@ function GetLangaugeCode() {
 }
 
 export const broadcastLanguages = [
-  { value: "he", label: "Hebrew", isLtr: false },
-  { value: "en", label: "English", isLtr: true },
-  { value: "ru", label: "Russian", isLtr: true },
-  { value: "es", label: "Spanish", isLtr: true },
+  { value: "he", label: "Hebrew", isLtr: false, order_num: 1 },
+  { value: "en", label: "English", isLtr: true, order_num: 2 },
+  { value: "ru", label: "Russian", isLtr: true, order_num: 3 },
+  { value: "es", label: "Spanish", isLtr: true, order_num: 4 },
 ];
 
 export let broadcastLangMapObj = {};
