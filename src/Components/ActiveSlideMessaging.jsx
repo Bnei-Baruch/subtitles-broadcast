@@ -48,14 +48,14 @@ export function ActiveSlideMessaging(props) {
   const broadcastLangCode = broadcastLangObj.value;
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode,
+    broadcastLangCode
   );
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode,
+    broadcastLangCode
   );
   const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState(
-    props.isSubTitleMode,
+    props.isSubTitleMode
   );
   const [contextMqttMessage, setContextMqttMessage] = useState(() => {
     return subtitlesDisplayMode === "sources"
@@ -65,13 +65,14 @@ export function ActiveSlideMessaging(props) {
         : "";
   });
   const displayModeTopic = subtitlesDisplayModeTopic;
-  const [otherQuestionMsgCol, setOtherQuestionMsgCol] = useState([]);
+  const [otherQuestionMsgCol, setOtherQuestionMsgCol] = useState({});
   const [otherQstColIndex, setOtherQstColIndex] = useState(0);
+  const [otherQstMsgColLength, setOtherQstMsgColLength] = useState(0);
 
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      langItem.value,
+      langItem.value
     );
     return mqttTopic;
   });
@@ -165,7 +166,7 @@ export function ActiveSlideMessaging(props) {
           subtitleMqttMessage.slide !== activeSlide.slide
         ) {
           const lastMqttMessageJson = JSON.parse(
-            sessionStorage.getItem("ActiveSlideMessaging"),
+            sessionStorage.getItem("ActiveSlideMessaging")
           );
 
           if (
@@ -177,7 +178,7 @@ export function ActiveSlideMessaging(props) {
 
             sessionStorage.setItem(
               "ActiveSlideMessaging",
-              JSON.stringify(slideJsonMsg),
+              JSON.stringify(slideJsonMsg)
             );
 
             if (otherSlides) {
@@ -185,7 +186,7 @@ export function ActiveSlideMessaging(props) {
                 const slide = otherSlides[index];
                 const topic = getSubtitleMqttTopic(
                   broadcastProgrammCode,
-                  slide.language,
+                  slide.language
                 );
 
                 publishSlide(slide, topic);
@@ -291,7 +292,7 @@ export function ActiveSlideMessaging(props) {
   useEffect(() => {
     if (subtitlesDisplayModeMsg && subtitlesDisplayModeMsg.slide) {
       const displayModeElmCol = document.getElementsByClassName(
-        `${subtitlesDisplayModeMsg.slide}-mod`,
+        `${subtitlesDisplayModeMsg.slide}-mod`
       );
 
       if (displayModeElmCol.length) {
@@ -305,7 +306,7 @@ export function ActiveSlideMessaging(props) {
                   const isTimeExceeded = determineTimeDiffExceeded(
                     questionMqttMessage,
                     qstSwapTime,
-                    2,
+                    2
                   );
 
                   if (isTimeExceeded) {
@@ -352,17 +353,38 @@ export function ActiveSlideMessaging(props) {
 
   function findNextVisibleQstMsg(questionMsgCol, startIndex) {
     let retObj = null;
-    let currentIndex = (startIndex + 1) % questionMsgCol.length;
+    let currentIndex = startIndex; // = (startIndex + 1) % questionMsgCol.length;
+    const langCodeByIdx = getLangCodeByIndex(currentIndex);
+    const lupQstMqttMsg = questionMsgCol[langCodeByIdx];
 
-    while (currentIndex !== startIndex) {
-      let qstMsg = questionMsgCol[currentIndex];
+    if (lupQstMqttMsg && lupQstMqttMsg.visible) {
+      retObj = {
+        index: currentIndex,
+        message: lupQstMqttMsg,
+        lnagCode: langCodeByIdx,
+      };
+    } else {
+      for (const landCode in questionMsgCol) {
+        if (Object.hasOwn(questionMsgCol, landCode)) {
+          const lupQstMqttMsg = questionMsgCol[questionMsgCol[landCode]];
 
-      if (qstMsg.visible) {
-        retObj = { index: currentIndex, message: qstMsg };
-        break;
+          if (!retObj) {
+            //In order to return the first message
+            retObj = { index: currentIndex, message: lupQstMqttMsg };
+            break;
+          }
+
+          if (lupQstMqttMsg.visible) {
+            if (currentIndex === startIndex) {
+              if (!retObj) {
+                retObj = { index: currentIndex, message: lupQstMqttMsg };
+                break;
+              }
+            }
+          }
+          currentIndex++;
+        }
       }
-
-      currentIndex = (currentIndex + 1) % questionMsgCol.length;
     }
 
     return retObj;
@@ -397,7 +419,7 @@ export function ActiveSlideMessaging(props) {
 
   const subtitleNewMessageHandling = (event, topic, newMessageJson) => {
     const lastMqttMessageJson = JSON.parse(
-      sessionStorage.getItem("LastActiveSlidePublishedMessage"),
+      sessionStorage.getItem("LastActiveSlidePublishedMessage")
     );
 
     if (
@@ -408,7 +430,7 @@ export function ActiveSlideMessaging(props) {
 
       sessionStorage.setItem(
         "LastActiveSlidePublishedMessage",
-        JSON.stringify(newMessageJson),
+        JSON.stringify(newMessageJson)
       );
     }
 
@@ -429,18 +451,18 @@ export function ActiveSlideMessaging(props) {
   function otherQstMessageHandling(event, topic, newMessageJson) {
     if (newMessageJson) {
       if (broadcastLangCode === "he") {
-        let otherQstMsgArr;
-        let newOtherQuestionMsgCol = [];
+        let otherQstMsgArr = null;
+        let newOtherQuestionMsgCol = {};
         let otherQstMsgArrStr = sessionStorage.getItem("OtherQstMsgJsonList");
 
         try {
           otherQstMsgArr = JSON.parse(otherQstMsgArrStr);
         } catch (error) {
-          otherQstMsgArr = [];
+          otherQstMsgArr = {};
         }
 
-        if (!Array.isArray(otherQstMsgArr)) {
-          otherQstMsgArr = [];
+        if (typeof otherQstMsgArr !== "object") {
+          otherQstMsgArr = {};
         }
 
         newMessageJson.isLtr =
@@ -449,16 +471,21 @@ export function ActiveSlideMessaging(props) {
             : newMessageJson.lang === "he"
               ? false
               : true;
-        newOtherQuestionMsgCol.push(newMessageJson);
 
-        for (let index = 0; index < otherQstMsgArr.length; index++) {
-          const lupQstMqttMsg = otherQstMsgArr[index];
+        let qstMsgColLength =
+          otherQstMsgArr && otherQstMsgArr[newMessageJson.lang] ? 0 : 1;
 
-          if (lupQstMqttMsg.lang !== newMessageJson.lang) {
-            newOtherQuestionMsgCol.push(lupQstMqttMsg);
+        for (const landCode in otherQstMsgArr) {
+          if (Object.hasOwn(otherQstMsgArr, landCode)) {
+            const lupQstMqttMsg = otherQstMsgArr[landCode];
+            newOtherQuestionMsgCol[landCode] = lupQstMqttMsg;
+            qstMsgColLength++;
           }
         }
+
+        newOtherQuestionMsgCol[newMessageJson.lang] = newMessageJson;
         setOtherQuestionMsgCol(newOtherQuestionMsgCol);
+        setOtherQstMsgColLength(qstMsgColLength);
 
         const otherQstMsgJsonListStr = JSON.stringify(newOtherQuestionMsgCol);
         sessionStorage.setItem("OtherQstMsgJsonList", otherQstMsgJsonListStr);
@@ -525,7 +552,7 @@ export function ActiveSlideMessaging(props) {
     let isPublishOrgSlide = true;
     let newIndex = otherQstColIndex;
 
-    if (isNaN(newIndex) || newIndex >= otherQuestionMsgCol.length) {
+    if (isNaN(newIndex) || newIndex >= otherQstMsgColLength) {
       newIndex = 0;
     }
 
@@ -533,31 +560,27 @@ export function ActiveSlideMessaging(props) {
     const isTimeExceeded = determineTimeDiffExceeded(
       contextMessage,
       qstSwapTime,
-      4,
+      4
     );
 
     if (
       !isTimeExceeded &&
       contextMessage.visible &&
       otherQuestionMsgCol &&
-      otherQuestionMsgCol.length > 0
+      otherQstMsgColLength > 0
     ) {
-      let curOtherQstMsg = otherQuestionMsgCol[newIndex];
+      let curOtherQstMsg = null;
+      const otherVisbleQstMsgObj = findNextVisibleQstMsg(
+        otherQuestionMsgCol,
+        newIndex
+      );
+
+      if (otherVisbleQstMsgObj) {
+        curOtherQstMsg = otherVisbleQstMsgObj.message;
+        newIndex = otherVisbleQstMsgObj.index;
+      }
 
       if (curOtherQstMsg) {
-        if (!curOtherQstMsg.visible) {
-          //Find other visble message id exist
-          const otherVisbleQstMsgObj = findNextVisibleQstMsg(
-            otherQuestionMsgCol,
-            newIndex,
-          );
-
-          if (otherVisbleQstMsgObj) {
-            curOtherQstMsg = otherVisbleQstMsgObj.message;
-            newIndex = otherVisbleQstMsgObj.index;
-          }
-        }
-
         if (curOtherQstMsg.visible) {
           if (contextMessage && contextMessage.clientId === mqttClientId) {
             if (curOtherQstMsg.orgSlide) {
@@ -574,6 +597,7 @@ export function ActiveSlideMessaging(props) {
               contextMessage.slide = curOtherQstMsg.slide;
             }
 
+            contextMessage.slide = `<div class="d-flex justify-content-center">${contextMessage.slide}<div>`;
             contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
             publishSlide(contextMessage, questionMqttTopic, true);
             isPublishOrgSlide = false;
@@ -607,11 +631,25 @@ export function ActiveSlideMessaging(props) {
 
     newIndex++;
 
-    if (newIndex >= otherQuestionMsgCol.length) {
+    if (newIndex >= otherQstMsgColLength) {
       newIndex = 0;
     }
 
     setOtherQstColIndex(newIndex);
+  }
+
+  function getLangCodeByIndex(index) {
+    let retVal = "he";
+
+    if (index === 1) {
+      retVal = "en";
+    } else if (index === 2) {
+      retVal = "ru";
+    } else if (index === 3) {
+      retVal = "es";
+    }
+
+    return retVal;
   }
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
