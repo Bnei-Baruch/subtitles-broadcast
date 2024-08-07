@@ -242,6 +242,38 @@ const EditArcive = ({ handleClose }) => {
     return structuredArray;
   };
 
+  const rerun = () => {
+    let index = parseInt(localStorage.getItem("myIndex"), 10);
+    let updateSlideList = [];
+    for (let i = 0; i < index; i++) {
+      const slideData = {
+        slide_id: slideListData[i].ID,
+        slide: slideListData[i].slide,
+        order_number: slideListData[i].order_number,
+        left_to_right: slideListData[i].left_to_right
+      };
+      updateSlideList.push(slideData);
+    }
+    const updateSlideListRequest = {
+      updateSlideList: updateSlideList,
+      file_uid: slideListData[0].file_uid,
+    };
+    dispatch(updateNewSlide(updateSlideListRequest));
+    let newSlideTextList = [];
+    const parts = [];
+    for (let i = index; i < slideListData.length; i++) {
+      let words = parseFileContents(slideListData[i].slide);
+      parts.push(slideListData[i].slide);
+      words[0].paragraphStart = true;
+      for (let word of words) {
+        newSlideTextList.push(word);
+      }
+    }
+    setWholeText(parts.join('\r'));
+    setSplit(true);
+    setSlideTextList(newSlideTextList);
+  }
+
   return (
     <>
       {ForceDeleteBookmark}
@@ -275,43 +307,7 @@ const EditArcive = ({ handleClose }) => {
             </div>
           </div>
           <div className="innerhead d-flex justify-content-end align-items-end mb-5">
-            <button
-              type="button"
-              onClick={() => {
-                let index = parseInt(localStorage.getItem("myIndex"), 10);
-                let updateSlideList = [];
-                for (let i = 0; i < index; i++) {
-                  const slideData = {
-                    slide_id: slideListData[i].ID,
-                    slide: slideListData[i].slide,
-                    order_number: slideListData[i].order_number,
-                    left_to_right: slideListData[i].left_to_right
-                  };
-                  updateSlideList.push(slideData);
-                }
-                const updateSlideListRequest = {
-                  updateSlideList: updateSlideList,
-                  file_uid: slideListData[0].file_uid,
-                };
-                dispatch(updateNewSlide(updateSlideListRequest));
-                let newSlideTextList = [];
-                const parts = [];
-                for (let i = index; i < slideListData.length; i++) {
-                  let words = parseFileContents(slideListData[i].slide);
-                  parts.push(slideListData[i].slide);
-                  words[0].paragraphStart = true;
-                  for (let word of words) {
-                    newSlideTextList.push(word);
-                  }
-                }
-                setWholeText(parts.join('\r'));
-                setSplit(true);
-                setSlideTextList(newSlideTextList);
-              }}
-              className="btn btn-tr"
-            >
-              Re-run
-            </button>
+            <button type="button" onClick={() => rerun()} className="btn btn-tr">Re-run</button>
             <div className="button-box group-new">
               <button
                 type="button"
@@ -462,6 +458,9 @@ const EditArcive = ({ handleClose }) => {
                         className="bi bi-trash3 delete-icon "
                         style={{ [isLtr ? 'right' : 'left']: '5px' }}
                       />
+                    )}
+                    {index == selected && (
+                      <i onClick={() => rerun()} className="bi bi-bootstrap-reboot delete-icon " style={{ color: 'black', [isLtr ? 'right' : 'left']: '30px' }} />
                     )}
                     {index == selected && (
                       <i
