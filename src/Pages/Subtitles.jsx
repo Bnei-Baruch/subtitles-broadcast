@@ -146,7 +146,7 @@ const Subtitles = () => {
     if (searchSlide.length > 0 || searchSlide !== previousSearch) {
       let file_uid = localStorage.getItem("fileUid");
       if (file_uid !== "") {
-        dispatch(GetSubtitleData({ file_uid, keyword: searchSlide }));
+        dispatch(GetSubtitleData({ file_uid, keyword: searchSlide, limit: 10000 }));
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
     }
