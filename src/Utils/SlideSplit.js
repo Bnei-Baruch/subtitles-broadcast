@@ -194,6 +194,7 @@ const TextOrMarkdownToken = (stack, index, i, text) => {
   };
 };
 
+/*
 const ENUM_RE = /^\d+\.$/;
 const IsTextTokenEnumeration = ({type, text}) => {
   if (type !== TOKEN_TEXT) {
@@ -201,6 +202,7 @@ const IsTextTokenEnumeration = ({type, text}) => {
   }
   return !!text.match(ENUM_RE);
 };
+*/
 
 // Stack is a stack of markdown tokens that span over a line or several lines.
 // Example: # this is *italic* header.  So when toknizing 'italic', the stack
@@ -271,8 +273,24 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
       const slides = [];
       let firstTokenInSlide = true;
       let lines = 0;
+      let wordsInLine = 0;
       let prevHeight = 0;
-      const newSlide = (lastToken) => {
+
+      // Store backtrack point for proper last line cutoff.
+      let lastLineCutoffs = [];
+
+      const newSlide = (lastToken, token, restIndex) => {
+        if (token !== null && lastLineCutoffs.length > 0) {
+          lastLineCutoffs.sort((a, b) => b.score - a.score);  // Higher score first.
+
+          const cutoff = lastLineCutoffs[0];
+          token = cutoff.token;
+          lastToken = cutoff.lastToken;
+          restIndex = cutoff.restIndex;
+          nextDivMarkdown = cutoff.nextDivMarkdown;
+          prevRestIndex = cutoff.lastRestIndex;
+        }
+
         if (visible) {
           divIndex += 1;
           nextDiv.innerHTML = md.render(nextDivMarkdown); // Just for visualization...
@@ -289,7 +307,11 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
         nextDivMarkdown = '';
         firstTokenInSlide = true;
         lines = 0;
+        wordsInLine = 0;
         prevHeight = 0;
+        lastLineCutoffs = [];
+
+        return {prevToken: lastToken, token, restIndex, prevRestIndex};
       };
       while (!prevRestIndex || prevRestIndex <= markdown.length &&
              (!prevToken || (prevToken.text || prevToken.type === TOKEN_NEWSLIDE))) {
@@ -299,15 +321,16 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
         console.log(nextDiv.clientHeight, firstTokenInSlide);
         console.log(prevToken, token);
         console.log(JSON.stringify(markdown.slice(restIndex, restIndex+30)));*/
-        if (IsTextTokenEnumeration(token) ||
+        if (/*IsTextTokenEnumeration(token) ||*/
             type === TOKEN_NEWSLIDE ||
             (HEADER_TOKENS.includes(type) && CutNonVisibleEndings(nextDivMarkdown) !== '')) {
-          // New slide due to enumeration, header or new slide token.
-          newSlide(token);
+          // New slide due to /*enumeration*/, header or new slide token.
+          newSlide(token, null, null);
           prevToken = token;
           prevRestIndex = restIndex;
           ({token, restIndex} = Tokenize(stack, restIndex, markdown));
           ({type, text, stack} = token);
+          wordsInLine++;
         } else if (nextDiv.clientHeight < 310) {
           if (firstTokenInSlide) {
             if (prevToken) {
@@ -320,31 +343,38 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
           // Count lines.
           if (prevHeight !== nextDiv.clientHeight && nextDiv.clientHeight - prevHeight > 30) {
             lines += 1;
+            wordsInLine = 0;
             prevHeight = nextDiv.clientHeight;
           }
           nextDivMarkdown += prevToken ? prevToken.text : '';
           // Cut on . and , if last line.
-          if (lines === 4 && [',', '.'].includes(prevToken.text[prevToken.text.length - 1])) {
-            newSlide(prevToken);
-
-            prevToken = token;
-            prevRestIndex = restIndex;
-            ({token, restIndex} = Tokenize(stack, restIndex, markdown));
-            ({type, text, stack} = token);
-          } else {
-            nextDiv.innerHTML = md.render(nextDivMarkdown + text + 
-              // We want to add potential closing markdown tokens.
-              (!OPEN_CLOSE_TOKENS.includes(type) ?
-                stack.slice().filter(t => !HEADER_TOKENS.includes(t)).reverse().map(t =>TokenTypeToText(t)).join('')
-                : ''));
-
-            prevToken = token;
-            prevRestIndex = restIndex;
-            ({token, restIndex} = Tokenize(stack, restIndex, markdown));
-            ({type, text, stack} = token);
+          const lastChar = prevToken && prevToken.text[prevToken.text.length - 1];
+          if ([3,4].includes(lines) && [',', '.'].includes(lastChar)) {
+            const nextToken = Tokenize(stack, restIndex, markdown);
+            lastLineCutoffs.push({
+              // Sort the cutoffs, dots more important then commas,
+              // last more important then first.
+              score: lastChar === '.' ? (lines * 1000 + wordsInLine) : (lines * 100 + wordsInLine),
+              lastToken: token,
+              lastRestIndex: restIndex,
+              token: nextToken.token,
+              restIndex: nextToken.restIndex,
+              nextDivMarkdown
+            });
           }
+          nextDiv.innerHTML = md.render(nextDivMarkdown + text + 
+            // We want to add potential closing markdown tokens.
+            (!OPEN_CLOSE_TOKENS.includes(type) ?
+              stack.slice().filter(t => !HEADER_TOKENS.includes(t)).reverse().map(t =>TokenTypeToText(t)).join('')
+              : ''));
+
+          prevToken = token;
+          prevRestIndex = restIndex;
+          ({token, restIndex} = Tokenize(stack, restIndex, markdown));
+          ({type, text, stack} = token);
+          wordsInLine++;
         } else {
-          newSlide(prevToken);
+          ({token, prevToken, restIndex, prevRestIndex} = newSlide(prevToken, token, restIndex));
         }
       }
       // Add last token
