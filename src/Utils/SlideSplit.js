@@ -4,7 +4,7 @@ import markdownit from "markdown-it";
 import TurndownService from 'turndown';
 
 export const createMarkdownit = () => {
-  return markdownit({ html: true, breaks: true }).disable(['lheading', 'list']);
+  return markdownit({ html: true, breaks: false }).disable(['lheading', 'list']);
 }
 
 export const sourceToMarkdown = (simpleHtml) => {
@@ -61,7 +61,7 @@ export const sourceToMarkdown = (simpleHtml) => {
   turndownService.addRule('paragraph', {
     filter: 'p',
     replacement: function (content) {
-      return content.trim() + "\n";
+      return content.trim() + "\n\n";
     }
   });
 

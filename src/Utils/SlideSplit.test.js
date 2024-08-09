@@ -8,7 +8,13 @@ import {
   TOKEN_SEPARATOR,
   TOKEN_TEXT,
   Tokenize,
+  createMarkdownit,
 } from "./SlideSplit";
+
+test('Markdown only two endlines to <p>', () => {
+  const md = createMarkdownit();
+  expect(md.render('test\none\nor\n\ntwo endlines')).toBe('<p>test\none\nor</p>\n<p>two endlines</p>\n');
+});
 
 test('Tokenize, sanity check', () => {
   const testText = 'token is good';
