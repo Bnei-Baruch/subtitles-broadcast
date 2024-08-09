@@ -3,6 +3,10 @@ import { useRef, useEffect } from "react";
 import markdownit from "markdown-it";
 import TurndownService from 'turndown';
 
+export const createMarkdownit = () => {
+  return markdownit({ html: true, breaks: false }).disable(['lheading', 'list']);
+}
+
 export const sourceToMarkdown = (simpleHtml) => {
   const turndownService = new TurndownService();
   turndownService.addRule('h1', {
@@ -57,7 +61,7 @@ export const sourceToMarkdown = (simpleHtml) => {
   turndownService.addRule('paragraph', {
     filter: 'p',
     replacement: function (content) {
-      return content.trim() + "\n";
+      return content.trim() + "\n\n";
     }
   });
 
@@ -250,7 +254,7 @@ const CutNonVisibleEndings = (slideText) => {
 
 export const SplitToSlides = ({markdown, updateSlides, active = false, visible = false}) => {
   const divRef = useRef(null);
-  const md = markdownit({ html: true, breaks: true }).disable(['lheading']);;
+  const md = createMarkdownit();
   // console.log('markdown', markdown);
 
   useEffect(() => {

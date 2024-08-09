@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import markdownit from "markdown-it";
+import { createMarkdownit } from "../Utils/SlideSplit";
 
 export const Slide = ({ content, isLtr, searchKeyword }) => {
   const outerRef = useRef();
   const slideRef = useRef();
-  const md = markdownit({ html: true, breaks: true }).disable(['lheading']);;
+  const md = createMarkdownit();
   const backgroundColor = "#01cd27";
 
   const handleResize = () => {
