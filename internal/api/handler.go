@@ -984,20 +984,41 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Path       string         `json:"path"`
 	}
 	paths := []*SourcePathData{}
-	result := h.Database.Debug().WithContext(ctx).
-		Select("DISTINCT ON (source_paths.path, source_paths.source_uid) slides.id AS slide_id, "+
-			"bookmarks.id AS bookmark_id, "+
-			"source_paths.source_uid AS source_uid, "+
-			"files.file_uid AS file_uid, "+
-			"source_paths.languages AS languages, "+
-			"source_paths.path AS path," +
-      "RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number").
-		Table("slides").
-		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
-		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
-		Where("? = ANY(files.languages) AND source_paths.path ILIKE ?", language, "%"+keyword+"%").
-		Order("source_paths.path, source_paths.source_uid").Limit(listLimit).Offset(offset).Scan(&paths)
+  limitSql := fmt.Sprintf(" LIMIT %d", listLimit)
+  offsetSql := fmt.Sprintf(" OFFSET %d", offset)
+  fields := `
+    slides.id AS slide_id,
+    bookmarks.id AS bookmark_id,
+    source_paths.source_uid AS source_uid,
+    files.file_uid AS file_uid,
+    source_paths.languages AS languages,
+    source_paths.path AS path,
+    RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number
+  `
+  orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
+  templateSql := `
+    SELECT
+      %s
+      %s
+    FROM "slides"
+    LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = '%s'
+    INNER JOIN files ON slides.file_uid = files.file_uid
+    INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages
+    WHERE TRUE
+      AND '%s' = ANY(files.languages)
+      AND source_paths.path ILIKE '%%%s%%'
+  `
+  querySql := fmt.Sprintf(templateSql,
+      "DISTINCT ON (source_paths.path, source_paths.source_uid)",
+      fields, userId, language, keyword)
+  countQuerySql := fmt.Sprintf(templateSql,
+      "COUNT(DISTINCT (source_paths.path, source_paths.source_uid))",
+      "", userId, language, keyword)
+  // Count total.
+  h.Database.Debug().WithContext(ctx).Raw(countQuerySql).Scan(&totalRows)
+  // Get specific page.
+  result := h.Database.Debug().WithContext(ctx).Raw(
+      querySql + orderBySql + limitSql + offsetSql).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -1011,7 +1032,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Pagination: &Pagination{
 			Limit:      listLimit,
 			Page:       page,
-			TotalRows:  int64(len(paths)),
+			TotalRows:  totalRows,
 			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
 		},
 		Paths: paths,
