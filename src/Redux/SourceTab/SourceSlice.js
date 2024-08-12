@@ -107,7 +107,12 @@ export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}bookmark/${data.bookmark_id}`);
-    thunkAPI.dispatch(GetAllSourcePathData({ language: data.language, keyword: data.search_keyword }));
+    thunkAPI.dispatch(GetAllSourcePathData({
+      language: data.language,
+      keyword: data.search_keyword,
+      page: data.page, 
+      limit: data.limit,
+    }));
     thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
     return response.data;
   }

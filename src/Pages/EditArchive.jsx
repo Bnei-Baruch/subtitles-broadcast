@@ -280,42 +280,11 @@ const EditArcive = ({ handleClose }) => {
       {ConfirmationMessage}
       <div className="archiveBackground bg-light Edit">
         <div className="card border-0">
-          <span>
-            <i
-              onClick={handleClose}
-              className="bi bi-chevron-left me-1 cursor-pointer "
-            >
-              Back to all documents
-            </i>
-          </span>
-          <div className="top-row d-flex justify-content-between align-items-center mb-4">
+          <div className="top-row d-flex justify-content-between align-items-center">
             <h3 className="m-0">Edit Subtitle</h3>
-            <div className="form-sec position-relative">
-              <input
-                className="form-control input"
-                type="search"
-                placeholder="Search in the article..."
-                aria-label="Search"
-              />
-              <button
-                type="button"
-                className="btn btn-tr position-absolute end-0 top-0  mt-1"
-              >
-                {" "}
-                <img alt="vector" width="22px" src="image/Vector.svg" />
-              </button>
-            </div>
-          </div>
-          <div className="innerhead d-flex justify-content-end align-items-end mb-5">
-            <button type="button" onClick={() => rerun()} className="btn btn-tr">Re-run</button>
-            <div className="button-box group-new">
-              <button
-                type="button"
-                onClick={() => setIsLtr(!isLtr)}
-                className="btn btn-tr"
-              >
-                {isLtr ? "LTR" : "RTL"}
-              </button>
+            <div>
+              <button type="button" onClick={() => rerun()} className="btn cancel">Re-run</button>
+              <button type="button" onClick={() => setIsLtr(!isLtr)} className="btn cancel">{isLtr ? "LTR" : "RTL"}</button>
               <button
                 onClick={() => {
                   const addNewSlides = slideListData

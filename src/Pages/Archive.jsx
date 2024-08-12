@@ -39,6 +39,13 @@ const Archive = () => {
     });
   };
 
+  useEffect(() => {
+    setPageIndex({
+      startIndex: ((page.page - 1) * page.limit) + 1,
+      endIndex: Math.min((page.page) * page.limit, archiveList?.pagination?.total_rows, Number.MAX_VALUE),
+    });
+  }, [archiveList]);
+
   const message = "";
   const [editSlide, setEditSlide] = useState("");
   const [fileUidForDeleteSlide, setFileUidForDeleteSlide] = useState(
@@ -59,18 +66,19 @@ const Archive = () => {
     update: "",
     order: "",
   });
-  // const [bookmarkId, setBookmarkId] = useState();
 
   useEffect(() => {
-    dispatch(
-      GetAllArchiveData({
-        language: appContextlData.broadcastLang.label,
-        page: page.page,
-        limit: page.limit,
-        keyword: localStorage?.getItem("free-text"),
-      })
-    );
-  }, [page.page, page.limit, appContextlData.broadcastLang.label]);
+    if (!editSlide) {
+      dispatch(
+        GetAllArchiveData({
+          language: appContextlData.broadcastLang.label,
+          page: page.page,
+          limit: page.limit,
+          keyword: localStorage?.getItem("free-text"),
+        })
+      );
+    }
+  }, [editSlide, page.page, page.limit, appContextlData.broadcastLang.label]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -126,9 +134,10 @@ const Archive = () => {
             setFinalConfirm={() => {
               dispatch(
                 BookmarkSlideFromArchivePage({
+                  search_keyword: localStorage.getItem("free-text"),
                   data: bookmarkData,
                   language: appContextlData.broadcastLang.label,
-                  params: { page: page.page, limit: page.limit },
+                  params: page,
                 })
               );
             }}
@@ -263,7 +272,9 @@ const Archive = () => {
                                   UnBookmarkSlide({
                                     search_keyword: localStorage.getItem("free-text"),
                                     bookmark_id: key.bookmark_id,
-                                    language: appContextlData.broadcastLang.label
+                                    language: appContextlData.broadcastLang.label,
+                                    page: page.page,
+                                    limit: page.limit,
                                   })
                                 );
                                 setBookmarkData({
@@ -291,10 +302,7 @@ const Archive = () => {
                                       )?.length
                                     },
                                     language: appContextlData.broadcastLang.label,
-                                    params: {
-                                      page: page.page,
-                                      limit: page.limit,
-                                    },
+                                    params: page,
                                   })
                                 ).then((res) => {
                                   if (

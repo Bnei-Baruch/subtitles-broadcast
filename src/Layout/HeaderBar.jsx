@@ -32,11 +32,10 @@ const HeaderBar = ({ logout }) => {
     setFreeText(t);
     localStorage?.setItem("free-text", t);
   }
+
   const DebouncingFreeText = useDebounce(freeText, 500);
   useEffect(() => {
-    if (param.pathname !== "/archive") {
-      updateFreeText("");
-    }
+    updateFreeText("");
   }, [param.pathname]);
 
   useEffect(() => {
@@ -92,7 +91,6 @@ const HeaderBar = ({ logout }) => {
                 sessionStorage.setItem("headerSearchKeyword", "");
               }}
               onChange={(e) => {
-                console.log("hi");
                 sessionStorage.setItem("headerSearchKeyword", e.target.value);
                 updateFreeText(e.target.value);
               }}
@@ -155,24 +153,8 @@ const HeaderBar = ({ logout }) => {
               </li>
             </ul>
           </div>
-          {/* <div className="btn-group list-btn">
-            <button
-              className="btn btn-secondary dropdown-toggle"
-              type="button"
-              data-bs-toggle="dropdown"
-            >
-              <img
-                alt="button"
-                className=""
-                src="image/Globe.svg"
-                id="dropdownMenuButton1"
-                data-bs-toggle="dropdown"
-              />
-              <span className="m-2">EN</span>
-            </button>
-          </div> */}
         </div>
-      </div >
+      </div>
     </>
   );
 };

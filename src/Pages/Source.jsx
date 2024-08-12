@@ -54,7 +54,13 @@ const Source = () => {
   });
   const languages = GetLangaugeCode();
   const navigate = useNavigate();
-  // const [bookmarkId, setBookmarkId] = useState();
+
+  useEffect(() => {
+    setPageIndex({
+      startIndex: ((page.page - 1) * page.limit) + 1,
+      endIndex: Math.min((page.page) * page.limit, sourcePathList?.pagination?.total_rows, Number.MAX_VALUE),
+    });
+  }, [sourcePathList]);
 
   useEffect(() => {
     dispatch(
@@ -62,6 +68,7 @@ const Source = () => {
         language: appContextlData.broadcastLang.label,
         page: page.page,
         limit: page.limit,
+        keyword: sessionStorage.getItem("headerSearchKeywordSource"),
       })
     );
   }, [page.page, page.limit, appContextlData.broadcastLang.label]);
@@ -106,9 +113,10 @@ const Source = () => {
             setFinalConfirm={() => {
               dispatch(
                 BookmarkSlideFromArchivePage({
+                  search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
                   data: bookmarkData,
                   language: appContextlData.broadcastLang.label,
-                  params: { page: page.page, limit: page.limit },
+                  params: page,
                 })
               );
             }}
@@ -233,7 +241,9 @@ const Source = () => {
                                 UnBookmarkSlide({
                                   search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
                                   bookmark_id: key.bookmark_id,
-                                  language: appContextlData.broadcastLang.label
+                                  language: appContextlData.broadcastLang.label,
+                                  page: page.page,
+                                  limit: page.limit,
                                 })
                               );
                               setBookmarkData({
@@ -271,10 +281,7 @@ const Source = () => {
                                       )?.length
                                     },
                                     language: appContextlData.broadcastLang.label,
-                                    params: {
-                                      page: page.page,
-                                      limit: page.limit,
-                                    },
+                                    params: page,
                                   })
                                 ).then((res) => {
                                   if (
