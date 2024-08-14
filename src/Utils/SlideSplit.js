@@ -240,16 +240,26 @@ export const Tokenize = (stack, index, text) => {
 
 const CutNonVisibleEndings = (slideText) => {
   let from = 0;
+  let newLinesStart = 0;
   for (; from < slideText.length; from++) {
     if (![SEPARATOR, ...NEW_LINE].includes(slideText[from])) {
       break;
     }
+    if (NEW_LINE.includes(slideText[from])) {
+      newLinesStart++;
+    }
   }
+  let newLinesEnd = 0;
   for (let to = slideText.length - 1; to >= 0; to--) {
+    if (NEW_LINE.includes(slideText[to])) {
+      newLinesEnd++;
+    }
     if ([SEPARATOR, '#', ...NEW_LINE].includes(slideText[to])) {
       continue;
     }
-    return slideText.slice(from, to+1);
+    return (newLinesStart >= 2 ? '\r\r' : '') +
+      slideText.slice(from, to+1) +
+      (newLinesEnd >= 2 ? '\r\r' : '');
   }
   return '';
 }
@@ -354,13 +364,15 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
             lastLineCutoffs.push({
               // Sort the cutoffs, dots more important then commas,
               // last more important then first.
-              score: lastChar === '.' ? (lines * 1000 + wordsInLine) : (lines * 100 + wordsInLine),
+              score: lastChar === ',' ? (lines * 100 + wordsInLine) : (lines * 1000 + wordsInLine),
               lastToken: token,
               lastRestIndex: restIndex,
               token: nextToken.token,
               restIndex: nextToken.restIndex,
               nextDivMarkdown
             });
+          } else if (prevToken && prevToken.type === TOKEN_NEWLINE) {
+            lastLineCutoffs = [];
           }
           nextDiv.innerHTML = md.render(nextDivMarkdown + text + 
             // We want to add potential closing markdown tokens.
