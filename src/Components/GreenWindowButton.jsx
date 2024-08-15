@@ -198,6 +198,7 @@ export const GreenWindowButton = (props) => {
                       ? contextMqttMessage.isLtr
                       : props.isLtr
                   }
+                  isQuestion={contextMqttMessage.type === "question"}
                 ></Slide>
               )}
             </div>

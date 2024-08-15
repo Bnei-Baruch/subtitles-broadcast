@@ -194,6 +194,7 @@ const QuestionMessage = (props) => {
               <Slide
                 content={obj.orgSlide ? obj.orgSlide : obj.slide}
                 isLtr={languageIsLtr(obj.lang)}
+                isQuestion={obj.type === "question"}
               ></Slide>
             </div>
           ))}
@@ -209,6 +210,7 @@ const QuestionMessage = (props) => {
               <Slide
                 content={obj.slide}
                 isLtr={languageIsLtr(obj.lang)}
+                isQuestion={obj.type === "question"}
               ></Slide>
             </div>
           ))}

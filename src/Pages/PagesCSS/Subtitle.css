@@ -183,14 +183,31 @@ bdo {
 .slide-container {
   width: 100%;
 }
+
+.slide-container .blue-stripe {
+  height : 0;
+}
+
+.slide-container .grey-stripe {
+  height : 0;
+}
+
+.slide-container.slide-question .blue-stripe {
+  height : 3px;
+  background-color: rgb(73, 152, 248);
+}
+
+.slide-container.slide-question .grey-stripe {
+  height : 3px;
+  background-color: rgb(200, 204, 205);
+}
+
 .slideNumber {
   font-family: Nunito;
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;
   text-align: left;
-}
-.custom-pagination {
 }
 .slide-content {
   position: absolute;

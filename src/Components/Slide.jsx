@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { createMarkdownit } from "../Utils/SlideSplit";
 
-export const Slide = ({ content, isLtr, searchKeyword }) => {
+export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const md = createMarkdownit();
@@ -39,7 +39,11 @@ export const Slide = ({ content, isLtr, searchKeyword }) => {
   }, [content, md]);
 
   return (
-    <div ref={outerRef} className="slide-container">
+    <div ref={outerRef} className={(isQuestion ? "slide-question" : "") + " slide-container"}>
+      <div>
+        <div className="blue-stripe"></div>
+        <div className="grey-stripe"></div>
+      </div>
       <div
         ref={slideRef}
         className={`slide-content  ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}

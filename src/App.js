@@ -89,7 +89,7 @@ const App = ({ auth }) => {
     const message = data.detail.message;
 
     mqttPublush(mqttTopic, message).then(() => {
-      console.log("App mqttPublushed", data);
+      // console.log("App mqttPublushed", data);
     });
   };
 

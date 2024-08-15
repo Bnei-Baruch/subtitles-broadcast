@@ -29,7 +29,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
-  const qstSwapTime = 5000; //7 sec.
+  const qstSwapTime = 5000;  // 5s
   const appContextlData = useContext(AppContext);
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
@@ -677,6 +677,7 @@ export function ActiveSlideMessaging(props) {
                   ? contextMqttMessage.isLtr
                   : props.isLtr
               }
+              isQuestion={contextMqttMessage.type === "question"}
             ></Slide>
           )}
         </div>
