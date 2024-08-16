@@ -26,6 +26,8 @@ export const SetCustomSlideBySource = createAsyncThunk(
       file_uid: data.file_uid,
       left_to_right: data.left_to_right,
       slides: data.slides,
+      slides_types: Array.from({length: data.slides.length}, (v, i) => 'subtitle'),
+
     };
     try {
       const response = await axios.post(`${API}custom_slide`, requestBody);

@@ -148,21 +148,23 @@ const EditArcive = ({ handleClose }) => {
     }
 
     const updateSlideList = slideListData?.map(
-      ({ ID, slide, order_number }, index) => ({
+      ({ ID, slide, order_number, slide_type }, index) => ({
         slide_id: ID,
         slide,
         left_to_right: isLtr,
         order_number: order_number,
+        slide_type,
       })
     );
 
     const addNewSlideList = updateSlideList
       ?.filter(({ slide_id }) => slide_id === undefined)
-      ?.map(({ slide, order_number }) => ({
+      ?.map(({ slide, order_number, slide_type }) => ({
         slide,
         order_number,
         left_to_right: isLtr,
         file_uid: slideListData[0]?.file_uid,
+        slide_type,
       }));
 
     if (addNewSlideList?.length > 0) {
