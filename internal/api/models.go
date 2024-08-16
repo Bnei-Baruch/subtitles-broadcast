@@ -45,6 +45,7 @@ type Slide struct {
 	LeftToRight bool      `json:"left_to_right"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+  SlideType   string    `json:"slide_type"`
 }
 
 type SlideDetail struct {

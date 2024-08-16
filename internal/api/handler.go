@@ -132,6 +132,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		Slide       string `json:"slide"`
 		OrderNumber int    `json:"order_number"`
 		LeftToRight bool   `json:"left_to_right"`
+    SlideType   string `json:"slide_type"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -153,6 +154,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			Slide:       req.Slide,
 			OrderNumber: req.OrderNumber,
 			LeftToRight: req.LeftToRight,
+      SlideType:   req.SlideType,
 		}).Error; err != nil {
 			tx.Rollback()
 			log.Error(err)
@@ -178,6 +180,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		SourceUid   string   `json:"source_uid"`
 		FileUid     string   `json:"file_uid"`
 		Slides      []string `json:"slides"`
+		SlidesTypes []string `json:"slides_types"`
 		LeftToRight bool     `json:"left_to_right"`
 	}{}
 	err := ctx.BindJSON(&req)
@@ -252,6 +255,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			LeftToRight: req.LeftToRight,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
+      SlideType:   req.SlidesTypes[idx],
 		}
 		if len(req.FileUid) > 0 {
 			slideData.FileUid = req.FileUid
@@ -380,6 +384,7 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 		Slide       string `json:"slide"`
 		OrderNumber int    `json:"order_number"`
 		LeftToRight bool   `json:"left_to_right"`
+		SlideType   string `json:"slide_type"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -394,21 +399,26 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	updateQuery := "UPDATE slides AS s SET slide = r.slide, order_number = r.order_number, left_to_right = r.left_to_right, updated_at = ? "
+	updateQuery := `UPDATE slides AS s SET
+    slide = r.slide,
+    order_number = r.order_number,
+    left_to_right = r.left_to_right,
+    slide_type = r.slide_type,
+    updated_at = ? `
 	whereQuery := "WHERE s.id = r.slide_id"
 	valuesQuery := []string{}
 	placeholders := []interface{}{}
 
 	for _, req := range reqs {
 		// Use a placeholder for req.Slide and escape any special characters
-		value := fmt.Sprintf("(%d, ?, %d, %t)", req.SlideID, req.OrderNumber, req.LeftToRight)
+		value := fmt.Sprintf("(%d, ?, %d, %t, '%s')", req.SlideID, req.OrderNumber, req.LeftToRight, req.SlideType)
 		valuesQuery = append(valuesQuery, value)
 
 		// Append Slide value to placeholders
 		placeholders = append(placeholders, req.Slide)
 	}
 
-	withQuery := "WITH reqs(slide_id, slide, order_number, left_to_right) AS (VALUES " + strings.Join(valuesQuery, ", ") + ") "
+	withQuery := "WITH reqs(slide_id, slide, order_number, left_to_right, slide_type) AS (VALUES " + strings.Join(valuesQuery, ", ") + ") "
 	query := withQuery + updateQuery + "FROM reqs AS r " + whereQuery
 
 	// Append the timestamp placeholder to the placeholders slice
