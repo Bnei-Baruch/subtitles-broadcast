@@ -431,6 +431,16 @@ const EditArcive = ({ handleClose }) => {
                       />
                     )}
                     {index == selected && (
+                      <i
+                        onClick={() => {
+                          const cloneSlidedataArray = [...slideListData];
+                          cloneSlidedataArray[index] ={...cloneSlidedataArray[index]};
+                          cloneSlidedataArray[index].slide_type = key.slide_type === 'question' ? 'subtitle' : 'question';
+                          setSlideListData(cloneSlidedataArray);
+                        }}
+                        className={(key.slide_type === 'question' ? 'bi-question-circle' : 'bi-card-text') + ' bi delete-icon'} style={{ color: 'black', [isLtr ? 'right' : 'left']: '56px' }} />
+                    )}
+                    {index == selected && (
                       <i onClick={() => rerun()} className="bi bi-bootstrap-reboot delete-icon " style={{ color: 'black', [isLtr ? 'right' : 'left']: '30px' }} />
                     )}
                     {index == selected && (
@@ -451,9 +461,10 @@ const EditArcive = ({ handleClose }) => {
                           cloneSlidedataArray.splice(index + 1, 0, {
                             // slide_id: +key?.ID + 1,
                             file_uid: key?.file_uid,
-                            slide: "",
+                            slide: '',
                             //order_number: key?.order_number + additionalOrderNumber,
                             addedNew: true,
+                            slide_type: 'subtitle',
                           });
                           const updatedSlideListData = cloneSlidedataArray.map((slide, i) => {
                             const updatedOrderNumber = Math.floor(i / key.languages.length);
@@ -479,6 +490,7 @@ const EditArcive = ({ handleClose }) => {
                     <Slide
                       content={key?.slide}
                       isLtr={isLtr}
+                      isQuestion={key?.slide_type === 'question'}
                     />
                   </div>
                 </div>

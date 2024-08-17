@@ -254,7 +254,7 @@ const Archive = () => {
                       >
                         <td style={{ padding: "10px" }}>
                           <div className="" style={{ outline: "solid", position: "relative" }}>
-                            <Slide content={key.slide} isLtr={key.left_to_right} />
+                            <Slide content={key.slide} isLtr={key.left_to_right} isQuestion={key.slide_type === 'question'} />
                           </div>
                         </td>
                         <td

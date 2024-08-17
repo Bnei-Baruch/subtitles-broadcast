@@ -57,7 +57,7 @@ const BookContent = ({
                 className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
                 dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
               > */}
-              <Slide content={item?.slide} isLtr={isLtr} searchKeyword={searchKeyword}></Slide>
+              <Slide content={item?.slide} isLtr={isLtr} searchKeyword={searchKeyword} isQuestion={item?.slide_type === 'question'}></Slide>
               {/* </bdo> */}
               <span className="order-number">{`${item?.languages.length > 1 ? item?.languages[+index % item?.languages.length] : item?.languages[0]} ${+item.order_number + 1}`}</span>
             </div>

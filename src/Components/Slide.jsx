@@ -40,7 +40,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
 
   return (
     <div ref={outerRef} className={(isQuestion ? "slide-question" : "") + " slide-container"}>
-      <div>
+      <div className="stripes">
         <div className="blue-stripe"></div>
         <div className="grey-stripe"></div>
       </div>
