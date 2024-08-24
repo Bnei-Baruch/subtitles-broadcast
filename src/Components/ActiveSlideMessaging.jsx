@@ -29,7 +29,7 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
-  const qstSwapTime = 5000;  // 5s
+  const qstSwapTime = 5000; // 5s
   const appContextlData = useContext(AppContext);
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
@@ -139,6 +139,7 @@ export function ActiveSlideMessaging(props) {
         slide: slide.slide,
         source_uid: slide.source_uid,
         date: new Date().toUTCString(),
+        isLtr: slide.left_to_right === false ? false : true,
       };
 
       publishEvent("mqttPublush", {

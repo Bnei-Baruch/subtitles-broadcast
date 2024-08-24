@@ -11,9 +11,7 @@ import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
 import { SplitToSlides } from "../Utils/SlideSplit";
-import {
-  GetAllArchiveData,
-} from "../Redux/ArchiveTab/ArchiveSlice";
+import { GetAllArchiveData } from "../Redux/ArchiveTab/ArchiveSlice";
 
 const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
@@ -39,7 +37,10 @@ const EditArcive = ({ handleClose }) => {
         limit: 2000,
       })
     ).then((response) => {
-      if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
+      if (
+        response.payload.data?.slides &&
+        response.payload.data?.slides.length > 0
+      ) {
         setSlideListData(response.payload.data.slides);
         setSlideTextListCopy(response.payload.data.slides);
         setIsLtr(response.payload.data.slides[0].left_to_right);
@@ -51,8 +52,10 @@ const EditArcive = ({ handleClose }) => {
     const performUpdates = async () => {
       let i = 0;
       // Create a mutable copy of the array and its objects
-      let mutableSlideTextListCopy = slideTextListCopy.map(item => ({ ...item }));
-      let currentSlide = parseInt(localStorage.getItem("myIndex"), 10)
+      let mutableSlideTextListCopy = slideTextListCopy.map((item) => ({
+        ...item,
+      }));
+      let currentSlide = parseInt(localStorage.getItem("myIndex"), 10);
       mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
       for (; i < mutableSlideTextListCopy.length; i++) {
         if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
@@ -69,7 +72,7 @@ const EditArcive = ({ handleClose }) => {
             slide_id: mutableSlideTextListCopy[j].ID,
             slide: updatedSlideTextList[j],
             order_number: mutableSlideTextListCopy[j].order_number,
-            left_to_right: mutableSlideTextListCopy[j].left_to_right
+            left_to_right: mutableSlideTextListCopy[j].left_to_right,
           };
           updateSlideList.push(slideData);
         }
@@ -82,36 +85,51 @@ const EditArcive = ({ handleClose }) => {
         if (mutableSlideTextListCopy.length < updatedSlideTextList.length) {
           // Add
           let addNewSlideList = [];
-          for (let j = mutableSlideTextListCopy.length; j < updatedSlideTextList.length; j++) {
+          for (
+            let j = mutableSlideTextListCopy.length;
+            j < updatedSlideTextList.length;
+            j++
+          ) {
             const slideData = {
               file_uid: mutableSlideTextListCopy[0].file_uid,
               slide: updatedSlideTextList[j],
-              order_number: mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1].order_number + (j - mutableSlideTextListCopy.length + 1),
-              left_to_right: mutableSlideTextListCopy[0].left_to_right
-            }
-            addNewSlideList.push(slideData)
+              order_number:
+                mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1]
+                  .order_number +
+                (j - mutableSlideTextListCopy.length + 1),
+              left_to_right: mutableSlideTextListCopy[0].left_to_right,
+            };
+            addNewSlideList.push(slideData);
           }
           if (addNewSlideList.length > 0) {
-            await dispatch(addNewSlide({
-              list: addNewSlideList,
-              language: appContextlData.broadcastLang.label
-            }));
+            await dispatch(
+              addNewSlide({
+                list: addNewSlideList,
+                language: appContextlData.broadcastLang.label,
+              })
+            );
           }
         } else {
           // Delete
           let deleteSlideIds = [];
-          for (let j = updatedSlideTextList.length; j < mutableSlideTextListCopy.length; j++) {
+          for (
+            let j = updatedSlideTextList.length;
+            j < mutableSlideTextListCopy.length;
+            j++
+          ) {
             deleteSlideIds.push(mutableSlideTextListCopy[j].ID);
           }
           if (deleteSlideIds.length > 0) {
             const deleteParams = {
               force_delete_bookmarks: true,
-              slide_ids: deleteSlideIds
-            }
-            await dispatch(deleteNewSlide({
-              data: deleteParams,
-              language: appContextlData.broadcastLang.label
-            }));
+              slide_ids: deleteSlideIds,
+            };
+            await dispatch(
+              deleteNewSlide({
+                data: deleteParams,
+                language: appContextlData.broadcastLang.label,
+              })
+            );
           }
         }
       }
@@ -122,12 +140,15 @@ const EditArcive = ({ handleClose }) => {
           file_uid: localStorage.getItem("file_uid_for_edit_slide"),
         })
       ).then((response) => {
-        if (response.payload.data?.slides && response.payload.data?.slides.length > 0) {
+        if (
+          response.payload.data?.slides &&
+          response.payload.data?.slides.length > 0
+        ) {
           setSlideListData(response.payload.data.slides);
-          setSlideTextListCopy(response.payload.data.slides)
+          setSlideTextListCopy(response.payload.data.slides);
         }
       });
-    }
+    };
 
     performUpdates();
   }, [updatedSlideTextList]);
@@ -141,17 +162,19 @@ const EditArcive = ({ handleClose }) => {
         force_delete_bookmarks: shouldForceDelete,
         slide_ids: deleted,
       };
-      dispatch(deleteNewSlide({
-        data: deleteParams,
-        language: appContextlData.broadcastLang.label
-      }));
+      dispatch(
+        deleteNewSlide({
+          data: deleteParams,
+          language: appContextlData.broadcastLang.label,
+        })
+      );
     }
 
     const updateSlideList = slideListData?.map(
-      ({ ID, slide, order_number, slide_type }, index) => ({
+      ({ ID, slide, order_number, slide_type, left_to_right }, index) => ({
         slide_id: ID,
         slide,
-        left_to_right: isLtr,
+        left_to_right: left_to_right === false ? false : true,
         order_number: order_number,
         slide_type,
       })
@@ -162,16 +185,21 @@ const EditArcive = ({ handleClose }) => {
       ?.map(({ slide, order_number, slide_type }) => ({
         slide,
         order_number,
-        left_to_right: isLtr,
+        left_to_right:
+          slideListData[0] && slideListData[0].left_to_right === false
+            ? false
+            : true,
         file_uid: slideListData[0]?.file_uid,
         slide_type,
       }));
 
     if (addNewSlideList?.length > 0) {
-      dispatch(addNewSlide({
-        list: addNewSlideList,
-        language: appContextlData.broadcastLang.label
-      }));
+      dispatch(
+        addNewSlide({
+          list: addNewSlideList,
+          language: appContextlData.broadcastLang.label,
+        })
+      );
     }
 
     if (updateSlideList?.length > 0) {
@@ -252,7 +280,7 @@ const EditArcive = ({ handleClose }) => {
         slide_id: slideListData[i].ID,
         slide: slideListData[i].slide,
         order_number: slideListData[i].order_number,
-        left_to_right: slideListData[i].left_to_right
+        left_to_right: slideListData[i].left_to_right,
       };
       updateSlideList.push(slideData);
     }
@@ -271,10 +299,10 @@ const EditArcive = ({ handleClose }) => {
         newSlideTextList.push(word);
       }
     }
-    setWholeText(parts.join('\r'));
+    setWholeText(parts.join("\r"));
     setSplit(true);
     setSlideTextList(newSlideTextList);
-  }
+  };
 
   return (
     <>
@@ -285,8 +313,20 @@ const EditArcive = ({ handleClose }) => {
           <div className="top-row d-flex justify-content-between align-items-center">
             <h3 className="m-0">Edit Subtitle</h3>
             <div>
-              <button type="button" onClick={() => rerun()} className="btn cancel">Re-run</button>
-              <button type="button" onClick={() => setIsLtr(!isLtr)} className="btn cancel">{isLtr ? "LTR" : "RTL"}</button>
+              <button
+                type="button"
+                onClick={() => rerun()}
+                className="btn cancel"
+              >
+                Re-run
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLtr(!isLtr)}
+                className="btn cancel"
+              >
+                {isLtr ? "LTR" : "RTL"}
+              </button>
               <button
                 onClick={() => {
                   const addNewSlides = slideListData
@@ -331,7 +371,7 @@ const EditArcive = ({ handleClose }) => {
         <div className="container">
           {slideListData?.length > 0 &&
             slideListData?.map((key, index) => (
-              < div className="row" >
+              <div className="row">
                 <div
                   className={`col-md-6 mb-2`}
                   onClick={() => {
@@ -340,42 +380,61 @@ const EditArcive = ({ handleClose }) => {
                   }}
                 >
                   <div
-                    className={`adjustable-font box box2 ${index == selected && "EditActiveSlide"
-                      }`}
+                    className={`adjustable-font box box2 ${
+                      index == selected && "EditActiveSlide"
+                    }`}
                   >
                     <textarea
                       value={key?.slide}
                       onKeyDown={(e) => {
                         const textArea = e.target;
                         let textAreaParent = textArea.parentElement;
-                        if (e.keyCode === 8 && textArea.selectionStart === 0 && index > 0) {
+                        if (
+                          e.keyCode === 8 &&
+                          textArea.selectionStart === 0 &&
+                          index > 0
+                        ) {
                           // Move first line to previous text-area
-                          while (!!textAreaParent && !textAreaParent.className.includes('row')) {
+                          while (
+                            !!textAreaParent &&
+                            !textAreaParent.className.includes("row")
+                          ) {
                             textAreaParent = textAreaParent.parentElement;
                           }
-                          if (textAreaParent && textAreaParent.previousElementSibling) {
-                            const prevTextArea = textAreaParent.previousElementSibling.querySelector('textarea');
+                          if (
+                            textAreaParent &&
+                            textAreaParent.previousElementSibling
+                          ) {
+                            const prevTextArea =
+                              textAreaParent.previousElementSibling.querySelector(
+                                "textarea"
+                              );
                             if (prevTextArea) {
                               const cloneSlideDataArray = [...slideListData];
-                              const prevKey = slideListData[index-1];
+                              const prevKey = slideListData[index - 1];
                               let lines = key.slide.split(/[\r\n]/);
                               let offset = 0;
                               if (lines.length > 0) {
                                 offset = lines[0].length;
-                                cloneSlideDataArray[index-1] = {
+                                cloneSlideDataArray[index - 1] = {
                                   ...prevKey,
-                                  slide: cloneSlideDataArray[index-1].slide + '\n' + lines[0] + ' ',
+                                  slide:
+                                    cloneSlideDataArray[index - 1].slide +
+                                    "\n" +
+                                    lines[0] +
+                                    " ",
                                 };
                                 cloneSlideDataArray[index] = {
                                   ...key,
-                                  slide: key.slide.slice(offset+1),
-                                }
+                                  slide: key.slide.slice(offset + 1),
+                                };
 
                                 setSlideListData(cloneSlideDataArray);
                               }
-                              setSelected(index-1);
+                              setSelected(index - 1);
                               prevTextArea.focus();
-                              prevTextArea.selectionStart = prevTextArea.value.length;
+                              prevTextArea.selectionStart =
+                                prevTextArea.value.length;
                             }
                           }
                         }
@@ -384,8 +443,8 @@ const EditArcive = ({ handleClose }) => {
                         let newValue = e.target.value;
 
                         // Perform any special handling for \r if needed
-                        if (newValue.includes('\n')) {
-                          newValue = newValue.replace(/\n/g, '\r'); // Example: replace \r with a visible string representation
+                        if (newValue.includes("\n")) {
+                          newValue = newValue.replace(/\n/g, "\r"); // Example: replace \r with a visible string representation
                         }
 
                         const cloneSlideDataArray = [...slideListData];
@@ -409,7 +468,9 @@ const EditArcive = ({ handleClose }) => {
                       }}
                       key={index}
                       className=""
-                      style={{ direction: isLtr ? 'ltr' : 'rtl' }}
+                      style={{
+                        direction: key.left_to_right === false ? "rtl" : "ltr",
+                      }}
                     />
 
                     {index == selected && (
@@ -427,21 +488,77 @@ const EditArcive = ({ handleClose }) => {
                           }
                         }}
                         className="bi bi-trash3 delete-icon "
-                        style={{ [isLtr ? 'right' : 'left']: '5px' }}
+                        style={{
+                          [key.left_to_right === false ? "left" : "right"]:
+                            "5px",
+                        }}
                       />
                     )}
+
                     {index == selected && (
                       <i
                         onClick={() => {
                           const cloneSlidedataArray = [...slideListData];
-                          cloneSlidedataArray[index] ={...cloneSlidedataArray[index]};
-                          cloneSlidedataArray[index].slide_type = key.slide_type === 'question' ? 'subtitle' : 'question';
+                          cloneSlidedataArray[index] = {
+                            ...cloneSlidedataArray[index],
+                          };
+                          cloneSlidedataArray[index].left_to_right =
+                            key.left_to_right === false ? true : false;
                           setSlideListData(cloneSlidedataArray);
                         }}
-                        className={(key.slide_type === 'question' ? 'bi-question-circle' : 'bi-card-text') + ' bi delete-icon'} style={{ color: 'black', [isLtr ? 'right' : 'left']: '56px' }} />
+                        className={
+                          (key.left_to_right === false
+                            ? "bi-arrow-bar-left"
+                            : "bi-arrow-bar-right") + " bi delete-icon"
+                        }
+                        title={
+                          key.left_to_right === false
+                            ? "The slide is Right To Left. Change it to the Left To Right press the iccon"
+                            : "The slide is Left To Right. Change it to the Right To Left press the iccon"
+                        }
+                        style={{
+                          color: "black",
+                          [key.left_to_right === false ? "left" : "right"]:
+                            "86px",
+                        }}
+                      />
+                    )}
+
+                    {index == selected && (
+                      <i
+                        onClick={() => {
+                          const cloneSlidedataArray = [...slideListData];
+                          cloneSlidedataArray[index] = {
+                            ...cloneSlidedataArray[index],
+                          };
+                          cloneSlidedataArray[index].slide_type =
+                            key.slide_type === "question"
+                              ? "subtitle"
+                              : "question";
+                          setSlideListData(cloneSlidedataArray);
+                        }}
+                        className={
+                          (key.slide_type === "question"
+                            ? "bi-question-circle"
+                            : "bi-card-text") + " bi delete-icon"
+                        }
+                        style={{
+                          color: "black",
+                          [key.left_to_right === false ? "left" : "right"]:
+                            "56px",
+                        }}
+                      />
                     )}
                     {index == selected && (
-                      <i onClick={() => rerun()} className="bi bi-bootstrap-reboot delete-icon " style={{ color: 'black', [isLtr ? 'right' : 'left']: '30px' }} />
+                      <i
+                        onClick={() => rerun()}
+                        className="bi bi-bootstrap-reboot delete-icon "
+                        style={{
+                          color: "black",
+                          [key.left_to_right === false ? "left" : "right"]:
+                            "30px",
+                        }}
+                      />
                     )}
                     {index == selected && (
                       <i
@@ -455,25 +572,32 @@ const EditArcive = ({ handleClose }) => {
                             }
                           }
                           let additionalOrderNumber = 0;
-                          if (numberOfPreviousSlides % key.languages.length === 0) {
+                          if (
+                            numberOfPreviousSlides % key.languages.length ===
+                            0
+                          ) {
                             additionalOrderNumber += 1;
                           }
                           cloneSlidedataArray.splice(index + 1, 0, {
                             // slide_id: +key?.ID + 1,
                             file_uid: key?.file_uid,
-                            slide: '',
+                            slide: "",
                             //order_number: key?.order_number + additionalOrderNumber,
                             addedNew: true,
-                            slide_type: 'subtitle',
+                            slide_type: "subtitle",
                           });
-                          const updatedSlideListData = cloneSlidedataArray.map((slide, i) => {
-                            const updatedOrderNumber = Math.floor(i / key.languages.length);
-                            return {
-                              ...slide, // Spread the original slide object to create a new one
-                              order_number: updatedOrderNumber, // Update the order_number property
-                              languages: key.languages
-                            };
-                          });
+                          const updatedSlideListData = cloneSlidedataArray.map(
+                            (slide, i) => {
+                              const updatedOrderNumber = Math.floor(
+                                i / key.languages.length
+                              );
+                              return {
+                                ...slide, // Spread the original slide object to create a new one
+                                order_number: updatedOrderNumber, // Update the order_number property
+                                languages: key.languages,
+                              };
+                            }
+                          );
                           setSlideListData(updatedSlideListData);
                         }}
                         className="bi bi-plus-circle add-icon "
@@ -485,12 +609,12 @@ const EditArcive = ({ handleClose }) => {
                   <div
                     key={index}
                     className=" adjustable-font"
-                  // style={containerStyle}
+                    // style={containerStyle}
                   >
                     <Slide
                       content={key?.slide}
-                      isLtr={isLtr}
-                      isQuestion={key?.slide_type === 'question'}
+                      isLtr={key && key.left_to_right === false ? false : true}
+                      isQuestion={key?.slide_type === "question"}
                     />
                   </div>
                 </div>
@@ -502,10 +626,13 @@ const EditArcive = ({ handleClose }) => {
             markdown={wholeText}
             visible={false}
             active={split}
-            updateSlides={(slides) => {setSplit(false); setUpdatedSlideTextList(slides);}}
+            updateSlides={(slides) => {
+              setSplit(false);
+              setUpdatedSlideTextList(slides);
+            }}
           />
         </div>
-      </div >
+      </div>
     </>
   );
 };

@@ -27,8 +27,7 @@ const BookContent = ({
     <>
       {contents?.slides?.length > 0 &&
         +activatedTab >= 0 &&
-        contents?.slides?.map((item, index) =>
-        (
+        contents?.slides?.map((item, index) => (
           <>
             <div
               id={`slide_${item.ID}`}
@@ -43,23 +42,37 @@ const BookContent = ({
                     data: {
                       file_uid: item.file_uid,
                       slide_id: item.ID,
-                      update: true
+                      update: true,
                     },
-                    language: appContextlData.broadcastLang.label
+                    language: appContextlData.broadcastLang.label,
                   })
                 );
               }}
-              ref={((+activatedTab + 1) === item.order_number + 1) ? focusSlides : null}
-              className={`box-content d-flex  cursor-pointer  ${(+activatedTab + 1) === +item.order_number + 1 && "activeSlide"
-                }`}
+              ref={
+                +activatedTab + 1 === item.order_number + 1 ? focusSlides : null
+              }
+              className={`box-content d-flex  cursor-pointer  ${
+                +activatedTab + 1 === +item.order_number + 1 && "activeSlide"
+              }`}
             >
               {/* <bdo
                 className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
                 dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
               > */}
-              <Slide content={item?.slide} isLtr={isLtr} searchKeyword={searchKeyword} isQuestion={item?.slide_type === 'question'}></Slide>
+              <Slide
+                content={item?.slide}
+                isLtr={
+                  item && item.slide && item.slide.left_to_right ? false : true
+                }
+                searchKeyword={searchKeyword}
+                isQuestion={item?.slide_type === "question"}
+              ></Slide>
               {/* </bdo> */}
-              <span className="order-number">{`${item?.languages.length > 1 ? item?.languages[+index % item?.languages.length] : item?.languages[0]} ${+item.order_number + 1}`}</span>
+              <span className="order-number">{`${
+                item?.languages.length > 1
+                  ? item?.languages[+index % item?.languages.length]
+                  : item?.languages[0]
+              } ${+item.order_number + 1}`}</span>
             </div>
           </>
         ))}
