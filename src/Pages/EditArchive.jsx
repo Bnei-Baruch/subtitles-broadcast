@@ -519,7 +519,7 @@ const EditArcive = ({ handleClose }) => {
                         style={{
                           color: "black",
                           [key.left_to_right === false ? "left" : "right"]:
-                            "86px",
+                            "80px",
                         }}
                       />
                     )}
