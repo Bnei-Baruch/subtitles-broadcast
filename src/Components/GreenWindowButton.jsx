@@ -58,15 +58,15 @@ export const GreenWindowButton = (props) => {
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [subtitlesDisplayModeMsg, setSubtitlesDisplayModeMsg] = useState(null);
   const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState(
-    props.subtitlesDisplayMode,
+    props.subtitlesDisplayMode
   );
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode,
+    broadcastLangCode
   );
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode,
+    broadcastLangCode
   );
   const [contextMqttMessage, setContextMqttMessage] = useState(null);
   const displayModeTopic = subtitlesDisplayModeTopic;
@@ -196,7 +196,9 @@ export const GreenWindowButton = (props) => {
                   isLtr={
                     typeof contextMqttMessage.isLtr === "boolean"
                       ? contextMqttMessage.isLtr
-                      : props.isLtr
+                      : typeof contextMqttMessage.left_to_right === "boolean"
+                        ? contextMqttMessage.left_to_right
+                        : props.isLtr
                   }
                   isQuestion={contextMqttMessage.type === "question"}
                 ></Slide>

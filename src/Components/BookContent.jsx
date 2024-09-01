@@ -62,7 +62,9 @@ const BookContent = ({
               <Slide
                 content={item?.slide}
                 isLtr={
-                  item && item.slide && item.slide.left_to_right ? false : true
+                  item && typeof item.left_to_right === "boolean"
+                    ? item.left_to_right
+                    : isLtr
                 }
                 searchKeyword={searchKeyword}
                 isQuestion={item?.slide_type === "question"}
