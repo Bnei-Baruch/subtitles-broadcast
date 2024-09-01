@@ -155,7 +155,8 @@ export function ActiveSlideMessaging(props) {
 
   const determinePublishActiveSlide = (userAddedList, activatedTab) => {
     if (
-      props.subtitlesDisplayMode === "sources" &&
+      (!props.subtitlesDisplayMode ||
+        props.subtitlesDisplayMode === "sources") &&
       userAddedList &&
       activatedTab >= 0
     ) {
@@ -163,7 +164,12 @@ export function ActiveSlideMessaging(props) {
       const activeSlide = activeSlideObj.activeSlideByLang;
       const otherSlides = activeSlideObj.otherSlides;
 
-      if (activeSlide) {
+      if (
+        activeSlide &&
+        (activeSlide.slide_type !== "question" ||
+          (activeSlide.slide_type === "question" &&
+            Number(sessionStorage.getItem("rounRobinIndex")) <= 0))
+      ) {
         if (
           !subtitleMqttMessage ||
           subtitleMqttMessage.slide !== activeSlide.slide
@@ -709,6 +715,7 @@ export function ActiveSlideMessaging(props) {
                 slideToPublish,
                 subtitleMqttTopic
               );
+
               setSubtitleMqttMessage(slideJsonMsg);
               sessionStorage.setItem(
                 "ActiveSlideMessaging",
@@ -725,7 +732,6 @@ export function ActiveSlideMessaging(props) {
 
     return timeoutId;
   }
-
   ///####
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
