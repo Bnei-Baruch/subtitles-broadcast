@@ -753,9 +753,14 @@ export function ActiveSlideMessaging(props) {
               isLtr={
                 typeof contextMqttMessage.isLtr === "boolean"
                   ? contextMqttMessage.isLtr
-                  : props.isLtr
+                  : typeof contextMqttMessage.left_to_right === "boolean"
+                    ? props.left_to_right
+                    : props.isLtr
               }
-              isQuestion={contextMqttMessage.type === "question"}
+              isQuestion={
+                contextMqttMessage.type === "question" ||
+                contextMqttMessage.slide_type === "question"
+              }
             ></Slide>
           )}
         </div>
