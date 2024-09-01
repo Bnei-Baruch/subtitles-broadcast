@@ -15,6 +15,7 @@ import {
 } from "../Utils/Events";
 import AppContext from "../AppContext";
 import { broadcastLanguages } from "../Utils/Const";
+import session from "redux-persist/lib/storage/session";
 
 const styles = {
   mainContainer: {
@@ -66,8 +67,9 @@ export function ActiveSlideMessaging(props) {
   });
   const displayModeTopic = subtitlesDisplayModeTopic;
   const [otherQuestionMsgCol, setOtherQuestionMsgCol] = useState({});
-  const [otherQstColIndex, setOtherQstColIndex] = useState(0);
+  const [otherQstColIndex, setOtherQstColIndex] = useState(1);
   const [otherQstMsgColLength, setOtherQstMsgColLength] = useState(0);
+  const [rounRobinQstMsgCol, setRounRobinQstMsgCol] = useState([]);
 
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
@@ -400,10 +402,7 @@ export function ActiveSlideMessaging(props) {
       }, qstSwapTime);
     } else {
       setOtherQstColIndex(0);
-
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      timeoutId = determineSlideTypeQuestionRounRobin();
     }
 
     return () => {
@@ -416,6 +415,7 @@ export function ActiveSlideMessaging(props) {
     otherQstColIndex,
     otherQuestionMsgCol,
     questionMqttMessage,
+    props.userAddedList,
   ]);
 
   const subtitleNewMessageHandling = (event, topic, newMessageJson) => {
@@ -652,6 +652,81 @@ export function ActiveSlideMessaging(props) {
 
     return retVal;
   }
+
+  function determineSlideTypeQuestionRounRobin() {
+    let timeoutId = null;
+
+    if (props.subtitlesDisplayMode === "sources") {
+      const userAddedList = props.userAddedList;
+      const activatedTab = props.activatedTab;
+
+      if (userAddedList && activatedTab >= 0) {
+        const activeSlideObj = findActiveSlides(userAddedList, activatedTab);
+        const activeSlide = activeSlideObj.activeSlideByLang;
+        const otherSlides = activeSlideObj.otherSlides;
+
+        if (
+          activeSlide &&
+          activeSlide.slide_type === "question" &&
+          otherSlides &&
+          otherSlides.length > 0
+        ) {
+          if (
+            !Array.isArray(rounRobinQstMsgCol) ||
+            rounRobinQstMsgCol.length === 0 ||
+            rounRobinQstMsgCol.slide !== rounRobinQstMsgCol[0].slide
+          ) {
+            let rbMsgArr = [];
+            rbMsgArr.push(activeSlide, ...otherSlides);
+            setRounRobinQstMsgCol(rbMsgArr);
+
+            timeoutId = setInterval(() => {
+              const rounRobinIndexStr =
+                sessionStorage.getItem("rounRobinIndex");
+
+              let newIndex =
+                typeof rounRobinIndexStr === "string" &&
+                rounRobinIndexStr.length > 0
+                  ? Number(rounRobinIndexStr)
+                  : 0;
+
+              if (isNaN(newIndex)) {
+                newIndex = 0;
+              }
+
+              if (newIndex >= rbMsgArr.length - 1) {
+                newIndex = 0;
+              } else {
+                newIndex++;
+              }
+
+              const slideToPublish = rbMsgArr[newIndex];
+
+              console.log("setInterval rounRobinIndex: " + newIndex);
+              console.log("setInterval slide: " + slideToPublish.slide);
+
+              const slideJsonMsg = publishSlide(
+                slideToPublish,
+                subtitleMqttTopic
+              );
+              setSubtitleMqttMessage(slideJsonMsg);
+              sessionStorage.setItem(
+                "ActiveSlideMessaging",
+                JSON.stringify(slideJsonMsg)
+              );
+
+              setOtherQstColIndex(newIndex); //Doesn't work
+              sessionStorage.setItem("rounRobinIndex", String(newIndex)); //Workaround
+            }, qstSwapTime);
+          }
+        }
+      }
+    }
+
+    return timeoutId;
+  }
+
+  ///####
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
 
