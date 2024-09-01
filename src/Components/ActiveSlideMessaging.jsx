@@ -707,10 +707,6 @@ export function ActiveSlideMessaging(props) {
               }
 
               const slideToPublish = rbMsgArr[newIndex];
-
-              console.log("setInterval rounRobinIndex: " + newIndex);
-              console.log("setInterval slide: " + slideToPublish.slide);
-
               const slideJsonMsg = publishSlide(
                 slideToPublish,
                 subtitleMqttTopic
