@@ -18,7 +18,7 @@ const DraggableItem = ({
   fileUid,
   bookmarkDelete,
   setActivatedTab,
-  setIsLtr
+  setIsLtr,
 }) => {
   const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
@@ -38,7 +38,7 @@ const DraggableItem = ({
   });
 
   const handleBookMarkClick = (e) => {
-    setActivatedTab((+text?.split("/")?.at(-1)) - 1);
+    setActivatedTab(+text?.split("/")?.at(-1) - 1);
     localStorage.setItem("fileUid", e);
     dispatch(GetSubtitleData({ file_uid: e })).then((response) => {
       setIsLtr(response.payload.data.slides[0].left_to_right);
@@ -48,16 +48,23 @@ const DraggableItem = ({
   const selected = localStorage.getItem("fileUid") === fileUid;
   return (
     <div
-      className={"d-flex justify-content-between cursor-pointer" + (selected ? " bookmark-selected" : "")}
+      className={
+        "d-flex justify-content-between cursor-pointer" +
+        (selected ? " bookmark-selected" : "")
+      }
       ref={(node) => ref(drop(node))}
       style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
     >
       <i className="bi bi-grip-vertical me-3" />
       <i
-        onClick={() => dispatch(UnBookmarkSlide({
-          bookmark_id: bookmarkDelete,
-          language: appContextlData.broadcastLang.label
-        }))}
+        onClick={() =>
+          dispatch(
+            UnBookmarkSlide({
+              bookmark_id: bookmarkDelete,
+              language: appContextlData.broadcastLang.label,
+            })
+          )
+        }
         className="bi bi-trash"
       />
       <span
