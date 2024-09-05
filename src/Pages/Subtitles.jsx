@@ -303,27 +303,6 @@ const Subtitles = () => {
               }`}
               onClick={() => {
                 if (selectedSlide > 0) {
-                  /*const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-                  const slideID = UserAddedList?.slides?.find(
-                    (key) => key?.order_number == selectedSlide - 1
-                  );
-                  let targetBookmarkSlideID = slideID.ID;
-                  slideID?.languages.forEach((item, index) => {
-                    if (item === languages[appContextlData.broadcastLang.label]) {
-                      targetBookmarkSlideID += index;
-                    }
-                  });
-                  dispatch(
-                    BookmarkSlide({
-                      data: {
-                        file_uid: file_uid,
-                        slide_id: targetBookmarkSlideID,
-                        update: true
-                      },
-                      language: appContextlData.broadcastLang.label
-                    })
-                  );
-                  setSelectedSlide(selectedSlide - 1);*/
                   updateSelectedSlide(selectedSlide - 1);
                 }
               }}
