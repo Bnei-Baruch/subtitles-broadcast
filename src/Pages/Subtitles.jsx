@@ -97,31 +97,11 @@ const Subtitles = () => {
   };
   const handleKeyPress = useCallback(
     (event) => {
-      //  if (event.key === "n" || event.keyCode === 78) {
       if (event.keyCode === 40) {
         updateSelectedSlide(selectedSlide + 1);
-        /*
-      setSelectedSlide((pre) => {
-        console.log(pre, maxSlideIndex);
-        if (+pre <= maxSlideIndex) {
-          return +pre + 1;
-        }
-        return pre;
-      });*/
-        // localStorage.setItem("activatedTabData", selectedSlide + 1);
       }
-      //   if (event.key === "b" || event.keyCode === 66) {
       if (event.keyCode === 38) {
         updateSelectedSlide(selectedSlide - 1);
-        /*
-      setSelectedSlide((pre) => {
-        if (+pre >= 1) {
-          return +pre - 1;
-        }
-        return pre;
-      });
-      localStorage.setItem("activatedTabData", selectedSlide - 1);
-      */
       }
     },
     [UserAddedList, selectedSlide]
