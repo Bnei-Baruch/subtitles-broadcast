@@ -186,11 +186,11 @@ bdo {
 }
 
 .slide-container .blue-stripe {
-  height : 0;
+  height: 0;
 }
 
 .slide-container .grey-stripe {
-  height : 0;
+  height: 0;
 }
 
 .slide-container.slide-question .stripes {
@@ -201,12 +201,12 @@ bdo {
 }
 
 .slide-container.slide-question .blue-stripe {
-  height : 3px;
+  height: 3px;
   background-color: rgb(73, 152, 248);
 }
 
 .slide-container.slide-question .grey-stripe {
-  height : 3px;
+  height: 3px;
   background-color: rgb(200, 204, 205);
 }
 
@@ -380,6 +380,11 @@ bdo {
 .ChangeToRtl {
   direction: rtl;
   text-align: right;
+}
+
+.slide-question .ChangeToLtr,
+.slide-question .ChangeToRtl {
+  text-align: center;
 }
 
 .activeSlide {
