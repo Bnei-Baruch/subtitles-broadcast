@@ -40,7 +40,7 @@ const DraggableItem = ({
   const handleBookMarkClick = (e) => {
     setActivatedTab(+text?.split("/")?.at(-1) - 1);
     localStorage.setItem("fileUid", e);
-    dispatch(GetSubtitleData({ file_uid: e })).then((response) => {
+    dispatch(GetSubtitleData({ file_uid: e, limit: 1000 })).then((response) => {
       setIsLtr(response.payload.data.slides[0].left_to_right);
     });
   };
