@@ -31,7 +31,8 @@ import QuestionMessage from "../Components/QuestionMessage";
 import { broadcastLanguages } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
-import { GetLangaugeCode, MAX_SLIDE_LIMIT } from "../Utils/Const";
+import GetLangaugeCode from "../Utils/Const";
+import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 
 function usePrevious(value) {
   const ref = useRef();

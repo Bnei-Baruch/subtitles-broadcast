@@ -2,7 +2,8 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
-import { GetLangaugeCode, MAX_SLIDE_LIMIT } from "../Utils/Const";
+import GetLangaugeCode from "../../Utils/Const";
+import { MAX_SLIDE_LIMIT } from "../../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 const languages = GetLangaugeCode();
@@ -53,7 +54,7 @@ export const AddToSubtitleList = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}${API_URL.AddData}`, data);
-    thunkAPI.dispatch(GetSubtitleData({ limit: 10000 }));
+    thunkAPI.dispatch(GetSubtitleData({ limit: MAX_SLIDE_LIMIT }));
     return response.data;
   }
 );

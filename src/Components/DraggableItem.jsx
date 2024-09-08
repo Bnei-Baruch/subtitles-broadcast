@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import AppContext from "../AppContext";
-import MAX_SLIDE_LIMIT from "../Utils/Const";
+import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 
 const ItemTypes = {
   CARD: "card",
