@@ -60,7 +60,7 @@ const styles = {
 export function BroadcastSettings({ props }) {
   const appContextlData = useContext(AppContext);
   const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
-    return sessionStorage.getItem("isBroadcastSettingsShown") === "true"
+    return localStorage.getItem("isBroadcastSettingsShown") === "true"
       ? false
       : true;
   });
@@ -74,7 +74,7 @@ export function BroadcastSettings({ props }) {
   });
 
   const handleClose = () => {
-    sessionStorage.setItem("isBroadcastSettingsShown", true);
+    localStorage.setItem("isBroadcastSettingsShown", true);
     setShowBroadcastSettings(false);
     appContextlData.setBroadcastLang(broadcastLang);
     appContextlData.setBroadcastProgramm(broadcastProgramm);
@@ -82,8 +82,8 @@ export function BroadcastSettings({ props }) {
 
   const handleShow = () => setShowBroadcastSettings(true);
 
-  sessionStorage.setItem("broadcastLangObj", JSON.stringify(broadcastLang));
-  sessionStorage.setItem(
+  localStorage.setItem("broadcastLangObj", JSON.stringify(broadcastLang));
+  localStorage.setItem(
     "broadcastProgrammObj",
     JSON.stringify(broadcastProgramm)
   );
