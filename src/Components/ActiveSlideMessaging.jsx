@@ -142,6 +142,7 @@ export function ActiveSlideMessaging(props) {
         source_uid: slide.source_uid,
         date: new Date().toUTCString(),
         isLtr: slide.left_to_right === false ? false : true,
+        slide_type: slide.slide_type,
       };
 
       publishEvent("mqttPublush", {

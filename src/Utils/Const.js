@@ -40,4 +40,6 @@ export const brodcastProgrammArr = [
   { value: "brodcast_3", label: "Brodcast 3" },
 ];
 
+export const MAX_SLIDE_LIMIT = 10000;
+
 export default GetLangaugeCode;

@@ -26,7 +26,7 @@ const QuestionMessage = (props) => {
   const mqttTopicList = langList.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      langItem.value,
+      langItem.value
     );
     return mqttTopic;
   });
@@ -84,7 +84,7 @@ const QuestionMessage = (props) => {
     const newMessage = event.detail.messageJson;
     const currMqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      broadcastLangCode,
+      broadcastLangCode
     );
 
     if (event.detail.mqttTopic === currMqttTopic) {
@@ -164,7 +164,7 @@ const QuestionMessage = (props) => {
   const sendQuestionButtonClickHandler = (questionMsg) => {
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      questionMsg.lang,
+      questionMsg.lang
     );
     questionMsg.visible = !questionMsg.visible;
     const jsonMsgStr = JSON.stringify(questionMsg);
@@ -210,7 +210,9 @@ const QuestionMessage = (props) => {
               <Slide
                 content={obj.slide}
                 isLtr={languageIsLtr(obj.lang)}
-                isQuestion={obj.type === "question"}
+                isQuestion={
+                  obj.type === "question" || obj.slide_type === "question"
+                }
               ></Slide>
             </div>
           ))}
