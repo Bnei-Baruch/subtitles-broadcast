@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import AppContext from "../AppContext";
+import MAX_SLIDE_LIMIT from "../Utils/Const";
 
 const ItemTypes = {
   CARD: "card",
@@ -40,9 +41,11 @@ const DraggableItem = ({
   const handleBookMarkClick = (e) => {
     setActivatedTab(+text?.split("/")?.at(-1) - 1);
     localStorage.setItem("fileUid", e);
-    dispatch(GetSubtitleData({ file_uid: e, limit: 1000 })).then((response) => {
-      setIsLtr(response.payload.data.slides[0].left_to_right);
-    });
+    dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT })).then(
+      (response) => {
+        setIsLtr(response.payload.data.slides[0].left_to_right);
+      }
+    );
   };
 
   const selected = localStorage.getItem("fileUid") === fileUid;

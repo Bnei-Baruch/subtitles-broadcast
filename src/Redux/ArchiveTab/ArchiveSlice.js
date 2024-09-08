@@ -2,10 +2,10 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
-import GetLangaugeCode from "../../Utils/Const";
+import { GetLangaugeCode, MAX_SLIDE_LIMIT } from "../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const languages = GetLangaugeCode()
+const languages = GetLangaugeCode();
 
 const initialState = {
   archiveList: [],
@@ -53,17 +53,26 @@ export const AddToSubtitleList = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}${API_URL.AddData}`, data);
-    thunkAPI.dispatch(GetSubtitleData());
+    thunkAPI.dispatch(GetSubtitleData({ limit: 10000 }));
     return response.data;
   }
 );
 export const DeleteArchive = createAsyncThunk(
   `DeleteArchive`,
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}${API_URL.Delete+"/"+data.file_uid+"?force_delete_bookmarks=true"}`, {
-    });
+    const response = await axios.delete(
+      `${API}${
+        API_URL.Delete + "/" + data.file_uid + "?force_delete_bookmarks=true"
+      }`,
+      {}
+    );
 
-    thunkAPI.dispatch(GetAllArchiveData({ language: data.language, keyword: data.search_keyword }));
+    thunkAPI.dispatch(
+      GetAllArchiveData({
+        language: data.language,
+        keyword: data.search_keyword,
+      })
+    );
 
     return response.data;
   }
@@ -79,7 +88,9 @@ export const ArchiveAutoComplete = createAsyncThunk(
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}bookmark`, { params: { language: languages[data.language] } });
+    const response = await axios.get(`${API}bookmark`, {
+      params: { language: languages[data.language] },
+    });
     return response.data;
   }
 );
@@ -123,7 +134,13 @@ export const BookmarkSlideFromArchivePage = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await axios.post(`${API}bookmark`, data.data);
-      thunkAPI.dispatch(GetAllArchiveData({ language: data.language, ...data.params, keyword:data.search_keyword }));
+      thunkAPI.dispatch(
+        GetAllArchiveData({
+          language: data.language,
+          ...data.params,
+          keyword: data.search_keyword,
+        })
+      );
       thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
       return response.data;
     } catch (error) {
@@ -153,12 +170,14 @@ export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}bookmark/${data.bookmark_id}`);
-    thunkAPI.dispatch(GetAllArchiveData({
-      language: data.language, 
-      keyword: data.search_keyword,
-      page: data.page,
-      limit: data.limit,
-    }));
+    thunkAPI.dispatch(
+      GetAllArchiveData({
+        language: data.language,
+        keyword: data.search_keyword,
+        page: data.page,
+        limit: data.limit,
+      })
+    );
     thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
     return response.data;
   }
@@ -187,8 +206,8 @@ export const deleteNewSlide = createAsyncThunk(
   "deleteNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}slide`, {
-      data: data.data
-    })
+      data: data.data,
+    });
     // thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
     response.data.success && toast.success(response.data.description);
     return response.data;
@@ -230,7 +249,7 @@ const ArchiveSlice = createSlice({
       return { ...state, bookmarkListLoading: true };
     });
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
-      return { ...state, bookmarkList: payload, bookmarkListLoading: false};
+      return { ...state, bookmarkList: payload, bookmarkListLoading: false };
     });
     builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
       return { ...state, bookmarkList: payload };

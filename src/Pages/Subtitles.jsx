@@ -31,7 +31,7 @@ import QuestionMessage from "../Components/QuestionMessage";
 import { broadcastLanguages } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
-import GetLangaugeCode from "../Utils/Const";
+import { GetLangaugeCode, MAX_SLIDE_LIMIT } from "../Utils/Const";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -133,7 +133,11 @@ const Subtitles = () => {
       let file_uid = localStorage.getItem("fileUid");
       if (file_uid !== "") {
         dispatch(
-          GetSubtitleData({ file_uid, keyword: searchSlide, limit: 10000 })
+          GetSubtitleData({
+            file_uid,
+            keyword: searchSlide,
+            limit: MAX_SLIDE_LIMIT,
+          })
         );
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
