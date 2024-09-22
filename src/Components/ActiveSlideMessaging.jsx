@@ -442,15 +442,17 @@ export function ActiveSlideMessaging(props) {
       );
     }
 
-    const targetSlide = document.getElementById(`slide_${newMessageJson.ID}`);
+    if (newMessageJson.clientId !== mqttClientId) {
+      const targetSlide = document.getElementById(`slide_${newMessageJson.ID}`);
 
-    if (targetSlide) {
-      const sourceUidAttrVal = targetSlide.getAttribute("source-uid");
+      if (targetSlide) {
+        const sourceUidAttrVal = targetSlide.getAttribute("source-uid");
 
-      if (sourceUidAttrVal === newMessageJson.source_uid) {
-        if (!targetSlide.classList.contains("activeSlide")) {
-          targetSlide.focus();
-          targetSlide.click();
+        if (sourceUidAttrVal === newMessageJson.source_uid) {
+          if (!targetSlide.classList.contains("activeSlide")) {
+            targetSlide.focus();
+            targetSlide.click();
+          }
         }
       }
     }
