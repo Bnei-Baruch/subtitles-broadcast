@@ -87,10 +87,15 @@ const App = ({ auth }) => {
   const mqttPublushEventHandler = (data) => {
     const mqttTopic = data.detail.mqttTopic;
     const message = data.detail.message;
+    const sesStorageName = `LastMqttMsg-${mqttTopic}`;
+    const lastMqttMessageStr = sessionStorage.getItem(sesStorageName);
 
-    mqttPublush(mqttTopic, message).then(() => {
-      // console.log("App mqttPublushed", data);
-    });
+    if (!lastMqttMessageStr || lastMqttMessageStr !== message) {
+      sessionStorage.setItem(sesStorageName, message);
+      mqttPublush(mqttTopic, message).then(() => {
+        // console.log("App mqttPublushed", data);
+      });
+    }
   };
 
   const mqttNewmessageEventHandler = (data) => {
