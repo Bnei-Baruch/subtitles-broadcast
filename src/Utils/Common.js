@@ -12,8 +12,6 @@ export function getCurrentBroadcastLanguage() {
     bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
       ? broadcastLangMapObj[bcLanglocalStorageVal]
       : broadcastLanguages[0];
-
-    console.log("init broadcastLangObj");
   }
 
   return bcLangObj;
@@ -22,12 +20,11 @@ export function getCurrentBroadcastLanguage() {
 export function getCurrentBroadcastProgramm() {
   let bcProgrammObj;
   const broadcastProgrammObjStr = sessionStorage.getItem(
-    "broadcastProgrammObj",
+    "broadcastProgrammObj"
   );
   if (broadcastProgrammObjStr) {
     bcProgrammObj = JSON.parse(broadcastProgrammObjStr);
   } else {
-    console.log("init broadcastProgrammObj");
     bcProgrammObj = { value: "morning_lesson", label: "Morning lesson" };
   }
 
