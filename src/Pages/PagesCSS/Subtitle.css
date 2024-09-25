@@ -75,6 +75,7 @@
 }
 .body-content .right-section {
   margin-left: 15px;
+  height: calc(100vh - 180px);
 }
 .body-content .first-section {
   margin-bottom: 10px;
@@ -396,6 +397,7 @@ bdo {
   padding-left: 5px;
   padding-top: 5px;
   padding-bottom: 5px;
+  padding-right: 5px;
 }
 
 .cursor-pointer {
@@ -530,4 +532,12 @@ dropdown-toggle {
 #home,
 #bookContentCont {
   height: 100%;
+  outline: none;
+}
+
+.book-mark {
+  height: calc(42vh - 180px);
+}
+.Questions {
+  height: calc(45vh - 180px);
 }

@@ -2,7 +2,7 @@ import { broadcastLangMapObj, broadcastLanguages } from "./Const";
 
 export function getCurrentBroadcastLanguage() {
   let bcLangObj;
-  const broadcastLangObjStr = sessionStorage.getItem("broadcastLangObj");
+  const broadcastLangObjStr = localStorage.getItem("broadcastLangObj");
 
   if (broadcastLangObjStr) {
     bcLangObj = JSON.parse(broadcastLangObjStr);
@@ -19,9 +19,8 @@ export function getCurrentBroadcastLanguage() {
 
 export function getCurrentBroadcastProgramm() {
   let bcProgrammObj;
-  const broadcastProgrammObjStr = sessionStorage.getItem(
-    "broadcastProgrammObj"
-  );
+  const broadcastProgrammObjStr = localStorage.getItem("broadcastProgrammObj");
+
   if (broadcastProgrammObjStr) {
     bcProgrammObj = JSON.parse(broadcastProgrammObjStr);
   } else {

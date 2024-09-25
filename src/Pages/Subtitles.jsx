@@ -104,6 +104,7 @@ const Subtitles = () => {
       if (event.keyCode === 38) {
         updateSelectedSlide(selectedSlide - 1);
       }
+      event.preventDefault();
       event.stopPropagation();
     },
     [UserAddedList, selectedSlide]
@@ -260,7 +261,7 @@ const Subtitles = () => {
               <ul className="nav nav-tabs " id="myTab" role="tablist"></ul>
             </div>
 
-            <div className="tab-content overflow-y-auto">
+            <div className="tab-content">
               <div
                 className="tab-pane active"
                 id="home"
@@ -268,7 +269,10 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div id="bookContentCont" className="slides-set">
+                <div
+                  id="bookContentCont"
+                  className="slides-set  overflow-y-auto"
+                >
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
