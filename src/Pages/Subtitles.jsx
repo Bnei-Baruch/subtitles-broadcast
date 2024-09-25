@@ -260,7 +260,7 @@ const Subtitles = () => {
               <ul className="nav nav-tabs " id="myTab" role="tablist"></ul>
             </div>
 
-            <div className="tab-content overflow-y-auto">
+            <div className="tab-content">
               <div
                 className="tab-pane active"
                 id="home"
@@ -268,7 +268,10 @@ const Subtitles = () => {
                 aria-labelledby="home-tab"
                 tabIndex="0"
               >
-                <div id="bookContentCont" className="slides-set">
+                <div
+                  id="bookContentCont"
+                  className="slides-set  overflow-y-auto"
+                >
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
