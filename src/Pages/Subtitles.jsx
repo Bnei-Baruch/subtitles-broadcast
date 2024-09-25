@@ -104,6 +104,7 @@ const Subtitles = () => {
       if (event.keyCode === 38) {
         updateSelectedSlide(selectedSlide - 1);
       }
+      event.stopPropagation();
     },
     [UserAddedList, selectedSlide]
   );

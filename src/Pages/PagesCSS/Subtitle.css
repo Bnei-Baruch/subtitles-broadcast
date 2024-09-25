@@ -526,3 +526,8 @@ dropdown-toggle {
   height: 1px;
   background-color: black;
 }
+
+#home,
+#bookContentCont {
+  height: 100%;
+}
