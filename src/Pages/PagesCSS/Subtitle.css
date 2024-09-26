@@ -542,3 +542,7 @@ dropdown-toggle {
 .Questions {
   height: calc(45vh - 180px);
 }
+
+.centered-heading {
+  text-align: center;
+}
