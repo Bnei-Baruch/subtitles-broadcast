@@ -305,7 +305,7 @@ select {
 
 .delete-icon {
   position: absolute;
-  top: 5px;
+  bottom: 5px;
   background: none;
   border: none;
   cursor: pointer;
@@ -345,7 +345,7 @@ select {
   display: flex;
   align-items: center; /* Center vertically within the entire container */
   margin: 0px 13px;
-  justify-content: center
+  justify-content: center;
 }
 
 .flex-box-start {

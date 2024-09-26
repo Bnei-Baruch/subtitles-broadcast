@@ -386,6 +386,8 @@ bdo {
 .slide-question .ChangeToLtr,
 .slide-question .ChangeToRtl {
   text-align: center;
+  padding-top: 12%;
+  padding-bottom: 12%;
 }
 
 .activeSlide {
