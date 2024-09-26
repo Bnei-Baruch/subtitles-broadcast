@@ -305,7 +305,7 @@ select {
 
 .delete-icon {
   position: absolute;
-  top: 77px;
+  bottom: 5px;
   background: none;
   border: none;
   cursor: pointer;
