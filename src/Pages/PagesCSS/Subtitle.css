@@ -543,3 +543,9 @@ dropdown-toggle {
 .Questions {
   height: calc(45vh - 180px);
 }
+
+.slide-content h1,
+.slide-content h2,
+.slide-content h3 {
+  text-align: center;
+}
