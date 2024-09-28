@@ -27,27 +27,19 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
   });
 
   useEffect(() => {
-    let mdContent = content;
-
     if (searchKeyword !== undefined && searchKeyword !== "") {
       const escapeRegex = (str) => {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       };
       const escapedKeyword = escapeRegex(searchKeyword);
-      const regex = new RegExp(escapedKeyword, "g");
-      mdContent = content.replace(
-        regex,
-        `<span style="background-color: ${backgroundColor};">$&</span>`
-      );
+      const regex = new RegExp(escapedKeyword, 'g');
+      content = content.replace(regex, `<span style="background-color: ${backgroundColor};">$&</span>`);
     }
-    slideRef.current.innerHTML = md.render(mdContent);
+    slideRef.current.innerHTML = md.render(content);
   }, [content, md]);
 
   return (
-    <div
-      ref={outerRef}
-      className={(isQuestion ? "slide-question" : "") + " slide-container"}
-    >
+    <div ref={outerRef} className={(isQuestion ? "slide-question" : "") + " slide-container"}>
       <div className="stripes">
         <div className="blue-stripe"></div>
         <div className="grey-stripe"></div>
