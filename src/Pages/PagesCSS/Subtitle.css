@@ -544,6 +544,8 @@ dropdown-toggle {
   height: calc(45vh - 180px);
 }
 
-.centered-heading {
+.slide-content h1,
+.slide-content h2,
+.slide-content h3 {
   text-align: center;
 }

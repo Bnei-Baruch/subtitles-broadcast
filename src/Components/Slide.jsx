@@ -27,10 +27,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
   });
 
   useEffect(() => {
-    let mdContent = content.replace(
-      /###\s*(.*?)\s*###/g,
-      '<h3 class="centered-heading">$1</h3>'
-    );
+    let mdContent = content;
 
     if (searchKeyword !== undefined && searchKeyword !== "") {
       const escapeRegex = (str) => {
