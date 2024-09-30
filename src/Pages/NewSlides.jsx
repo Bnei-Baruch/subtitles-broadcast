@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
-import {SplitToSlides, sourceToMarkdown} from "../Utils/SlideSplit";
+import { SplitToSlides, sourceToMarkdown } from "../Utils/SlideSplit";
 import GenerateUID from "../Utils/Uid";
 import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import GetLangaugeCode from "../Utils/Const";
@@ -13,6 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import AppContext from "../AppContext";
+import { getCurrentBroadcastLanguage, languageIsLtr } from "../Utils/Common";
 
 const NewSlides = () => {
   const appContextlData = useContext(AppContext);
@@ -26,7 +27,12 @@ const NewSlides = () => {
   const [splitActive, setSplitActive] = useState(false);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState("");
-  const [slideLanguageOptions, setSlideLanguageOptions] = useState(["Hebrew", "Russian", "English", "Spanish"]);
+  const [slideLanguageOptions, setSlideLanguageOptions] = useState([
+    "Hebrew",
+    "Russian",
+    "English",
+    "Spanish",
+  ]);
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
@@ -41,10 +47,28 @@ const NewSlides = () => {
     },
   ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
+  const curBroadcastLanguage = getCurrentBroadcastLanguage();
+  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
+    return curBroadcastLanguage;
+  });
+  const broadcastLangCode = broadcastLangObj.value;
+  const [isLtr, setIsLtr] = useState(() => {
+    return languageIsLtr(broadcastLangCode);
+  });
+
+  if (curBroadcastLanguage.value !== broadcastLangObj.value) {
+    setBroadcastLangObj(curBroadcastLanguage);
+    setIsLtr(languageIsLtr(curBroadcastLanguage.value));
+  }
 
   useEffect(() => {
     if (sourceUrl.length > 0) {
-      dispatch(ArchiveAutoComplete({ query: sourceUrl, language: languages[appContextlData.broadcastLang.label] }));
+      dispatch(
+        ArchiveAutoComplete({
+          query: sourceUrl,
+          language: languages[appContextlData.broadcastLang.label],
+        })
+      );
     }
   }, [sourceUrl]);
 
@@ -70,7 +94,9 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        left_to_right: IsLangLtr(languages[appContextlData.broadcastLang.label]),
+        left_to_right: IsLangLtr(
+          languages[appContextlData.broadcastLang.label]
+        ),
         languages: languages[appContextlData.broadcastLang.label],
         slides: updateTagList,
       };
@@ -83,7 +109,7 @@ const NewSlides = () => {
       } else {
         if (contentSource.includes("https://kabbalahmedia.info")) {
           let parts = sourceUrl.split("/");
-          request.source_path = parts[parts.length - 1]
+          request.source_path = parts[parts.length - 1];
         }
       }
       if (
@@ -104,9 +130,13 @@ const NewSlides = () => {
         const response = await dispatch(SetCustomSlideBySource(request));
         if (response.payload.error !== "") {
           if (response.payload.error.includes("SQLSTATE 22021")) {
-            alert("Wrong request. File is not a txt file. Please check your upload file");
+            alert(
+              "Wrong request. File is not a txt file. Please check your upload file"
+            );
           } else if (response.payload.error.includes("SQLSTATE 23505")) {
-            alert("Wrong request. The file uid is duplicated. Please check your input");
+            alert(
+              "Wrong request. The file uid is duplicated. Please check your input"
+            );
           }
           return;
         }
@@ -128,23 +158,23 @@ const NewSlides = () => {
 
   const IsLangLtr = (languageCode) => {
     switch (languageCode) {
-      case 'he':
+      case "he":
         return false;
-      case 'ar':
+      case "ar":
         return false;
       default:
         return true;
     }
-  }
+  };
 
   const uploadFile = (filename) => {
     // Read from file.
     const reader = new FileReader();
     reader.onload = (event) => {
       setCustomText(event.target.result);
-      document.getElementById('custom-textarea').value = event.target.result;
+      document.getElementById("custom-textarea").value = event.target.result;
     };
-    if (filename.name.split('.').pop() !== "txt") {
+    if (filename.name.split(".").pop() !== "txt") {
       alert("The file must be txt file");
       return;
     }
@@ -153,7 +183,7 @@ const NewSlides = () => {
     } catch (error) {
       console.error("Error reading input fileoccurred:", error);
     }
-  }
+  };
 
   const addSlidesFromCustomText = () => {
     const name = document.getElementById("upload_name").value;
@@ -186,7 +216,7 @@ const NewSlides = () => {
   };
 
   const loadSlides = async (sourceData) => {
-    const markdown = sourceToMarkdown(sourceData)
+    const markdown = sourceToMarkdown(sourceData);
     let parse = parseFileContents(markdown);
     setTagList(parse);
     setWholeText(markdown);
@@ -228,7 +258,7 @@ const NewSlides = () => {
         let sourceUidStr;
         if (sourceUrl.includes("https://kabbalahmedia.info/")) {
           let parts = sourceUrl.split("/");
-          sourceUidStr = parts[parts.length - 1]
+          sourceUidStr = parts[parts.length - 1];
         } else if (sourceUid !== "") {
           sourceUidStr = sourceUid;
           if (sourceUidStr.includes("upload_")) {
@@ -239,11 +269,14 @@ const NewSlides = () => {
             sourceUidStr = contentSource;
           } else {
             alert("The input must be source uid or source url");
-            return
+            return;
           }
         }
         setSourceUid("upload_" + sourceUidStr);
-        let fileUid = await GetFileUid(languages[appContextlData.broadcastLang.label], sourceUidStr);
+        let fileUid = await GetFileUid(
+          languages[appContextlData.broadcastLang.label],
+          sourceUidStr
+        );
         if (fileUid === undefined) {
           alert("File not found");
           return;
@@ -310,16 +343,21 @@ const NewSlides = () => {
                 id="languageSelect"
                 isMulti
                 options={
-                  slideLanguageOptions.map((slideLanguage) => {
-                    if (languages[slideLanguage] !== languages[appContextlData.broadcastLang.label]) {
-                      return {
-                        label: slideLanguage,
-                        value: languages[slideLanguage],
-                      };
-                    } else {
-                      return null; // Skip the undesired option
-                    }
-                  }).filter(option => option !== null) // Filter out null options
+                  slideLanguageOptions
+                    .map((slideLanguage) => {
+                      if (
+                        languages[slideLanguage] !==
+                        languages[appContextlData.broadcastLang.label]
+                      ) {
+                        return {
+                          label: slideLanguage,
+                          value: languages[slideLanguage],
+                        };
+                      } else {
+                        return null; // Skip the undesired option
+                      }
+                    })
+                    .filter((option) => option !== null) // Filter out null options
                 }
                 value={selectedOptions}
                 onChange={(selectedOptions) => {
@@ -336,8 +374,20 @@ const NewSlides = () => {
                   uploadFile(event.target.files[0]);
                 }}
               />
-              <textarea id="custom-textarea" style={{marginTop: '1em', marginBottom: '1em', height: '500px', width: '500px'}}
-                  onChange={(event) => { setCustomText(event.target.value)}} />
+              <textarea
+                id="custom-textarea"
+                style={{
+                  marginTop: "1em",
+                  marginBottom: "1em",
+                  height: "500px",
+                  width: "500px",
+                }}
+                onChange={(event) => {
+                  setCustomText(event.target.value);
+                }}
+                dir={isLtr ? "ltr" : "rtl"}
+                placeholder="Enter text here"
+              />
               <button
                 className="btn btn-light rounded-pill col-4"
                 onClick={addSlidesFromCustomText}
@@ -352,7 +402,10 @@ const NewSlides = () => {
               markdown={wholeText}
               active={splitActive}
               visible={false}
-              updateSlides={(slides) => {setSplitActive(false); setUpdateTagList(slides);}}
+              updateSlides={(slides) => {
+                setSplitActive(false);
+                setUpdateTagList(slides);
+              }}
             />
           </div>
         </>
@@ -382,7 +435,11 @@ const NewSlides = () => {
                   }}
                 />
                 {showAutocompleteBox && sourceUrl.length > 0 && (
-                  <ul className="suggestions" id="suggestions" style={{ display: "none" }}>
+                  <ul
+                    className="suggestions"
+                    id="suggestions"
+                    style={{ display: "none" }}
+                  >
                     {AutocompleteList?.map((suggestion, index) => (
                       <li
                         key={index}
@@ -410,13 +467,16 @@ const NewSlides = () => {
                 markdown={wholeText}
                 active={splitActive}
                 visible={false}
-                updateSlides={(slides) => {setSplitActive(false); setUpdateTagList(slides);}}
+                updateSlides={(slides) => {
+                  setSplitActive(false);
+                  setUpdateTagList(slides);
+                }}
               />
             </div>
-          </div >
+          </div>
         </>
       )}
-    </div >
+    </div>
   );
 };
 
