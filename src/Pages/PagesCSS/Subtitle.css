@@ -218,6 +218,7 @@ bdo {
   line-height: 24px;
   text-align: left;
 }
+
 .slide-content {
   position: absolute;
 
@@ -259,6 +260,11 @@ bdo {
     margin: 0.5rem 0;
     border-top: 5px solid;
     color: black;
+  }
+
+  &.ChangeToLtr {
+    padding-left: 1.5em;
+    padding-right: 1.1em;
   }
 }
 
@@ -364,14 +370,6 @@ bdo {
   padding: 15px;
   margin-bottom: 10px;
 }
-.whit-s h3 {
-  font-family: "Roboto";
-  font-style: normal;
-  font-weight: 500;
-  font-size: 13px;
-  line-height: 20px;
-  color: #0c0c0c;
-}
 
 .ChangeToLtr {
   text-align: left;
@@ -386,8 +384,10 @@ bdo {
 .slide-question .ChangeToLtr,
 .slide-question .ChangeToRtl {
   text-align: center;
-  padding-top: 12%;
-  padding-bottom: 12%;
+}
+
+.slide-question .slide-content * {
+  margin-top: 40px;
 }
 
 .activeSlide {
@@ -537,15 +537,24 @@ dropdown-toggle {
   outline: none;
 }
 
-.book-mark {
-  height: calc(42vh - 180px);
-}
-.Questions {
-  height: calc(45vh - 180px);
-}
-
 .slide-content h1,
 .slide-content h2,
 .slide-content h3 {
   text-align: center;
+  margin-top: 40px;
+}
+
+.slide-question .slide-content * {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  width: fit-content;
+  padding-left: 1.5em;
+  padding-right: 1.1em;
+}
+
+.slide-question .slide-content.ChangeToLtr * {
+  padding-left: 1.5em;
+  padding-right: 1.1em;
 }

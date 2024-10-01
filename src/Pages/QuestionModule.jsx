@@ -42,7 +42,8 @@ const QuestionModule = () => {
 
   const sendQuestionButtonClickHandler = () => {
     if (newQuestionTxtRef.current) {
-      const qustionTxt = newQuestionTxtRef.current.value;
+      // Question should always be a one liner.
+      const qustionTxt = newQuestionTxtRef.current.value.replace(/(\r\n|\n|\r)/gm, ' ');
 
       if (qustionTxt) {
         const jsonMsg = {
