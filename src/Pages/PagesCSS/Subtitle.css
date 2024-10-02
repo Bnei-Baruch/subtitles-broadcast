@@ -558,3 +558,41 @@ dropdown-toggle {
   padding-left: 1.5em;
   padding-right: 1.1em;
 }
+
+.page-subtitle {
+  &.top-header {
+    background-color: #232f3e !important;
+    color: white !important;
+
+    .btn {
+      color: white !important;
+    }
+    .list-btn .btn.btn-secondary {
+      background-color: #232f3e !important;
+      color: white !important;
+    }
+    .btn-group {
+      display: block;
+    }
+  }
+
+  .form-group.autoComplete {
+    display: none;
+  }
+
+  .side-menu-item-holder {
+    padding-top: 15px;
+    padding-bottom: 0px;
+    display: flex;
+    align-items: flex-start;
+  }
+  .side-menu-item-holder:hover {
+    cursor: pointer;
+  }
+
+  .icon {
+    vertical-align: top;
+    stroke-width: 2;
+    margin-right: 7px;
+  }
+}

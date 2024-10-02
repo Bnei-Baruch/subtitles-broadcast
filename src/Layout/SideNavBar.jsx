@@ -1,8 +1,9 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import "./Layout.css";
+import HeaderBar from "../Layout/HeaderBar";
 
-const SideNavBar = ({ logout, securityRole }) => (
+const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
   <>
     <div className="side-menu">
       <div
@@ -18,8 +19,10 @@ const SideNavBar = ({ logout, securityRole }) => (
           </div>
         </a>
 
+        <HeaderBar logout={authKeycloak} />
+
         <ul className="nav nav-pills flex-column mb-auto">
-          {securityRole && securityRole !== "translator" &&
+          {securityRole && securityRole !== "translator" && (
             <li className="nav-item">
               <NavLink
                 to={"/subtitle"}
@@ -29,40 +32,40 @@ const SideNavBar = ({ logout, securityRole }) => (
                 <img alt="dashboard" src="image/dashboard.svg" /> Subtitles
               </NavLink>
             </li>
-          }
+          )}
 
-          {securityRole && securityRole !== "translator" &&
+          {securityRole && securityRole !== "translator" && (
             <li>
               <NavLink to={"/archive"} className="nav-link text-white">
                 <img alt="folder" src="image/folder-special.svg" /> Archive
               </NavLink>
             </li>
-          }
+          )}
 
-          {securityRole && securityRole !== "translator" &&
+          {securityRole && securityRole !== "translator" && (
             <li>
               <NavLink to={"/source"} className="nav-link text-white">
                 <img alt="folder" src="image/folder-special.svg" /> Source
               </NavLink>
             </li>
-          }
+          )}
 
-          {securityRole && securityRole !== "translator" &&
+          {securityRole && securityRole !== "translator" && (
             <li>
               <NavLink to={"/new"} className="nav-link text-white">
                 <img alt="queue" src="image/queue.svg" /> New
               </NavLink>
             </li>
-          }
+          )}
 
-          {securityRole && securityRole !== "operator" &&
+          {securityRole && securityRole !== "operator" && (
             <li>
               <NavLink to={"/question"} className="nav-link text-white">
                 <img alt="slider" src="image/sliders.svg" />
                 Question
               </NavLink>
             </li>
-          }
+          )}
         </ul>
       </div>
     </div>

@@ -5,7 +5,6 @@ import "./App.css";
 import SideNavBar from "./Layout/SideNavBar";
 
 import MainRoutes from "./Routes/Routes";
-import HeaderBar from "./Layout/HeaderBar";
 import useMqtt from "./Utils/UseMqttUtils";
 import { publishEvent, subscribeEvent, unSubscribeEvent } from "./Utils/Events";
 import AppContext from "./AppContext";
@@ -180,9 +179,11 @@ const App = ({ auth }) => {
             setBroadcastProgramm,
           }}
         >
-          <SideNavBar securityRole={auth ? auth.securityRole : null} />
+          <SideNavBar
+            securityRole={auth ? auth.securityRole : null}
+            authKeycloak={auth?.keycloak}
+          />
           <div style={{ backgroundColor: "#eeee" }} className="main-content">
-            <HeaderBar logout={auth?.keycloak} />
             <MainRoutes
               logout={auth?.keycloak}
               securityRole={auth ? auth.securityRole : null}
