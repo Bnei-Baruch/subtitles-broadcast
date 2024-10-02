@@ -75,7 +75,7 @@
 }
 .body-content .right-section {
   margin-left: 15px;
-  height: calc(100vh - 180px);
+  /* height: calc(100vh + 180px); */
 }
 .body-content .first-section {
   margin-bottom: 10px;
@@ -518,6 +518,10 @@ dropdown-toggle {
 .green-part-cont {
   background-color: green;
   height: 71.29%;
+}
+
+.active-slide-messaging.green-part-cont {
+  height: 5px;
 }
 
 .green-part-cont.display-mode-none {

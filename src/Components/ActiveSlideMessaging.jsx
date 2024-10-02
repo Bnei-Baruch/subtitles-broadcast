@@ -20,7 +20,7 @@ import session from "redux-persist/lib/storage/session";
 const styles = {
   mainContainer: {
     outline: "1px solid rgb(204, 204, 204)",
-    aspectRatio: "16/9",
+    // aspectRatio: "16/9",
     margin: "0 0 1px 0",
   },
   greenPartContainer: {
@@ -724,7 +724,7 @@ export function ActiveSlideMessaging(props) {
     <>
       <div style={styles.mainContainer}>
         <div
-          className={`green-part-cont${
+          className={`green-part-cont active-slide-messaging${
             !contextMqttMessage || !contextMqttMessage.slide
               ? " display-mode-none"
               : ""
