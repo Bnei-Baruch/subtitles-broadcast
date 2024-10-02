@@ -189,11 +189,13 @@ const QuestionMessage = (props) => {
                   }
                   onClick={() => sendQuestionButtonClickHandler(obj)}
                 />
-                <span>{getLanguageName(obj.lang)}</span>
+                <span>
+                  {getLanguageName(obj.lang ? obj.lang : obj.language)}
+                </span>
               </div>
               <Slide
                 content={obj.orgSlide ? obj.orgSlide : obj.slide}
-                isLtr={languageIsLtr(obj.lang)}
+                isLtr={languageIsLtr(obj.lang ? obj.lang : obj.language)}
                 isQuestion={obj.type === "question"}
               ></Slide>
             </div>
@@ -209,7 +211,7 @@ const QuestionMessage = (props) => {
             <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
               <Slide
                 content={obj.slide}
-                isLtr={languageIsLtr(obj.lang)}
+                isLtr={languageIsLtr(obj.lang ? obj.lang : obj.language)}
                 isQuestion={
                   obj.type === "question" || obj.slide_type === "question"
                 }
@@ -233,7 +235,9 @@ const QuestionMessage = (props) => {
                   <br />
                   <div
                     className={`message ${
-                      languageIsLtr(obj.lang) ? "ChangeToLtr" : "ChangeToRtl"
+                      languageIsLtr(obj.lang ? obj.lang : obj.language)
+                        ? "ChangeToLtr"
+                        : "ChangeToRtl"
                     }`}
                   >
                     {obj.orgSlide ? obj.orgSlide : obj.slide}
