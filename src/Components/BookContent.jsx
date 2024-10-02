@@ -28,55 +28,54 @@ const BookContent = ({
       {contents?.slides?.length > 0 &&
         +activatedTab >= 0 &&
         contents?.slides?.map((item, index) => (
-          <>
-            <div
-              id={`slide_${item.ID}`}
-              source-uid={item.source_uid}
-              onClick={() => {
-                setSearchSlide("");
-                setActivatedTab(+item?.order_number);
-                localStorage.setItem("activatedTabData", +item?.order_number);
+          <div
+            key={`slide_${item.ID}`}
+            id={`slide_${item.ID}`}
+            source-uid={item.source_uid}
+            onClick={() => {
+              setSearchSlide("");
+              setActivatedTab(+item?.order_number);
+              localStorage.setItem("activatedTabData", +item?.order_number);
 
-                dispatch(
-                  BookmarkSlide({
-                    data: {
-                      file_uid: item.file_uid,
-                      slide_id: item.ID,
-                      update: true,
-                    },
-                    language: appContextlData.broadcastLang.label,
-                  })
-                );
-              }}
-              ref={
-                +activatedTab + 1 === item.order_number + 1 ? focusSlides : null
-              }
-              className={`box-content d-flex  cursor-pointer  ${
-                +activatedTab + 1 === +item.order_number + 1 && "activeSlide"
-              }`}
-            >
-              {/* <bdo
+              dispatch(
+                BookmarkSlide({
+                  data: {
+                    file_uid: item.file_uid,
+                    slide_id: item.ID,
+                    update: true,
+                  },
+                  language: appContextlData.broadcastLang.label,
+                })
+              );
+            }}
+            ref={
+              +activatedTab + 1 === item.order_number + 1 ? focusSlides : null
+            }
+            className={`box-content d-flex  cursor-pointer  ${
+              +activatedTab + 1 === +item.order_number + 1 && "activeSlide"
+            }`}
+          >
+            {/* <bdo
                 className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
                 dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
               > */}
-              <Slide
-                content={item?.slide}
-                isLtr={
-                  item && typeof item.left_to_right === "boolean"
-                    ? item.left_to_right
-                    : isLtr
-                }
-                searchKeyword={searchKeyword}
-                isQuestion={item?.slide_type === "question"}
-              ></Slide>
-              {/* </bdo> */}
-              <span className="order-number">{`${
-                item?.languages.length > 1
-                  ? item?.languages[+index % item?.languages.length]
-                  : item?.languages[0]
-              } ${+item.order_number + 1}`}</span>
-            </div>
-          </>
+            <Slide
+              content={item?.slide}
+              isLtr={
+                item && typeof item.left_to_right === "boolean"
+                  ? item.left_to_right
+                  : isLtr
+              }
+              searchKeyword={searchKeyword}
+              isQuestion={item?.slide_type === "question"}
+            ></Slide>
+            {/* </bdo> */}
+            <span className="order-number">{`${
+              item?.languages.length > 1
+                ? item?.languages[+index % item?.languages.length]
+                : item?.languages[0]
+            } ${+item.order_number + 1}`}</span>
+          </div>
         ))}
     </>
   );
