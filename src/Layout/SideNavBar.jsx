@@ -19,8 +19,6 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
           </div>
         </a>
 
-        <HeaderBar logout={authKeycloak} />
-
         <ul className="nav nav-pills flex-column mb-auto">
           {securityRole && securityRole !== "translator" && (
             <li className="nav-item">
@@ -67,6 +65,8 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
             </li>
           )}
         </ul>
+
+        <HeaderBar logout={authKeycloak} />
       </div>
     </div>
   </>

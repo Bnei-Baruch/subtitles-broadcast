@@ -559,7 +559,7 @@ dropdown-toggle {
   padding-right: 1.1em;
 }
 
-.page-subtitle {
+.top-header {
   &.top-header {
     background-color: #232f3e !important;
     color: white !important;
