@@ -83,41 +83,26 @@ export function ActiveSlideMessaging(props) {
     setSubtitlesDisplayMode(props.subtitlesDisplayMode);
   }
 
-  function findActiveSlides(userAddedList, activeSlideOrderNum) {
-    let activeSlideByBroadCustLang;
-    let languageIndex = 0;
-    let otherLangSlides = [];
-
-    for (let i = 0; i < userAddedList.slides.length; i++) {
-      const lupSlide = userAddedList.slides[i];
-
-      if (lupSlide.order_number === activeSlideOrderNum) {
-        let language = lupSlide.languages[languageIndex];
-
-        if (language === broadcastLangCode) {
-          activeSlideByBroadCustLang = lupSlide;
-        } else {
-          let slide = {
-            ...userAddedList.slides[i],
-            language: lupSlide.languages[languageIndex],
-          };
-          otherLangSlides.push(slide);
-        }
-
-        languageIndex++;
-      } else {
-        if (otherLangSlides.length > 0) {
-          break;
-        }
-      }
+  const findActiveSlides = (userAddedList, activeSlideOrderNum) => {
+    if (
+      !userAddedList ||
+      !userAddedList.slides ||
+      activeSlideOrderNum >= userAddedList.slides.length
+    ) {
+      return { activeSlideByLang: null, otherSlides: [] };
     }
 
-    let retObj = {
-      activeSlideByLang: activeSlideByBroadCustLang,
-      otherSlides: otherLangSlides,
+    const activeSlide = userAddedList.slides[activeSlideOrderNum];
+
+    if (!activeSlide) {
+      return { activeSlideByLang: null, otherSlides: [] };
+    }
+
+    return {
+      activeSlideByLang: activeSlide,
+      otherSlides: [],
     };
-    return retObj;
-  }
+  };
 
   const publishSlide = (slide, topic, isJsonMsg) => {
     let slideJsonMsg;
