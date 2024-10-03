@@ -1,15 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import {
-  GetAllArchiveData,
-} from "../Redux/ArchiveTab/ArchiveSlice";
+import { GetAllArchiveData } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
 import BroadcastSettings from "../Components/BroadcastSettings";
 import AppContext from "../AppContext";
-import {
-  GetAllSourcePathData,
-} from "../Redux/SourceTab/SourceSlice";
+import { GetAllSourcePathData } from "../Redux/SourceTab/SourceSlice";
 
 const HeaderBar = ({ logout }) => {
   const appContextlData = useContext(AppContext);
@@ -31,7 +27,7 @@ const HeaderBar = ({ logout }) => {
   const updateFreeText = (t) => {
     setFreeText(t);
     localStorage?.setItem("free-text", t);
-  }
+  };
 
   const DebouncingFreeText = useDebounce(freeText, 500);
   useEffect(() => {
@@ -72,9 +68,14 @@ const HeaderBar = ({ logout }) => {
 
   return (
     <>
-      <div className="top-header d-flex justify-content-between ">
+      <div
+        className={`top-header d-flex justify-content-between page-${param.pathname.replace(
+          "/",
+          ""
+        )}`}
+      >
         <div className="form-group col-3 autoComplete">
-          {param.pathname === "/archive" &&
+          {param.pathname === "/archive" && (
             <input
               placeholder="Search"
               value={freeText}
@@ -97,8 +98,8 @@ const HeaderBar = ({ logout }) => {
               type="text"
               className="form-control input"
             />
-          }
-          {param.pathname === "/source" &&
+          )}
+          {param.pathname === "/source" && (
             <input
               placeholder="Search"
               value={freeText}
@@ -115,18 +116,20 @@ const HeaderBar = ({ logout }) => {
                 //sessionStorage.setItem("headerSearchKeywordSource", "");
               }}
               onChange={(e) => {
-                sessionStorage.setItem("headerSearchKeywordSource", e.target.value);
+                sessionStorage.setItem(
+                  "headerSearchKeywordSource",
+                  e.target.value
+                );
                 updateFreeText(e.target.value);
               }}
               type="text"
               className="form-control input"
             />
-          }
+          )}
           <div></div>
-        </div >
+        </div>
         <div className="d-flex aligne-item-center">
           <div className="btn-group list-btn">
-            <BroadcastSettings></BroadcastSettings>
             <button
               className="btn btn-secondary dropdown-toggle"
               type="button"
@@ -136,7 +139,7 @@ const HeaderBar = ({ logout }) => {
               <img
                 alt="button"
                 className=""
-                src="image/account-circle.svg"
+                src="/image/user_icon.svg"
                 id="dropdownMenuButton1"
                 data-bs-toggle="dropdown"
               />
@@ -152,6 +155,7 @@ const HeaderBar = ({ logout }) => {
                 </span>
               </li>
             </ul>
+            <BroadcastSettings></BroadcastSettings>
           </div>
         </div>
       </div>

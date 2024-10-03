@@ -18,7 +18,7 @@ const rightColSize = 8;
 
 const styles = {
   buttonPrimary: {
-    width: "390px",
+    // width: "390px",
     textAlign: "left",
     backgroundColor: "transparent",
     transition: "none",
@@ -44,14 +44,14 @@ const styles = {
   },
   labelMainVal: {
     marginRight: "5px",
-    fontWeight: "bold",
-    fontSize: "16px",
+    // fontWeight: "bold",
+    fontSize: "14px",
     width: "135px",
     display: "inline-block",
   },
   labelMainLast: {
-    fontWeight: "bold",
-    fontSize: "16px",
+    // fontWeight: "bold",
+    fontSize: "14px",
     width: "75px",
     display: "inline-block",
   },
@@ -101,11 +101,24 @@ export function BroadcastSettings({ props }) {
   return (
     <>
       <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
-        <label style={styles.labelMain}>Chanel: </label>
-        <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
-
-        <label style={styles.labelMain}>Language: </label>
-        <span style={styles.labelMainLast}>{broadcastLang.label}</span>
+        <div className="side-menu-item-holder">
+          {/* <label style={styles.labelMain}>Chanel: </label> */}
+          <img
+            src="/image/new_channel_icon.svg"
+            alt="Channel Icon"
+            class="icon"
+          />
+          <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
+        </div>
+        <div className="side-menu-item-holder">
+          {/* <label style={styles.labelMain}>Language: </label> */}
+          <img
+            src="/image/globe_language_icon.svg"
+            alt="Language Icon"
+            class="icon"
+          />
+          <span style={styles.labelMainLast}>{broadcastLang.label}</span>
+        </div>
       </Button>
 
       <Modal
