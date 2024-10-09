@@ -17,4 +17,4 @@ RUN npm install -g serve
 RUN npm run build -- prod
 
 # Set the command to run the application
-CMD ["serve", "-s", "start"]
+CMD ["serve", "-s", "build"]
