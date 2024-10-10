@@ -7,6 +7,12 @@ ARG mqtt_port="443"
 ARG mqtt_protocol="wss"
 ARG mqtt_url="msg.kab.info"
 
+# Use an official Node runtime as the base image
+FROM node:alpine
+
+# Set the working directory
+WORKDIR /usr/src/app
+
 ENV REACT_APP_ENV=production \
     REACT_APP_API_BASE_URL=${api_base_url} \
     REACT_APP_KEYCLOAK_CLIENT_ID=${keycloak_client_id} \
@@ -16,12 +22,6 @@ ENV REACT_APP_ENV=production \
     REACT_APP_MQTT_PORT=${mqtt_port} \
     REACT_APP_MQTT_PROTOCOL=${mqtt_protocol} \
     REACT_APP_MQTT_URL=${mqtt_url}
-
-# Use an official Node runtime as the base image
-FROM node:alpine
-
-# Set the working directory
-WORKDIR /usr/src/app
 
 # Install app dependencies
 COPY package.json .
