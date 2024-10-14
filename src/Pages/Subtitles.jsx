@@ -136,7 +136,7 @@ const Subtitles = () => {
   useEffect(() => {
     if (searchSlide.length > 0 || searchSlide !== previousSearch) {
       let file_uid = localStorage.getItem("fileUid");
-      if (file_uid !== "") {
+      if (file_uid) {
         dispatch(
           GetSubtitleData({
             file_uid,
