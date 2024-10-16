@@ -17,6 +17,7 @@ import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation } from "react-router-dom";
 import AppContext from "../AppContext";
+import { Search } from "../Layout/Search";
 
 const Archive = () => {
   const appContextlData = useContext(AppContext);
@@ -158,10 +159,11 @@ const Archive = () => {
       {editSlide ? (
         <EditArcive handleClose={() => setEditSlide(false)} />
       ) : (
-        <div className="archiveBackground  bg-light Edit">
+        <div className="archiveBackground  bg-light Edit" style={{position: "relative"}}>
           <div className="flex-container">
             <div className="flex-box-center" style={{marginLeft: "10px", marginRight: "10px"}}>
               {/* Content for the second flex box centered */}
+              <Search />
               <ReactPaginate
                 pageCount={archiveList?.pagination?.total_pages}
                 onPageChange={(e) => {
