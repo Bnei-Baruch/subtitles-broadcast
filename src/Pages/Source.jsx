@@ -15,6 +15,7 @@ import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
 import AppContext from "../AppContext";
 import GetLangaugeCode from "../Utils/Const";
+import { Search } from "../Layout/Search";
 import { useNavigate } from "react-router-dom";
 
 const Source = () => {
@@ -134,10 +135,11 @@ const Source = () => {
     <>
       {DelectConfirmationModal}
       {ConfirmationMessage}
-      <div className="archiveBackground  bg-light Edit">
+      <div className="archiveBackground bg-light Edit" style={{position: "relative"}}>
         <div className="flex-container">
           <div className="flex-box-center" style={{marginLeft: "10px", marginRight: "10px"}}>
             {/* Content for the second flex box centered */}
+            <Search />
             <ReactPaginate
               pageCount={sourcePathList?.pagination?.total_pages}
               onPageChange={(e) => {

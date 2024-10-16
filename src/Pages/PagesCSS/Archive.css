@@ -250,7 +250,9 @@ select {
 
 /* Styles for the dropdown container */
 .form-group.autoComplete {
-  position: relative;
+  position: absolute;
+  left: 0;
+  margin-left: 5px;
 }
 
 /* Styles for the input */
