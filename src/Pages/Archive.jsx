@@ -161,7 +161,7 @@ const Archive = () => {
       ) : (
         <div className="archiveBackground  bg-light Edit" style={{position: "relative"}}>
           <div className="flex-container">
-            <div className="flex-box-center" style={{marginLeft: "10px", marginRight: "10px"}}>
+            <div className="flex-box-center top-autocomplete" style={{marginLeft: "10px", marginRight: "10px"}}>
               {/* Content for the second flex box centered */}
               <Search />
               <ReactPaginate
