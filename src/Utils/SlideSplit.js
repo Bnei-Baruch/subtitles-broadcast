@@ -194,17 +194,15 @@ const TextOrMarkdownToken = (stack, index, i, text) => {
   };
 };
 
-/*
-const ENUM_RE = /^\d+\.$/;
-const IsTextTokenEnumeration = ({type, text}) => {
+const ENUM_RE = /^\d+\\?\.$/;
+export const IsTextTokenEnumeration = ({type, text}) => {
   if (type !== TOKEN_TEXT) {
     return false;
   }
   return !!text.match(ENUM_RE);
 };
-*/
 
-// Stack is a stack of markdown tokens that span over a line or several lines.
+// |stack| is a stack of markdown tokens that span over a line or several lines.
 // Example: # this is *italic* header.  So when toknizing 'italic', the stack
 // will be [TOKEN_H1, TOKEN_ITALIC]
 export const Tokenize = (stack, index, text) => {
@@ -331,7 +329,7 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
         console.log(nextDiv.clientHeight, firstTokenInSlide);
         console.log(prevToken, token);
         console.log(JSON.stringify(markdown.slice(restIndex, restIndex+30)));*/
-        if (/*IsTextTokenEnumeration(token) ||*/
+        if ((prevToken && prevToken.type === TOKEN_NEWLINE && IsTextTokenEnumeration(token)) ||
             type === TOKEN_NEWSLIDE ||
             (HEADER_TOKENS.includes(type) && CutNonVisibleEndings(nextDivMarkdown) !== '')) {
           // New slide due to /*enumeration*/, header or new slide token.

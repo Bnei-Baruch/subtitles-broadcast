@@ -9,6 +9,7 @@ import {
   TOKEN_TEXT,
   Tokenize,
   createMarkdownit,
+  IsTextTokenEnumeration,
 } from "./SlideSplit";
 
 test('Markdown only two endlines to <p>', () => {
@@ -76,4 +77,14 @@ test('Tokenize, markdown combined', () => {
   expect(Tokenize([], 35, testText)).toStrictEqual({token: {text: 'markdown', type: TOKEN_TEXT, stack: []}, restIndex: 43});
   expect(Tokenize([], 43, testText)).toStrictEqual({token: {text: '*', type: TOKEN_ITALIC, stack: [TOKEN_ITALIC]}, restIndex: 44});
   expect(testText.length).toBe(44);
+});
+
+test('Enumaration', () => {
+  expect(IsTextTokenEnumeration({text: '1', type: TOKEN_TEXT})).toBe(false);
+  expect(IsTextTokenEnumeration({text: '1.', type: TOKEN_TEXT})).toBe(true);
+  expect(IsTextTokenEnumeration({text: '1.', type: TOKEN_H1})).toBe(false);
+  expect(IsTextTokenEnumeration({text: '1\.', type: TOKEN_TEXT})).toBe(true);
+  expect(IsTextTokenEnumeration({text: '1\\.', type: TOKEN_TEXT})).toBe(true);
+  expect(IsTextTokenEnumeration({text: '1\\\.', type: TOKEN_TEXT})).toBe(true);
+  expect(IsTextTokenEnumeration({text: '1\\\\.', type: TOKEN_TEXT})).toBe(false);
 });
