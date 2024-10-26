@@ -194,7 +194,7 @@ const TextOrMarkdownToken = (stack, index, i, text) => {
   };
 };
 
-const ENUM_RE = /^\d+\\?\.$/;
+const ENUM_RE = /^[\dאבגדהוזחטיכלמנסעפצקרשתםןץףך]+\\?[\.\)]$/;
 export const IsTextTokenEnumeration = ({type, text}) => {
   if (type !== TOKEN_TEXT) {
     return false;
