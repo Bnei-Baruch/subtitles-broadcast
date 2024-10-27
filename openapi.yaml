@@ -921,6 +921,10 @@ components:
           type: string
           description: archive file uid
           example: 1
+        source_path:
+          type: string
+          description: source path
+          example: "VDkDRNnR"
         slide_source_path:
           type: string
           description: source path including author name for slide
