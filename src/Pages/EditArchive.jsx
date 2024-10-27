@@ -28,6 +28,7 @@ const EditArcive = ({ handleClose }) => {
   const [split, setSplit] = useState(false);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
+  const [sourcePath, setSourcePath] = useState("");
 
   useEffect(() => {
     dispatch(
@@ -44,6 +45,7 @@ const EditArcive = ({ handleClose }) => {
         setSlideListData(response.payload.data.slides);
         setSlideTextListCopy(response.payload.data.slides);
         setIsLtr(response.payload.data.slides[0].left_to_right);
+        setSourcePath(response.payload.data.slides[0].source_path);
       }
     });
   }, []);
@@ -312,6 +314,15 @@ const EditArcive = ({ handleClose }) => {
         <div className="card border-0">
           <div className="top-row d-flex justify-content-between align-items-center">
             <h3 className="m-0">Edit Subtitle</h3>
+            <div>
+              <span>
+                <strong>Source Path:</strong>
+              </span>
+              <input
+                style={{ width: "450px", display: "inline-block" }}
+                value={sourcePath}
+              />
+            </div>
             <div>
               <button
                 type="button"
