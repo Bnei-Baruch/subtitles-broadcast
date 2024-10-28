@@ -55,6 +55,7 @@ type SlideDetail struct {
 	Bookmark_id     *uint          `json:"bookmark_id" gorm:"->"`
 	SourceUid       string         `json:"source_uid" gorm:"->"`
 	SourcePath      string         `json:"source_path" gorm:"->"`
+	SourcePathId    string         `json:"source_path_id" gorm:"->"`
 }
 
 type SourcePath struct {

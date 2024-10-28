@@ -35,6 +35,7 @@ func NewRouter(handler *Handler) http.Handler {
 	// Unnecessary handler at this moment. If need, will be used
 	// v1.GET("/source_name", handler.GetSourceName)
 	v1.GET("/source_path", handler.GetSourcePath)
+	v1.PATCH("/source_path_id/:id", handler.UpdateSourcePath)
 
 	router.NoMethod(func(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{

@@ -328,7 +328,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
 	return h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
-		Select("slides.*, source_paths.path AS source_path, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
+		Select("slides.*, source_paths.id AS source_path_id, source_paths.path AS source_path, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
@@ -1053,6 +1053,36 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		getResponse(true,
 			sourcePathList,
 			"", "Getting data has succeeded"))
+}
+
+// UpdateSourcePath updates the source_path field for a given source_uid
+func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
+	sourcePathID := ctx.Param("id")
+
+	// Define a struct to parse the JSON request body
+	var req struct {
+		SourcePath string `json:"source_path"`
+	}
+
+	// Bind JSON data to the request struct
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON provided"})
+		return
+	}
+
+	// Update the source_path in the database
+	result := h.Database.Model(&SourcePath{}).
+		Where("id = ?", sourcePathID).
+		Update("path", req.SourcePath)
+
+	// Check if the update was successful
+	if result.Error != nil || result.RowsAffected == 0 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update source path"})
+		return
+	}
+
+	// Respond with a success message
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "message": "Source path updated successfully"})
 }
 
 // For checking user role verification for the permissions (need to define user roles soon)
