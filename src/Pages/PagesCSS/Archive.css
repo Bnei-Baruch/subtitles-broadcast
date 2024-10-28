@@ -35,6 +35,11 @@
   box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.05);
   border-radius: 4px;
 }
+
+.Edit .form-control.input {
+  height: 38px;
+}
+
 .css-13cymwt-control {
   height: 50px;
   background: #ffffff;
