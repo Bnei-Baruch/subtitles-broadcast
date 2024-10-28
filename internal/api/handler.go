@@ -132,7 +132,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		Slide       string `json:"slide"`
 		OrderNumber int    `json:"order_number"`
 		LeftToRight bool   `json:"left_to_right"`
-    SlideType   string `json:"slide_type"`
+		SlideType   string `json:"slide_type"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -154,7 +154,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			Slide:       req.Slide,
 			OrderNumber: req.OrderNumber,
 			LeftToRight: req.LeftToRight,
-      SlideType:   req.SlideType,
+			SlideType:   req.SlideType,
 		}).Error; err != nil {
 			tx.Rollback()
 			log.Error(err)
@@ -210,9 +210,9 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			First(&sourcePath)
 		if result.Error != nil {
 			log.Error(result.Error)
-      // Some Likutim or new sources might not have source path.
-      // TODO: Allow renaming source path for any loaded material.
-      sourcePath.Path = "Unknown"
+			// Some Likutim or new sources might not have source path.
+			// TODO: Allow renaming source path for any loaded material.
+			sourcePath.Path = "Unknown"
 		}
 		req.SourcePath = sourcePath.Path
 	}
@@ -255,7 +255,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			LeftToRight: req.LeftToRight,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
-      SlideType:   req.SlidesTypes[idx],
+			SlideType:   req.SlidesTypes[idx],
 		}
 		if len(req.FileUid) > 0 {
 			slideData.FileUid = req.FileUid
@@ -315,7 +315,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
+
 	}
+
 	ctx.JSON(http.StatusOK,
 		getResponse(true,
 			constructResponsePagination(page, listLimit, totalRows, slides),
@@ -326,7 +328,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
 	return h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
-		Select("slides.*, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
+		Select("slides.*, source_paths.id AS source_path_id, source_paths.path AS source_path, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
 		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
@@ -994,9 +996,9 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Path       string         `json:"path"`
 	}
 	paths := []*SourcePathData{}
-  limitSql := fmt.Sprintf(" LIMIT %d", listLimit)
-  offsetSql := fmt.Sprintf(" OFFSET %d", offset)
-  fields := `
+	limitSql := fmt.Sprintf(" LIMIT %d", listLimit)
+	offsetSql := fmt.Sprintf(" OFFSET %d", offset)
+	fields := `
     slides.id AS slide_id,
     bookmarks.id AS bookmark_id,
     source_paths.source_uid AS source_uid,
@@ -1005,8 +1007,8 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
     source_paths.path AS path,
     RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number
   `
-  orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
-  templateSql := `
+	orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
+	templateSql := `
     SELECT
       %s
       %s
@@ -1018,17 +1020,17 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
       AND '%s' = ANY(files.languages)
       AND source_paths.path ILIKE '%%%s%%'
   `
-  querySql := fmt.Sprintf(templateSql,
-      "DISTINCT ON (source_paths.path, source_paths.source_uid)",
-      fields, userId, language, keyword)
-  countQuerySql := fmt.Sprintf(templateSql,
-      "COUNT(DISTINCT (source_paths.path, source_paths.source_uid))",
-      "", userId, language, keyword)
-  // Count total.
-  h.Database.Debug().WithContext(ctx).Raw(countQuerySql).Scan(&totalRows)
-  // Get specific page.
-  result := h.Database.Debug().WithContext(ctx).Raw(
-      querySql + orderBySql + limitSql + offsetSql).Scan(&paths)
+	querySql := fmt.Sprintf(templateSql,
+		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
+		fields, userId, language, keyword)
+	countQuerySql := fmt.Sprintf(templateSql,
+		"COUNT(DISTINCT (source_paths.path, source_paths.source_uid))",
+		"", userId, language, keyword)
+	// Count total.
+	h.Database.Debug().WithContext(ctx).Raw(countQuerySql).Scan(&totalRows)
+	// Get specific page.
+	result := h.Database.Debug().WithContext(ctx).Raw(
+		querySql + orderBySql + limitSql + offsetSql).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -1051,6 +1053,36 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		getResponse(true,
 			sourcePathList,
 			"", "Getting data has succeeded"))
+}
+
+// UpdateSourcePath updates the source_path field for a given source_uid
+func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
+	sourcePathID := ctx.Param("id")
+
+	// Define a struct to parse the JSON request body
+	var req struct {
+		SourcePath string `json:"source_path"`
+	}
+
+	// Bind JSON data to the request struct
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON provided"})
+		return
+	}
+
+	// Update the source_path in the database
+	result := h.Database.Model(&SourcePath{}).
+		Where("id = ?", sourcePathID).
+		Update("path", req.SourcePath)
+
+	// Check if the update was successful
+	if result.Error != nil || result.RowsAffected == 0 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update source path"})
+		return
+	}
+
+	// Respond with a success message
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "message": "Source path updated successfully"})
 }
 
 // For checking user role verification for the permissions (need to define user roles soon)

@@ -45,7 +45,7 @@ type Slide struct {
 	LeftToRight bool      `json:"left_to_right"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-  SlideType   string    `json:"slide_type"`
+	SlideType   string    `json:"slide_type"`
 }
 
 type SlideDetail struct {
@@ -54,6 +54,8 @@ type SlideDetail struct {
 	SlideSourcePath string         `json:"slide_source_path" gorm:"->"` // author/type/title/slide_id
 	Bookmark_id     *uint          `json:"bookmark_id" gorm:"->"`
 	SourceUid       string         `json:"source_uid" gorm:"->"`
+	SourcePath      string         `json:"source_path" gorm:"->"`
+	SourcePathId    string         `json:"source_path_id" gorm:"->"`
 }
 
 type SourcePath struct {

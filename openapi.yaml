@@ -865,6 +865,35 @@ paths:
       security:
         - bearerAuth:
             - read:authors
+  /source_path_id/{id}:
+    patch:
+      summary: Update the source_path.path for a specific source_path.id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the source_path to update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source_path:
+                  type: string
+      responses:
+        '200':
+          description: Success message
+        '400':
+          description: Invalid JSON provided
+        '500':
+          description: Failed to update source path
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
 components:
   schemas:
     Slide:
@@ -921,6 +950,10 @@ components:
           type: string
           description: archive file uid
           example: 1
+        source_path:
+          type: string
+          description: source path
+          example: "VDkDRNnR"
         slide_source_path:
           type: string
           description: source path including author name for slide
