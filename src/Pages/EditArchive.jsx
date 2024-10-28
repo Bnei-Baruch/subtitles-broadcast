@@ -5,13 +5,13 @@ import {
   addNewSlide,
   deleteNewSlide,
   updateNewSlide,
-  getEditSlideList,
+  updateSourcePath,
+  GetAllArchiveData,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import AppContext from "../AppContext";
 import { SplitToSlides } from "../Utils/SlideSplit";
-import { GetAllArchiveData } from "../Redux/ArchiveTab/ArchiveSlice";
 
 const EditArcive = ({ handleClose }) => {
   const appContextlData = useContext(AppContext);
@@ -28,7 +28,8 @@ const EditArcive = ({ handleClose }) => {
   const [split, setSplit] = useState(false);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
-  const [sourcePath, setSourcePath] = useState("");
+  const [sourcePath, setSourcePath] = useState(null);
+  const [sourcePathId, setSourcePathId] = useState(null);
 
   useEffect(() => {
     dispatch(
@@ -46,6 +47,7 @@ const EditArcive = ({ handleClose }) => {
         setSlideTextListCopy(response.payload.data.slides);
         setIsLtr(response.payload.data.slides[0].left_to_right);
         setSourcePath(response.payload.data.slides[0].source_path);
+        setSourcePathId(response.payload.data.slides[0].source_path_id);
       }
     });
   }, []);
@@ -306,24 +308,49 @@ const EditArcive = ({ handleClose }) => {
     setSlideTextList(newSlideTextList);
   };
 
+  const handleSourcePathChange = (e) => {
+    setSourcePath(e.target.value);
+  };
+
+  const handleUpdateSourcePath = () => {
+    if (!isNaN(sourcePathId) && sourcePathId > 0 && sourcePath) {
+      dispatch(
+        updateSourcePath({
+          sourcePathId: sourcePathId,
+          sourcePath: sourcePath,
+        })
+      );
+    }
+  };
+
   return (
     <>
       {ForceDeleteBookmark}
       {ConfirmationMessage}
       <div className="archiveBackground bg-light Edit">
         <div className="card border-0">
-          <div className="top-row d-flex justify-content-between align-items-center">
-            <h3 className="m-0">Edit Subtitle</h3>
-            <div>
-              <span>
-                <strong>Source Path:</strong>
-              </span>
+          <div className="top-row d-flex">
+            <h4 className="m-0 inline-flex me-4">Edit Subtitle</h4>
+            <div className="inline-flex w-50">
               <input
-                style={{ width: "450px", display: "inline-block" }}
+                type="text"
+                className={`form-control input  ${
+                  isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                }`}
                 value={sourcePath}
+                onChange={handleSourcePathChange}
+                placeholder="Update Source Path"
               />
             </div>
-            <div>
+            <div className="me-4">
+              <button
+                className="btn btn-success inline-flex"
+                onClick={handleUpdateSourcePath}
+              >
+                Update Source Path
+              </button>
+            </div>
+            <div className="inline-flex">
               <button
                 type="button"
                 onClick={() => rerun()}

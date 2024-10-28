@@ -285,4 +285,21 @@ export const getAllBookmarkListLoading = (state) =>
 export const getAllAuthorList = (state) =>
   state?.ArchiveList?.getAuthorList?.data;
 
+export const updateSourcePath = createAsyncThunk(
+  "updateSourcePath",
+  async (data, thunkAPI) => {
+    try {
+      const response = await axios.patch(
+        `${API}source_path_id/${data.sourcePathId}`,
+        { source_path: data.sourcePath }
+      );
+      response.data.success && toast.success(response.data.message);
+      return response.data;
+    } catch (error) {
+      toast.error("Failed to update source path");
+      return thunkAPI.rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export default ArchiveSlice.reducer;
