@@ -170,6 +170,7 @@ const EditArcive = ({ handleClose }) => {
 
       if (slideElement) {
         slideElement.click();
+        slideElement.scrollIntoView({ behavior: "smooth", block: "center" });
         hasSelected.current = true;
       }
     }
