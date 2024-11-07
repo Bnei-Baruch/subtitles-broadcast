@@ -33,6 +33,7 @@ import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
 import GetLangaugeCode from "../Utils/Const";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
+import { useNavigate } from "react-router-dom";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -61,6 +62,7 @@ const Subtitles = () => {
     +localStorage.getItem("activeSlideFileUid")
   );
   const languages = GetLangaugeCode();
+  const navigate = useNavigate();
 
   const updateSelectedSlide = (newSelectedSlide) => {
     if (newSelectedSlide < 0) {
@@ -182,6 +184,20 @@ const Subtitles = () => {
     setSubtitlesDisplayMode("none");
   }
 
+  const navigatToEditSubtitle = () => {
+    const file_uid = UserAddedList?.slides?.[0]?.file_uid;
+    const slide = UserAddedList?.slides?.find(
+      (key) => key?.order_number === selectedSlide
+    );
+    const slideID = slide ? slide.ID : null;
+
+    if (file_uid && slideID) {
+      navigate(`/archive?file_uid=${file_uid}&slide_id=${slideID}`);
+    } else {
+      console.warn("file_uid or slideID is missing");
+    }
+  };
+
   return (
     <>
       <div className="body-content d-flex ">
@@ -250,10 +266,11 @@ const Subtitles = () => {
               />
               <button
                 type="button"
-                onClick={() => setIsLtr(!isLtr)}
+                onClick={(evt) => navigatToEditSubtitle(evt)}
                 className="btn btn-tr"
+                disabled={!UserAddedList?.slides?.length || !selectedSlide}
               >
-                {isLtr ? "LTR" : "RTL"}
+                Edit Subtitle
               </button>
             </div>
           </div>
