@@ -30,7 +30,12 @@ const EditArcive = ({ handleClose }) => {
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
   const [sourcePath, setSourcePath] = useState(null);
   const [sourcePathId, setSourcePathId] = useState(null);
+  const location = useLocation();
+  const hasSelected = useRef(false); // Ref to track if navigation selection by slide id has already been made
 
+  // Retrieve the slide_id from the URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const slideID = searchParams.get("slide_id");
   useEffect(() => {
     dispatch(
       GetAllArchiveData({
@@ -156,6 +161,19 @@ const EditArcive = ({ handleClose }) => {
 
     performUpdates();
   }, [updatedSlideTextList]);
+
+  useEffect(() => {
+    if (!hasSelected.current && slideID && slideListData.length > 0) {
+      const slideElement = document.querySelector(
+        `[data-slide-id="${slideID}"]`
+      );
+
+      if (slideElement) {
+        slideElement.click();
+        hasSelected.current = true;
+      }
+    }
+  }, [slideListData, slideID, setSelected]);
 
   const handleSubmit = () => {
     const shouldDelete = deleted?.length > 0;
@@ -409,13 +427,18 @@ const EditArcive = ({ handleClose }) => {
         <div className="container">
           {slideListData?.length > 0 &&
             slideListData?.map((key, index) => (
-              <div className="row">
+              <div
+                className="row "
+                key={`row_slide_${key.ID}`}
+                id={`row_slide_${key.ID}`}
+              >
                 <div
                   className={`col-md-6 mb-2`}
                   onClick={() => {
                     setSelected(index);
                     localStorage.setItem("myIndex", index);
                   }}
+                  data-slide-id={key.ID}
                 >
                   <div
                     className={`adjustable-font box box2 ${

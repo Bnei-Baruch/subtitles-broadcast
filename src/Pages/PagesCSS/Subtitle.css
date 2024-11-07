@@ -600,3 +600,10 @@ dropdown-toggle {
     margin-right: 7px;
   }
 }
+.innerhead .btn.btn-tr:disabled {
+  color: #888888;
+  background-color: #e0e0e0;
+  border-color: #b0b0b0;
+  opacity: 0.75;
+  cursor: not-allowed;
+}
