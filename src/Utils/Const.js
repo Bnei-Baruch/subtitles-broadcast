@@ -26,6 +26,9 @@ export const broadcastLanguages = [
   { value: "en", label: "English", isLtr: true, order_num: 2 },
   { value: "ru", label: "Russian", isLtr: true, order_num: 3 },
   { value: "es", label: "Spanish", isLtr: true, order_num: 4 },
+  { value: "ua", label: "Ukrainian", isLtr: true, order_num: 5 },
+  { value: "it", label: "Italian", isLtr: true, order_num: 6 },
+  { value: "tr", label: "Turkish", isLtr: true, order_num: 6 },
 ];
 
 export let broadcastLangMapObj = {};
