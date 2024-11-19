@@ -341,6 +341,30 @@ const EditArcive = ({ handleClose }) => {
       );
     }
   };
+  const handleDeleteSlide = (
+    key,
+    index,
+    slideListData,
+    setSlideListData,
+    deleted,
+    setDeleted,
+    setForceDeleteConfirm
+  ) => {
+    if (key.bookmark_id !== null && key?.ID) {
+      setForceDeleteConfirm(index);
+    } else {
+      const cloneSlidedataArray = [...slideListData];
+      cloneSlidedataArray.splice(index, 1);
+      const updatedSlides = cloneSlidedataArray.map((slide, idx) => ({
+        ...slide,
+        order_number: idx,
+      }));
+      setSlideListData(updatedSlides);
+      if (key?.ID) {
+        setDeleted([...deleted, key?.ID]);
+      }
+    }
+  };
 
   return (
     <>
@@ -537,18 +561,17 @@ const EditArcive = ({ handleClose }) => {
 
                     {index == selected && (
                       <i
-                        onClick={() => {
-                          if (key.bookmark_id !== null && key?.ID) {
-                            setForceDeleteConfirm(index);
-                          } else {
-                            const cloneSlidedataArray = [...slideListData];
-                            cloneSlidedataArray?.splice(index, 1);
-                            setSlideListData(cloneSlidedataArray);
-                            if (key?.ID) {
-                              setDeleted([...deleted, key?.ID]);
-                            }
-                          }
-                        }}
+                        onClick={() =>
+                          handleDeleteSlide(
+                            key,
+                            index,
+                            slideListData,
+                            setSlideListData,
+                            deleted,
+                            setDeleted,
+                            setForceDeleteConfirm
+                          )
+                        }
                         className="bi bi-trash3 delete-icon "
                         style={{
                           [key.left_to_right === false ? "left" : "right"]:
