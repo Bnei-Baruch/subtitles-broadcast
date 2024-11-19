@@ -1,5 +1,5 @@
 # Use an official Node runtime as the base image
-FROM node:lts-alpine
+FROM node:23-alpine
 
 # Set the working directory
 WORKDIR /usr/src/app
