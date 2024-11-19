@@ -98,21 +98,50 @@ const Subtitles = () => {
     const inputValue = +selectedOption?.label - 1;
     updateSelectedSlide(inputValue);
   };
+
   const handleKeyPress = useCallback(
     (event) => {
+      if (!UserAddedList.slides || UserAddedList.slides.length === 0) {
+        return;
+      }
+
+      let currentIndex = UserAddedList.slides.findIndex(
+        (slide) => slide.order_number === selectedSlide
+      );
+
+      if (currentIndex === -1) {
+        console.warn(
+          "handleKeyPress: Current slide not found in UserAddedList"
+        );
+        return;
+      }
+
+      let newIndex = currentIndex;
+
       if (event.keyCode === 40) {
-        updateSelectedSlide(selectedSlide + 1);
+        // Navigate down (next slide by index)
+        newIndex = Math.min(currentIndex + 1, UserAddedList.slides.length - 1);
         event.preventDefault();
         event.stopPropagation();
       }
+
       if (event.keyCode === 38) {
-        updateSelectedSlide(selectedSlide - 1);
+        // Navigate up (previous slide by index)
+        newIndex = Math.max(currentIndex - 1, 0);
         event.preventDefault();
         event.stopPropagation();
+      }
+
+      if (newIndex !== currentIndex) {
+        const newSlide = UserAddedList.slides[newIndex];
+        if (newSlide) {
+          updateSelectedSlide(newSlide.order_number);
+        }
       }
     },
-    [UserAddedList, selectedSlide]
+    [UserAddedList, selectedSlide, updateSelectedSlide]
   );
+
   useEffect(() => {
     // Add event listener when the component mounts
     window.addEventListener("keydown", handleKeyPress);
