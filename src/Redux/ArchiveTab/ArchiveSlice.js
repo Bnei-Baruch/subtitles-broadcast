@@ -223,6 +223,15 @@ export const updateNewSlide = createAsyncThunk(
     return response.data;
   }
 );
+// Define async thunk
+export const fetchArchiveData = createAsyncThunk(
+  "archive/fetchData",
+  async () => {
+    const response = await fetch("/api/archive");
+    return response.json();
+  }
+);
+
 const ArchiveSlice = createSlice({
   name: "Archive",
   initialState,
@@ -232,18 +241,21 @@ const ArchiveSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(GetAllArchiveData.fulfilled, (state, action) => {
+    builder.addCase(fetchArchiveData.fulfilled, (state, action) => {
+      toast.success("Successfully fetched archive data");
       return { ...state, archiveList: action?.payload };
     });
-    builder.addCase(DeleteArchive.rejected, (state, action) => {
+
+    builder.addCase(fetchArchiveData.rejected, (state, action) => {
       toast.error("Something went wrong");
       return state;
     });
+
     builder.addCase(DeleteArchive.fulfilled, (state, action) => {
       toast.success("Successfully deleted");
       return state;
     });
-    builder.addCase(GetAllAuthor, (state, { payload }) => {
+    builder.addCase(GetAllAuthor.fulfilled, (state, { payload }) => {
       return { ...state, authorList: payload };
     });
     builder.addCase(UserBookmarkList.pending, (state) => {
