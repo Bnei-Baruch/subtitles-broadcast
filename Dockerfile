@@ -14,7 +14,7 @@ COPY . .
 
 # Copy the .env file containing all required environment variables
 # Ensure the .env file defines variables like REACT_APP_KEYCLOAK_CLIENT_ID, REACT_APP_API_BASE_URL, etc.
-# COPY .env .env
+COPY .env .env
 
 # Build the React app
 RUN npm install -g serve
