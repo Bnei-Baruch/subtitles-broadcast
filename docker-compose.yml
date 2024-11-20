@@ -1,12 +1,18 @@
-version: "3"
 services:
   react-app:
     container_name: subtitle-project
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: bneibaruch/subtitles_frontend:${SUBTITLES_FRONTEND_VERSION}
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "${SUBTITLES_FRONTEND_PORT}:3000"
     volumes:
       - .:/app
     stdin_open: true
+    env_file:
+      - .env
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"

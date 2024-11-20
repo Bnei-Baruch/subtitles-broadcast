@@ -12,18 +12,12 @@ RUN npm install
 # Add app files
 COPY . .
 
+# Copy the .env file containing all required environment variables
+# Ensure the .env file defines variables like REACT_APP_KEYCLOAK_CLIENT_ID, REACT_APP_API_BASE_URL, etc.
+COPY .env .env
+
 # Build the React app
 RUN npm install -g serve
-
-ENV REACT_APP_ENV=production
-ENV REACT_APP_API_BASE_URL="https://subs.kab.info/backend/api/v1/"
-ENV REACT_APP_KEYCLOAK_CLIENT_ID="subtitles"
-ENV REACT_APP_KEYCLOAK_REALM="main"
-ENV REACT_APP_KEYCLOAK_URL="https://accounts.kab.info/auth"
-ENV REACT_APP_MQTT_PATH=""
-ENV REACT_APP_MQTT_PORT="443"
-ENV REACT_APP_MQTT_PROTOCOL="wss"
-ENV REACT_APP_MQTT_URL="msg.kab.info"
 
 RUN npm run build -- prod
 
