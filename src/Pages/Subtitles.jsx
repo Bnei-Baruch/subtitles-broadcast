@@ -46,7 +46,7 @@ function usePrevious(value) {
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
   const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("");
-  const btnSubtitelsRef = React.createRef();
+  const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
   const dispatch = useDispatch();
@@ -191,13 +191,13 @@ const Subtitles = () => {
 
   function questionsBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
-    btnSubtitelsRef.current.classList.remove("btn-success");
+    btnSubtitlesRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
     setSubtitlesDisplayMode("questions");
   }
 
-  function subtitelsBtnOnClick(evt) {
+  function subtitlesBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
@@ -207,7 +207,7 @@ const Subtitles = () => {
 
   function noneBtnOnClick(evt) {
     evt.target.classList.add("btn-success");
-    btnSubtitelsRef.current.classList.remove("btn-success");
+    btnSubtitlesRef.current.classList.remove("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
 
     setSubtitlesDisplayMode("none");
@@ -244,17 +244,17 @@ const Subtitles = () => {
               aria-label="Basic mixed styles example"
             >
               <button
-                ref={btnSubtitelsRef}
-                id="btnSubtitels"
+                ref={btnSubtitlesRef}
+                id="btnSubtitles"
                 type="button"
                 className={`btn sources-mod${
                   subtitlesDisplayMode === "sources"
                     ? " btn-success display-mod-selected"
                     : ""
                 }`}
-                onClick={(evt) => subtitelsBtnOnClick(evt)}
+                onClick={(evt) => subtitlesBtnOnClick(evt)}
               >
-                Subtitels
+                Subtitles
               </button>
               <button
                 ref={btnQuestionsRef}
