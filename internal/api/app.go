@@ -18,13 +18,26 @@ import (
 )
 
 const (
-	LanguageCodeEnglish = "en"
-	LanguageCodeSpanish = "es"
-	LanguageCodeHebrew  = "he"
-	LanguageCodeRussian = "ru"
+	LanguageCodeEnglish   = "en"
+	LanguageCodeSpanish   = "es"
+	LanguageCodeHebrew    = "he"
+	LanguageCodeRussian   = "ru"
+  LanguageCodeUkrainian = "ua"
+  LanguageCodeItalian   = "it"
+  LanguageCodeTurkish   = "tr"
 
 	SourcePathUpdateTermHour = 6
 )
+
+var LanguageCodes = []string {
+  LanguageCodeEnglish,
+  LanguageCodeSpanish,
+  LanguageCodeHebrew,
+  LanguageCodeRussian,
+  LanguageCodeUkrainian,
+  LanguageCodeItalian,
+  LanguageCodeTurkish,
+}
 
 func NewApp(sig chan os.Signal) *http.Server {
 	db, err := database.NewPostgres(os.Getenv(config.EnvBssvrPostgresUri))
@@ -35,8 +48,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	languageCodes := []string{LanguageCodeEnglish, LanguageCodeSpanish, LanguageCodeHebrew, LanguageCodeRussian}
-	sourcePaths, err := getSourcePathListByLanguages(languageCodes)
+	sourcePaths, err := getSourcePathListByLanguages(LanguageCodes)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -50,7 +62,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 			select {
 			case <-ticker.C:
 				log.Println("Updating source path.")
-				sourcePaths, err := getSourcePathListByLanguages(languageCodes)
+				sourcePaths, err := getSourcePathListByLanguages(LanguageCodes)
 				if err != nil {
 					log.Println(err)
 				}
