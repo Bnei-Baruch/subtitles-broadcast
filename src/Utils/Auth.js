@@ -9,7 +9,12 @@ import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 import PropTypes from "prop-types";
 
 const Auth = ({ children }) => {
-  const [auth, setAuth] = useState({ keycloak: null, authenticated: false, securityProfile: null, securityRole: null });
+  const [auth, setAuth] = useState({
+    keycloak: null,
+    authenticated: false,
+    securityProfile: null,
+    securityRole: null,
+  });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
 
@@ -23,10 +28,18 @@ const Auth = ({ children }) => {
     console.log("authApiUrl: ", authApiUrl);
 
     if (!authRealm || !authClientId || !authApiUrl) {
-      console.error("Keycloak configuration is missing due to missing environment variables");
+      console.error(
+        "Keycloak configuration is missing due to missing environment variables"
+      );
       return;
     }
-  
+
+    const keycloak = new Keycloak({
+      realm: authRealm,
+      url: authApiUrl,
+      clientId: authClientId,
+    });
+
     keycloak
       .init({
         onLoad: "login-required",
@@ -46,7 +59,7 @@ const Auth = ({ children }) => {
 
             // TODO: Add gender to the response
             gender: "male",
-            securityRole: securityRole
+            securityRole: securityRole,
           };
           // profile.logout = keycloak.logout;
           dispatch(StoreProfile({ profile }));
@@ -55,7 +68,7 @@ const Auth = ({ children }) => {
             keycloak,
             authenticated,
             profile,
-            securityRole
+            securityRole,
           });
         });
       });
@@ -95,9 +108,9 @@ function determineAccess(keycloak, setAccess) {
       const subtitlesRoleMatchRes = role.match(subtitlesRoleRex);
 
       if (subtitlesRoleMatchRes && subtitlesRoleMatchRes.groups) {
-        securityRole = subtitlesRoleMatchRes.groups.role?  
-          subtitlesRoleMatchRes.groups.role: 
-          subtitlesRoleMatchRes.groups.admin_role;
+        securityRole = subtitlesRoleMatchRes.groups.role
+          ? subtitlesRoleMatchRes.groups.role
+          : subtitlesRoleMatchRes.groups.admin_role;
         setAccess(true);
         break;
       }
