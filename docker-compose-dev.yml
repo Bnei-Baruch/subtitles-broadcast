@@ -1,0 +1,16 @@
+services:
+  subtitles_frontend_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subtitles_frontend_dev
+    ports:
+      - "3004:80" # Новый порт
+    environment:
+      - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+      - REACT_APP_MQTT_URL=${REACT_APP_MQTT_URL}
+      - REACT_APP_MQTT_PROTOCOL=${REACT_APP_MQTT_PROTOCOL}
+      - REACT_APP_MQTT_PORT=${REACT_APP_MQTT_PORT}
+      - REACT_APP_KEYCLOAK_URL=${REACT_APP_KEYCLOAK_URL}
+      - REACT_APP_KEYCLOAK_REALM=${REACT_APP_KEYCLOAK_REALM}
+      - REACT_APP_KEYCLOAK_CLIENT_ID=${REACT_APP_KEYCLOAK_CLIENT_ID}
