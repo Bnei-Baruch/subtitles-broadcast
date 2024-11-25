@@ -14,11 +14,19 @@ const Auth = ({ children }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const keycloak = new Keycloak({
-      realm: process.env.REACT_APP_KEYCLOAK_REALM,
-      url: process.env.REACT_APP_KEYCLOAK_URL,
-      clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID,
-    });
+    var authRealm = process.env.REACT_APP_KEYCLOAK_REALM;
+    var authClientId = process.env.REACT_APP_KEYCLOAK_CLIENT_ID;
+    var authApiUrl = process.env.REACT_APP_KEYCLOAK_URL;
+
+    console.log("authRealm: ", authRealm);
+    console.log("authClientId: ", authClientId);
+    console.log("authApiUrl: ", authApiUrl);
+
+    if (!authRealm || !authClientId || !authApiUrl) {
+      console.error("Keycloak configuration is missing due to missing environment variables");
+      return;
+    }
+  
     keycloak
       .init({
         onLoad: "login-required",
