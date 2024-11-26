@@ -131,3 +131,7 @@ docker rm subtitles-frontend
 ```
 
 By following these steps, you can effectively deploy the Subtitles Frontend application using Docker from the source code, ensuring a consistent and portable deployment environment.
+
+### Deploying the Subtitles Frontend Using Docker from Source Code
+
+For production deployments, the project uses Docker with Nginx as the web server. Follow the steps below to build and run the container:
