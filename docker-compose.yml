@@ -14,3 +14,10 @@ services:
         tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
         max-size: "10m"
         max-file: "3"
+    networks:
+      - subtitles-network
+
+networks:
+  subtitles-network:
+    name: subtitles-network
+    driver: bridge
