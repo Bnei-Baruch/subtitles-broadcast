@@ -3,7 +3,7 @@ services:
     container_name: subtitles_frontend
     image: bneibaruch/subtitles_frontend:${SUBTITLES_FRONTEND_VERSION}
     ports:
-      - "${SUBTITLES_FRONTEND_PORT}:3000"
+      - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
     volumes:
       - .:/app
     env_file:
