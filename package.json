@@ -1,6 +1,7 @@
 {
   "name": "subtitleproject",
   "version": "0.1.0",
+  "homepage": "/subtitle",
   "private": true,
   "dependencies": {
     "@react-keycloak/web": "^3.4.0",
@@ -36,7 +37,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "setup:hooks": "node scripts/setup-hooks.js",
+    "start": "npm run setup:hooks && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

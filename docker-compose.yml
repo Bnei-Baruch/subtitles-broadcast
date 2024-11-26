@@ -1,18 +1,23 @@
 services:
-  react-app:
-    container_name: subtitle-project
+  subtitles_frontend:
+    container_name: subtitles_frontend
     image: bneibaruch/subtitles_frontend:${SUBTITLES_FRONTEND_VERSION}
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     ports:
-      - "${SUBTITLES_FRONTEND_PORT}:3000"
+      - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
     volumes:
       - .:/app
-    stdin_open: true
     env_file:
       - .env
     logging:
       driver: json-file
       options:
         tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - subtitles-network
+
+networks:
+  subtitles-network:
+    name: subtitles-network
+    driver: bridge

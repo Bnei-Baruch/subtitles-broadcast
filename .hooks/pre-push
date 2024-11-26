@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Skip the hook if only README.md or other documentation files are changed
+if git diff --cached --name-only | grep -Eq "^(README\.md|docs/.*)$"; then
+  echo "Skipping pre-push hook for README.md or documentation changes."
+  exit 0
+fi
+
+# Validate the required files (e.g., .env.template, Dockerfile, etc.)
+REQUIRED_FILES=(".env.template" "docker-compose.yml" "Dockerfile")
+for FILE in "${REQUIRED_FILES[@]}"; do
+  if [ ! -f "$FILE" ]; then
+    echo "Error: Missing required file: $FILE"
+    exit 1
+  fi
+done
+
+# Validate the required environment variables in .env.template
+ENV_FILE=".env.template"
+REQUIRED_VARS=("REACT_APP_PORT" "SUBTITLES_FRONTEND_PORT" "SUBTITLES_FRONTEND_VERSION")
+for VAR in "${REQUIRED_VARS[@]}"; do
+  if ! grep -q "^${VAR}=" "$ENV_FILE"; then
+    echo "Error: Missing environment variable: $VAR in $ENV_FILE"
+    exit 1
+  fi
+done
+
+echo "Pre-push hook passed successfully."
+exit 0
