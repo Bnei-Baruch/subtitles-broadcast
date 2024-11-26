@@ -1,31 +1,29 @@
 #!/bin/bash
 
-# Temporary directory for the environment file (replace with your actual .env location)
-ENV_FILE="$TMP_DIR/.env.template"
+# Skip the hook if only README.md or other documentation files are changed
+if git diff --cached --name-only | grep -Eq "^(README\.md|docs/.*)$"; then
+  echo "Skipping pre-push hook for README.md or documentation changes."
+  exit 0
+fi
 
-# Variables to check
-REQUIRED_VARS=(
-  "SUBTITLES_FRONTEND_PORT"
-  "SUBTITLES_FRONTEND_VERSION"
-  "SUBTITLES_BACKEND_URL"
-  "REACT_APP_API_BASE_URL"
-  "REACT_APP_KEYCLOAK_URL"
-  "REACT_APP_KEYCLOAK_CLIENT_ID"
-  "REACT_APP_MQTT_URL"
-  "REACT_APP_MQTT_PROTOCOL"
-  "REACT_APP_KEYCLOAK_REALM"
-  "REACT_APP_MQTT_PORT"
-  "REACT_APP_MQTT_PATH"
-  "REACT_APP_PORT"
-)
-
-# Validate each variable
-for VAR in "${REQUIRED_VARS[@]}"; do
-    if ! grep -q "^$VAR=" "$ENV_FILE"; then
-        echo "Error: Missing environment variable $VAR in .env"
-        exit 1
-    fi
+# Validate the required files (e.g., .env.template, Dockerfile, etc.)
+REQUIRED_FILES=(".env.template" "docker-compose.yml" "Dockerfile")
+for FILE in "${REQUIRED_FILES[@]}"; do
+  if [ ! -f "$FILE" ]; then
+    echo "Error: Missing required file: $FILE"
+    exit 1
+  fi
 done
 
-echo "All required environment variables are present!"
+# Validate the required environment variables in .env.template
+ENV_FILE=".env.template"
+REQUIRED_VARS=("REACT_APP_PORT" "SUBTITLES_FRONTEND_PORT" "SUBTITLES_FRONTEND_VERSION")
+for VAR in "${REQUIRED_VARS[@]}"; do
+  if ! grep -q "^${VAR}=" "$ENV_FILE"; then
+    echo "Error: Missing environment variable: $VAR in $ENV_FILE"
+    exit 1
+  fi
+done
+
+echo "Pre-push hook passed successfully."
 exit 0
