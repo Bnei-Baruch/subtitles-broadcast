@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Temporary directory for the environment file (replace with your actual .env location)
+ENV_FILE="$TMP_DIR/.env.template"
+
+# Variables to check
+REQUIRED_VARS=(
+  "SUBTITLES_FRONTEND_PORT"
+  "SUBTITLES_FRONTEND_VERSION"
+  "SUBTITLES_BACKEND_URL"
+  "REACT_APP_API_BASE_URL"
+  "REACT_APP_KEYCLOAK_URL"
+  "REACT_APP_KEYCLOAK_CLIENT_ID"
+  "REACT_APP_MQTT_URL"
+  "REACT_APP_MQTT_PROTOCOL"
+  "REACT_APP_KEYCLOAK_REALM"
+  "REACT_APP_MQTT_PORT"
+  "REACT_APP_MQTT_PATH"
+)
+
+# Validate each variable
+for VAR in "${REQUIRED_VARS[@]}"; do
+    if ! grep -q "^$VAR=" "$ENV_FILE"; then
+        echo "Error: Missing environment variable $VAR in .env"
+        exit 1
+    fi
+done
+
+echo "All required environment variables are present!"
+exit 0
