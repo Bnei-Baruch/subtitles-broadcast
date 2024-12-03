@@ -33,7 +33,7 @@ ENV REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
 ENV REACT_APP_PORT=${REACT_APP_PORT}
 
 # Install app dependencies
-COPY package.json .
+COPY package.json . 
 COPY package-lock.json .
 RUN npm install
 
@@ -41,8 +41,10 @@ RUN npm install
 COPY . .
 
 # Build the React app
-RUN npm install -g serve
-RUN npm run build -- prod
+RUN npm run build
+
+# Expose port 80 for the container
+EXPOSE 80
 
 # Set the command to run the application
-CMD ["npx", "serve", "-s", "build", "--single"]
+CMD ["npx", "serve", "-s", "build", "-l", "80", "--single"]
