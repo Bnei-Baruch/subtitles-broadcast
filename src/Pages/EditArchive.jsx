@@ -530,7 +530,7 @@ const EditArcive = ({ handleClose }) => {
 
                         // Perform any special handling for \r if needed
                         if (newValue.includes("\n")) {
-                          newValue = newValue.replace(/\n/g, "\r"); // Example: replace \r with a visible string representation
+                          newValue = newValue.replace(/\n/g, "\r");
                         }
 
                         const cloneSlideDataArray = [...slideListData];

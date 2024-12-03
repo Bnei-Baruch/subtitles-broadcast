@@ -221,33 +221,6 @@ const NewSlides = () => {
     setTagList(parse);
     setWholeText(markdown);
     setSplitActive(true);
-    // const parser = new DOMParser();
-    // const doc = parser.parseFromString(sourceData, "text/html");
-    // const contentElements = doc.querySelectorAll("h1,h2,h3,h4,h5,h6,p");
-    // const paragraphArray = Array.from(contentElements).map((element) => ({
-    //   tag: element.tagName,
-    //   content: element.outerHTML,
-    // }));
-    // let tags = [];
-    // paragraphArray.forEach((elementInfo) => {
-    //   const tagName = elementInfo.tag;
-    //   const wordArray = elementInfo.content
-    //     .replace(/<[^>]*>/g, "")
-    //     .replace(/\n/g, "")
-    //     .trim()
-    //     .split("  ")
-    //     .join(" ")
-    //     .split(/(\s+)/);
-    //   wordArray.forEach((word, index) => {
-    //     const elementObject = {
-    //       paragraphStart: index === 0,
-    //       tagName: tagName,
-    //       word: word,
-    //     };
-    //     tags.push(elementObject);
-    //   });
-    // });
-    // setTagList(tags);
   };
 
   const loadSource = () => {

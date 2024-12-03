@@ -156,11 +156,29 @@ const TokenTextToType = (text) => {
   return TOKEN_TEXT;
 }
 
+const fixLegacyTokens = (text, index, i) => {
+  const tokenText = text.slice(index, i);
+  let restIndex = i;
+  if (tokenText.startsWith('%page') || tokenText.startsWith('%letter')) {
+    restIndex = i;
+    while(restIndex < text.length) {
+      if (NEW_LINE.includes(text[restIndex])) {
+        break;
+      }
+      restIndex++;
+    }
+    return {tokenText: ' ', restIndex};
+  }
+  if (tokenText.startsWith('%')) {
+    return {tokenText: '##', restIndex};
+  }
+  return {tokenText, restIndex};
+}
+
 const TextOrMarkdownToken = (stack, index, i, text) => {
   // console.log('TextOrMarkdownToken', stack, index, i);
-  let tokenText = text.slice(index, i);
+  let {tokenText, restIndex} = fixLegacyTokens(text, index, i);
   let tokenType = TokenTextToType(tokenText);
-  let restIndex = i;
   // Lookahead for headers to make sure we have separator.
   if (HEADER_TOKENS.includes(tokenType) && i < text.length && text[i] === SEPARATOR) {
     tokenText += SEPARATOR;
@@ -184,6 +202,7 @@ const TextOrMarkdownToken = (stack, index, i, text) => {
   } else if (tokenType !== TOKEN_TEXT) {
     newStack = [...stack, tokenType];
   }
+
   return {
     token: {
       type: tokenType,
@@ -203,18 +222,19 @@ export const IsTextTokenEnumeration = ({type, text}) => {
 };
 
 // |stack| is a stack of markdown tokens that span over a line or several lines.
-// Example: # this is *italic* header.  So when toknizing 'italic', the stack
+// Example: # this is *italic* header. So when toknizing 'italic', the stack
 // will be [TOKEN_H1, TOKEN_ITALIC]
 export const Tokenize = (stack, index, text) => {
   for (let i = index; i < text.length; i++) {
     // console.log('loop', i, text[i]);
-    const is3Eq = text.slice(i, i+3) === '===';
-    if (NEW_LINE.includes(text[i]) || text[i] === SEPARATOR || text[i] === ITALIC || is3Eq) {
+    // breakLength of -1 for no break, otherwise the length of the break token.
+    const breakLength = (text.slice(i, i+3) === '===' && 3) || (text.slice(i, i+6) === '%break' && 6) || -1;
+    if (NEW_LINE.includes(text[i]) || text[i] === SEPARATOR || text[i] === ITALIC || breakLength !== -1) {
       if (i === index) {
         if (text[i] === SEPARATOR) {
           return {token: {type: TOKEN_SEPARATOR, text: ' ', stack}, restIndex: i+1};
-        } else if (is3Eq) {
-          return { token: { type: TOKEN_NEWSLIDE, text: '', stack: stack.filter(t => !HEADER_TOKENS.includes(t)) }, restIndex: i+3 };
+        } else if (breakLength !== -1) {
+          return { token: { type: TOKEN_NEWSLIDE, text: '', stack: stack.filter(t => !HEADER_TOKENS.includes(t)) }, restIndex: i+breakLength };
         } else if (NEW_LINE.includes(text[i])) {
           return {
             token: {
@@ -229,7 +249,7 @@ export const Tokenize = (stack, index, text) => {
           i += 1;
         }
       }
-      // Italic, Bold, Text, Header.
+      // Italic, Bold, Text, Header, Legacy skips.
       return TextOrMarkdownToken(stack, index, i, text);
     }
   }
