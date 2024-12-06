@@ -1,5 +1,5 @@
 # Use an official Node runtime as the base image
-FROM node:lts-alpine
+FROM node:lts-alpine AS build
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -35,16 +35,19 @@ ENV REACT_APP_PORT=${REACT_APP_PORT}
 # Install app dependencies
 COPY package.json . 
 COPY package-lock.json .
-RUN npm install
+
+RUN npm ci
 
 # Add app files
 COPY . .
 
-# Build the React app
 RUN npm run build
 
-# Expose port 80 for the container
-EXPOSE 80
+FROM nginx:latest AS prod
 
-# Set the command to run the application
-CMD ["npx", "serve", "-s", "build", "-l", "80", "--single"]
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80/tcp
+
+CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
