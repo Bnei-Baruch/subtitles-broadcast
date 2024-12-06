@@ -1,7 +1,6 @@
 {
   "name": "subtitleproject",
   "version": "0.1.0",
-  "homepage": "/",
   "private": true,
   "dependencies": {
     "@react-keycloak/web": "^3.4.0",
