@@ -39,7 +39,7 @@ ssh ${SSH_OPTIONS} ${STAGING_SERVER} <<EOF
 
     # Clone the repository into 'src' directory
     echo "Cloning the repository into 'src'..."
-    git clone --branch master git@gitlab.bbdev.team:vh/subtitles-frontend.git src
+    git clone --branch %teamcity.build.branch% git@gitlab.bbdev.team:vh/subtitles-frontend.git src
 
     # Copy .env and docker-compose.yml into the 'src' directory
     echo "Copying configuration files to 'src'..."
