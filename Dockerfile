@@ -32,22 +32,19 @@ ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
 ENV REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
 ENV REACT_APP_PORT=${REACT_APP_PORT}
 
-# Install app dependencies
-COPY package.json . 
-COPY package-lock.json .
-
+# Install dependencies and build the app
+COPY package.json package-lock.json ./
 RUN npm ci
-
-# Add app files
 COPY . .
+RUN npm run build && rm -rf node_modules
 
-RUN npm run build
+# Use Nginx for serving the built files
+FROM nginx:alpine AS prod
 
-FROM nginx:latest AS prod
-
+# Copy built files to Nginx
 COPY --from=build /usr/src/app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80/tcp
+EXPOSE 80
 
-CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
