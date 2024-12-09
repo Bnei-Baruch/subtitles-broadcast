@@ -1,5 +1,5 @@
 # Use an official Node runtime as the base image
-FROM node:lts-alpine
+FROM node:lts-alpine AS build
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -32,17 +32,19 @@ ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
 ENV REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
 ENV REACT_APP_PORT=${REACT_APP_PORT}
 
-# Install app dependencies
-COPY package.json .
-COPY package-lock.json .
-RUN npm install
-
-# Add app files
+# Install dependencies and build the app
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
+RUN npm run build && rm -rf node_modules
 
-# Build the React app
-RUN npm install -g serve
-RUN npm run build -- prod
+# Use Nginx for serving the built files
+FROM nginx:alpine AS prod
 
-# Set the command to run the application
-CMD ["npx", "serve", "-s", "build", "--single"]
+# Copy built files to Nginx
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
