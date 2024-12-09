@@ -1,23 +1,34 @@
 services:
   subtitles_frontend:
     container_name: subtitles_frontend
-    image: bneibaruch/subtitles_frontend:${SUBTITLES_FRONTEND_VERSION}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_KEYCLOAK_CLIENT_ID
+        - REACT_APP_KEYCLOAK_REALM
+        - REACT_APP_KEYCLOAK_URL
+        - REACT_APP_API_BASE_URL
+        - REACT_APP_MQTT_URL
+        - REACT_APP_MQTT_PORT
+        - REACT_APP_MQTT_PATH
+        - REACT_APP_MQTT_PROTOCOL
+        - SUBTITLES_BACKEND_URL
+    environment:
+      - REACT_APP_KEYCLOAK_CLIENT_ID=${REACT_APP_KEYCLOAK_CLIENT_ID}
+      - REACT_APP_KEYCLOAK_REALM=${REACT_APP_KEYCLOAK_REALM}
+      - REACT_APP_KEYCLOAK_URL=${REACT_APP_KEYCLOAK_URL}
+      - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+      - REACT_APP_MQTT_URL=${REACT_APP_MQTT_URL}
+      - REACT_APP_MQTT_PORT=${REACT_APP_MQTT_PORT}
+      - REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
+      - REACT_APP_MQTT_PROTOCOL=${REACT_APP_MQTT_PROTOCOL}
+      - SUBTITLES_BACKEND_URL=${SUBTITLES_BACKEND_URL}
     ports:
       - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    logging:
-      driver: json-file
-      options:
-        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
-        max-size: "10m"
-        max-file: "3"
     networks:
-      - subtitles-network
+      - subtitles_backend_subtitles-network
 
 networks:
-  subtitles-network:
-    name: subtitles-network
-    driver: bridge
+  subtitles_backend_subtitles-network:
+    external: true
