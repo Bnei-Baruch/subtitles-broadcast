@@ -478,6 +478,7 @@ const EditArcive = ({ handleClose }) => {
                         if (
                           e.keyCode === 8 &&
                           textArea.selectionStart === 0 &&
+                          textArea.selectionEnd === 0 &&
                           index > 0
                         ) {
                           // Move first line to previous text-area
