@@ -203,7 +203,11 @@ const Archive = () => {
               {/* Content for the second flex box centered */}
               <Search />
               <ReactPaginate
-                pageCount={archiveList?.pagination?.total_pages}
+                pageCount={
+                  archiveList?.pagination?.total_pages
+                    ? Math.ceil(archiveList.pagination.total_pages)
+                    : 1
+                }
                 onPageChange={(e) => {
                   const selectedPage = e.selected + 1;
                   if (selectedPage <= archiveList?.pagination?.total_pages) {
@@ -254,7 +258,8 @@ const Archive = () => {
             >
               <span>Row per page:</span>
               <select
-                value={/*localPagination?.limit ||*/ page.limit}
+                value={page.limit}
+                onChange={(e) => updatePage(1, +e.target.value)}
                 className="ms-2"
               >
                 <option value={10}>10</option>
@@ -274,12 +279,12 @@ const Archive = () => {
                   className=""
                   style={{ padding: "20px", minWidth: "100%" }}
                 >
+                  <colgroup>
+                    <col style={{ width: "75%" }} />
+                    <col style={{ width: "20%" }} />
+                    <col style={{ width: "5%" }} />
+                  </colgroup>
                   <thead>
-                    <colgroup>
-                      <col style={{ width: "75%" }} />
-                      <col style={{ width: "20%" }} />
-                      <col style={{ width: "5%" }} />
-                    </colgroup>
                     <tr>
                       <th style={{ width: "65%", padding: "10px" }}>Text</th>
                       <th style={{ width: "20%", padding: "10px" }}>Path</th>
