@@ -180,6 +180,8 @@ const EditArcive = ({ handleClose }) => {
     const shouldDelete = deleted?.length > 0;
     const shouldForceDelete = shouldDelete && force_delete_bookmarks;
 
+    handleUpdateSourcePath();
+
     if (shouldDelete) {
       const deleteParams = {
         force_delete_bookmarks: shouldForceDelete,
@@ -333,14 +335,20 @@ const EditArcive = ({ handleClose }) => {
 
   const handleUpdateSourcePath = () => {
     if (!isNaN(sourcePathId) && sourcePathId > 0 && sourcePath) {
-      dispatch(
-        updateSourcePath({
-          sourcePathId: sourcePathId,
-          sourcePath: sourcePath,
-        })
-      );
+      if (
+        sourcePath &&
+        sourcePath.trim() !== slideListData[0]?.source_path?.trim()
+      ) {
+        dispatch(
+          updateSourcePath({
+            sourcePathId: sourcePathId,
+            sourcePath: sourcePath,
+          })
+        );
+      }
     }
   };
+
   const handleDeleteSlide = (
     key,
     index,
