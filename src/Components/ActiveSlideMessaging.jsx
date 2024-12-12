@@ -429,21 +429,6 @@ export function ActiveSlideMessaging(props) {
         JSON.stringify(newMessageJson)
       );
     }
-
-    if (newMessageJson.clientId !== mqttClientId) {
-      const targetSlide = document.getElementById(`slide_${newMessageJson.ID}`);
-
-      if (targetSlide) {
-        const sourceUidAttrVal = targetSlide.getAttribute("source-uid");
-
-        if (sourceUidAttrVal === newMessageJson.source_uid) {
-          if (!targetSlide.classList.contains("activeSlide")) {
-            targetSlide.focus();
-            targetSlide.click();
-          }
-        }
-      }
-    }
   };
 
   function otherQstMessageHandling(event, topic, newMessageJson) {
