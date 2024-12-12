@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { GetAllArchiveData } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
-import BroadcastSettings from "../Components/BroadcastSettings";
 import AppContext from "../AppContext";
 import { GetAllSourcePathData } from "../Redux/SourceTab/SourceSlice";
 
@@ -64,7 +63,15 @@ export const Search = () => {
       );
       //sessionStorage.setItem("headerSearchKeywordSource", "");
     }
-  }, [DebouncingFreeText, dispatch, freeText, param.pathname]);
+  }, [
+    DebouncingFreeText,
+    appContextlData.broadcastLang.label,
+    dispatch,
+    freeText,
+    localPagination.limit,
+    localPagination.page,
+    param.pathname,
+  ]);
 
   return (
     <>
@@ -124,4 +131,3 @@ export const Search = () => {
     </>
   );
 };
-
