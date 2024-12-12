@@ -180,6 +180,8 @@ const EditArcive = ({ handleClose }) => {
     const shouldDelete = deleted?.length > 0;
     const shouldForceDelete = shouldDelete && force_delete_bookmarks;
 
+    handleUpdateSourcePath();
+
     if (shouldDelete) {
       const deleteParams = {
         force_delete_bookmarks: shouldForceDelete,
@@ -348,6 +350,7 @@ const EditArcive = ({ handleClose }) => {
       }
     }
   };
+
   const handleDeleteSlide = (
     key,
     index,
