@@ -1,5 +1,7 @@
+const isLogMode = process.env.NODE_ENV === "development";
+
 const debugLog = (message, ...optionalParams) => {
-  if (process.env.NODE_ENV === "development") {
+  if (isLogMode) {
     console.log(`[DEBUG]: ${message}`, ...optionalParams);
   }
 };
