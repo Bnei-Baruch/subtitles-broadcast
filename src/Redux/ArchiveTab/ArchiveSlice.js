@@ -2,8 +2,8 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
-import GetLangaugeCode from "../../Utils/Const";
-import { MAX_SLIDE_LIMIT } from "../../Utils/Const";
+import GetLangaugeCode, { MAX_SLIDE_LIMIT } from "../../Utils/Const";
+import debugLog from "../../Utils/debugLog";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 const languages = GetLangaugeCode();
@@ -237,47 +237,60 @@ const ArchiveSlice = createSlice({
   initialState,
   reducers: {
     emptyAutoComplete: (state, { payload }) => {
+      debugLog("emptyAutoComplete action triggered");
       return { ...state, autocomplete: [] };
     },
     updateArchiveList: (state, action) => {
+      debugLog("Updating archiveList in reducer with data:", action.payload);
       return { ...state, archiveList: action.payload };
     },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchArchiveData.fulfilled, (state, action) => {
+      debugLog("fetchArchiveData.fulfilled - Payload:", action?.payload);
       toast.success("Successfully fetched archive data");
       return { ...state, archiveList: action?.payload };
     });
 
     builder.addCase(fetchArchiveData.rejected, (state, action) => {
+      debugLog("fetchArchiveData.rejected - Error:", action?.error);
       toast.error("Something went wrong");
+      debugLog("fetchArchiveData.fulfilled - Payload:", action?.payload);
       return state;
     });
 
     builder.addCase(DeleteArchive.fulfilled, (state, action) => {
+      debugLog("DeleteArchive.fulfilled - Success:", action?.payload);
       toast.success("Successfully deleted");
       return state;
     });
     builder.addCase(GetAllAuthor.fulfilled, (state, { payload }) => {
+      debugLog("GetAllAuthor.fulfilled - Payload:", payload);
       return { ...state, authorList: payload };
     });
     builder.addCase(UserBookmarkList.pending, (state) => {
+      debugLog("UserBookmarkList.pending - Loading started");
       return { ...state, bookmarkListLoading: true };
     });
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
+      debugLog("UserBookmarkList.fulfilled - Payload:", payload);
       return { ...state, bookmarkList: payload, bookmarkListLoading: false };
     });
     builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
+      debugLog("BookmarkSlide.fulfilled - Payload:", payload);
       return { ...state, bookmarkList: payload };
     });
 
     builder.addCase(GetAllAuthorList.fulfilled, (state, { payload }) => {
+      debugLog("GetAllAuthorList.fulfilled - Payload:", payload);
       return { ...state, getAuthorList: payload };
     });
     builder.addCase(ArchiveAutoComplete.fulfilled, (state, { payload }) => {
+      debugLog("GetAllAuthorList.fulfilled - Payload:", payload);
       return { ...state, autocomplete: payload };
     });
     builder.addCase(SlideListWithFildeUid.fulfilled, (state, { payload }) => {
+      debugLog("SlideListWithFildeUid.fulfilled - Payload:", payload);
       return { ...state, editSlideList: payload };
     });
   },
