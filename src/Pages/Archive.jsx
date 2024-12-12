@@ -25,7 +25,7 @@ const Archive = () => {
   const dispatch = useDispatch();
   const archiveList = useSelector(getAllArchiveList);
 
-  const [unbookmarkAction, setUnbookmarkAction] = useState(false)
+  const [unbookmarkAction, setUnbookmarkAction] = useState(false);
   const localPagination = localStorage?.getItem("pagination")
     ? JSON?.parse(localStorage?.getItem("pagination"))
     : { page: 1, limit: 10 };
@@ -35,15 +35,23 @@ const Archive = () => {
     localStorage.setItem("pagination", JSON.stringify({ page, limit }));
     setPage({ page, limit });
     setPageIndex({
-      startIndex: ((page - 1) * limit) + 1,
-      endIndex: Math.min((page) * limit, archiveList?.pagination?.total_rows, Number.MAX_VALUE),
+      startIndex: (page - 1) * limit + 1,
+      endIndex: Math.min(
+        page * limit,
+        archiveList?.pagination?.total_rows,
+        Number.MAX_VALUE
+      ),
     });
   };
 
   useEffect(() => {
     setPageIndex({
-      startIndex: ((page.page - 1) * page.limit) + 1,
-      endIndex: Math.min((page.page) * page.limit, archiveList?.pagination?.total_rows, Number.MAX_VALUE),
+      startIndex: (page.page - 1) * page.limit + 1,
+      endIndex: Math.min(
+        page.page * page.limit,
+        archiveList?.pagination?.total_rows,
+        Number.MAX_VALUE
+      ),
     });
   }, [archiveList]);
 
@@ -77,7 +85,12 @@ const Archive = () => {
           limit: page.limit,
           keyword: localStorage?.getItem("free-text"),
         })
-      );
+      ).then((response) => {
+        dispatch({
+          type: "Archive/updateArchiveList",
+          payload: response.payload.data,
+        });
+      });
     }
   }, [editSlide, page.page, page.limit, appContextlData.broadcastLang.label]);
 
@@ -87,17 +100,19 @@ const Archive = () => {
         DeleteArchive({
           search_keyword: localStorage.getItem("headerSearchKeyword"),
           file_uid: fileUidForDeleteSlide,
-          language: appContextlData.broadcastLang.label
+          language: appContextlData.broadcastLang.label,
         })
       );
       setFinalConfirm(false);
     }
     if (toggle) {
-      dispatch(BookmarkSlideFromArchivePage({
-        search_keyword: localStorage.getItem("headerSearchKeyword"),
-        data: deleteId,
-        language: appContextlData.broadcastLang.label
-      }));
+      dispatch(
+        BookmarkSlideFromArchivePage({
+          search_keyword: localStorage.getItem("headerSearchKeyword"),
+          data: deleteId,
+          language: appContextlData.broadcastLang.label,
+        })
+      );
       setToggle(false);
     }
   }, [finalConfirm, toggle, deleteId, dispatch]);
@@ -127,30 +142,27 @@ const Archive = () => {
     [deleteConfirmationPopup]
   );
 
-  const ConfirmationMessage = useMemo(
-    () => {
-      if (!unbookmarkAction) {
-        return (
-          <MessageBox
-            setFinalConfirm={() => {
-              dispatch(
-                BookmarkSlideFromArchivePage({
-                  search_keyword: localStorage.getItem("free-text"),
-                  data: bookmarkData,
-                  language: appContextlData.broadcastLang.label,
-                  params: page,
-                })
-              );
-            }}
-            message={"Are you sure , you want to bookmark this File slide"}
-            show={confirmation}
-            handleClose={() => setConfirmation(false)}
-          />
-        );
-      }
-    },
-    [confirmation, message, unbookmarkAction]
-  );
+  const ConfirmationMessage = useMemo(() => {
+    if (!unbookmarkAction) {
+      return (
+        <MessageBox
+          setFinalConfirm={() => {
+            dispatch(
+              BookmarkSlideFromArchivePage({
+                search_keyword: localStorage.getItem("free-text"),
+                data: bookmarkData,
+                language: appContextlData.broadcastLang.label,
+                params: page,
+              })
+            );
+          }}
+          message={"Are you sure , you want to bookmark this File slide"}
+          show={confirmation}
+          handleClose={() => setConfirmation(false)}
+        />
+      );
+    }
+  }, [confirmation, message, unbookmarkAction]);
 
   return (
     <>
@@ -159,9 +171,15 @@ const Archive = () => {
       {editSlide ? (
         <EditArcive handleClose={() => setEditSlide(false)} />
       ) : (
-        <div className="archiveBackground  bg-light Edit" style={{position: "relative"}}>
+        <div
+          className="archiveBackground  bg-light Edit"
+          style={{ position: "relative" }}
+        >
           <div className="flex-container">
-            <div className="flex-box-center top-autocomplete" style={{marginLeft: "10px", marginRight: "10px"}}>
+            <div
+              className="flex-box-center top-autocomplete"
+              style={{ marginLeft: "10px", marginRight: "10px" }}
+            >
               {/* Content for the second flex box centered */}
               <Search />
               <ReactPaginate
@@ -224,7 +242,9 @@ const Archive = () => {
                 <option value={30}>30</option>
               </select>{" "}
               &nbsp; &nbsp; &nbsp;
-              <span style={{width: '200px'}}>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
+              <span
+                style={{ width: "200px" }}
+              >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
             </div>
           </div>
           <div className="card" style={{ border: "none" }}>
@@ -255,15 +275,24 @@ const Archive = () => {
                         }
                       >
                         <td style={{ padding: "10px" }}>
-                          <div className="" style={{ outline: "solid", position: "relative" }}>
-                            <Slide content={key.slide} isLtr={key.left_to_right} isQuestion={key.slide_type === 'question'} />
+                          <div
+                            className=""
+                            style={{ outline: "solid", position: "relative" }}
+                          >
+                            <Slide
+                              content={key.slide}
+                              isLtr={key.left_to_right}
+                              isQuestion={key.slide_type === "question"}
+                            />
                           </div>
                         </td>
                         <td
                           style={{ padding: "10px" }}
                           className="text-truncate"
                         >
-                          {key.languages.length > 1 ? `(${key.languages[index % key.languages.length]}) ${key.slide_source_path}` : key.slide_source_path}
+                          {key.languages.length > 1
+                            ? `(${key.languages[index % key.languages.length]}) ${key.slide_source_path}`
+                            : key.slide_source_path}
                         </td>
                         <td style={{ padding: "10px" }}>
                           {key.bookmark_id !== null ? (
@@ -272,9 +301,11 @@ const Archive = () => {
                                 setUnbookmarkAction(true);
                                 dispatch(
                                   UnBookmarkSlide({
-                                    search_keyword: localStorage.getItem("free-text"),
+                                    search_keyword:
+                                      localStorage.getItem("free-text"),
                                     bookmark_id: key.bookmark_id,
-                                    language: appContextlData.broadcastLang.label,
+                                    language:
+                                      appContextlData.broadcastLang.label,
                                     page: page.page,
                                     limit: page.limit,
                                   })
@@ -294,16 +325,18 @@ const Archive = () => {
                                 setUnbookmarkAction(false);
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
-                                    search_keyword: localStorage.getItem("free-text"),
+                                    search_keyword:
+                                      localStorage.getItem("free-text"),
                                     data: {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.ID,
                                       update: false,
                                       order: archiveList?.slides?.find(
                                         (k) => k.bookmark_id !== null
-                                      )?.length
+                                      )?.length,
                                     },
-                                    language: appContextlData.broadcastLang.label,
+                                    language:
+                                      appContextlData.broadcastLang.label,
                                     params: page,
                                   })
                                 ).then((res) => {
@@ -327,7 +360,10 @@ const Archive = () => {
                             className="bi bi-pencil m-2 cursor-pointer "
                             onClick={() => {
                               setUnbookmarkAction(false);
-                              localStorage.setItem("file_uid_for_edit_slide", key?.file_uid)
+                              localStorage.setItem(
+                                "file_uid_for_edit_slide",
+                                key?.file_uid
+                              );
                               dispatch(
                                 SlideListWithFildeUid({
                                   file_uid: key?.file_uid,

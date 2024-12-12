@@ -239,6 +239,9 @@ const ArchiveSlice = createSlice({
     emptyAutoComplete: (state, { payload }) => {
       return { ...state, autocomplete: [] };
     },
+    updateArchiveList: (state, action) => {
+      return { ...state, archiveList: action.payload };
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchArchiveData.fulfilled, (state, action) => {
@@ -279,6 +282,7 @@ const ArchiveSlice = createSlice({
     });
   },
 });
+
 export const { emptyAutoComplete } = ArchiveSlice.actions;
 
 export const getEditSlideList = (state) =>
@@ -286,7 +290,9 @@ export const getEditSlideList = (state) =>
 export const getAutocompleteSuggetion = (state) =>
   state?.ArchiveList?.autocomplete?.data;
 export const getAllArchiveList = (state) =>
-  state?.ArchiveList?.archiveList?.data;
+  state?.ArchiveList?.archiveList?.data
+    ? state.ArchiveList.archiveList.data
+    : state.ArchiveList.archiveList;
 
 export const getAllBookmarkList = (state) =>
   state?.ArchiveList?.bookmarkList?.data;
