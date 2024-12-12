@@ -85,17 +85,12 @@ const Archive = () => {
           limit: page.limit,
           keyword: localStorage?.getItem("free-text"),
         })
-      )
-        .then((response) => {
-          console.log("GetAllArchiveData API Response:", response.payload);
-          dispatch({
-            type: "Archive/updateArchiveList",
-            payload: response.payload.data,
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching archive data:", error);
+      ).then((response) => {
+        dispatch({
+          type: "Archive/updateArchiveList",
+          payload: response.payload.data,
         });
+      });
     }
   }, [editSlide, page.page, page.limit, appContextlData.broadcastLang.label]);
 
