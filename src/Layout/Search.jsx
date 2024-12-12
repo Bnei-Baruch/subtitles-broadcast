@@ -46,7 +46,12 @@ export const Search = () => {
           page: localPagination.page,
           keyword: freeText,
         })
-      );
+      ).then((response) => {
+        dispatch({
+          type: "Archive/updateArchiveList",
+          payload: response.payload.data,
+        });
+      });
       localStorage.setItem("headerSearchKeyword", "");
     } else if (param.pathname === "/source") {
       localStorage.setItem(
