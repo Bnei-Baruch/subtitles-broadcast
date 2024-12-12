@@ -191,6 +191,8 @@ const EditArcive = ({ handleClose }) => {
           language: appContextlData.broadcastLang.label,
         })
       );
+
+      handleUpdateSourcePath();
     }
 
     const updateSlideList = slideListData?.map(
@@ -333,12 +335,17 @@ const EditArcive = ({ handleClose }) => {
 
   const handleUpdateSourcePath = () => {
     if (!isNaN(sourcePathId) && sourcePathId > 0 && sourcePath) {
-      dispatch(
-        updateSourcePath({
-          sourcePathId: sourcePathId,
-          sourcePath: sourcePath,
-        })
-      );
+      if (
+        sourcePath &&
+        sourcePath.trim() !== slideListData[0]?.source_path?.trim()
+      ) {
+        dispatch(
+          updateSourcePath({
+            sourcePathId: sourcePathId,
+            sourcePath: sourcePath,
+          })
+        );
+      }
     }
   };
   const handleDeleteSlide = (
