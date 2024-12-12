@@ -5,11 +5,7 @@ import Container from "react-bootstrap/Container";
 import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import DropdownButtonDef from "../Components/DropdownButtonDef";
-import {
-  broadcastLanguages,
-  brodcastProgrammArr,
-  broadcastLangMapObj,
-} from "../Utils/Const";
+import { broadcastLanguages, brodcastProgrammArr } from "../Utils/Const";
 import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
 
@@ -82,21 +78,27 @@ export function BroadcastSettings({ props }) {
 
   const handleShow = () => setShowBroadcastSettings(true);
 
-  localStorage.setItem("broadcastLangObj", JSON.stringify(broadcastLang));
-  localStorage.setItem(
-    "broadcastProgrammObj",
-    JSON.stringify(broadcastProgramm)
-  );
+  // Synchronize appContext values on mount
+  useEffect(() => {
+    if (!appContextlData.broadcastLang) {
+      appContextlData.setBroadcastLang(broadcastLang);
+    }
 
-  if (!appContextlData.broadcastLang) {
-    appContextlData.broadcastLang = broadcastLang;
-    appContextlData.setBroadcastLang(broadcastLang);
-  }
+    if (!appContextlData.broadcastProgramm) {
+      appContextlData.setBroadcastProgramm(broadcastProgramm);
+    }
+  }, [appContextlData, broadcastLang, broadcastProgramm]);
 
-  if (!appContextlData.broadcastProgramm) {
-    appContextlData.broadcastProgramm = broadcastProgramm;
-    appContextlData.setBroadcastProgramm(broadcastProgramm);
-  }
+  // Synchronize appContext values on mount
+  useEffect(() => {
+    if (!appContextlData.broadcastLang) {
+      appContextlData.setBroadcastLang(broadcastLang);
+    }
+
+    if (!appContextlData.broadcastProgramm) {
+      appContextlData.setBroadcastProgramm(broadcastProgramm);
+    }
+  }, [appContextlData, broadcastLang, broadcastProgramm]);
 
   return (
     <>
