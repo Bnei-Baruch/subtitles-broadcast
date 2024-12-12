@@ -44,5 +44,7 @@ export const brodcastProgrammArr = [
 ];
 
 export const MAX_SLIDE_LIMIT = 2000;
+export const DEF_BROADCAST_LANG = "he";
+export const DEF_BROADCAST_PROG = "morning_lessone";
 
 export default GetLangaugeCode;

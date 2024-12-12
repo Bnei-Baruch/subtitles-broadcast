@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import Keycloak from "keycloak-js";
-
 import { useDispatch } from "react-redux";
-
 import ErrorLogin from "../Pages/Views/ErrorLogin";
-import LoadingScreen from "../Pages/Views/LoadingScreen";
 import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 import PropTypes from "prop-types";
+import debugLog from "../Utils/debugLog";
 
 const Auth = ({ children }) => {
   const [auth, setAuth] = useState({
@@ -23,9 +21,9 @@ const Auth = ({ children }) => {
     var authClientId = process.env.REACT_APP_KEYCLOAK_CLIENT_ID;
     var authApiUrl = process.env.REACT_APP_KEYCLOAK_URL;
 
-    console.log("authRealm: ", authRealm);
-    console.log("authClientId: ", authClientId);
-    console.log("authApiUrl: ", authApiUrl);
+    debugLog("authRealm: ", authRealm);
+    debugLog("authClientId: ", authClientId);
+    debugLog("authApiUrl: ", authApiUrl);
 
     if (!authRealm || !authClientId || !authApiUrl) {
       console.error(

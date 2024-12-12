@@ -14,8 +14,11 @@ import {
   unSubscribeEvent,
 } from "../Utils/Events";
 import AppContext from "../AppContext";
-import { broadcastLanguages } from "../Utils/Const";
-import session from "redux-persist/lib/storage/session";
+import {
+  broadcastLanguages,
+  DEF_BROADCAST_PROG,
+  DEF_BROADCAST_LANG,
+} from "../Utils/Const";
 
 const styles = {
   mainContainer: {
@@ -237,22 +240,22 @@ export function ActiveSlideMessaging(props) {
   }, []);
 
   useEffect(() => {
-    if (broadcastLangCode !== appContextlData.broadcastLang.value) {
+    if (
+      appContextlData.broadcastLang?.value &&
+      broadcastLangCode !== appContextlData.broadcastLang.value
+    ) {
       setBroadcastLangObj(appContextlData.broadcastLang);
     }
-  }, [appContextlData.broadcastLang.value]);
+  }, [appContextlData.broadcastLang?.value || DEF_BROADCAST_LANG]);
 
   useEffect(() => {
-    if (broadcastProgrammCode !== appContextlData.broadcastProgramm.value) {
+    if (
+      appContextlData.broadcastProgramm?.value &&
+      broadcastProgrammCode !== appContextlData.broadcastProgramm.value
+    ) {
       setBroadcastProgrammObj(appContextlData.broadcastProgramm);
     }
-  }, [appContextlData.broadcastProgramm.value]);
-
-  useEffect(() => {
-    if (broadcastLangCode !== appContextlData.broadcastLang.value) {
-      setBroadcastLangObj(appContextlData.broadcastLang);
-    }
-  }, [appContextlData.broadcastLang.value]);
+  }, [appContextlData.broadcastProgramm?.value || DEF_BROADCAST_PROG]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -425,21 +428,6 @@ export function ActiveSlideMessaging(props) {
         "LastActiveSlidePublishedMessage",
         JSON.stringify(newMessageJson)
       );
-    }
-
-    if (newMessageJson.clientId !== mqttClientId) {
-      const targetSlide = document.getElementById(`slide_${newMessageJson.ID}`);
-
-      if (targetSlide) {
-        const sourceUidAttrVal = targetSlide.getAttribute("source-uid");
-
-        if (sourceUidAttrVal === newMessageJson.source_uid) {
-          if (!targetSlide.classList.contains("activeSlide")) {
-            targetSlide.focus();
-            targetSlide.click();
-          }
-        }
-      }
     }
   };
 

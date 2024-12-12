@@ -28,12 +28,13 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import { broadcastLanguages } from "../Utils/Const";
-import { getCurrentBroadcastLanguage } from "../Utils/Common";
 import AppContext from "../AppContext";
-import GetLangaugeCode from "../Utils/Const";
-import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useNavigate } from "react-router-dom";
+import GetLangaugeCode, {
+  MAX_SLIDE_LIMIT,
+  DEF_BROADCAST_LANG,
+  broadcastLanguages,
+} from "../Utils/Const";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -78,7 +79,10 @@ const Subtitles = () => {
       slideID.ID +
         slideID?.languages.findIndex(
           (langCode) =>
-            langCode === languages[appContextlData.broadcastLang.label]
+            langCode ===
+            languages[
+              appContextlData.broadcastLang?.label || DEF_BROADCAST_LANG
+            ]
         ) || 0;
     dispatch(
       BookmarkSlide({
@@ -152,11 +156,13 @@ const Subtitles = () => {
     };
   }, [handleKeyPress]);
   useEffect(() => {
-    dispatch(
-      UserBookmarkList({ language: appContextlData.broadcastLang.label })
-    );
-    dispatch(clearAllBookmarks());
-  }, [dispatch, appContextlData.broadcastLang.label]);
+    if (appContextlData.broadcastLang?.label) {
+      dispatch(
+        UserBookmarkList({ language: appContextlData.broadcastLang.label })
+      );
+      dispatch(clearAllBookmarks());
+    }
+  }, [dispatch, appContextlData.broadcastLang?.label || DEF_BROADCAST_LANG]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {

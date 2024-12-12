@@ -6,7 +6,6 @@ import {
   GetAllArchiveData,
   SlideListWithFildeUid,
   UnBookmarkSlide,
-  UserBookmarkList,
   getAllArchiveList,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,7 +23,6 @@ const Archive = () => {
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const archiveList = useSelector(getAllArchiveList);
-
   const [unbookmarkAction, setUnbookmarkAction] = useState(false);
   const localPagination = localStorage?.getItem("pagination")
     ? JSON?.parse(localStorage?.getItem("pagination"))
@@ -53,16 +51,13 @@ const Archive = () => {
         Number.MAX_VALUE
       ),
     });
-  }, [archiveList]);
+  }, [archiveList, page.limit, page.page]);
 
-  const message = "";
   const [editSlide, setEditSlide] = useState("");
   const [fileUidForDeleteSlide, setFileUidForDeleteSlide] = useState(
     queryParams.get("file_uid")
   );
-  const [fileUidForEditSlide, setFileUidForEditSlide] = useState(
-    queryParams.get("file_uid")
-  );
+  const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
 
   const [toggle, setToggle] = useState(false);
   const [finalConfirm, setFinalConfirm] = useState(false);
@@ -85,14 +80,24 @@ const Archive = () => {
           limit: page.limit,
           keyword: localStorage?.getItem("free-text"),
         })
-      ).then((response) => {
-        dispatch({
-          type: "Archive/updateArchiveList",
-          payload: response.payload.data,
+      )
+        .then((response) => {
+          dispatch({
+            type: "Archive/updateArchiveList",
+            payload: response.payload.data,
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching archive data:", error);
         });
-      });
     }
-  }, [editSlide, page.page, page.limit, appContextlData.broadcastLang.label]);
+  }, [
+    editSlide,
+    page.page,
+    page.limit,
+    appContextlData.broadcastLang.label,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -115,7 +120,14 @@ const Archive = () => {
       );
       setToggle(false);
     }
-  }, [finalConfirm, toggle, deleteId, dispatch]);
+  }, [
+    finalConfirm,
+    toggle,
+    deleteId,
+    dispatch,
+    fileUidForDeleteSlide,
+    appContextlData.broadcastLang.label,
+  ]);
 
   useEffect(() => {
     if (fileUidForEditSlide !== null) {
@@ -129,7 +141,7 @@ const Archive = () => {
         setEditSlide(response.payload.data.slides[0].ID);
       });
     }
-  }, [fileUidForEditSlide]);
+  }, [dispatch, fileUidForEditSlide]);
 
   const DelectConfirmationModal = useMemo(
     () => (
@@ -162,7 +174,14 @@ const Archive = () => {
         />
       );
     }
-  }, [confirmation, message, unbookmarkAction]);
+  }, [
+    appContextlData.broadcastLang.label,
+    bookmarkData,
+    confirmation,
+    dispatch,
+    page,
+    unbookmarkAction,
+  ]);
 
   return (
     <>
@@ -183,7 +202,11 @@ const Archive = () => {
               {/* Content for the second flex box centered */}
               <Search />
               <ReactPaginate
-                pageCount={archiveList?.pagination?.total_pages}
+                pageCount={
+                  archiveList?.pagination?.total_pages
+                    ? Math.ceil(archiveList.pagination.total_pages)
+                    : 1
+                }
                 onPageChange={(e) => {
                   const selectedPage = e.selected + 1;
                   if (selectedPage <= archiveList?.pagination?.total_pages) {
@@ -234,7 +257,8 @@ const Archive = () => {
             >
               <span>Row per page:</span>
               <select
-                value={/*localPagination?.limit ||*/ page.limit}
+                value={page.limit}
+                onChange={(e) => updatePage(1, +e.target.value)}
                 className="ms-2"
               >
                 <option value={10}>10</option>
@@ -254,12 +278,12 @@ const Archive = () => {
                   className=""
                   style={{ padding: "20px", minWidth: "100%" }}
                 >
+                  <colgroup>
+                    <col style={{ width: "75%" }} />
+                    <col style={{ width: "20%" }} />
+                    <col style={{ width: "5%" }} />
+                  </colgroup>
                   <thead>
-                    <colgroup>
-                      <col style={{ width: "75%" }} />
-                      <col style={{ width: "20%" }} />
-                      <col style={{ width: "5%" }} />
-                    </colgroup>
                     <tr>
                       <th style={{ width: "65%", padding: "10px" }}>Text</th>
                       <th style={{ width: "20%", padding: "10px" }}>Path</th>
