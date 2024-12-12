@@ -89,7 +89,7 @@ const Archive = () => {
         .then((response) => {
           console.log("GetAllArchiveData API Response:", response.payload);
           dispatch({
-            type: "Archive/updateArchiveList", // Define this action in your slice
+            type: "Archive/updateArchiveList",
             payload: response.payload.data,
           });
         })
