@@ -106,7 +106,7 @@ export function BroadcastSettings({ props }) {
           <img
             src="/image/new_channel_icon.svg"
             alt="Channel Icon"
-            class="icon"
+            className="icon"
           />
           <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
         </div>
@@ -115,7 +115,7 @@ export function BroadcastSettings({ props }) {
           <img
             src="/image/globe_language_icon.svg"
             alt="Language Icon"
-            class="icon"
+            className="icon"
           />
           <span style={styles.labelMainLast}>{broadcastLang.label}</span>
         </div>
