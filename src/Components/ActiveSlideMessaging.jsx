@@ -669,10 +669,18 @@ export function ActiveSlideMessaging(props) {
   const disModeNewMqttMsgHandling = (event, topic, newMessageJson) => {
     incomeDisModeMqttMsg.current = newMessageJson;
 
-    setSubtitlesDisplayModeMsg(newMessageJson);
+    //determineTimeDiffExceeded 4 hours =  (1000 MilSec=1 Sec) *  (60* 1 Sec = 1 Min) * (60 * 1 Min = 1 Hour) * (4 Hours)
+    const isTimeExceeded = determineTimeDiffExceeded(
+      newMessageJson,
+      1000 * 60 * 60 * 4
+    );
 
-    if (newMessageJson.slide !== subtitlesDisplayMode) {
-      dispatch(setSubtitlesDisplayMode(newMessageJson.slide));
+    if (!isTimeExceeded) {
+      setSubtitlesDisplayModeMsg(newMessageJson);
+
+      if (newMessageJson.slide !== subtitlesDisplayMode) {
+        dispatch(setSubtitlesDisplayMode(newMessageJson.slide));
+      }
     }
   };
 
