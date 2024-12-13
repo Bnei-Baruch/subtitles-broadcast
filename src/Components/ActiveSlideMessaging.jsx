@@ -19,6 +19,7 @@ import {
   DEF_BROADCAST_PROG,
   DEF_BROADCAST_LANG,
 } from "../Utils/Const";
+import { useSelector } from "react-redux";
 
 const styles = {
   mainContainer: {
@@ -58,9 +59,11 @@ export function ActiveSlideMessaging(props) {
     broadcastProgrammCode,
     broadcastLangCode
   );
-  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState(
-    props.isSubTitleMode
+
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.BroadcastParams.subtitlesDisplayMode
   );
+
   const [contextMqttMessage, setContextMqttMessage] = useState(() => {
     return subtitlesDisplayMode === "sources"
       ? subtitleMqttMessage
@@ -81,10 +84,6 @@ export function ActiveSlideMessaging(props) {
     );
     return mqttTopic;
   });
-
-  if (props.subtitlesDisplayMode !== subtitlesDisplayMode) {
-    setSubtitlesDisplayMode(props.subtitlesDisplayMode);
-  }
 
   const findActiveSlides = (userAddedList, activeSlideOrderNum) => {
     if (

@@ -35,6 +35,7 @@ import GetLangaugeCode, {
   DEF_BROADCAST_LANG,
   broadcastLanguages,
 } from "../Utils/Const";
+import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -46,7 +47,11 @@ function usePrevious(value) {
 
 const Subtitles = () => {
   const appContextlData = useContext(AppContext);
-  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("");
+
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.BroadcastParams.subtitlesDisplayMode
+  );
+
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
@@ -200,7 +205,7 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
-    setSubtitlesDisplayMode("questions");
+    dispatch(setSubtitlesDisplayMode("questions"));
   }
 
   function subtitlesBtnOnClick(evt) {
@@ -208,7 +213,7 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
-    setSubtitlesDisplayMode("sources");
+    dispatch(setSubtitlesDisplayMode("sources"));
   }
 
   function noneBtnOnClick(evt) {
@@ -216,7 +221,7 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
 
-    setSubtitlesDisplayMode("none");
+    dispatch(setSubtitlesDisplayMode("none"));
   }
 
   const navigatToEditSubtitle = () => {
