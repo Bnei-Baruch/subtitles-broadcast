@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
   BookmarkSlideFromArchivePage,
