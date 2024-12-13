@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Slide } from "../Components/Slide";
 import {
   getCurrentBroadcastLanguage,
@@ -19,7 +19,9 @@ import {
   DEF_BROADCAST_PROG,
   DEF_BROADCAST_LANG,
 } from "../Utils/Const";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
+import debugLog from "../Utils/debugLog";
 
 const styles = {
   mainContainer: {
@@ -34,8 +36,10 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
+  const dispatch = useDispatch();
   const qstSwapTime = 5000; // 5s
   const appContextlData = useContext(AppContext);
+
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
   });
@@ -43,18 +47,23 @@ export function ActiveSlideMessaging(props) {
   const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [subtitlesDisplayModeMsg, setSubtitlesDisplayModeMsg] = useState(null);
+
   const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
     return getCurrentBroadcastProgramm();
   });
+
   const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
     return getCurrentBroadcastLanguage();
   });
+
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
+
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
     broadcastLangCode
   );
+
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
     broadcastLangCode
@@ -189,11 +198,6 @@ export function ActiveSlideMessaging(props) {
                 publishSlide(slide, topic);
               }
             }
-
-            if (!subtitlesDisplayModeMsg) {
-              const slideJsonMsg = publishSubtitlesDisplayMode("sources");
-              setSubtitlesDisplayModeMsg(slideJsonMsg);
-            }
           }
         }
       }
@@ -207,19 +211,24 @@ export function ActiveSlideMessaging(props) {
       subscribeEvent(subtitleMqttTopic, newMessageHandling);
 
       qstMqttTopicList.forEach((mqttTopic, index) => {
-        subscribeEvent(mqttTopic, (event) => {
-          newMessageHandling(event);
-        });
+        if (mqttTopic !== displayModeTopic) {
+          subscribeEvent(mqttTopic, (event) => {
+            newMessageHandling(event);
+          });
+        }
       });
     }
     subscribed = true;
   };
+
   const compUnSubscribeAppEvents = () => {
     unSubscribeEvent(displayModeTopic, newMessageHandling);
     unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
 
     qstMqttTopicList.forEach((mqttTopic, index) => {
-      unSubscribeEvent(mqttTopic, newMessageHandling);
+      if (mqttTopic !== displayModeTopic) {
+        unSubscribeEvent(mqttTopic, newMessageHandling);
+      }
     });
   };
 
@@ -269,15 +278,6 @@ export function ActiveSlideMessaging(props) {
       });
 
       compSubscribeEvents();
-
-      if (props.subtitlesDisplayMode) {
-        if (
-          !subtitlesDisplayModeMsg ||
-          props.subtitlesDisplayMode !== subtitlesDisplayModeMsg.slide
-        ) {
-          publishSubtitlesDisplayMode(subtitlesDisplayMode);
-        }
-      }
     }, 0);
 
     return () => {
@@ -285,41 +285,6 @@ export function ActiveSlideMessaging(props) {
       compUnSubscribeAppEvents();
     };
   }, [subtitlesDisplayMode, subtitleMqttTopic]);
-
-  useEffect(() => {
-    if (subtitlesDisplayModeMsg && subtitlesDisplayModeMsg.slide) {
-      const displayModeElmCol = document.getElementsByClassName(
-        `${subtitlesDisplayModeMsg.slide}-mod`
-      );
-
-      if (displayModeElmCol.length) {
-        const trgDisplayModeElm = displayModeElmCol[0];
-
-        if (trgDisplayModeElm) {
-          if (!trgDisplayModeElm.classList.contains("display-mod-selected")) {
-            if (subtitlesDisplayModeMsg.slide === "questions") {
-              if (subtitlesDisplayModeMsg.clientId !== mqttClientId) {
-                if (questionMqttMessage) {
-                  const isTimeExceeded = determineTimeDiffExceeded(
-                    questionMqttMessage,
-                    qstSwapTime,
-                    2
-                  );
-
-                  if (isTimeExceeded) {
-                    publishSlide(questionMqttMessage, questionMqttTopic, true);
-                  }
-                }
-              }
-            }
-
-            trgDisplayModeElm.focus();
-            trgDisplayModeElm.click();
-          }
-        }
-      }
-    }
-  }, [subtitlesDisplayModeMsg]);
 
   useEffect(() => {
     let contextMessage;
@@ -488,11 +453,7 @@ export function ActiveSlideMessaging(props) {
         setQuestionMqttMessage(newMessageJson);
         break;
       case displayModeTopic:
-        if (newMessageJson && !newMessageJson.slide) {
-          newMessageJson.slide = "none";
-        }
-
-        setSubtitlesDisplayModeMsg(newMessageJson);
+        disModeNewMqttMsgHandling(event, topic, newMessageJson);
         break;
       default:
         otherQstMessageHandling(event, topic, newMessageJson);
@@ -703,7 +664,30 @@ export function ActiveSlideMessaging(props) {
 
     return timeoutId;
   }
-  ///####
+
+  const incomeDisModeMqttMsg = useRef(false);
+  const disModeNewMqttMsgHandling = (event, topic, newMessageJson) => {
+    incomeDisModeMqttMsg.current = newMessageJson;
+
+    setSubtitlesDisplayModeMsg(newMessageJson);
+
+    if (newMessageJson.slide !== subtitlesDisplayMode) {
+      dispatch(setSubtitlesDisplayMode(newMessageJson.slide));
+    }
+  };
+
+  useEffect(() => {
+    const handleStateChange = () => {
+      if (
+        subtitlesDisplayModeMsg &&
+        subtitlesDisplayModeMsg.slide !== subtitlesDisplayMode
+      ) {
+        publishSubtitlesDisplayMode(subtitlesDisplayMode);
+      }
+    };
+
+    handleStateChange();
+  }, [subtitlesDisplayMode]);
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
 

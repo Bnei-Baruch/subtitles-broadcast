@@ -12,11 +12,17 @@ const BroadcastParamsSlice = createSlice({
     setSubtitlesDisplayMode: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
     },
+    initializeSubtitlesDisplayMode: (state, action) => {
+      if (state.subtitlesDisplayMode === "none") {
+        state.subtitlesDisplayMode = action.payload;
+      }
+    },
   },
 });
 
 // Export the actions
-export const { setSubtitlesDisplayMode } = BroadcastParamsSlice.actions;
+export const { setSubtitlesDisplayMode, initializeSubtitlesDisplayMode } =
+  BroadcastParamsSlice.actions;
 
 // Export the reducer
 export default BroadcastParamsSlice.reducer;
