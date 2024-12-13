@@ -1,11 +1,11 @@
 // List.js
-import React, { useContext } from "react";
+import React from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
-import AppContext from "../AppContext";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
+import { useSelector } from "react-redux";
 
 const ItemTypes = {
   CARD: "card",
@@ -21,7 +21,9 @@ const DraggableItem = ({
   setActivatedTab,
   setIsLtr,
 }) => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
   const dispatch = useDispatch();
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
@@ -64,7 +66,7 @@ const DraggableItem = ({
           dispatch(
             UnBookmarkSlide({
               bookmark_id: bookmarkDelete,
-              language: appContextlData.broadcastLang.label,
+              language: broadcastLangObj.label,
             })
           )
         }

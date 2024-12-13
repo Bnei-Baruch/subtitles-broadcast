@@ -13,18 +13,19 @@ import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
 import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
-import AppContext from "../AppContext";
 import GetLangaugeCode from "../Utils/Const";
 import { Search } from "../Layout/Search";
 import { useNavigate } from "react-router-dom";
 
 const Source = () => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const sourcePathList = useSelector(getAllSourcePathList);
 
-  const [unbookmarkAction, setUnbookmarkAction] = useState(false)
+  const [unbookmarkAction, setUnbookmarkAction] = useState(false);
   const localPagination = localStorage?.getItem("source_pagination")
     ? JSON?.parse(localStorage?.getItem("source_pagination"))
     : { page: 1, limit: 10 };
@@ -34,8 +35,12 @@ const Source = () => {
     localStorage.setItem("pagination", JSON.stringify({ page, limit }));
     setPage({ page, limit });
     setPageIndex({
-      startIndex: ((page - 1) * limit) + 1,
-      endIndex: Math.min((page) * limit, sourcePathList?.pagination?.total_rows, Number.MAX_VALUE),
+      startIndex: (page - 1) * limit + 1,
+      endIndex: Math.min(
+        page * limit,
+        sourcePathList?.pagination?.total_rows,
+        Number.MAX_VALUE
+      ),
     });
   };
 
@@ -53,26 +58,30 @@ const Source = () => {
     file_uid: "",
     update: "",
   });
-  const languages = GetLangaugeCode();
+
   const navigate = useNavigate();
 
   useEffect(() => {
     setPageIndex({
-      startIndex: ((page.page - 1) * page.limit) + 1,
-      endIndex: Math.min((page.page) * page.limit, sourcePathList?.pagination?.total_rows, Number.MAX_VALUE),
+      startIndex: (page.page - 1) * page.limit + 1,
+      endIndex: Math.min(
+        page.page * page.limit,
+        sourcePathList?.pagination?.total_rows,
+        Number.MAX_VALUE
+      ),
     });
   }, [sourcePathList]);
 
   useEffect(() => {
     dispatch(
       GetAllSourcePathData({
-        language: appContextlData.broadcastLang.label,
+        language: broadcastLangObj.label,
         page: page.page,
         limit: page.limit,
         keyword: sessionStorage.getItem("headerSearchKeywordSource"),
       })
     );
-  }, [page.page, page.limit, appContextlData.broadcastLang.label]);
+  }, [page.page, page.limit, broadcastLangObj.label]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -80,17 +89,19 @@ const Source = () => {
         DeleteSource({
           search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           source_uid: SourceUidForDeleteSlide,
-          language: appContextlData.broadcastLang.label
+          language: broadcastLangObj.label,
         })
       );
       setFinalConfirm(false);
     }
     if (toggle) {
-      dispatch(BookmarkSlideFromArchivePage({
-        search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
-        data: deleteId,
-        language: appContextlData.broadcastLang.label
-      }));
+      dispatch(
+        BookmarkSlideFromArchivePage({
+          search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
+          data: deleteId,
+          language: broadcastLangObj.label,
+        })
+      );
       setToggle(false);
     }
   }, [finalConfirm, toggle, deleteId, dispatch]);
@@ -106,38 +117,43 @@ const Source = () => {
     [deleteConfirmationPopup]
   );
 
-  const ConfirmationMessage = useMemo(
-    () => {
-      if (!unbookmarkAction) {
-        return (
-          <MessageBox
-            setFinalConfirm={() => {
-              dispatch(
-                BookmarkSlideFromArchivePage({
-                  search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
-                  data: bookmarkData,
-                  language: appContextlData.broadcastLang.label,
-                  params: page,
-                })
-              );
-            }}
-            message={"Are you sure , you want to bookmark this File slide"}
-            show={confirmation}
-            handleClose={() => setConfirmation(false)}
-          />
-        );
-      }
-    },
-    [confirmation, message, unbookmarkAction]
-  );
+  const ConfirmationMessage = useMemo(() => {
+    if (!unbookmarkAction) {
+      return (
+        <MessageBox
+          setFinalConfirm={() => {
+            dispatch(
+              BookmarkSlideFromArchivePage({
+                search_keyword: sessionStorage.getItem(
+                  "headerSearchKeywordSource"
+                ),
+                data: bookmarkData,
+                language: broadcastLangObj.label,
+                params: page,
+              })
+            );
+          }}
+          message={"Are you sure , you want to bookmark this File slide"}
+          show={confirmation}
+          handleClose={() => setConfirmation(false)}
+        />
+      );
+    }
+  }, [confirmation, message, unbookmarkAction]);
 
   return (
     <>
       {DelectConfirmationModal}
       {ConfirmationMessage}
-      <div className="archiveBackground bg-light Edit" style={{position: "relative"}}>
+      <div
+        className="archiveBackground bg-light Edit"
+        style={{ position: "relative" }}
+      >
         <div className="flex-container">
-          <div className="flex-box-center top-autocomplete" style={{marginLeft: "10px", marginRight: "10px"}}>
+          <div
+            className="flex-box-center top-autocomplete"
+            style={{ marginLeft: "10px", marginRight: "10px" }}
+          >
             {/* Content for the second flex box centered */}
             <Search className="top-autocomplete" />
             <ReactPaginate
@@ -200,16 +216,15 @@ const Source = () => {
               <option value={30}>30</option>
             </select>{" "}
             &nbsp; &nbsp; &nbsp;
-            <span style={{width: '200px'}}>{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${sourcePathList?.pagination?.total_rows} `}</span>
+            <span
+              style={{ width: "200px" }}
+            >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${sourcePathList?.pagination?.total_rows} `}</span>
           </div>
         </div>
         <div className="card" style={{ border: "none" }}>
           {sourcePathList ? (
             <div style={{ overflowX: "auto" }}>
-              <table
-                className=""
-                style={{ padding: "20px", minWidth: "100%" }}
-              >
+              <table className="" style={{ padding: "20px", minWidth: "100%" }}>
                 <thead>
                   <colgroup>
                     <col style={{ width: "20%" }} />
@@ -228,10 +243,7 @@ const Source = () => {
                         key.bookmark_id !== null ? "bookmarkedrow" : ""
                       }
                     >
-                      <td
-                        style={{ padding: "10px" }}
-                        className="text-truncate"
-                      >
+                      <td style={{ padding: "10px" }} className="text-truncate">
                         {key.path}
                       </td>
                       <td style={{ padding: "10px" }}>
@@ -241,9 +253,11 @@ const Source = () => {
                               setUnbookmarkAction(true);
                               dispatch(
                                 UnBookmarkSlide({
-                                  search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
+                                  search_keyword: sessionStorage.getItem(
+                                    "headerSearchKeywordSource"
+                                  ),
                                   bookmark_id: key.bookmark_id,
-                                  language: appContextlData.broadcastLang.label,
+                                  language: broadcastLangObj.label,
                                   page: page.page,
                                   limit: page.limit,
                                 })
@@ -261,28 +275,37 @@ const Source = () => {
                               setUnbookmarkAction(false);
                               dispatch(
                                 UserBookmarkList({
-                                  language: appContextlData.broadcastLang.label,
+                                  language: broadcastLangObj.label,
                                 })
                               ).then((res) => {
                                 let update = false;
-                                for (let i = 0; i < res.payload.data.length; i++) {
-                                  if (res.payload.data[i].slide_id === key?.slide_id) {
+                                for (
+                                  let i = 0;
+                                  i < res.payload.data.length;
+                                  i++
+                                ) {
+                                  if (
+                                    res.payload.data[i].slide_id ===
+                                    key?.slide_id
+                                  ) {
                                     update = true;
-                                    break
+                                    break;
                                   }
                                 }
                                 dispatch(
                                   BookmarkSlideFromArchivePage({
-                                    search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
+                                    search_keyword: sessionStorage.getItem(
+                                      "headerSearchKeywordSource"
+                                    ),
                                     data: {
                                       file_uid: key?.file_uid,
                                       slide_id: key?.slide_id,
                                       update: update,
                                       order: sourcePathList?.paths?.find(
                                         (k) => k.bookmark_id !== null
-                                      )?.length
+                                      )?.length,
                                     },
-                                    language: appContextlData.broadcastLang.label,
+                                    language: broadcastLangObj.label,
                                     params: page,
                                   })
                                 ).then((res) => {

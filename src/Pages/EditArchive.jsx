@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import {
@@ -10,11 +10,12 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
-import AppContext from "../AppContext";
 import { SplitToSlides } from "../Utils/SlideSplit";
 
 const EditArcive = ({ handleClose }) => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
   const dispatch = useDispatch();
   const [isLtr, setIsLtr] = useState(true);
   const [slideListData, setSlideListData] = useState([]);
@@ -23,7 +24,7 @@ const EditArcive = ({ handleClose }) => {
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
-  const [slideTextList, setSlideTextList] = useState([]);
+  const [setSlideTextList] = useState([]);
   const [wholeText, setWholeText] = useState("");
   const [split, setSplit] = useState(false);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
@@ -40,7 +41,7 @@ const EditArcive = ({ handleClose }) => {
     dispatch(
       GetAllArchiveData({
         file_uid: localStorage.getItem("file_uid_for_edit_slide"),
-        language: appContextlData.broadcastLang.label,
+        language: broadcastLangObj.label,
         limit: 2000,
       })
     ).then((response) => {
@@ -114,7 +115,7 @@ const EditArcive = ({ handleClose }) => {
             await dispatch(
               addNewSlide({
                 list: addNewSlideList,
-                language: appContextlData.broadcastLang.label,
+                language: broadcastLangObj.label,
               })
             );
           }
@@ -136,7 +137,7 @@ const EditArcive = ({ handleClose }) => {
             await dispatch(
               deleteNewSlide({
                 data: deleteParams,
-                language: appContextlData.broadcastLang.label,
+                language: broadcastLangObj.label,
               })
             );
           }
@@ -144,7 +145,7 @@ const EditArcive = ({ handleClose }) => {
       }
       await dispatch(
         GetAllArchiveData({
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
           limit: 2000,
           file_uid: localStorage.getItem("file_uid_for_edit_slide"),
         })
@@ -190,7 +191,7 @@ const EditArcive = ({ handleClose }) => {
       dispatch(
         deleteNewSlide({
           data: deleteParams,
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
         })
       );
 
@@ -224,7 +225,7 @@ const EditArcive = ({ handleClose }) => {
       dispatch(
         addNewSlide({
           list: addNewSlideList,
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
         })
       );
     }

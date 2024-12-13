@@ -2,8 +2,7 @@ import React, { useContext, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { Slide } from "./Slide";
-//import { debounce } from "lodash";
-import AppContext from "../AppContext";
+import { useSelector } from "react-redux";
 
 const BookContent = ({
   setActivatedTab,
@@ -13,9 +12,11 @@ const BookContent = ({
   setSearchSlide,
   searchKeyword,
 }) => {
-  const appContextlData = useContext(AppContext);
   const dispatch = useDispatch();
   const focusSlides = useRef();
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
 
   useEffect(() => {
     focusSlides?.current?.scrollIntoView({
@@ -44,7 +45,7 @@ const BookContent = ({
                     slide_id: item.ID,
                     update: true,
                   },
-                  language: appContextlData.broadcastLang.label,
+                  language: broadcastLangObj.label,
                 })
               );
             }}

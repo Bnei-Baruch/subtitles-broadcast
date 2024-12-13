@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./PagesCSS/Newslide.css";
 import Select from "react-select";
 import { SplitToSlides, sourceToMarkdown } from "../Utils/SlideSplit";
@@ -12,22 +12,23 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import AppContext from "../AppContext";
 import { getCurrentBroadcastLanguage, languageIsLtr } from "../Utils/Common";
 
 const NewSlides = () => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const languages = GetLangaugeCode();
   const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
-  const [tagList, setTagList] = useState([]);
+  const [setTagList] = useState([]);
   const [wholeText, setWholeText] = useState("");
   const [splitActive, setSplitActive] = useState(false);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState("");
-  const [slideLanguageOptions, setSlideLanguageOptions] = useState([
+  const [slideLanguageOptions] = useState([
     "Hebrew",
     "Russian",
     "English",
@@ -42,31 +43,28 @@ const NewSlides = () => {
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const [selectedOptions, setSelectedOptions] = useState([
     {
-      label: appContextlData.broadcastLang.label,
-      value: languages[appContextlData.broadcastLang.label],
+      label: broadcastLangObj.label,
+      value: languages[broadcastLangObj.label],
     },
   ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const curBroadcastLanguage = getCurrentBroadcastLanguage();
-  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
-    return curBroadcastLanguage;
-  });
   const broadcastLangCode = broadcastLangObj.value;
   const [isLtr, setIsLtr] = useState(() => {
     return languageIsLtr(broadcastLangCode);
   });
 
-  if (curBroadcastLanguage.value !== broadcastLangObj.value) {
-    setBroadcastLangObj(curBroadcastLanguage);
-    setIsLtr(languageIsLtr(curBroadcastLanguage.value));
-  }
+  // if (curBroadcastLanguage.value !== broadcastLangObj.value) {
+  //   setBroadcastLangObj(curBroadcastLanguage);
+  //   setIsLtr(languageIsLtr(curBroadcastLanguage.value));
+  // }
 
   useEffect(() => {
     if (sourceUrl.length > 0) {
       dispatch(
         ArchiveAutoComplete({
           query: sourceUrl,
-          language: languages[appContextlData.broadcastLang.label],
+          language: languages[broadcastLangObj.label],
         })
       );
     }
@@ -81,10 +79,10 @@ const NewSlides = () => {
 
   useEffect(() => {
     setSelectedOptions({
-      label: appContextlData.broadcastLang.label,
-      value: languages[appContextlData.broadcastLang.label],
+      label: broadcastLangObj.label,
+      value: languages[broadcastLangObj.label],
     });
-  }, [appContextlData.broadcastLang.label]);
+  }, [broadcastLangObj.label]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,10 +92,8 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        left_to_right: IsLangLtr(
-          languages[appContextlData.broadcastLang.label]
-        ),
-        languages: languages[appContextlData.broadcastLang.label],
+        left_to_right: IsLangLtr(languages[broadcastLangObj.label]),
+        languages: languages[broadcastLangObj.label],
         slides: updateTagList,
       };
       if (
@@ -247,7 +243,7 @@ const NewSlides = () => {
         }
         setSourceUid("upload_" + sourceUidStr);
         let fileUid = await GetFileUid(
-          languages[appContextlData.broadcastLang.label],
+          languages[broadcastLangObj.label],
           sourceUidStr
         );
         if (fileUid === undefined) {
@@ -320,7 +316,7 @@ const NewSlides = () => {
                     .map((slideLanguage) => {
                       if (
                         languages[slideLanguage] !==
-                        languages[appContextlData.broadcastLang.label]
+                        languages[broadcastLangObj.label]
                       ) {
                         return {
                           label: slideLanguage,
@@ -386,7 +382,7 @@ const NewSlides = () => {
         <>
           <div className="row m-4">
             <label>Language</label>
-            <p>{appContextlData.broadcastLang.label}</p>
+            <p>{broadcastLangObj.label}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
               <div className="form-group autoComplete">

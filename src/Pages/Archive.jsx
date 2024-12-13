@@ -15,11 +15,12 @@ import EditArcive from "./EditArchive";
 import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation } from "react-router-dom";
-import AppContext from "../AppContext";
 import { Search } from "../Layout/Search";
 
 const Archive = () => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
   const archiveList = useSelector(getAllArchiveList);
@@ -75,7 +76,7 @@ const Archive = () => {
     if (!editSlide) {
       dispatch(
         GetAllArchiveData({
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
           page: page.page,
           limit: page.limit,
           keyword: localStorage?.getItem("free-text"),
@@ -91,13 +92,7 @@ const Archive = () => {
           console.error("Error fetching archive data:", error);
         });
     }
-  }, [
-    editSlide,
-    page.page,
-    page.limit,
-    appContextlData.broadcastLang.label,
-    dispatch,
-  ]);
+  }, [editSlide, page.page, page.limit, broadcastLangObj.label, dispatch]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -105,7 +100,7 @@ const Archive = () => {
         DeleteArchive({
           search_keyword: localStorage.getItem("headerSearchKeyword"),
           file_uid: fileUidForDeleteSlide,
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
         })
       );
       setFinalConfirm(false);
@@ -115,7 +110,7 @@ const Archive = () => {
         BookmarkSlideFromArchivePage({
           search_keyword: localStorage.getItem("headerSearchKeyword"),
           data: deleteId,
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
         })
       );
       setToggle(false);
@@ -126,7 +121,7 @@ const Archive = () => {
     deleteId,
     dispatch,
     fileUidForDeleteSlide,
-    appContextlData.broadcastLang.label,
+    broadcastLangObj.label,
   ]);
 
   useEffect(() => {
@@ -163,7 +158,7 @@ const Archive = () => {
               BookmarkSlideFromArchivePage({
                 search_keyword: localStorage.getItem("free-text"),
                 data: bookmarkData,
-                language: appContextlData.broadcastLang.label,
+                language: broadcastLangObj.label,
                 params: page,
               })
             );
@@ -175,7 +170,7 @@ const Archive = () => {
       );
     }
   }, [
-    appContextlData.broadcastLang.label,
+    broadcastLangObj.label,
     bookmarkData,
     confirmation,
     dispatch,
@@ -328,8 +323,7 @@ const Archive = () => {
                                     search_keyword:
                                       localStorage.getItem("free-text"),
                                     bookmark_id: key.bookmark_id,
-                                    language:
-                                      appContextlData.broadcastLang.label,
+                                    language: broadcastLangObj.label,
                                     page: page.page,
                                     limit: page.limit,
                                   })
@@ -359,8 +353,7 @@ const Archive = () => {
                                         (k) => k.bookmark_id !== null
                                       )?.length,
                                     },
-                                    language:
-                                      appContextlData.broadcastLang.label,
+                                    language: broadcastLangObj.label,
                                     params: page,
                                   })
                                 ).then((res) => {

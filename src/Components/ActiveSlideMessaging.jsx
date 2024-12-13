@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { Slide } from "../Components/Slide";
 import {
-  getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
   getSubtitleMqttTopic,
   getQuestionMqttTopic,
   subtitlesDisplayModeTopic,
@@ -13,15 +11,9 @@ import {
   subscribeEvent,
   unSubscribeEvent,
 } from "../Utils/Events";
-import AppContext from "../AppContext";
-import {
-  broadcastLanguages,
-  DEF_BROADCAST_PROG,
-  DEF_BROADCAST_LANG,
-} from "../Utils/Const";
+import { broadcastLanguages } from "../Utils/Const";
 import { useSelector, useDispatch } from "react-redux";
 import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
-import debugLog from "../Utils/debugLog";
 
 const styles = {
   mainContainer: {
@@ -38,7 +30,6 @@ const styles = {
 export function ActiveSlideMessaging(props) {
   const dispatch = useDispatch();
   const qstSwapTime = 5000; // 5s
-  const appContextlData = useContext(AppContext);
 
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
@@ -48,13 +39,13 @@ export function ActiveSlideMessaging(props) {
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [subtitlesDisplayModeMsg, setSubtitlesDisplayModeMsg] = useState(null);
 
-  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
-    return getCurrentBroadcastProgramm();
-  });
+  const broadcastProgrammObj = useSelector(
+    (state) => state.BroadcastParams.broadcastProgramm
+  );
 
-  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
-    return getCurrentBroadcastLanguage();
-  });
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
 
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
@@ -246,24 +237,6 @@ export function ActiveSlideMessaging(props) {
       clearTimeout(timeoutId);
     };
   }, []);
-
-  useEffect(() => {
-    if (
-      appContextlData.broadcastLang?.value &&
-      broadcastLangCode !== appContextlData.broadcastLang.value
-    ) {
-      setBroadcastLangObj(appContextlData.broadcastLang);
-    }
-  }, [appContextlData.broadcastLang?.value || DEF_BROADCAST_LANG]);
-
-  useEffect(() => {
-    if (
-      appContextlData.broadcastProgramm?.value &&
-      broadcastProgrammCode !== appContextlData.broadcastProgramm.value
-    ) {
-      setBroadcastProgrammObj(appContextlData.broadcastProgramm);
-    }
-  }, [appContextlData.broadcastProgramm?.value || DEF_BROADCAST_PROG]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

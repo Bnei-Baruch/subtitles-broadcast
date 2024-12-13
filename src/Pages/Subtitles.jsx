@@ -28,7 +28,6 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import AppContext from "../AppContext";
 import { useNavigate } from "react-router-dom";
 import GetLangaugeCode, {
   MAX_SLIDE_LIMIT,
@@ -46,7 +45,9 @@ function usePrevious(value) {
 }
 
 const Subtitles = () => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
 
   const subtitlesDisplayMode = useSelector(
     (state) => state.BroadcastParams.subtitlesDisplayMode
@@ -83,11 +84,7 @@ const Subtitles = () => {
     const targetBookmarkSlideID =
       slideID.ID +
         slideID?.languages.findIndex(
-          (langCode) =>
-            langCode ===
-            languages[
-              appContextlData.broadcastLang?.label || DEF_BROADCAST_LANG
-            ]
+          (langCode) => langCode === languages[broadcastLangObj.label]
         ) || 0;
     dispatch(
       BookmarkSlide({
@@ -96,7 +93,7 @@ const Subtitles = () => {
           slide_id: targetBookmarkSlideID,
           update: true,
         },
-        language: appContextlData.broadcastLang.label,
+        language: broadcastLangObj.label,
       })
     );
     setSelectedSlide(newSelectedSlide);
@@ -161,13 +158,11 @@ const Subtitles = () => {
     };
   }, [handleKeyPress]);
   useEffect(() => {
-    if (appContextlData.broadcastLang?.label) {
-      dispatch(
-        UserBookmarkList({ language: appContextlData.broadcastLang.label })
-      );
+    if (broadcastLangObj.label) {
+      dispatch(UserBookmarkList({ language: broadcastLangObj.label }));
       dispatch(clearAllBookmarks());
     }
-  }, [dispatch, appContextlData.broadcastLang?.label || DEF_BROADCAST_LANG]);
+  }, [dispatch, broadcastLangObj.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {

@@ -1,34 +1,32 @@
 import React, { useState, useEffect } from "react";
 import "./PagesCSS/Questions.css";
 import QuestionMessage from "../Components/QuestionMessage";
+import { broadcastLanguages } from "../Utils/Const";
+import { getQuestionMqttTopic, languageIsLtr } from "../Utils/Common";
 import {
-  broadcastLanguages,
-} from "../Utils/Const";
-import {
-  getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
-  getQuestionMqttTopic,
-  languageIsLtr,
-} from "../Utils/Common";
-import { publishEvent, subscribeEvent, unSubscribeEvent } from "../Utils/Events";
+  publishEvent,
+  subscribeEvent,
+  unSubscribeEvent,
+} from "../Utils/Events";
+import { useSelector } from "react-redux";
 
 const QuestionModule = () => {
-  const curBroadcastLanguage = getCurrentBroadcastLanguage();
   const mqttClientId = localStorage.getItem("mqttClientId");
-
   const newQuestionTxtRef = React.createRef();
   const [handleSuccess, sethandleSuccess] = useState(false);
 
-  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
-    return getCurrentBroadcastProgramm();
-  });
-  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
-    return curBroadcastLanguage;
-  });
+  const broadcastProgrammObj = useSelector(
+    (state) => state.BroadcastParams.broadcastProgramm
+  );
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
+
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
-  const [isLtr, setIsLtr] = useState(()=>{
-    return languageIsLtr(broadcastLangCode)
+
+  const [isLtr, setIsLtr] = useState(() => {
+    return languageIsLtr(broadcastLangCode);
   });
 
   const clearButtonClickHandler = () => {
@@ -43,7 +41,10 @@ const QuestionModule = () => {
   const sendQuestionButtonClickHandler = () => {
     if (newQuestionTxtRef.current) {
       // Question should always be a one liner.
-      const qustionTxt = newQuestionTxtRef.current.value.replace(/(\r\n|\n|\r)/gm, ' ');
+      const qustionTxt = newQuestionTxtRef.current.value.replace(
+        /(\r\n|\n|\r)/gm,
+        " "
+      );
 
       if (qustionTxt) {
         const jsonMsg = {
@@ -61,7 +62,10 @@ const QuestionModule = () => {
         };
 
         const jsonMsgStr = JSON.stringify(jsonMsg);
-        const mqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
+        const mqttTopic = getQuestionMqttTopic(
+          broadcastProgrammCode,
+          broadcastLangCode
+        );
 
         publishEvent("mqttPublush", {
           mqttTopic: mqttTopic,
@@ -69,11 +73,10 @@ const QuestionModule = () => {
         });
       }
     }
-    
+
     newQuestionTxtRef.current.focus();
   };
 
-  
   let subscribed = false;
   const compSubscribeEvents = () => {
     if (!subscribed) {
@@ -86,19 +89,17 @@ const QuestionModule = () => {
     unSubscribeEvent("mqttMessagePublished", messagePublishedHandling);
   };
 
-  const messagePublishedHandling = ()=>{
+  const messagePublishedHandling = () => {
     sethandleSuccess(true);
   };
 
-  
-  useEffect(() => {  
+  useEffect(() => {
     if (newQuestionTxtRef.current) {
       newQuestionTxtRef.current.focus();
     }
-    
+
     const timeoutId = setTimeout(() => {
       compSubscribeEvents();
-    
     }, 0);
 
     return () => {
@@ -106,31 +107,28 @@ const QuestionModule = () => {
       compUnSubscribeAppEvents();
     };
   }, []);
-  
-  useEffect(() => {     
+
+  useEffect(() => {
+    setIsLtr(languageIsLtr(broadcastLangObj.value));
+
     const timeoutId = setTimeout(() => {
       if (newQuestionTxtRef.current) {
         newQuestionTxtRef.current.focus();
-      }    
+      }
     }, 300);
 
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [curBroadcastLanguage]);
+  }, [broadcastLangObj]);
 
-  const setLtrClickHandler = ()=>{
+  const setLtrClickHandler = () => {
     setIsLtr(!isLtr);
-    
+
     if (newQuestionTxtRef.current) {
       newQuestionTxtRef.current.focus();
     }
   };
-
-  if (curBroadcastLanguage.value !== broadcastLangObj.value){
-    setBroadcastLangObj(curBroadcastLanguage) ;   
-    setIsLtr(languageIsLtr(curBroadcastLanguage.value));    
-  }
 
   return (
     <div className="form-Question">

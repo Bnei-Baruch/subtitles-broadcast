@@ -7,7 +7,6 @@ import SideNavBar from "./Layout/SideNavBar";
 import MainRoutes from "./Routes/Routes";
 import useMqtt from "./Utils/UseMqttUtils";
 import { publishEvent, subscribeEvent, unSubscribeEvent } from "./Utils/Events";
-import AppContext from "./AppContext";
 
 const App = ({ auth }) => {
   const { mqttUnSubscribe, mqttSubscribe, mqttPublush, isConnected, payload } =
@@ -173,25 +172,16 @@ const App = ({ auth }) => {
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <div className="app">
-        <AppContext.Provider
-          value={{
-            broadcastLang,
-            setBroadcastLang,
-            broadcastProgramm,
-            setBroadcastProgramm,
-          }}
-        >
-          <SideNavBar
+        <SideNavBar
+          securityRole={auth ? auth.securityRole : null}
+          authKeycloak={auth?.keycloak}
+        />
+        <div style={{ backgroundColor: "#eeee" }} className="main-content">
+          <MainRoutes
+            logout={auth?.keycloak}
             securityRole={auth ? auth.securityRole : null}
-            authKeycloak={auth?.keycloak}
           />
-          <div style={{ backgroundColor: "#eeee" }} className="main-content">
-            <MainRoutes
-              logout={auth?.keycloak}
-              securityRole={auth ? auth.securityRole : null}
-            />
-          </div>
-        </AppContext.Provider>
+        </div>
       </div>
 
       {auth && auth.securityRole && auth.securityRole === "translator" && (

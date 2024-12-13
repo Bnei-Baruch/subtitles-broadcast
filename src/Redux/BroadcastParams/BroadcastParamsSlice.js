@@ -1,8 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { brodcastProgrammArr, broadcastLanguages } from "../../Utils/Const";
 
 // Initial state for broadcast parameters
 const initialState = {
-  subtitlesDisplayMode: "none", // Initial mode set to 'none'
+  subtitlesDisplayMode: "none",
+  broadcastLang: broadcastLanguages[0],
+  broadcastProgramm: brodcastProgrammArr[0],
 };
 
 const BroadcastParamsSlice = createSlice({
@@ -17,12 +20,22 @@ const BroadcastParamsSlice = createSlice({
         state.subtitlesDisplayMode = action.payload;
       }
     },
+    setBroadcastLang: (state, action) => {
+      state.broadcastLang = action.payload;
+    },
+    setBroadcastProgramm: (state, action) => {
+      state.broadcastProgramm = action.payload;
+    },
   },
 });
 
 // Export the actions
-export const { setSubtitlesDisplayMode, initializeSubtitlesDisplayMode } =
-  BroadcastParamsSlice.actions;
+export const {
+  setSubtitlesDisplayMode,
+  initializeSubtitlesDisplayMode,
+  setBroadcastLang,
+  setBroadcastProgramm,
+} = BroadcastParamsSlice.actions;
 
 // Export the reducer
 export default BroadcastParamsSlice.reducer;
