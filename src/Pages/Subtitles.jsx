@@ -430,7 +430,6 @@ const Subtitles = () => {
               activatedTab={selectedSlide}
               setActivatedTab={setSelectedSlide}
               isLtr={isLtr}
-              subtitlesDisplayMode={subtitlesDisplayMode}
             />
           </div>
           <div className="book-mark whit-s overflow-auto">
