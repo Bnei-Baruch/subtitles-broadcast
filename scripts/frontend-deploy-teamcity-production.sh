@@ -29,6 +29,15 @@ ssh ${SSH_OPTIONS} ${STAGING_SERVER} <<EOF
     # Navigate to the build context directory
     cd /root/configs/subtitles_frontend || { echo "Directory /root/configs/subtitles_frontend does not exist. Exiting."; exit 1; }
 
+    # Stop and remove the existing Docker container
+    docker stop subtitles_frontend
+    docker rm subtitles_frontend
+
+    # Clean up Docker resources
+    docker builder prune -af
+    docker image prune -a -f
+    docker volume prune -f
+
     # Remove and recreate the 'src' directory
     if [ -d "src" ]; then
         echo "Removing existing 'src' directory..."
