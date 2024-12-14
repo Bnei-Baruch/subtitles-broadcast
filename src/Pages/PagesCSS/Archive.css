@@ -385,3 +385,24 @@ select {
 .bookmarkedrow {
   background-color: grey;
 }
+
+button {
+  height: 40px; /* Ensure consistent height */
+  line-height: 40px; /* Align text vertically */
+  margin: 0; /* Remove unnecessary margins */
+}
+
+.inline-flex {
+  display: inline-flex;
+  align-items: center; /* Vertical alignment */
+  gap: 10px; /* Adjust spacing between items */
+}
+
+.update-source-path-inp {
+  min-width: 600px;
+  width: 600px;
+}
+
+.update-source-path-btn {
+  margin-left: 65px;
+}

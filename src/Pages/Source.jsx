@@ -141,6 +141,18 @@ const Source = () => {
     }
   }, [confirmation, message, unbookmarkAction]);
 
+  const handleEditSlide = (slide) => {
+    const fileUid = slide.file_uid;
+    const slideId = slide.slide_id;
+    const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
+
+    localStorage.setItem("file_uid_for_edit_slide", fileUid);
+
+    navigate(editUrl, {
+      state: { previousLocation: window.location.pathname },
+    });
+  };
+
   return (
     <>
       {DelectConfirmationModal}
@@ -328,10 +340,7 @@ const Source = () => {
                         )}
                         <i
                           className="bi bi-pencil m-2 cursor-pointer "
-                          onClick={() => {
-                            setUnbookmarkAction(false);
-                            navigate("/archive?file_uid=" + key?.file_uid);
-                          }}
+                          onClick={() => handleEditSlide(key)}
                         />
                         <i
                           onClick={() => {

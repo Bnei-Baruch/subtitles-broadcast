@@ -140,7 +140,15 @@ const NewSlides = () => {
           setUpdateTagList([]);
           setSourceUid("");
           alert(response.payload.description);
-          navigate("/archive?file_uid=" + fileUid);
+
+          const firstSlideId = response.payload.data?.slides?.[0]?.ID;
+          if (firstSlideId) {
+            navigate(
+              `/archive/edit?file_uid=${fileUid}&slide_id=${firstSlideId}`
+            );
+          } else {
+            navigate(`/archive/edit?file_uid=${fileUid}`);
+          }
         }
       } catch (error) {
         console.error("Error occurred:", error); // Handle any errors

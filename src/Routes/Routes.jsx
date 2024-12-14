@@ -5,6 +5,7 @@ import Archive from "../Pages/Archive";
 import Source from "../Pages/Source";
 import NewSlides from "../Pages/NewSlides";
 import QuestionsModule from "../Pages/QuestionModule";
+import EditArchive from "../Pages/EditArchive";
 
 const MainRoutes = ({ logout, securityRole }) => {
   return (
@@ -13,19 +14,20 @@ const MainRoutes = ({ logout, securityRole }) => {
         {/** Protected Routes */}
         {/** Wrap all Route under ProtectedRoutes element */}
 
-        {securityRole && securityRole !== "translator" &&
+        {securityRole && securityRole !== "translator" && (
           <>
             <Route index element={<Navigate to={"/subtitle"} />} />
             <Route path="/subtitle" element={<Subtitles />} />
             <Route path="/archive" element={<Archive />} />
+            <Route path="/archive/edit" element={<EditArchive />} />
             <Route path="/source" element={<Source />} />
             <Route path="/new" element={<NewSlides />} />
           </>
-        }
+        )}
 
-        {securityRole && securityRole !== "operator" &&
+        {securityRole && securityRole !== "operator" && (
           <Route path="/question" element={<QuestionsModule />} />
-        }
+        )}
 
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}

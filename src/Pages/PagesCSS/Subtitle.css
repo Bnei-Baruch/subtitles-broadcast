@@ -602,3 +602,8 @@ dropdown-toggle {
   opacity: 0.75;
   cursor: not-allowed;
 }
+
+.edit-slide-button {
+  margin-left: 8px;
+  cursor: pointer;
+}
