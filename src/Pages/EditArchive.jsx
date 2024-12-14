@@ -26,10 +26,8 @@ const EditArchive = ({ handleClose }) => {
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
-  const [, setSlideTextList] = useState([]);
   const [wholeText, setWholeText] = useState("");
   const [split, setSplit] = useState(false);
-  const [slideTextListCopy, setSlideTextListCopy] = useState([]);
   const [updatedSlideTextList, setUpdatedSlideTextList] = useState([]);
   const [sourcePath, setSourcePath] = useState(null);
   const [sourcePathId, setSourcePathId] = useState(null);
@@ -52,7 +50,6 @@ const EditArchive = ({ handleClose }) => {
         response.payload.data?.slides.length > 0
       ) {
         setSlideListData(response.payload.data.slides);
-        setSlideTextListCopy(response.payload.data.slides);
         setIsLtr(response.payload.data.slides[0].left_to_right);
         setSourcePath(response.payload.data.slides[0].source_path);
         setSourcePathId(response.payload.data.slides[0].source_path_id);
@@ -62,104 +59,46 @@ const EditArchive = ({ handleClose }) => {
 
   useEffect(() => {
     const performUpdates = async () => {
-      let i = 0;
       // Create a mutable copy of the array and its objects
-      let mutableSlideTextListCopy = slideTextListCopy.map((item) => ({
-        ...item,
-      }));
-      let currentSlide = parseInt(localStorage.getItem("myIndex"), 10);
-      mutableSlideTextListCopy = mutableSlideTextListCopy.slice(currentSlide);
-      for (; i < mutableSlideTextListCopy.length; i++) {
-        if (mutableSlideTextListCopy[i].slide !== updatedSlideTextList[i]) {
+      const newSlideListData = [...slideListData];
+      const offsetSlide = Math.max(0, Math.min(parseInt(localStorage.getItem("myIndex"), 10), newSlideListData.length - 1));
+      let i = 0;
+      
+      // Keep existing slides that did not change intact.
+      for (; i < updatedSlideTextList.length; i++) {
+        if (newSlideListData[i + offsetSlide].slide !== updatedSlideTextList[i]) {
           break;
         }
       }
 
-      // Update
-      let updateSlideList = [];
-      if (i < mutableSlideTextListCopy.length) {
-        // Update slides from i to the last
-        for (let j = i; j < mutableSlideTextListCopy.length; j++) {
-          const slideData = {
-            slide_id: mutableSlideTextListCopy[j].ID,
-            slide: updatedSlideTextList[j],
-            order_number: mutableSlideTextListCopy[j].order_number,
-            left_to_right: mutableSlideTextListCopy[j].left_to_right,
-          };
-          updateSlideList.push(slideData);
-        }
-        const updateSlideListRequest = {
-          updateSlideList: updateSlideList,
-          file_uid: mutableSlideTextListCopy[0].file_uid,
+      // Update existing slides with new content, from i to the last.
+      for (let j = i; j + offsetSlide < newSlideListData.length && j < updatedSlideTextList.length; j++) {
+        newSlideListData[j + offsetSlide] = {
+          ...newSlideListData[j + offsetSlide],
+          slide: updatedSlideTextList[j],
         };
-        await dispatch(updateNewSlide(updateSlideListRequest));
-
-        if (mutableSlideTextListCopy.length < updatedSlideTextList.length) {
-          // Add
-          let addNewSlideList = [];
-          for (
-            let j = mutableSlideTextListCopy.length;
-            j < updatedSlideTextList.length;
-            j++
-          ) {
-            const slideData = {
-              file_uid: mutableSlideTextListCopy[0].file_uid,
-              slide: updatedSlideTextList[j],
-              order_number:
-                mutableSlideTextListCopy[mutableSlideTextListCopy.length - 1]
-                  .order_number +
-                (j - mutableSlideTextListCopy.length + 1),
-              left_to_right: mutableSlideTextListCopy[0].left_to_right,
-            };
-            addNewSlideList.push(slideData);
-          }
-          if (addNewSlideList.length > 0) {
-            await dispatch(
-              addNewSlide({
-                list: addNewSlideList,
-                language: broadcastLangObj.label,
-              })
-            );
-          }
-        } else {
-          // Delete
-          let deleteSlideIds = [];
-          for (
-            let j = updatedSlideTextList.length;
-            j < mutableSlideTextListCopy.length;
-            j++
-          ) {
-            deleteSlideIds.push(mutableSlideTextListCopy[j].ID);
-          }
-          if (deleteSlideIds.length > 0) {
-            const deleteParams = {
-              force_delete_bookmarks: true,
-              slide_ids: deleteSlideIds,
-            };
-            await dispatch(
-              deleteNewSlide({
-                data: deleteParams,
-                language: broadcastLangObj.label,
-              })
-            );
-          }
-        }
       }
-      await dispatch(
-        GetAllArchiveData({
-          language: broadcastLangObj.label,
-          limit: 2000,
-          file_uid: localStorage.getItem("file_uid_for_edit_slide"),
-        })
-      ).then((response) => {
-        if (
-          response.payload.data?.slides &&
-          response.payload.data?.slides.length > 0
-        ) {
-          setSlideListData(response.payload.data.slides);
-          setSlideTextListCopy(response.payload.data.slides);
+
+      // Add new slided at the end.
+      for (let j = newSlideListData.length - offsetSlide; j < updatedSlideTextList.length; j++) {
+        const slideData = {
+          file_uid: newSlideListData[0].file_uid,
+          slide: updatedSlideTextList[j],
+          order_number: newSlideListData.length,
+          left_to_right: newSlideListData[0].left_to_right,
+        };
+        newSlideListData.push(slideData);
+      }
+      if (newSlideListData.length - offsetSlide > updatedSlideTextList.length) {
+        // Delete
+        let deleteSlideIds = [];
+        for (let j = offsetSlide + updatedSlideTextList.length; j < newSlideListData.length; j++) {
+          deleteSlideIds.push(newSlideListData[j].ID);
         }
-      });
+        setDeleted([...deleted, ...deleteSlideIds]);
+        newSlideListData.splice(offsetSlide + updatedSlideTextList.length, newSlideListData.length - offsetSlide - updatedSlideTextList.length);
+      }
+      setSlideListData(newSlideListData);
     };
 
     performUpdates();
@@ -179,7 +118,7 @@ const EditArchive = ({ handleClose }) => {
     }
   }, [slideListData, slideID, setSelected]);
 
-  const handleSubmit = () => {
+  const handleSave = () => {
     const shouldDelete = deleted?.length > 0;
     const shouldForceDelete = shouldDelete && force_delete_bookmarks;
 
@@ -200,8 +139,9 @@ const EditArchive = ({ handleClose }) => {
       handleUpdateSourcePath();
     }
 
-    const updateSlideList = slideListData?.map(
-      ({ ID, slide, order_number, slide_type, left_to_right }, index) => ({
+    const updateSlideList = slideListData
+      ?.filter(({ ID }) => ID !== undefined)
+      ?.map(({ ID, slide, order_number, slide_type, left_to_right }, index) => ({
         slide_id: ID,
         slide,
         left_to_right: left_to_right === false ? false : true,
@@ -210,8 +150,8 @@ const EditArchive = ({ handleClose }) => {
       })
     );
 
-    const addNewSlideList = updateSlideList
-      ?.filter(({ slide_id }) => slide_id === undefined)
+    const addNewSlideList = slideListData
+      ?.filter(({ ID }) => ID === undefined)
       ?.map(({ slide, order_number, slide_type }) => ({
         slide,
         order_number,
@@ -247,10 +187,10 @@ const EditArchive = ({ handleClose }) => {
     () => (
       <MessageBox
         setFinalConfirm={() => {
-          handleSubmit();
+          handleSave();
         }}
-        buttonName={["Delete", "Save"]}
-        message={"You will not able to recover it"}
+        buttonName={["Drop changes", "Save changes"]}
+        message={"You will not able to recover changes"}
         show={confirmation}
         handleClose={() => {
           setConfirmation(false);
@@ -272,12 +212,10 @@ const EditArchive = ({ handleClose }) => {
           setForce_delete_bookmarks(true);
           setDeleted([...deleted, findIDFORDelete]);
         }}
-        buttonName={["On", "Yes"]}
+        buttonName={["No", "Yes"]}
         message={"You want to delete bookmarked slide "}
         show={forceDeleteConfirm != null}
         handleClose={() => {
-          // deleted?.pop();
-          // setDeleted(deleted);
           setForceDeleteConfirm(null);
         }}
       />
@@ -285,52 +223,15 @@ const EditArchive = ({ handleClose }) => {
     [forceDeleteConfirm]
   );
 
-  const parseFileContents = (fileContents) => {
-    const wordsArray = fileContents.replace(/\r/g, " <br/> ").split(/\s+/);
-    let structuredArray = [];
-    let previousWord = "";
-    wordsArray.forEach((word, index) => {
-      const elementObject = {
-        paragraphStart: previousWord === "<br/>" && word !== "<br/>",
-        tagName: "",
-        word: word,
-      };
-      structuredArray.push(elementObject);
-      previousWord = word;
-    });
-    return structuredArray;
-  };
-
   const rerun = () => {
     let index = parseInt(localStorage.getItem("myIndex"), 10);
-    let updateSlideList = [];
-    for (let i = 0; i < index; i++) {
-      const slideData = {
-        slide_id: slideListData[i].ID,
-        slide: slideListData[i].slide,
-        order_number: slideListData[i].order_number,
-        left_to_right: slideListData[i].left_to_right,
-      };
-      updateSlideList.push(slideData);
-    }
-    const updateSlideListRequest = {
-      updateSlideList: updateSlideList,
-      file_uid: slideListData[0].file_uid,
-    };
-    dispatch(updateNewSlide(updateSlideListRequest));
-    let newSlideTextList = [];
+
     const parts = [];
     for (let i = index; i < slideListData.length; i++) {
-      let words = parseFileContents(slideListData[i].slide);
       parts.push(slideListData[i].slide);
-      words[0].paragraphStart = true;
-      for (let word of words) {
-        newSlideTextList.push(word);
-      }
     }
     setWholeText(parts.join("\r"));
     setSplit(true);
-    setSlideTextList(newSlideTextList);
   };
 
   const handleSourcePathChange = (e) => {
@@ -428,14 +329,14 @@ const EditArchive = ({ handleClose }) => {
               <button
                 onClick={() => {
                   const addNewSlides = slideListData
-                    ?.filter((key) => key?.addedNew == true)
+                    ?.filter((key) => key?.addedNew === true)
                     ?.map(({ file_uid, slide, order_number }) => ({
                       file_uid,
                       slide,
                       order_number,
                     }));
                   const updateNewSlides = slideListData
-                    ?.filter((key) => key?.updateSlide == true)
+                    ?.filter((key) => key?.updateSlide === true)
                     ?.map(({ ID, slide, order_number }) => ({
                       slide_id: ID,
                       slide,
@@ -457,7 +358,7 @@ const EditArchive = ({ handleClose }) => {
                 Cancel
               </button>
               <button
-                onClick={handleSubmit}
+                onClick={handleSave}
                 type="button"
                 className="btn save "
               >
@@ -480,8 +381,8 @@ const EditArchive = ({ handleClose }) => {
             slideListData?.map((key, index) => (
               <div
                 className="row "
-                key={`row_slide_${key.ID}`}
-                id={`row_slide_${key.ID}`}
+                key={`row_slide_${key.order_number}`}
+                id={`row_slide_${key.order_number}`}
               >
                 <div
                   className={`col-md-6 mb-2`}
@@ -493,7 +394,7 @@ const EditArchive = ({ handleClose }) => {
                 >
                   <div
                     className={`adjustable-font box box2 ${
-                      index == selected && "EditActiveSlide"
+                      index === selected && "EditActiveSlide"
                     }`}
                   >
                     <textarea
@@ -586,7 +487,7 @@ const EditArchive = ({ handleClose }) => {
                       }}
                     />
 
-                    {index == selected && (
+                    {index === selected && (
                       <i
                         onClick={() =>
                           handleDeleteSlide(
@@ -607,7 +508,7 @@ const EditArchive = ({ handleClose }) => {
                       />
                     )}
 
-                    {index == selected && (
+                    {index === selected && (
                       <i
                         onClick={() => {
                           const cloneSlidedataArray = [...slideListData];
@@ -636,7 +537,7 @@ const EditArchive = ({ handleClose }) => {
                       />
                     )}
 
-                    {index == selected && (
+                    {index === selected && (
                       <i
                         onClick={() => {
                           const cloneSlidedataArray = [...slideListData];
@@ -661,7 +562,7 @@ const EditArchive = ({ handleClose }) => {
                         }}
                       />
                     )}
-                    {index == selected && (
+                    {index === selected && (
                       <i
                         onClick={() => rerun()}
                         className="bi bi-bootstrap-reboot delete-icon "
@@ -672,7 +573,7 @@ const EditArchive = ({ handleClose }) => {
                         }}
                       />
                     )}
-                    {index == selected && (
+                    {index === selected && (
                       <i
                         onClick={() => {
                           const cloneSlidedataArray = [...slideListData];
@@ -683,18 +584,10 @@ const EditArchive = ({ handleClose }) => {
                               break;
                             }
                           }
-                          let additionalOrderNumber = 0;
-                          if (
-                            numberOfPreviousSlides % key.languages.length ===
-                            0
-                          ) {
-                            additionalOrderNumber += 1;
-                          }
                           cloneSlidedataArray.splice(index + 1, 0, {
                             // slide_id: +key?.ID + 1,
                             file_uid: key?.file_uid,
                             slide: "",
-                            //order_number: key?.order_number + additionalOrderNumber,
                             addedNew: true,
                             slide_type: "subtitle",
                           });
