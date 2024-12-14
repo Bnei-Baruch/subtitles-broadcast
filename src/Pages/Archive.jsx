@@ -11,13 +11,13 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
-import EditArcive from "./EditArchive";
 import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "../Layout/Search";
 
 const Archive = () => {
+  const navigate = useNavigate();
   const broadcastLangObj = useSelector(
     (state) => state.BroadcastParams.broadcastLang
   );
@@ -178,240 +178,233 @@ const Archive = () => {
     unbookmarkAction,
   ]);
 
+  const handleEditClick = (slide) => {
+    if (slide) {
+      localStorage.setItem("file_uid_for_edit_slide", slide.file_uid);
+
+      navigate(
+        `/archive/edit?file_uid=${slide.file_uid}&slide_id=${slide.ID}`,
+        {
+          state: { previousLocation: "/archive" },
+        }
+      );
+    }
+  };
+
   return (
     <>
       {DelectConfirmationModal}
       {ConfirmationMessage}
-      {editSlide ? (
-        <EditArcive handleClose={() => setEditSlide(false)} />
-      ) : (
-        <div
-          className="archiveBackground  bg-light Edit"
-          style={{ position: "relative" }}
-        >
-          <div className="flex-container">
-            <div
-              className="flex-box-center top-autocomplete"
-              style={{ marginLeft: "10px", marginRight: "10px" }}
-            >
-              {/* Content for the second flex box centered */}
-              <Search />
-              <ReactPaginate
-                pageCount={
-                  archiveList?.pagination?.total_pages
-                    ? Math.ceil(archiveList.pagination.total_pages)
-                    : 1
+      <div
+        className="archiveBackground  bg-light Edit"
+        style={{ position: "relative" }}
+      >
+        <div className="flex-container">
+          <div
+            className="flex-box-center top-autocomplete"
+            style={{ marginLeft: "10px", marginRight: "10px" }}
+          >
+            {/* Content for the second flex box centered */}
+            <Search />
+            <ReactPaginate
+              pageCount={
+                archiveList?.pagination?.total_pages
+                  ? Math.ceil(archiveList.pagination.total_pages)
+                  : 1
+              }
+              onPageChange={(e) => {
+                const selectedPage = e.selected + 1;
+                if (selectedPage <= archiveList?.pagination?.total_pages) {
+                  updatePage(selectedPage, page.limit);
                 }
-                onPageChange={(e) => {
-                  const selectedPage = e.selected + 1;
-                  if (selectedPage <= archiveList?.pagination?.total_pages) {
-                    updatePage(selectedPage, page.limit);
-                  }
-                }}
-                forcePage={page.page - 1}
-                containerClassName="pagination"
-                pageClassName="pagination-item"
-                previousLabel={
-                  <i
-                    className="bi bi-chevron-left"
-                    style={{
-                      fontSize: "30px",
-                      cursor: page.page === 1 ? "not-allowed" : "pointer",
-                      color: page.page === 1 ? "#6c757d" : "black",
-                    }}
-                  />
-                }
-                nextLabel={
-                  <i
-                    className="bi bi-chevron-right"
-                    style={{
-                      fontSize: "30px",
-                      cursor:
-                        page.page === archiveList?.pagination?.total_pages
-                          ? "not-allowed"
-                          : "pointer",
-                      color:
-                        page.page === archiveList?.pagination?.total_pages
-                          ? "#6c757d"
-                          : "black",
-                    }}
-                  />
-                }
-                activeClassName="active"
-                disabledClassName="disabled"
-                breakLabel={null}
-                pageRangeDisplayed={0}
-                marginPagesDisplayed={0}
-              />
-            </div>
-            <div
-              className="flex-box-center"
-              onChange={(e) => {
-                updatePage(1, +e.target.value);
               }}
-            >
-              <span>Row per page:</span>
-              <select
-                value={page.limit}
-                onChange={(e) => updatePage(1, +e.target.value)}
-                className="ms-2"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-              </select>{" "}
-              &nbsp; &nbsp; &nbsp;
-              <span
-                style={{ width: "200px" }}
-              >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
-            </div>
+              forcePage={page.page - 1}
+              containerClassName="pagination"
+              pageClassName="pagination-item"
+              previousLabel={
+                <i
+                  className="bi bi-chevron-left"
+                  style={{
+                    fontSize: "30px",
+                    cursor: page.page === 1 ? "not-allowed" : "pointer",
+                    color: page.page === 1 ? "#6c757d" : "black",
+                  }}
+                />
+              }
+              nextLabel={
+                <i
+                  className="bi bi-chevron-right"
+                  style={{
+                    fontSize: "30px",
+                    cursor:
+                      page.page === archiveList?.pagination?.total_pages
+                        ? "not-allowed"
+                        : "pointer",
+                    color:
+                      page.page === archiveList?.pagination?.total_pages
+                        ? "#6c757d"
+                        : "black",
+                  }}
+                />
+              }
+              activeClassName="active"
+              disabledClassName="disabled"
+              breakLabel={null}
+              pageRangeDisplayed={0}
+              marginPagesDisplayed={0}
+            />
           </div>
-          <div className="card" style={{ border: "none" }}>
-            {archiveList ? (
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  className=""
-                  style={{ padding: "20px", minWidth: "100%" }}
-                >
-                  <colgroup>
-                    <col style={{ width: "75%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "5%" }} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th style={{ width: "65%", padding: "10px" }}>Text</th>
-                      <th style={{ width: "20%", padding: "10px" }}>Path</th>
-                      <th style={{ width: "15%", padding: "10px" }}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {archiveList?.slides?.map((key, index) => (
-                      <tr
-                        key={key.ID}
-                        className={
-                          key.bookmark_id !== null ? "bookmarkedrow" : ""
-                        }
-                      >
-                        <td style={{ padding: "10px" }}>
-                          <div
-                            className=""
-                            style={{ outline: "solid", position: "relative" }}
-                          >
-                            <Slide
-                              content={key.slide}
-                              isLtr={key.left_to_right}
-                              isQuestion={key.slide_type === "question"}
-                            />
-                          </div>
-                        </td>
-                        <td
-                          style={{ padding: "10px" }}
-                          className="text-truncate"
-                        >
-                          {key.languages.length > 1
-                            ? `(${key.languages[index % key.languages.length]}) ${key.slide_source_path}`
-                            : key.slide_source_path}
-                        </td>
-                        <td style={{ padding: "10px" }}>
-                          {key.bookmark_id !== null ? (
-                            <i
-                              onClick={() => {
-                                setUnbookmarkAction(true);
-                                dispatch(
-                                  UnBookmarkSlide({
-                                    search_keyword:
-                                      localStorage.getItem("free-text"),
-                                    bookmark_id: key.bookmark_id,
-                                    language: broadcastLangObj.label,
-                                    page: page.page,
-                                    limit: page.limit,
-                                  })
-                                );
-                                setBookmarkData({
-                                  file_uid: "",
-                                  slide_id: "",
-                                  update: "",
-                                  order: "",
-                                });
-                              }}
-                              className="bi bi-bookmark-check-fill m-2 cursor-pointer "
-                            />
-                          ) : (
-                            <i
-                              onClick={() => {
-                                setUnbookmarkAction(false);
-                                dispatch(
-                                  BookmarkSlideFromArchivePage({
-                                    search_keyword:
-                                      localStorage.getItem("free-text"),
-                                    data: {
-                                      file_uid: key?.file_uid,
-                                      slide_id: key?.ID,
-                                      update: false,
-                                      order: archiveList?.slides?.find(
-                                        (k) => k.bookmark_id !== null
-                                      )?.length,
-                                    },
-                                    language: broadcastLangObj.label,
-                                    params: page,
-                                  })
-                                ).then((res) => {
-                                  if (
-                                    res.payload ===
-                                    "The bookmark with the same file exists"
-                                  ) {
-                                    setBookmarkData({
-                                      file_uid: key?.file_uid,
-                                      slide_id: key?.ID,
-                                      update: true,
-                                    });
-                                    setConfirmation(true);
-                                  }
-                                });
-                              }}
-                              className="bi bi-bookmark m-2 cursor-pointer "
-                            />
-                          )}
-                          <i
-                            className="bi bi-pencil m-2 cursor-pointer "
-                            onClick={() => {
-                              setUnbookmarkAction(false);
-                              localStorage.setItem(
-                                "file_uid_for_edit_slide",
-                                key?.file_uid
-                              );
-                              dispatch(
-                                SlideListWithFildeUid({
-                                  file_uid: key?.file_uid,
-                                  limit: 2000,
-                                })
-                              );
-                              setEditSlide(key.ID);
-                            }}
-                          />
-                          <i
-                            onClick={() => {
-                              setUnbookmarkAction(false);
-                              setDeleteConfirmationPopup(true);
-                              setDeleteId(key.ID);
-                              setFileUidForDeleteSlide(key.file_uid);
-                            }}
-                            className="bi bi-trash3 m-2 cursor-pointer "
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="card d-flex h-auto">
-                <div>NO Data</div>
-              </div>
-            )}
+          <div
+            className="flex-box-center"
+            onChange={(e) => {
+              updatePage(1, +e.target.value);
+            }}
+          >
+            <span>Row per page:</span>
+            <select
+              value={page.limit}
+              onChange={(e) => updatePage(1, +e.target.value)}
+              className="ms-2"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+            </select>{" "}
+            &nbsp; &nbsp; &nbsp;
+            <span
+              style={{ width: "200px" }}
+            >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${archiveList?.pagination?.total_rows} `}</span>
           </div>
         </div>
+        <div className="card" style={{ border: "none" }}>
+          {archiveList ? (
+            <div style={{ overflowX: "auto" }}>
+              <table className="" style={{ padding: "20px", minWidth: "100%" }}>
+                <colgroup>
+                  <col style={{ width: "75%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "5%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th style={{ width: "65%", padding: "10px" }}>Text</th>
+                    <th style={{ width: "20%", padding: "10px" }}>Path</th>
+                    <th style={{ width: "15%", padding: "10px" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archiveList?.slides?.map((key, index) => (
+                    <tr
+                      key={key.ID}
+                      className={
+                        key.bookmark_id !== null ? "bookmarkedrow" : ""
+                      }
+                    >
+                      <td style={{ padding: "10px" }}>
+                        <div
+                          className=""
+                          style={{ outline: "solid", position: "relative" }}
+                        >
+                          <Slide
+                            content={key.slide}
+                            isLtr={key.left_to_right}
+                            isQuestion={key.slide_type === "question"}
+                          />
+                        </div>
+                      </td>
+                      <td style={{ padding: "10px" }} className="text-truncate">
+                        {key.languages.length > 1
+                          ? `(${key.languages[index % key.languages.length]}) ${key.slide_source_path}`
+                          : key.slide_source_path}
+                      </td>
+                      <td style={{ padding: "10px" }}>
+                        {key.bookmark_id !== null ? (
+                          <i
+                            onClick={() => {
+                              setUnbookmarkAction(true);
+                              dispatch(
+                                UnBookmarkSlide({
+                                  search_keyword:
+                                    localStorage.getItem("free-text"),
+                                  bookmark_id: key.bookmark_id,
+                                  language: broadcastLangObj.label,
+                                  page: page.page,
+                                  limit: page.limit,
+                                })
+                              );
+                              setBookmarkData({
+                                file_uid: "",
+                                slide_id: "",
+                                update: "",
+                                order: "",
+                              });
+                            }}
+                            className="bi bi-bookmark-check-fill m-2 cursor-pointer "
+                          />
+                        ) : (
+                          <i
+                            onClick={() => {
+                              setUnbookmarkAction(false);
+                              dispatch(
+                                BookmarkSlideFromArchivePage({
+                                  search_keyword:
+                                    localStorage.getItem("free-text"),
+                                  data: {
+                                    file_uid: key?.file_uid,
+                                    slide_id: key?.ID,
+                                    update: false,
+                                    order: archiveList?.slides?.find(
+                                      (k) => k.bookmark_id !== null
+                                    )?.length,
+                                  },
+                                  language: broadcastLangObj.label,
+                                  params: page,
+                                })
+                              ).then((res) => {
+                                if (
+                                  res.payload ===
+                                  "The bookmark with the same file exists"
+                                ) {
+                                  setBookmarkData({
+                                    file_uid: key?.file_uid,
+                                    slide_id: key?.ID,
+                                    update: true,
+                                  });
+                                  setConfirmation(true);
+                                }
+                              });
+                            }}
+                            className="bi bi-bookmark m-2 cursor-pointer "
+                          />
+                        )}
+                        <i
+                          className="bi bi-pencil m-2 cursor-pointer slava"
+                          onClick={() => {
+                            handleEditClick(key);
+                          }}
+                        />
+                        <i
+                          onClick={() => {
+                            setUnbookmarkAction(false);
+                            setDeleteConfirmationPopup(true);
+                            setDeleteId(key.ID);
+                            setFileUidForDeleteSlide(key.file_uid);
+                          }}
+                          className="bi bi-trash3 m-2 cursor-pointer "
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="card d-flex h-auto">
+              <div>NO Data</div>
+            </div>
+          )}
+        </div>
+      </div>
       )}
     </>
   );

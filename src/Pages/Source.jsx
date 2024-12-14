@@ -330,7 +330,12 @@ const Source = () => {
                           className="bi bi-pencil m-2 cursor-pointer "
                           onClick={() => {
                             setUnbookmarkAction(false);
-                            navigate("/archive?file_uid=" + key?.file_uid);
+                            navigate(
+                              `/archive/edit?file_uid=${key?.file_uid}`,
+                              {
+                                state: { previousLocation: "/source" }, // Adjust based on actual context
+                              }
+                            );
                           }}
                         />
                         <i

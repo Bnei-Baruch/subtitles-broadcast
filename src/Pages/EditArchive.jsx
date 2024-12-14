@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   addNewSlide,
   deleteNewSlide,
@@ -11,8 +11,10 @@ import {
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import { SplitToSlides } from "../Utils/SlideSplit";
+import Button from "@mui/material/Button";
 
-const EditArcive = ({ handleClose }) => {
+const EditArchive = ({ handleClose }) => {
+  const navigate = useNavigate();
   const broadcastLangObj = useSelector(
     (state) => state.BroadcastParams.broadcastLang
   );
@@ -239,7 +241,7 @@ const EditArcive = ({ handleClose }) => {
     }
     setIsLtr(isLtr);
     setDeleted([]);
-    handleClose();
+    handleBack();
   };
 
   const ConfirmationMessage = useMemo(
@@ -377,18 +379,23 @@ const EditArcive = ({ handleClose }) => {
     }
   };
 
+  const handleBack = () => {
+    const previousLocation = location.state?.previousLocation || "/archive";
+    navigate(previousLocation);
+  };
+
   return (
     <>
       {ForceDeleteBookmark}
       {ConfirmationMessage}
       <div className="archiveBackground bg-light Edit">
         <div className="card border-0">
-          <div className="top-row d-flex">
+          <div className="top-row d-flex sticky-holder">
             <h4 className="m-0 inline-flex me-4">Edit Subtitle</h4>
-            <div className="inline-flex w-50">
+            <div className="inline-flex">
               <input
                 type="text"
-                className={`form-control input  ${
+                className={`update-source-path-inp form-control input  ${
                   isLtr ? "ChangeToLtr" : "ChangeToRtl"
                 }`}
                 value={sourcePath}
@@ -398,7 +405,7 @@ const EditArcive = ({ handleClose }) => {
             </div>
             <div className="me-4">
               <button
-                className="btn btn-success inline-flex"
+                className="btn btn-success inline-flex update-source-path-btn"
                 onClick={handleUpdateSourcePath}
               >
                 Update Source Path
@@ -457,6 +464,15 @@ const EditArcive = ({ handleClose }) => {
               >
                 Save
               </button>
+
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleBack}
+                className=".btn btn-back "
+              >
+                Back
+              </Button>
             </div>
           </div>
         </div>
@@ -734,4 +750,4 @@ const EditArcive = ({ handleClose }) => {
   );
 };
 
-export default EditArcive;
+export default EditArchive;

@@ -3,6 +3,9 @@ import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { Slide } from "./Slide";
 import { useSelector } from "react-redux";
+import IconButton from "@mui/material/IconButton";
+import EditIcon from "@mui/icons-material/Edit";
+import { useNavigate } from "react-router-dom";
 
 const BookContent = ({
   setActivatedTab,
@@ -12,6 +15,7 @@ const BookContent = ({
   setSearchSlide,
   searchKeyword,
 }) => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const focusSlides = useRef();
   const broadcastLangObj = useSelector(
@@ -24,6 +28,14 @@ const BookContent = ({
       block: "center",
     });
   }, [contents, activatedTab]);
+
+  const handleEditSlide = (slide) => {
+    const editUrl = `/archive/edit?file_uid=${slide.file_uid}&slide_id=${slide.ID}`;
+    navigate(editUrl, {
+      state: { previousLocation: window.location.pathname },
+    });
+  };
+
   return (
     <>
       {contents?.slides?.length > 0 &&
@@ -76,6 +88,12 @@ const BookContent = ({
                 ? item?.languages[+index % item?.languages.length]
                 : item?.languages[0]
             } ${+item.order_number + 1}`}</span>
+            <IconButton
+              className="edit-slide-button"
+              onClick={() => handleEditSlide(item)}
+            >
+              <EditIcon />
+            </IconButton>
           </div>
         ))}
     </>
