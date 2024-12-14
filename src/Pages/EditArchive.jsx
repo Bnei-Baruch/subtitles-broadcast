@@ -24,7 +24,7 @@ const EditArcive = ({ handleClose }) => {
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
   const [deleted, setDeleted] = useState([]);
-  const [setSlideTextList] = useState([]);
+  const [, setSlideTextList] = useState([]);
   const [wholeText, setWholeText] = useState("");
   const [split, setSplit] = useState(false);
   const [slideTextListCopy, setSlideTextListCopy] = useState([]);
