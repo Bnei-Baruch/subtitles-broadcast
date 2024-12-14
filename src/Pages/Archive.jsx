@@ -405,7 +405,6 @@ const Archive = () => {
           )}
         </div>
       </div>
-      )}
     </>
   );
 };
