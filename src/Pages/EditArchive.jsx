@@ -241,7 +241,6 @@ const EditArchive = ({ handleClose }) => {
     }
     setIsLtr(isLtr);
     setDeleted([]);
-    handleBack();
   };
 
   const ConfirmationMessage = useMemo(
