@@ -219,12 +219,11 @@ const Subtitles = () => {
       (key) => key?.order_number === selectedSlide
     );
     const slideID = slide ? slide.ID : null;
+    const editUrl = `/archive/edit?file_uid=${file_uid}&slide_id=${slideID}`;
 
-    if (file_uid && slideID) {
-      navigate(`/archive?file_uid=${file_uid}&slide_id=${slideID}`);
-    } else {
-      console.warn("file_uid or slideID is missing");
-    }
+    navigate(editUrl, {
+      state: { previousLocation: window.location.pathname },
+    });
   };
 
   return (

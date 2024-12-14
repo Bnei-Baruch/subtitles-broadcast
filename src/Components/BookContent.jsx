@@ -30,7 +30,12 @@ const BookContent = ({
   }, [contents, activatedTab]);
 
   const handleEditSlide = (slide) => {
-    const editUrl = `/archive/edit?file_uid=${slide.file_uid}&slide_id=${slide.ID}`;
+    const fileUid = slide.file_uid;
+    const slideId = slide.ID;
+    const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
+
+    localStorage.setItem("file_uid_for_edit_slide", fileUid);
+
     navigate(editUrl, {
       state: { previousLocation: window.location.pathname },
     });
