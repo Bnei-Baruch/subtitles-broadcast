@@ -23,7 +23,7 @@ const NewSlides = () => {
   const languages = GetLangaugeCode();
   const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
-  const [setTagList] = useState([]);
+  const [, setTagList] = useState([]);
   const [wholeText, setWholeText] = useState("");
   const [splitActive, setSplitActive] = useState(false);
   const [updateTagList, setUpdateTagList] = useState([]);
