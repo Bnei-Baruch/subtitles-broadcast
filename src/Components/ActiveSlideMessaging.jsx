@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Slide } from "../Components/Slide";
 import {
-  getCurrentBroadcastLanguage,
-  getCurrentBroadcastProgramm,
   getSubtitleMqttTopic,
   getQuestionMqttTopic,
   subtitlesDisplayModeTopic,
@@ -13,12 +11,9 @@ import {
   subscribeEvent,
   unSubscribeEvent,
 } from "../Utils/Events";
-import AppContext from "../AppContext";
-import {
-  broadcastLanguages,
-  DEF_BROADCAST_PROG,
-  DEF_BROADCAST_LANG,
-} from "../Utils/Const";
+import { broadcastLanguages } from "../Utils/Const";
+import { useSelector, useDispatch } from "react-redux";
+import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
 
 const styles = {
   mainContainer: {
@@ -33,8 +28,9 @@ const styles = {
 };
 
 export function ActiveSlideMessaging(props) {
+  const dispatch = useDispatch();
   const qstSwapTime = 5000; // 5s
-  const appContextlData = useContext(AppContext);
+
   const [mqttClientId] = useState(() => {
     return getMqttClientId();
   });
@@ -42,25 +38,32 @@ export function ActiveSlideMessaging(props) {
   const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
   const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
   const [subtitlesDisplayModeMsg, setSubtitlesDisplayModeMsg] = useState(null);
-  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
-    return getCurrentBroadcastProgramm();
-  });
-  const [broadcastLangObj, setBroadcastLangObj] = useState(() => {
-    return getCurrentBroadcastLanguage();
-  });
+
+  const broadcastProgrammObj = useSelector(
+    (state) => state.BroadcastParams.broadcastProgramm
+  );
+
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
+
   const broadcastProgrammCode = broadcastProgrammObj.value;
   const broadcastLangCode = broadcastLangObj.value;
+
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
     broadcastLangCode
   );
+
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
     broadcastLangCode
   );
-  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState(
-    props.isSubTitleMode
+
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.BroadcastParams.subtitlesDisplayMode
   );
+
   const [contextMqttMessage, setContextMqttMessage] = useState(() => {
     return subtitlesDisplayMode === "sources"
       ? subtitleMqttMessage
@@ -81,10 +84,6 @@ export function ActiveSlideMessaging(props) {
     );
     return mqttTopic;
   });
-
-  if (props.subtitlesDisplayMode !== subtitlesDisplayMode) {
-    setSubtitlesDisplayMode(props.subtitlesDisplayMode);
-  }
 
   const findActiveSlides = (userAddedList, activeSlideOrderNum) => {
     if (
@@ -190,11 +189,6 @@ export function ActiveSlideMessaging(props) {
                 publishSlide(slide, topic);
               }
             }
-
-            if (!subtitlesDisplayModeMsg) {
-              const slideJsonMsg = publishSubtitlesDisplayMode("sources");
-              setSubtitlesDisplayModeMsg(slideJsonMsg);
-            }
           }
         }
       }
@@ -208,19 +202,24 @@ export function ActiveSlideMessaging(props) {
       subscribeEvent(subtitleMqttTopic, newMessageHandling);
 
       qstMqttTopicList.forEach((mqttTopic, index) => {
-        subscribeEvent(mqttTopic, (event) => {
-          newMessageHandling(event);
-        });
+        if (mqttTopic !== displayModeTopic) {
+          subscribeEvent(mqttTopic, (event) => {
+            newMessageHandling(event);
+          });
+        }
       });
     }
     subscribed = true;
   };
+
   const compUnSubscribeAppEvents = () => {
     unSubscribeEvent(displayModeTopic, newMessageHandling);
     unSubscribeEvent(subtitleMqttTopic, newMessageHandling);
 
     qstMqttTopicList.forEach((mqttTopic, index) => {
-      unSubscribeEvent(mqttTopic, newMessageHandling);
+      if (mqttTopic !== displayModeTopic) {
+        unSubscribeEvent(mqttTopic, newMessageHandling);
+      }
     });
   };
 
@@ -240,24 +239,6 @@ export function ActiveSlideMessaging(props) {
   }, []);
 
   useEffect(() => {
-    if (
-      appContextlData.broadcastLang?.value &&
-      broadcastLangCode !== appContextlData.broadcastLang.value
-    ) {
-      setBroadcastLangObj(appContextlData.broadcastLang);
-    }
-  }, [appContextlData.broadcastLang?.value || DEF_BROADCAST_LANG]);
-
-  useEffect(() => {
-    if (
-      appContextlData.broadcastProgramm?.value &&
-      broadcastProgrammCode !== appContextlData.broadcastProgramm.value
-    ) {
-      setBroadcastProgrammObj(appContextlData.broadcastProgramm);
-    }
-  }, [appContextlData.broadcastProgramm?.value || DEF_BROADCAST_PROG]);
-
-  useEffect(() => {
     const timeoutId = setTimeout(() => {
       publishEvent("mqttSubscribe", {
         mqttTopic: subtitleMqttTopic,
@@ -270,15 +251,6 @@ export function ActiveSlideMessaging(props) {
       });
 
       compSubscribeEvents();
-
-      if (props.subtitlesDisplayMode) {
-        if (
-          !subtitlesDisplayModeMsg ||
-          props.subtitlesDisplayMode !== subtitlesDisplayModeMsg.slide
-        ) {
-          publishSubtitlesDisplayMode(subtitlesDisplayMode);
-        }
-      }
     }, 0);
 
     return () => {
@@ -286,41 +258,6 @@ export function ActiveSlideMessaging(props) {
       compUnSubscribeAppEvents();
     };
   }, [subtitlesDisplayMode, subtitleMqttTopic]);
-
-  useEffect(() => {
-    if (subtitlesDisplayModeMsg && subtitlesDisplayModeMsg.slide) {
-      const displayModeElmCol = document.getElementsByClassName(
-        `${subtitlesDisplayModeMsg.slide}-mod`
-      );
-
-      if (displayModeElmCol.length) {
-        const trgDisplayModeElm = displayModeElmCol[0];
-
-        if (trgDisplayModeElm) {
-          if (!trgDisplayModeElm.classList.contains("display-mod-selected")) {
-            if (subtitlesDisplayModeMsg.slide === "questions") {
-              if (subtitlesDisplayModeMsg.clientId !== mqttClientId) {
-                if (questionMqttMessage) {
-                  const isTimeExceeded = determineTimeDiffExceeded(
-                    questionMqttMessage,
-                    qstSwapTime,
-                    2
-                  );
-
-                  if (isTimeExceeded) {
-                    publishSlide(questionMqttMessage, questionMqttTopic, true);
-                  }
-                }
-              }
-            }
-
-            trgDisplayModeElm.focus();
-            trgDisplayModeElm.click();
-          }
-        }
-      }
-    }
-  }, [subtitlesDisplayModeMsg]);
 
   useEffect(() => {
     let contextMessage;
@@ -489,11 +426,7 @@ export function ActiveSlideMessaging(props) {
         setQuestionMqttMessage(newMessageJson);
         break;
       case displayModeTopic:
-        if (newMessageJson && !newMessageJson.slide) {
-          newMessageJson.slide = "none";
-        }
-
-        setSubtitlesDisplayModeMsg(newMessageJson);
+        disModeNewMqttMsgHandling(event, topic, newMessageJson);
         break;
       default:
         otherQstMessageHandling(event, topic, newMessageJson);
@@ -704,7 +637,38 @@ export function ActiveSlideMessaging(props) {
 
     return timeoutId;
   }
-  ///####
+
+  const incomeDisModeMqttMsg = useRef(false);
+  const disModeNewMqttMsgHandling = (event, topic, newMessageJson) => {
+    incomeDisModeMqttMsg.current = newMessageJson;
+
+    //determineTimeDiffExceeded 4 hours =  (1000 MilSec=1 Sec) *  (60* 1 Sec = 1 Min) * (60 * 1 Min = 1 Hour) * (4 Hours)
+    const isTimeExceeded = determineTimeDiffExceeded(
+      newMessageJson,
+      1000 * 60 * 60 * 4
+    );
+
+    if (!isTimeExceeded) {
+      setSubtitlesDisplayModeMsg(newMessageJson);
+
+      if (newMessageJson.slide !== subtitlesDisplayMode) {
+        dispatch(setSubtitlesDisplayMode(newMessageJson.slide));
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleStateChange = () => {
+      if (
+        subtitlesDisplayModeMsg &&
+        subtitlesDisplayModeMsg.slide !== subtitlesDisplayMode
+      ) {
+        publishSubtitlesDisplayMode(subtitlesDisplayMode);
+      }
+    };
+
+    handleStateChange();
+  }, [subtitlesDisplayMode]);
 
   determinePublishActiveSlide(props.userAddedList, props.activatedTab);
 

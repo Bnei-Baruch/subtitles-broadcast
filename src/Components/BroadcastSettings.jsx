@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState } from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
@@ -6,8 +6,11 @@ import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import DropdownButtonDef from "../Components/DropdownButtonDef";
 import { broadcastLanguages, brodcastProgrammArr } from "../Utils/Const";
-import { getCurrentBroadcastLanguage } from "../Utils/Common";
-import AppContext from "../AppContext";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setBroadcastLang,
+  setBroadcastProgramm,
+} from "../Redux/BroadcastParams/BroadcastParamsSlice";
 
 const leftColSize = 4;
 const rightColSize = 8;
@@ -54,51 +57,34 @@ const styles = {
 };
 
 export function BroadcastSettings({ props }) {
-  const appContextlData = useContext(AppContext);
+  const dispatch = useDispatch();
   const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
     return localStorage.getItem("isBroadcastSettingsShown") === "true"
       ? false
       : true;
   });
 
-  const [broadcastProgramm, setBroadcastProgramm] = useState(
-    brodcastProgrammArr[0]
+  const broadcastLang = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
+  const broadcastProgramm = useSelector(
+    (state) => state.BroadcastParams.broadcastProgramm
   );
 
-  const [broadcastLang, setBroadcastLang] = useState(() => {
-    return getCurrentBroadcastLanguage();
-  });
+  const updateBroadcastProgramm = (newProgramm) => {
+    dispatch(setBroadcastProgramm(newProgramm));
+  };
+
+  const updateBroadcastLang = (newLang) => {
+    dispatch(setBroadcastLang(newLang));
+  };
 
   const handleClose = () => {
     localStorage.setItem("isBroadcastSettingsShown", true);
     setShowBroadcastSettings(false);
-    appContextlData.setBroadcastLang(broadcastLang);
-    appContextlData.setBroadcastProgramm(broadcastProgramm);
   };
 
   const handleShow = () => setShowBroadcastSettings(true);
-
-  // Synchronize appContext values on mount
-  useEffect(() => {
-    if (!appContextlData.broadcastLang) {
-      appContextlData.setBroadcastLang(broadcastLang);
-    }
-
-    if (!appContextlData.broadcastProgramm) {
-      appContextlData.setBroadcastProgramm(broadcastProgramm);
-    }
-  }, [appContextlData, broadcastLang, broadcastProgramm]);
-
-  // Synchronize appContext values on mount
-  useEffect(() => {
-    if (!appContextlData.broadcastLang) {
-      appContextlData.setBroadcastLang(broadcastLang);
-    }
-
-    if (!appContextlData.broadcastProgramm) {
-      appContextlData.setBroadcastProgramm(broadcastProgramm);
-    }
-  }, [appContextlData, broadcastLang, broadcastProgramm]);
 
   return (
     <>
@@ -142,7 +128,7 @@ export function BroadcastSettings({ props }) {
                   id="brodcast_programm"
                   data={brodcastProgrammArr}
                   currentValue={broadcastProgramm}
-                  setDataRef={setBroadcastProgramm}
+                  setDataRef={updateBroadcastProgramm}
                   style={styles.dropDown}
                   variant="light"
                 ></DropdownButtonDef>
@@ -162,7 +148,7 @@ export function BroadcastSettings({ props }) {
                   id="brodcast_lang"
                   data={broadcastLanguages}
                   currentValue={broadcastLang}
-                  setDataRef={setBroadcastLang}
+                  setDataRef={updateBroadcastLang}
                   style={styles.dropDown}
                   variant="light"
                   disabled={false}

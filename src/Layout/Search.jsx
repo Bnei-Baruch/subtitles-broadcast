@@ -1,13 +1,15 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { GetAllArchiveData } from "../Redux/ArchiveTab/ArchiveSlice";
 import useDebounce from "../Services/useDebounce";
-import AppContext from "../AppContext";
 import { GetAllSourcePathData } from "../Redux/SourceTab/SourceSlice";
+import { useSelector } from "react-redux";
 
 export const Search = () => {
-  const appContextlData = useContext(AppContext);
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
   const dispatch = useDispatch();
   const param = useLocation();
 
@@ -41,7 +43,7 @@ export const Search = () => {
       );
       dispatch(
         GetAllArchiveData({
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
@@ -60,7 +62,7 @@ export const Search = () => {
       );
       dispatch(
         GetAllSourcePathData({
-          language: appContextlData.broadcastLang.label,
+          language: broadcastLangObj.label,
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
@@ -70,7 +72,7 @@ export const Search = () => {
     }
   }, [
     DebouncingFreeText,
-    appContextlData.broadcastLang.label,
+    broadcastLangObj.label,
     dispatch,
     freeText,
     localPagination.limit,
@@ -89,7 +91,7 @@ export const Search = () => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllArchiveData({
-                    language: appContextlData.broadcastLang.label,
+                    language: broadcastLangObj.label,
                     limit: localPagination.limit,
                     page: localPagination.page,
                     keyword: freeText,
@@ -113,7 +115,7 @@ export const Search = () => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllSourcePathData({
-                    language: appContextlData.broadcastLang.label,
+                    language: broadcastLangObj.label,
                     limit: localPagination.limit,
                     page: localPagination.page,
                     keyword: freeText,

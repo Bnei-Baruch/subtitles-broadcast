@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./PagesCSS/Subtitle.css";
 import { useDispatch } from "react-redux";
 import {
@@ -28,13 +22,13 @@ import Select from "react-select";
 import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
-import AppContext from "../AppContext";
 import { useNavigate } from "react-router-dom";
 import GetLangaugeCode, {
   MAX_SLIDE_LIMIT,
   DEF_BROADCAST_LANG,
   broadcastLanguages,
 } from "../Utils/Const";
+import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -45,8 +39,14 @@ function usePrevious(value) {
 }
 
 const Subtitles = () => {
-  const appContextlData = useContext(AppContext);
-  const [subtitlesDisplayMode, setSubtitlesDisplayMode] = useState("");
+  const broadcastLangObj = useSelector(
+    (state) => state.BroadcastParams.broadcastLang
+  );
+
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.BroadcastParams.subtitlesDisplayMode
+  );
+
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
@@ -78,11 +78,7 @@ const Subtitles = () => {
     const targetBookmarkSlideID =
       slideID.ID +
         slideID?.languages.findIndex(
-          (langCode) =>
-            langCode ===
-            languages[
-              appContextlData.broadcastLang?.label || DEF_BROADCAST_LANG
-            ]
+          (langCode) => langCode === languages[broadcastLangObj.label]
         ) || 0;
     dispatch(
       BookmarkSlide({
@@ -91,7 +87,7 @@ const Subtitles = () => {
           slide_id: targetBookmarkSlideID,
           update: true,
         },
-        language: appContextlData.broadcastLang.label,
+        language: broadcastLangObj.label,
       })
     );
     setSelectedSlide(newSelectedSlide);
@@ -156,13 +152,11 @@ const Subtitles = () => {
     };
   }, [handleKeyPress]);
   useEffect(() => {
-    if (appContextlData.broadcastLang?.label) {
-      dispatch(
-        UserBookmarkList({ language: appContextlData.broadcastLang.label })
-      );
+    if (broadcastLangObj.label) {
+      dispatch(UserBookmarkList({ language: broadcastLangObj.label }));
       dispatch(clearAllBookmarks());
     }
-  }, [dispatch, appContextlData.broadcastLang?.label || DEF_BROADCAST_LANG]);
+  }, [dispatch, broadcastLangObj.label]);
   // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
@@ -200,7 +194,7 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
-    setSubtitlesDisplayMode("questions");
+    dispatch(setSubtitlesDisplayMode("questions"));
   }
 
   function subtitlesBtnOnClick(evt) {
@@ -208,7 +202,7 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
-    setSubtitlesDisplayMode("sources");
+    dispatch(setSubtitlesDisplayMode("sources"));
   }
 
   function noneBtnOnClick(evt) {
@@ -216,7 +210,7 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
 
-    setSubtitlesDisplayMode("none");
+    dispatch(setSubtitlesDisplayMode("none"));
   }
 
   const navigatToEditSubtitle = () => {
@@ -425,7 +419,6 @@ const Subtitles = () => {
               activatedTab={selectedSlide}
               setActivatedTab={setSelectedSlide}
               isLtr={isLtr}
-              subtitlesDisplayMode={subtitlesDisplayMode}
             />
           </div>
           <div className="book-mark whit-s overflow-auto">
