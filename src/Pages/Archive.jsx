@@ -161,7 +161,22 @@ const Archive = () => {
                 language: broadcastLangObj.label,
                 params: page,
               })
-            );
+            ).then(() => {
+              dispatch(
+                GetAllArchiveData({
+                  language: broadcastLangObj.label,
+                  page: page.page,
+                  limit: page.limit,
+                  keyword: localStorage.getItem("free-text"),
+                })
+              ).then((response) => {
+                dispatch({
+                  type: "Archive/updateArchiveList",
+                  payload: response.payload.data,
+                });
+              });
+              setConfirmation(false); // Close confirmation dialog
+            });
           }}
           message={"Are you sure , you want to bookmark this File slide"}
           show={confirmation}
