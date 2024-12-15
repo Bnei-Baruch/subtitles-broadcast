@@ -219,7 +219,7 @@ const EditArchive = ({ handleClose }) => {
         show={confirmation}
         handleClose={() => {
           setConfirmation(false);
-          handleClose();
+          effectiveHandleClose();
         }}
       />
     ),
@@ -309,6 +309,12 @@ const EditArchive = ({ handleClose }) => {
     navigate(previousLocation);
   };
 
+  const fallbackHandleClose = () => {
+    handleBack();
+  };
+
+  const effectiveHandleClose = handleClose || fallbackHandleClose;
+
   return (
     <>
       {ForceDeleteBookmark}
@@ -374,7 +380,7 @@ const EditArchive = ({ handleClose }) => {
                   ) {
                     setConfirmation(true);
                   } else {
-                    handleClose();
+                    effectiveHandleClose();
                   }
                 }}
                 type="button"
