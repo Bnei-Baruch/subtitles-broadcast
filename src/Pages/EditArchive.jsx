@@ -61,18 +61,31 @@ const EditArchive = ({ handleClose }) => {
     const performUpdates = async () => {
       // Create a mutable copy of the array and its objects
       const newSlideListData = [...slideListData];
-      const offsetSlide = Math.max(0, Math.min(parseInt(localStorage.getItem("myIndex"), 10), newSlideListData.length - 1));
+      const offsetSlide = Math.max(
+        0,
+        Math.min(
+          parseInt(localStorage.getItem("myIndex"), 10),
+          newSlideListData.length - 1
+        )
+      );
       let i = 0;
-      
+
       // Keep existing slides that did not change intact.
       for (; i < updatedSlideTextList.length; i++) {
-        if (newSlideListData[i + offsetSlide].slide !== updatedSlideTextList[i]) {
+        if (
+          newSlideListData[i + offsetSlide].slide !== updatedSlideTextList[i]
+        ) {
           break;
         }
       }
 
       // Update existing slides with new content, from i to the last.
-      for (let j = i; j + offsetSlide < newSlideListData.length && j < updatedSlideTextList.length; j++) {
+      for (
+        let j = i;
+        j + offsetSlide < newSlideListData.length &&
+        j < updatedSlideTextList.length;
+        j++
+      ) {
         newSlideListData[j + offsetSlide] = {
           ...newSlideListData[j + offsetSlide],
           slide: updatedSlideTextList[j],
@@ -80,7 +93,11 @@ const EditArchive = ({ handleClose }) => {
       }
 
       // Add new slided at the end.
-      for (let j = newSlideListData.length - offsetSlide; j < updatedSlideTextList.length; j++) {
+      for (
+        let j = newSlideListData.length - offsetSlide;
+        j < updatedSlideTextList.length;
+        j++
+      ) {
         const slideData = {
           file_uid: newSlideListData[0].file_uid,
           slide: updatedSlideTextList[j],
@@ -92,11 +109,18 @@ const EditArchive = ({ handleClose }) => {
       if (newSlideListData.length - offsetSlide > updatedSlideTextList.length) {
         // Delete
         let deleteSlideIds = [];
-        for (let j = offsetSlide + updatedSlideTextList.length; j < newSlideListData.length; j++) {
+        for (
+          let j = offsetSlide + updatedSlideTextList.length;
+          j < newSlideListData.length;
+          j++
+        ) {
           deleteSlideIds.push(newSlideListData[j].ID);
         }
         setDeleted([...deleted, ...deleteSlideIds]);
-        newSlideListData.splice(offsetSlide + updatedSlideTextList.length, newSlideListData.length - offsetSlide - updatedSlideTextList.length);
+        newSlideListData.splice(
+          offsetSlide + updatedSlideTextList.length,
+          newSlideListData.length - offsetSlide - updatedSlideTextList.length
+        );
       }
       setSlideListData(newSlideListData);
     };
@@ -141,14 +165,15 @@ const EditArchive = ({ handleClose }) => {
 
     const updateSlideList = slideListData
       ?.filter(({ ID }) => ID !== undefined)
-      ?.map(({ ID, slide, order_number, slide_type, left_to_right }, index) => ({
-        slide_id: ID,
-        slide,
-        left_to_right: left_to_right === false ? false : true,
-        order_number: order_number,
-        slide_type,
-      })
-    );
+      ?.map(
+        ({ ID, slide, order_number, slide_type, left_to_right }, index) => ({
+          slide_id: ID,
+          slide,
+          left_to_right: left_to_right === false ? false : true,
+          order_number: order_number,
+          slide_type,
+        })
+      );
 
     const addNewSlideList = slideListData
       ?.filter(({ ID }) => ID === undefined)
@@ -194,7 +219,7 @@ const EditArchive = ({ handleClose }) => {
         show={confirmation}
         handleClose={() => {
           setConfirmation(false);
-          handleClose();
+          effectiveHandleClose();
         }}
       />
     ),
@@ -284,6 +309,12 @@ const EditArchive = ({ handleClose }) => {
     navigate(previousLocation);
   };
 
+  const fallbackHandleClose = () => {
+    handleBack();
+  };
+
+  const effectiveHandleClose = handleClose || fallbackHandleClose;
+
   return (
     <>
       {ForceDeleteBookmark}
@@ -349,7 +380,7 @@ const EditArchive = ({ handleClose }) => {
                   ) {
                     setConfirmation(true);
                   } else {
-                    handleClose();
+                    effectiveHandleClose();
                   }
                 }}
                 type="button"
@@ -357,11 +388,7 @@ const EditArchive = ({ handleClose }) => {
               >
                 Cancel
               </button>
-              <button
-                onClick={handleSave}
-                type="button"
-                className="btn save "
-              >
+              <button onClick={handleSave} type="button" className="btn save ">
                 Save
               </button>
 
