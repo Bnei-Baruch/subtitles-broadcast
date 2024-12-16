@@ -142,6 +142,8 @@ const NewSlides = () => {
           alert(response.payload.description);
 
           const firstSlideId = response.payload.data?.slides?.[0]?.ID;
+          localStorage.setItem("file_uid_for_edit_slide", fileUid);
+
           if (firstSlideId) {
             navigate(
               `/archive/edit?file_uid=${fileUid}&slide_id=${firstSlideId}`
