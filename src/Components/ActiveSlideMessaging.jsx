@@ -660,7 +660,7 @@ export function ActiveSlideMessaging(props) {
   useEffect(() => {
     const handleStateChange = () => {
       if (
-        subtitlesDisplayModeMsg &&
+        !subtitlesDisplayModeMsg ||
         subtitlesDisplayModeMsg.slide !== subtitlesDisplayMode
       ) {
         publishSubtitlesDisplayMode(subtitlesDisplayMode);
