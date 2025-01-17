@@ -38,9 +38,6 @@ const (
 	DocxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	DocxPdf  = "application/pdf"
 
-	DBTableFiles       = "files"
-	DBTableSourcePaths = "source_paths"
-
 	ConcurrencyLimit = 250
 )
 
@@ -140,6 +137,10 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 	}
 }
 
+func sourcePathKey(sp *SourcePath) string {
+  return fmt.Sprintf("%s-%s", strings.Join(sp.Languages, ","), sp.SourceUid)
+}
+
 // Update source_paths table(to sync source data regularly)
 func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
 	currentSourcePaths := []*SourcePath{}
@@ -151,16 +152,25 @@ func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
 		}
 	}
 	sourcePathsToDelete := map[string]*SourcePath{}
+  log.Printf("Currently has %d source paths.", len(currentSourcePaths))
 	for _, currentSourcePath := range currentSourcePaths {
-		sourcePathsToDelete[currentSourcePath.SourceUid] = currentSourcePath
+    key := sourcePathKey(currentSourcePath)
+		if !strings.Contains(currentSourcePath.SourceUid, "upload_") {
+      sourcePathsToDelete[key] = currentSourcePath
+    }
 	}
 	sourcePathsToInsert := []*SourcePath{}
 	for _, newSourcePath := range newSourcePaths {
-		sourcePathsToInsert = append(sourcePathsToInsert, newSourcePath)
+    newKey := sourcePathKey(newSourcePath)
+    if _, exist := sourcePathsToDelete[newKey]; !exist {
+      sourcePathsToInsert = append(sourcePathsToInsert, newSourcePath)
+    }
 		// Compare sources in db with source from archive
 		// Remain source list to be deleted from db(means sources are no more existed in archive)
-		delete(sourcePathsToDelete, newSourcePath.SourceUid)
+		delete(sourcePathsToDelete, newKey)
 	}
+  log.Printf("Updating source paths, adding %d, removing %d from kabbalahmedia.",
+    len(sourcePathsToInsert), len(sourcePathsToDelete))
 	tx := database.Debug().Begin()
 	if tx.Error != nil {
 		log.Printf("Internal error: %s", tx.Error)
@@ -168,17 +178,17 @@ func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
 	}
 	// Delete source list to be delete we get from above
 	for _, sourcePathToDelete := range sourcePathsToDelete {
-		if !strings.Contains(sourcePathToDelete.SourceUid, "upload_") {
-			err := tx.Where("id = ?", sourcePathToDelete.ID).Delete(sourcePathToDelete).Error
-			if err != nil {
-				tx.Rollback()
-				log.Printf("Internal error: %s", err)
-				return
-			}
-		}
+    log.Printf("Deleting %s", sourcePathKey(sourcePathToDelete))
+    err := tx.Where("id = ?", sourcePathToDelete.ID).Delete(sourcePathToDelete).Error
+    if err != nil {
+      tx.Rollback()
+      log.Printf("Internal error: %s", err)
+      return
+    }
 	}
 	// Upsert source path by gorm way
 	for _, sourcePathToInsert := range sourcePathsToInsert {
+    log.Printf("Inserting %s", sourcePathKey(sourcePathToInsert))
 		err := database.Debug().Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "languages"}, {Name: "source_uid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"path"}),

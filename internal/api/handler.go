@@ -26,9 +26,10 @@ const (
 
 	defaultListLimit = 50
 
-	DBTableSlides    = "slides"
-	DBTableBookmarks = "bookmarks"
-	DBTableFiless    = "files"
+	DBTableSlides      = "slides"
+	DBTableBookmarks   = "bookmarks"
+	DBTableFiles       = "files"
+	DBTableSourcePaths = "source_paths"
 
 	ERR_UNIQUE_VIOLATION_CODE      = "23505"
 	ERR_FOREIGN_KEY_VIOLATION_CODE = "23503"
@@ -291,6 +292,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
 	keyword := ctx.Query("keyword")
+	hidden := ctx.Query("hidden")
 	slides := []*SlideDetail{}
 	query := h.constructSlideQuery(ctx, userId)
 	if len(sourceUid) > 0 {
@@ -309,6 +311,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			query.Where("(slides.slide LIKE ? OR source_paths.path LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 		}
 	}
+  if hidden != "true" {
+    query = query.Where("slides.hidden = FALSE")
+  }
 	result := query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -519,99 +524,6 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
-func (h *Handler) DeleteFileSlides(ctx *gin.Context) {
-	queryParams := struct {
-		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
-	}{}
-	if err := ctx.BindQuery(&queryParams); err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-
-	fileUid := ctx.Param("file_uid")
-	var sourceUid string
-	query := h.Database.Debug().WithContext(ctx).
-		Select("source_uid").
-		Table(DBTableFiless).
-		Where("file_uid = ?", fileUid).
-		Find(&sourceUid)
-	if query.Error != nil {
-		log.Error(query.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
-		return
-	}
-	tx := h.Database.Debug().WithContext(ctx).Begin()
-	if tx.Error != nil {
-		log.Error(tx.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
-		return
-	}
-	var totalRows int64
-	result := tx.Table(DBTableSlides).
-		Joins("INNER JOIN bookmarks ON slides.id = bookmarks.slide_id").
-		Where("slides.file_uid = ?", fileUid).Count(&totalRows)
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
-		return
-	}
-	if !queryParams.ForceDeleteBookmarks && totalRows > 0 {
-		errMsg := "There are bookmarks refer to slide(id) in table to delete"
-		log.Error(errMsg)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, errMsg, "Deleting file slide data has failed"))
-		return
-	}
-	result = tx.Where("file_uid = ?", fileUid).Delete(&Slide{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, fmt.Sprintf("No file slides with %s", fileUid), fmt.Sprintf("No file slides with %s", fileUid)))
-		return
-	}
-	result = tx.Where("file_uid = ?", fileUid).Delete(&File{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, fmt.Sprintf("No file with %s", fileUid), fmt.Sprintf("No file with %s", fileUid)))
-		return
-	}
-	result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, fmt.Sprintf("No source path with file uid %s", fileUid), fmt.Sprintf("No source path with file uid %s", fileUid)))
-		return
-	}
-	if err := tx.Commit().Error; err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Deleting file slide data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
-}
-
 func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	queryParams := struct {
 		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
@@ -658,11 +570,16 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
 		return
 	}
-	result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+
+  // We don't delete, we hide the slides.
+  // result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+	result = tx.Model(&Slide{}).
+    Where("file_uid in ?", fileUids).
+		Update("hidden", true)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+			getResponse(false, nil, result.Error.Error(), "Hiding slide data has failed"))
 		return
 	}
 	if result.RowsAffected == 0 {
@@ -670,11 +587,15 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, fmt.Sprintf("No file slides in source %s", sourceUid), fmt.Sprintf("No file slides in source %s", sourceUid)))
 		return
 	}
-	result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
+  // We don't delete, we hide the file.
+	// result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
+	result = tx.Model(&File{}).
+    Where("source_uid = ?", sourceUid).
+    Update("hidden", true)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+			getResponse(false, nil, result.Error.Error(), "Hiding file data has failed"))
 		return
 	}
 	if result.RowsAffected == 0 {
@@ -682,18 +603,19 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, fmt.Sprintf("No file with %s", sourceUid), fmt.Sprintf("No file with %s", sourceUid)))
 		return
 	}
-	result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
-		return
-	}
-	if result.RowsAffected == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, fmt.Sprintf("No source path with souruce uid %s", sourceUid), fmt.Sprintf("No source path with source uid %s", sourceUid)))
-		return
-	}
+  // When hiding slides and files, we don't need to delete or hide source paths.
+	// result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
+	// if result.Error != nil {
+	// 	log.Error(result.Error)
+	// 	ctx.JSON(http.StatusInternalServerError,
+	// 		getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+	// 	return
+	// }
+	// if result.RowsAffected == 0 {
+	// 	ctx.JSON(http.StatusBadRequest,
+	// 		getResponse(false, nil, fmt.Sprintf("No source path with souruce uid %s", sourceUid), fmt.Sprintf("No source path with source uid %s", sourceUid)))
+	// 	return
+	// }
 	if err := tx.Commit().Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
@@ -1019,13 +941,19 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
     WHERE TRUE
       AND '%s' = ANY(files.languages)
       AND source_paths.path ILIKE '%%%s%%'
+      %s
   `
+	hidden := ctx.Query("hidden")
+  hiddenSql := ""
+  if hidden != "true" {
+    hiddenSql = "AND slides.hidden = FALSE"
+  }
 	querySql := fmt.Sprintf(templateSql,
 		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
-		fields, userId, language, keyword)
+		fields, userId, language, keyword, hiddenSql)
 	countQuerySql := fmt.Sprintf(templateSql,
 		"COUNT(DISTINCT (source_paths.path, source_paths.source_uid))",
-		"", userId, language, keyword)
+		"", userId, language, keyword, hiddenSql)
 	// Count total.
 	h.Database.Debug().WithContext(ctx).Raw(countQuerySql).Scan(&totalRows)
 	// Get specific page.
@@ -1070,8 +998,28 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 		return
 	}
 
+	var uploadSourcePath int64
+	result := h.Database.Debug().WithContext(ctx).
+    Table(DBTableSourcePaths).
+		Where("id = ?", sourcePathID).
+		Where("source_uid LIKE 'upload_%'").
+    Count(&uploadSourcePath)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
+		return
+	}
+	if uploadSourcePath == 0 {
+		errMsg := "Cannot update source path to archive sources."
+		log.Error(errMsg)
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, errMsg, "Update source path has failed"))
+		return
+	}
+
 	// Update the source_path in the database
-	result := h.Database.Model(&SourcePath{}).
+	result = h.Database.Model(&SourcePath{}).
 		Where("id = ?", sourcePathID).
 		Update("path", req.SourcePath)
 
