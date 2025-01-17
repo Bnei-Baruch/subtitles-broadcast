@@ -17,12 +17,13 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.GET("/bookmark", handler.GetUserBookmarks)
 	v1.DELETE("/bookmark/:bookmark_id", handler.DeleteUserBookmark)
 
-	//v1.POST("/slide", handler.ImportSource)
+	// v1.POST("/slide", handler.ImportSource)
 	v1.POST("/slide", handler.AddSlides)
 	v1.GET("/slide", handler.GetSlides)
 	v1.PATCH("/slide", handler.UpdateSlides)
 	v1.DELETE("/slide", handler.DeleteSlides)
-	v1.DELETE("/file-slide/:file_uid", handler.DeleteFileSlides)
+  // We support only delete (hide) from sources page, not from archive page.
+  // v1.DELETE("/file-slide/:file_uid", handler.DeleteFileSlides)
 	v1.DELETE("/source-slide/:source_uid", handler.DeleteSourceSlides)
 	v1.POST("/custom_slide", handler.AddCustomSlides)
 
