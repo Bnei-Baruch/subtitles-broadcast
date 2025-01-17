@@ -21,10 +21,6 @@ const initialState = {
 const API_URL = {
   AddData: "selected-content",
   GetALL: "slide",
-  GetByID: "",
-  Create: "",
-  Update: "",
-  Delete: "file-slide",
 };
 
 export const GetAllArchiveData = createAsyncThunk(
@@ -58,26 +54,7 @@ export const AddToSubtitleList = createAsyncThunk(
     return response.data;
   }
 );
-export const DeleteArchive = createAsyncThunk(
-  `DeleteArchive`,
-  async (data, thunkAPI) => {
-    const response = await axios.delete(
-      `${API}${
-        API_URL.Delete + "/" + data.file_uid + "?force_delete_bookmarks=true"
-      }`,
-      {}
-    );
 
-    thunkAPI.dispatch(
-      GetAllArchiveData({
-        language: data.language,
-        keyword: data.search_keyword,
-      })
-    );
-
-    return response.data;
-  }
-);
 export const ArchiveAutoComplete = createAsyncThunk(
   `ArchiveAutoComplete`,
   async (data, thunkAPI) => {
@@ -259,15 +236,11 @@ const ArchiveSlice = createSlice({
       return state;
     });
 
-    builder.addCase(DeleteArchive.fulfilled, (state, action) => {
-      debugLog("DeleteArchive.fulfilled - Success:", action?.payload);
-      toast.success("Successfully deleted");
-      return state;
-    });
     builder.addCase(GetAllAuthor.fulfilled, (state, { payload }) => {
       debugLog("GetAllAuthor.fulfilled - Payload:", payload);
       return { ...state, authorList: payload };
     });
+
     builder.addCase(UserBookmarkList.pending, (state) => {
       debugLog("UserBookmarkList.pending - Loading started");
       return { ...state, bookmarkListLoading: true };
@@ -276,6 +249,7 @@ const ArchiveSlice = createSlice({
       debugLog("UserBookmarkList.fulfilled - Payload:", payload);
       return { ...state, bookmarkList: payload, bookmarkListLoading: false };
     });
+
     builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
       debugLog("BookmarkSlide.fulfilled - Payload:", payload);
       return { ...state, bookmarkList: payload };
@@ -327,7 +301,7 @@ export const updateSourcePath = createAsyncThunk(
       response.data.success && toast.success(response.data.message);
       return response.data;
     } catch (error) {
-      toast.error("Failed to update source path");
+      toast.error(`${error.response.data.error} ${error.response.data.description}`);
       return thunkAPI.rejectWithValue(error.response.data);
     }
   }

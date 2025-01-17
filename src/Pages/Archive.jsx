@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./PagesCSS/Archive.css";
 import {
   BookmarkSlideFromArchivePage,
-  DeleteArchive,
   GetAllArchiveData,
   SlideListWithFildeUid,
   UnBookmarkSlide,
@@ -10,7 +9,6 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import MessageBox from "../Components/MessageBox";
-import DeleteConfirmation from "../Components/DeleteConfirmation";
 import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -55,16 +53,11 @@ const Archive = () => {
   }, [archiveList, page.limit, page.page]);
 
   const [editSlide, setEditSlide] = useState("");
-  const [fileUidForDeleteSlide, setFileUidForDeleteSlide] = useState(
-    queryParams.get("file_uid")
-  );
   const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
 
   const [toggle, setToggle] = useState(false);
   const [finalConfirm, setFinalConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
-  const [deleteId, setDeleteId] = useState();
-  const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
     slide_id: "",
@@ -95,36 +88,6 @@ const Archive = () => {
   }, [editSlide, page.page, page.limit, broadcastLangObj.label, dispatch]);
 
   useEffect(() => {
-    if (finalConfirm === true) {
-      dispatch(
-        DeleteArchive({
-          search_keyword: localStorage.getItem("headerSearchKeyword"),
-          file_uid: fileUidForDeleteSlide,
-          language: broadcastLangObj.label,
-        })
-      );
-      setFinalConfirm(false);
-    }
-    if (toggle) {
-      dispatch(
-        BookmarkSlideFromArchivePage({
-          search_keyword: localStorage.getItem("headerSearchKeyword"),
-          data: deleteId,
-          language: broadcastLangObj.label,
-        })
-      );
-      setToggle(false);
-    }
-  }, [
-    finalConfirm,
-    toggle,
-    deleteId,
-    dispatch,
-    fileUidForDeleteSlide,
-    broadcastLangObj.label,
-  ]);
-
-  useEffect(() => {
     if (fileUidForEditSlide !== null) {
       localStorage.setItem("file_uid_for_edit_slide", fileUidForEditSlide);
       dispatch(
@@ -137,17 +100,6 @@ const Archive = () => {
       });
     }
   }, [dispatch, fileUidForEditSlide]);
-
-  const DelectConfirmationModal = useMemo(
-    () => (
-      <DeleteConfirmation
-        confirm={() => setFinalConfirm(true)}
-        show={deleteConfirmationPopup}
-        handleClose={() => setDeleteConfirmationPopup(false)}
-      />
-    ),
-    [deleteConfirmationPopup]
-  );
 
   const ConfirmationMessage = useMemo(() => {
     if (!unbookmarkAction) {
@@ -208,7 +160,6 @@ const Archive = () => {
 
   return (
     <>
-      {DelectConfirmationModal}
       {ConfirmationMessage}
       <div
         className="archiveBackground  bg-light Edit"
@@ -397,15 +348,6 @@ const Archive = () => {
                           onClick={() => {
                             handleEditClick(key);
                           }}
-                        />
-                        <i
-                          onClick={() => {
-                            setUnbookmarkAction(false);
-                            setDeleteConfirmationPopup(true);
-                            setDeleteId(key.ID);
-                            setFileUidForDeleteSlide(key.file_uid);
-                          }}
-                          className="bi bi-trash3 m-2 cursor-pointer "
                         />
                       </td>
                     </tr>
