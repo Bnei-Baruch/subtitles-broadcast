@@ -58,7 +58,7 @@ func UserRoleHandler() gin.HandlerFunc {
 
 		// TODO: manage user role
 
-		ctx.Set("user_id", claims.Sub)
+		ctx.Set("user_id", claims.Email)
 		ctx.Next()
 	}
 }

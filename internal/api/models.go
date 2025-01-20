@@ -25,6 +25,11 @@ type File struct {
 	Content   []byte         `json:"content"`
 	SourceUid string         `json:"source_uid"`
 	FileUid   string         `json:"file_uid"`
+
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+  CreatedBy   string    `json:"created_by"`
+  UpdatedBy   string    `json:"updated_by"`
 }
 
 type Bookmark struct {
@@ -43,9 +48,12 @@ type Slide struct {
 	Slide       string    `json:"slide"`
 	OrderNumber int       `json:"order_number"`
 	LeftToRight bool      `json:"left_to_right"`
+	SlideType   string    `json:"slide_type"`
+
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	SlideType   string    `json:"slide_type"`
+  CreatedBy   string    `json:"created_by"`
+  UpdatedBy   string    `json:"updated_by"`
 }
 
 type SlideDetail struct {
@@ -63,6 +71,11 @@ type SourcePath struct {
 	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
 	SourceUid string         `json:"source_uid"`
 	Path      string         `json:"path"`
+
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+  CreatedBy   string    `json:"created_by"`
+  UpdatedBy   string    `json:"updated_by"`
 }
 
 // archive model
