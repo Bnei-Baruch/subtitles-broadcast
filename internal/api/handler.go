@@ -54,79 +54,6 @@ func getResponse(success bool, data interface{}, err, description string) gin.H 
 	}
 }
 
-/* not using
-func (h *Handler) ImportSource(ctx *gin.Context) {
-	req := struct {
-		SourceUid string `json:"source_uid"`
-		Language  string `json:"language"`
-	}{}
-	err := ctx.BindJSON(&req)
-	if err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, err.Error(), "Binding data has failed"))
-		return
-	}
-	if len(req.SourceUid) == 0 || len(req.Language) == 0 {
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, "Invalid request data", "Getting data has failed"))
-		return
-	}
-	tx := h.Database.Debug().WithContext(ctx).Begin()
-	if tx.Error != nil {
-		log.Error(tx.Error)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
-		return
-	}
-	contents, fileUid := getFileContent(req.SourceUid, req.Language)
-	if len(contents) == 0 {
-		tx.Rollback()
-		err := fmt.Errorf("failed to get file %s content", fileUid)
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Getting slide content has failed"))
-		return
-	}
-	newFile := File{
-		Type:      KabbalahmediaFileSourceType,
-		Language:  req.Language,
-		SourceUid: req.SourceUid,
-		FileUid:   fileUid,
-	}
-	if err = tx.Create(&newFile).Error; err != nil {
-		tx.Rollback()
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Creating file data has failed"))
-		return
-	}
-	for idx, content := range contents {
-		if len(content) > 0 {
-			slide := Slide{
-				FileUid:     newFile.FileUid,
-				Slide:       content,
-				OrderNumber: idx,
-			}
-			if err = tx.Create(&slide).Error; err != nil {
-				tx.Rollback()
-				log.Error(err)
-				ctx.JSON(http.StatusInternalServerError,
-					getResponse(false, nil, err.Error(), "Creating slide data has failed"))
-				return
-			}
-		}
-	}
-	if err = tx.Commit().Error; err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusInternalServerError,
-			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
-		return
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded"))
-}
-*/
-
 func (h *Handler) AddSlides(ctx *gin.Context) {
 	reqs := []*struct {
 		FileUid     string `json:"file_uid"`
@@ -149,13 +76,19 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
+	userId, _ := ctx.Get("user_id")
 	for _, req := range reqs {
+    now := time.Now()
 		if err = tx.Create(&Slide{
 			FileUid:     req.FileUid,
 			Slide:       req.Slide,
 			OrderNumber: req.OrderNumber,
 			LeftToRight: req.LeftToRight,
 			SlideType:   req.SlideType,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+      CreatedBy:   userId.(string),
+      UpdatedBy:   userId.(string),
 		}).Error; err != nil {
 			tx.Rollback()
 			log.Error(err)
@@ -217,10 +150,16 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		}
 		req.SourcePath = sourcePath.Path
 	}
+  now := time.Now()
+	userId, _ := ctx.Get("user_id")
 	sourcePathData := &SourcePath{
 		Languages: pq.StringArray(req.Languages),
 		SourceUid: req.SourceUid,
 		Path:      req.SourcePath,
+    CreatedBy: userId.(string),
+    UpdatedBy: userId.(string),
+    CreatedAt: now,
+    UpdatedAt: now,
 	}
 	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
 		tx.Rollback()
@@ -241,6 +180,10 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		SourceUid: req.SourceUid,
 		FileUid:   req.FileUid,
 		Filename:  req.FileName,
+    CreatedBy: userId.(string),
+    UpdatedBy: userId.(string),
+    CreatedAt: now,
+    UpdatedAt: now,
 	}
 	if err = tx.Table(DBTableFiles).Create(fileData).Error; err != nil {
 		tx.Rollback()
@@ -254,9 +197,11 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			Slide:       strings.ReplaceAll(slide, "\n", "\\n"),
 			OrderNumber: idx / len(req.Languages),
 			LeftToRight: req.LeftToRight,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
 			SlideType:   req.SlidesTypes[idx],
+      CreatedBy: userId.(string),
+      UpdatedBy: userId.(string),
+      CreatedAt: now,
+      UpdatedAt: now,
 		}
 		if len(req.FileUid) > 0 {
 			slideData.FileUid = req.FileUid
@@ -406,13 +351,7 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 			getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	updateQuery := `UPDATE slides AS s SET
-    slide = r.slide,
-    order_number = r.order_number,
-    left_to_right = r.left_to_right,
-    slide_type = r.slide_type,
-    updated_at = ? `
-	whereQuery := "WHERE s.id = r.slide_id"
+	userId, _ := ctx.Get("user_id")
 	valuesQuery := []string{}
 	placeholders := []interface{}{}
 
@@ -425,11 +364,20 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 		placeholders = append(placeholders, req.Slide)
 	}
 
-	withQuery := "WITH reqs(slide_id, slide, order_number, left_to_right, slide_type) AS (VALUES " + strings.Join(valuesQuery, ", ") + ") "
-	query := withQuery + updateQuery + "FROM reqs AS r " + whereQuery
+	withQuery := `
+    WITH reqs(slide_id, slide, order_number, left_to_right, slide_type) AS
+    (VALUES ` + strings.Join(valuesQuery, ", ") + ") "
+	updateQuery := `UPDATE slides AS s SET
+    slide = r.slide,
+    order_number = r.order_number,
+    left_to_right = r.left_to_right,
+    slide_type = r.slide_type,
+    updated_at = ?,
+    updated_by = ? `
+	query := withQuery + updateQuery + "FROM reqs AS r WHERE s.id = r.slide_id"
 
 	// Append the timestamp placeholder to the placeholders slice
-	placeholders = append(placeholders, time.Now())
+	placeholders = append(placeholders, time.Now(), userId)
 
 	// Execute the SQL query
 	result := tx.Exec(query, placeholders...)
@@ -573,9 +521,15 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 
   // We don't delete, we hide the slides.
   // result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+	userId, _ := ctx.Get("user_id")
+  updates := map[string]interface{}{
+    "hidden": true,
+    "updated_by": userId,
+    "updated_at": time.Now(),
+  }
 	result = tx.Model(&Slide{}).
     Where("file_uid in ?", fileUids).
-		Update("hidden", true)
+		Updates(updates)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -591,7 +545,7 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	// result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
 	result = tx.Model(&File{}).
     Where("source_uid = ?", sourceUid).
-    Update("hidden", true)
+    Updates(updates)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -665,12 +619,13 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			return
 		}
 	} else {
+    now := time.Now()
 		bookmark.SlideId = req.SlideId
 		bookmark.FileUid = req.FileUid
 		bookmark.UserId = userId.(string)
 		bookmark.OrderNumber = req.Order
-		bookmark.CreatedAt = time.Now()
-		bookmark.UpdatedAt = time.Now()
+		bookmark.CreatedAt = now
+		bookmark.UpdatedAt = now
 		err = h.Database.Debug().Create(&bookmark).Error
 		if err != nil {
 			log.Error(err)
@@ -853,46 +808,6 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
 }
 
-// func (h *Handler) GetSlideLanguages(ctx *gin.Context) {
-// 	var result []string
-// 	query := h.Database.Debug().WithContext(ctx).Table(DBTableFiles).
-// 		Distinct("UNNEST(languages) AS language").Pluck("language", &result)
-// 	if query.Error != nil {
-// 		log.Error(query.Error)
-// 		ctx.JSON(http.StatusInternalServerError,
-// 			getResponse(false, nil, query.Error.Error(), "Getting data has failed"))
-// 		return
-// 	}
-// 	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
-// }
-
-// Unnecessary handler at this moment. If need, will be used
-
-// func (h *Handler) GetSourceName(ctx *gin.Context) {
-// 	sourceUid := ctx.Query("source_uid")
-// 	if len(sourceUid) == 0 {
-// 		ctx.JSON(http.StatusBadRequest,
-// 			getResponse(false, nil, "", "source_uid parameter is needed"))
-// 		return
-// 	}
-// 	sourcePath := SourcePath{}
-// 	err := h.Database.Debug().WithContext(ctx).
-// 		Table("source_paths").
-// 		Where("source_uid = ?", sourceUid).First(&sourcePath).Error
-// 	if err != nil {
-// 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-// 			ctx.JSON(http.StatusInternalServerError,
-// 				getResponse(false, nil, err.Error(), "Getting source path has failed"))
-// 		return
-// 	}
-// 	re := regexp.MustCompile(`\(([^)]+)\)`)
-// 	matches := re.FindStringSubmatch(sourcePath.Path)
-// 	ctx.JSON(http.StatusOK,
-// 		getResponse(true,
-// 			matches[1],
-// 			"", "Getting data has succeeded"))
-// }
-
 func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	language := ctx.Query("language")
@@ -1019,9 +934,15 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 	}
 
 	// Update the source_path in the database
-	result = h.Database.Model(&SourcePath{}).
+	userId, _ := ctx.Get("user_id")
+  updates := map[string]interface{}{
+    "path": req.SourcePath,
+    "updated_by": userId,
+    "updated_at": time.Now(),
+  }
+	result = h.Database.Debug().Model(&SourcePath{}).
 		Where("id = ?", sourcePathID).
-		Update("path", req.SourcePath)
+		Updates(updates)
 
 	// Check if the update was successful
 	if result.Error != nil || result.RowsAffected == 0 {
