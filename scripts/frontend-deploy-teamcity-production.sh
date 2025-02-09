@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the staging server and SSH options
-STAGING_SERVER="root@subs.kab.info"
+STAGING_SERVER="root@135.125.213.39"
 SSH_OPTIONS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
 # Required environment variables
@@ -48,7 +48,7 @@ ssh ${SSH_OPTIONS} ${STAGING_SERVER} <<EOF
 
     # Clone the repository into 'src' directory
     echo "Cloning the repository into 'src'..."
-    git clone --branch %teamcity.build.branch% git@gitlab.bbdev.team:vh/subtitles-frontend.git src
+    git clone --branch %teamcity.build.branch% git@github.com:Bnei-Baruch/subtitles-frontend.git src
 
     # Copy .env and docker-compose.yml into the 'src' directory
     echo "Copying configuration files to 'src'..."
