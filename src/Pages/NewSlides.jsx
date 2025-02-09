@@ -13,6 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getCurrentBroadcastLanguage, languageIsLtr } from "../Utils/Common";
+import LoadingOverlay from "../Components/LoadingOverlay";
 
 const NewSlides = () => {
   const broadcastLangObj = useSelector(
@@ -53,11 +54,7 @@ const NewSlides = () => {
   const [isLtr, setIsLtr] = useState(() => {
     return languageIsLtr(broadcastLangCode);
   });
-
-  // if (curBroadcastLanguage.value !== broadcastLangObj.value) {
-  //   setBroadcastLangObj(curBroadcastLanguage);
-  //   setIsLtr(languageIsLtr(curBroadcastLanguage.value));
-  // }
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (sourceUrl.length > 0) {
@@ -230,6 +227,7 @@ const NewSlides = () => {
   };
 
   const loadSource = () => {
+    setLoading(true);
     let sourceUrl = `${contentSource}`;
     const fetchData = async () => {
       try {
@@ -247,6 +245,7 @@ const NewSlides = () => {
           if (uidRegex.test(sourceUrl)) {
             sourceUidStr = contentSource;
           } else {
+            setLoading(false);
             alert("The input must be source uid or source url");
             return;
           }
@@ -257,6 +256,7 @@ const NewSlides = () => {
           sourceUidStr
         );
         if (fileUid === undefined) {
+          setLoading(false);
           alert("File not found");
           return;
         }
@@ -271,11 +271,14 @@ const NewSlides = () => {
           } else {
             alert("Failed to load a file");
           }
+          setLoading(false);
           return;
         }
         const contentData = await response.text();
         await loadSlides(contentData);
+        setLoading(false);
       } catch (error) {
+        setLoading(false);
         console.error("Error fetching or parsing data:", error.message);
       }
     };
@@ -284,6 +287,7 @@ const NewSlides = () => {
 
   return (
     <div className="form-newsubtitle body-content Edit New-Subtitle">
+      <LoadingOverlay loading={loading} />
       <h3 className="mb-4">New slide set</h3>
       <div className="row">
         <button
