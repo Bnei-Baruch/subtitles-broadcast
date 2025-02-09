@@ -30,8 +30,8 @@ ssh ${SSH_OPTIONS} ${STAGING_SERVER} <<EOF
     cd /root/configs/subtitles_frontend || { echo "Directory /root/configs/subtitles_frontend does not exist. Exiting."; exit 1; }
 
     # Stop and remove the existing Docker container
-    docker stop subtitles_frontend
-    docker rm subtitles_frontend
+    docker stop subtitles_frontend || true
+    docker rm subtitles_frontend || true
 
     # Clean up Docker resources
     docker builder prune -af
