@@ -421,13 +421,7 @@ const EditArchive = ({ handleClose }) => {
 
   const handleAddNewSlide = (evt, key, index) => {
     const cloneSlidedataArray = [...slideListData];
-    let numberOfPreviousSlides = 0;
-    for (let i = 0; i < cloneSlidedataArray.length; i++) {
-      if (key?.ID === cloneSlidedataArray[i].ID) {
-        numberOfPreviousSlides = i + 1;
-        break;
-      }
-    }
+
     cloneSlidedataArray.splice(index + 1, 0, {
       file_uid: key?.file_uid,
       slide: "",
