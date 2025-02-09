@@ -411,18 +411,6 @@ const EditArchive = ({ handleClose }) => {
     return retVal;
   };
 
-  const updateNewSlides = () => {
-    const retVal = slideListData
-      ?.filter((key) => key?.updateSlide === true)
-      ?.map(({ ID, slide, order_number }) => ({
-        slide_id: ID,
-        slide,
-        order_number,
-      }));
-
-    return retVal;
-  };
-
   const handleBackBtn = (evt) => {
     if (isSlideDataChanged) {
       setConfirmation(true);
