@@ -12,8 +12,11 @@ import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import { SplitToSlides } from "../Utils/SlideSplit";
 import Button from "@mui/material/Button";
+import LoadingOverlay from "../Components/LoadingOverlay";
 
 const EditArchive = ({ handleClose }) => {
+  const [loading, setLoading] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const navigate = useNavigate();
   const broadcastLangObj = useSelector(
     (state) => state.BroadcastParams.broadcastLang
@@ -33,29 +36,81 @@ const EditArchive = ({ handleClose }) => {
   const [sourcePathId, setSourcePathId] = useState(null);
   const location = useLocation();
   const hasSelected = useRef(false); // Ref to track if navigation selection by slide id has already been made
+  const [isSlideDataChanged, setIsSlideDataChanged] = useState(false);
+  const [initialSlideData, setInitialSlideData] = useState([]); // Original slide data for comparison
 
   // Retrieve the slide_id from the URL parameters
   const searchParams = new URLSearchParams(location.search);
   const slideID = searchParams.get("slide_id");
-  useEffect(() => {
+
+  const fetchArchiveSlides = async () => {
+    // Retrieve the slides data from the server
+    setLoading(true);
+
     dispatch(
       GetAllArchiveData({
         file_uid: localStorage.getItem("file_uid_for_edit_slide"),
         language: broadcastLangObj.label,
         limit: 2000,
       })
-    ).then((response) => {
-      if (
-        response.payload.data?.slides &&
-        response.payload.data?.slides.length > 0
-      ) {
-        setSlideListData(response.payload.data.slides);
-        setIsLtr(response.payload.data.slides[0].left_to_right);
-        setSourcePath(response.payload.data.slides[0].source_path);
-        setSourcePathId(response.payload.data.slides[0].source_path_id);
-      }
-    });
+    )
+      .then((response) => {
+        if (
+          response.payload.data?.slides &&
+          response.payload.data?.slides.length > 0
+        ) {
+          setSlideListData(response.payload.data.slides); // Set current slide data
+          setInitialSlideData(response.payload.data.slides); // Save the original state of slides
+          setIsLtr(response.payload.data.slides[0].left_to_right);
+          setSourcePath(response.payload.data.slides[0].source_path);
+          setSourcePathId(response.payload.data.slides[0].source_path_id);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  // Load data when the component mounts
+  useEffect(() => {
+    fetchArchiveSlides();
   }, []);
+
+  // Monitor changes to slideListData and compare with initialSlideData
+  useEffect(() => {
+    if (Array.isArray(slideListData) && Array.isArray(initialSlideData)) {
+      if (slideListData.length > 0 && initialSlideData.length > 0) {
+        const isChanged = isDataChanged(initialSlideData, slideListData);
+        setIsSlideDataChanged(isChanged);
+      }
+    }
+  }, [slideListData, initialSlideData]);
+
+  const isDataChanged = (data1, data2) => {
+    let isChanged = false;
+
+    if (data1.length !== data2.length) {
+      isChanged = true;
+    } else {
+      for (let i = 0; i < data1.length; i++) {
+        const item1 = data1[i];
+        const item2 = data2[i];
+
+        if (
+          item1.order_number !== item2.order_number ||
+          item1.slide_type !== item2.slide_type ||
+          item1.left_to_right !== item2.left_to_right ||
+          item1.slide.length !== item2.slide.length ||
+          item1.slide !== item2.slide
+        ) {
+          isChanged = true;
+          break;
+        }
+      }
+    }
+
+    return isChanged;
+  };
 
   useEffect(() => {
     const performUpdates = async () => {
@@ -142,11 +197,15 @@ const EditArchive = ({ handleClose }) => {
     }
   }, [slideListData, slideID, setSelected]);
 
-  const handleSave = () => {
+  const handleSave = async (evt) => {
+    if (!isSlideDataChanged) {
+      return;
+    }
+
     const shouldDelete = deleted?.length > 0;
     const shouldForceDelete = shouldDelete && force_delete_bookmarks;
 
-    handleUpdateSourcePath();
+    handleUpdateSourcePath("save");
 
     if (shouldDelete) {
       const deleteParams = {
@@ -159,8 +218,6 @@ const EditArchive = ({ handleClose }) => {
           language: broadcastLangObj.label,
         })
       );
-
-      handleUpdateSourcePath();
     }
 
     const updateSlideList = slideListData
@@ -202,10 +259,15 @@ const EditArchive = ({ handleClose }) => {
         updateSlideList: updateSlideList,
         file_uid: slideListData[0]?.file_uid,
       };
-      dispatch(updateNewSlide(updateSlideListRequest));
+      setLoading(true);
+      dispatch(updateNewSlide(updateSlideListRequest)).finally((response) => {
+        setLoading(false);
+      });
     }
     setIsLtr(isLtr);
     setDeleted([]);
+    setIsSlideDataChanged(false);
+    fetchArchiveSlides();
   };
 
   const ConfirmationMessage = useMemo(
@@ -261,21 +323,43 @@ const EditArchive = ({ handleClose }) => {
 
   const handleSourcePathChange = (e) => {
     setSourcePath(e.target.value);
+
+    // Check if the new value matches the initial value
+    const initialSourcePath = slideListData[0]?.source_path || "";
+    if (e.target.value.trim() === initialSourcePath.trim()) {
+      setIsSlideDataChanged(false); // No changes detected
+    } else {
+      setIsSlideDataChanged(true); // Changes detected
+    }
   };
 
-  const handleUpdateSourcePath = () => {
-    if (!isNaN(sourcePathId) && sourcePathId > 0 && sourcePath) {
+  function isSourceParthChanged() {
+    let isChanged = false;
+
+    if (!isNaN(sourcePathId) && sourcePathId > 0) {
       if (
         sourcePath &&
         sourcePath.trim() !== slideListData[0]?.source_path?.trim()
       ) {
-        dispatch(
-          updateSourcePath({
-            sourcePathId: sourcePathId,
-            sourcePath: sourcePath,
-          })
-        );
+        isChanged = true;
       }
+    }
+
+    return isChanged;
+  }
+
+  const handleUpdateSourcePath = (flow) => {
+    if (isSourceParthChanged()) {
+      dispatch(
+        updateSourcePath({
+          sourcePathId: sourcePathId,
+          sourcePath: sourcePath,
+        })
+      ).then((response) => {
+        if (flow !== "save" && response.payload && response.payload.success) {
+          fetchArchiveSlides();
+        }
+      });
     }
   };
 
@@ -315,91 +399,147 @@ const EditArchive = ({ handleClose }) => {
 
   const effectiveHandleClose = handleClose || fallbackHandleClose;
 
+  const addNewSlides = () => {
+    const retVal = slideListData
+      ?.filter((key) => key?.addedNew === true)
+      ?.map(({ file_uid, slide, order_number }) => ({
+        file_uid,
+        slide,
+        order_number,
+      }));
+
+    return retVal;
+  };
+
+  const handleBackBtn = (evt) => {
+    if (isSlideDataChanged) {
+      setConfirmation(true);
+    } else {
+      effectiveHandleClose();
+    }
+  };
+
+  const handleAddNewSlide = (evt, key, index) => {
+    const cloneSlidedataArray = [...slideListData];
+
+    cloneSlidedataArray.splice(index + 1, 0, {
+      file_uid: key?.file_uid,
+      slide: "",
+      addedNew: true,
+      slide_type: "subtitle",
+    });
+    const updatedSlideListData = cloneSlidedataArray.map((slide, i) => {
+      const updatedOrderNumber = Math.floor(i / key.languages.length);
+      return {
+        ...slide, // Spread the original slide object to create a new one
+        order_number: updatedOrderNumber, // Update the order_number property
+        languages: key.languages,
+        left_to_right: key.left_to_right,
+      };
+    });
+    setSlideListData(updatedSlideListData);
+  };
+
+  const handleCancelBtn = (evt) => {
+    if (isSlideDataChanged) {
+      setShowCancelConfirmation(true);
+    }
+  };
+
+  const confirmCancel = () => {
+    setShowCancelConfirmation(false);
+    fetchArchiveSlides();
+  };
+
+  const cancelCancel = () => {
+    setShowCancelConfirmation(false);
+  };
+
+  const toggleSlideDirection = (index, key) => {
+    const cloneSlidedataArray = [...slideListData];
+    cloneSlidedataArray[index] = {
+      ...cloneSlidedataArray[index],
+    };
+    cloneSlidedataArray[index].left_to_right =
+      key.left_to_right === false ? true : false;
+    setSlideListData(cloneSlidedataArray);
+  };
+
+  function toggleSlideType(slideListData, index, key, setSlideListData) {
+    const cloneSlidedataArray = [...slideListData];
+    cloneSlidedataArray[index] = {
+      ...cloneSlidedataArray[index],
+    };
+    cloneSlidedataArray[index].slide_type =
+      key.slide_type === "question" ? "subtitle" : "question";
+    setSlideListData(cloneSlidedataArray);
+  }
+
   return (
     <>
+      <LoadingOverlay loading={loading} />
+      {showCancelConfirmation && (
+        <MessageBox
+          message="Are you sure you want to cancel changes?"
+          buttonName={["No", "Yes"]}
+          setFinalConfirm={confirmCancel}
+          handleClose={cancelCancel}
+          show={showCancelConfirmation}
+        />
+      )}
       {ForceDeleteBookmark}
       {ConfirmationMessage}
       <div className="archiveBackground bg-light Edit">
         <div className="card border-0">
           <div className="top-row d-flex sticky-holder">
-            <h4 className="m-0 inline-flex me-4">Edit Subtitle</h4>
-            <div className="inline-flex">
-              <input
-                type="text"
-                className={`update-source-path-inp form-control input  ${
-                  isLtr ? "ChangeToLtr" : "ChangeToRtl"
-                }`}
-                value={sourcePath}
-                onChange={handleSourcePathChange}
-                placeholder="Update Source Path"
-              />
-            </div>
-            <div className="me-4">
-              <button
-                className="btn btn-success inline-flex update-source-path-btn"
-                onClick={handleUpdateSourcePath}
-              >
-                Update Source Path
-              </button>
-            </div>
-            <div className="inline-flex">
-              <button
-                type="button"
-                onClick={() => rerun()}
-                className="btn cancel"
-              >
-                Re-run
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsLtr(!isLtr)}
-                className="btn cancel"
-              >
-                {isLtr ? "LTR" : "RTL"}
-              </button>
-              <button
-                onClick={() => {
-                  const addNewSlides = slideListData
-                    ?.filter((key) => key?.addedNew === true)
-                    ?.map(({ file_uid, slide, order_number }) => ({
-                      file_uid,
-                      slide,
-                      order_number,
-                    }));
-                  const updateNewSlides = slideListData
-                    ?.filter((key) => key?.updateSlide === true)
-                    ?.map(({ ID, slide, order_number }) => ({
-                      slide_id: ID,
-                      slide,
-                      order_number,
-                    }));
-                  if (
-                    deleted?.length > 0 ||
-                    addNewSlides?.length > 0 ||
-                    updateNewSlides?.length > 0
-                  ) {
-                    setConfirmation(true);
-                  } else {
-                    effectiveHandleClose();
-                  }
-                }}
-                type="button"
-                className="btn cancel"
-              >
-                Cancel
-              </button>
-              <button onClick={handleSave} type="button" className="btn save ">
-                Save
-              </button>
+            <div className="responsive-container">
+              <h4 className="m-2">Edit Subtitle</h4>
+              <div>
+                <input
+                  type="text"
+                  className={`update-source-path-inp form-control input  ${
+                    isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                  }`}
+                  value={sourcePath || ""} // Provide a fallback value
+                  onChange={handleSourcePathChange}
+                  placeholder="Update Source Path"
+                />
+              </div>
+              <div className="button-container">
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => rerun()}
+                  className="btn btn-re-run"
+                >
+                  Re-run
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleBackBtn}
+                  className=".btn btn-back"
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleCancelBtn}
+                  className={`btn btn-cancel  ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+                >
+                  Cancel
+                </Button>
 
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleBack}
-                className=".btn btn-back "
-              >
-                Back
-              </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  className={`"btn save  ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+                  onClick={handleSave}
+                >
+                  Save
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -425,7 +565,7 @@ const EditArchive = ({ handleClose }) => {
                     }`}
                   >
                     <textarea
-                      value={key?.slide}
+                      value={key?.slide || ""} // Provide a fallback value
                       onKeyDown={(e) => {
                         const textArea = e.target;
                         let textAreaParent = textArea.parentElement;
@@ -538,13 +678,7 @@ const EditArchive = ({ handleClose }) => {
                     {index === selected && (
                       <i
                         onClick={() => {
-                          const cloneSlidedataArray = [...slideListData];
-                          cloneSlidedataArray[index] = {
-                            ...cloneSlidedataArray[index],
-                          };
-                          cloneSlidedataArray[index].left_to_right =
-                            key.left_to_right === false ? true : false;
-                          setSlideListData(cloneSlidedataArray);
+                          return toggleSlideDirection(index, key);
                         }}
                         className={
                           (key.left_to_right === false
@@ -567,15 +701,12 @@ const EditArchive = ({ handleClose }) => {
                     {index === selected && (
                       <i
                         onClick={() => {
-                          const cloneSlidedataArray = [...slideListData];
-                          cloneSlidedataArray[index] = {
-                            ...cloneSlidedataArray[index],
-                          };
-                          cloneSlidedataArray[index].slide_type =
-                            key.slide_type === "question"
-                              ? "subtitle"
-                              : "question";
-                          setSlideListData(cloneSlidedataArray);
+                          return toggleSlideType(
+                            slideListData,
+                            index,
+                            key,
+                            setSlideListData
+                          );
                         }}
                         className={
                           (key.slide_type === "question"
@@ -602,35 +733,8 @@ const EditArchive = ({ handleClose }) => {
                     )}
                     {index === selected && (
                       <i
-                        onClick={() => {
-                          const cloneSlidedataArray = [...slideListData];
-                          let numberOfPreviousSlides = 0;
-                          for (let i = 0; i < cloneSlidedataArray.length; i++) {
-                            if (key?.ID === cloneSlidedataArray[i].ID) {
-                              numberOfPreviousSlides = i + 1;
-                              break;
-                            }
-                          }
-                          cloneSlidedataArray.splice(index + 1, 0, {
-                            // slide_id: +key?.ID + 1,
-                            file_uid: key?.file_uid,
-                            slide: "",
-                            addedNew: true,
-                            slide_type: "subtitle",
-                          });
-                          const updatedSlideListData = cloneSlidedataArray.map(
-                            (slide, i) => {
-                              const updatedOrderNumber = Math.floor(
-                                i / key.languages.length
-                              );
-                              return {
-                                ...slide, // Spread the original slide object to create a new one
-                                order_number: updatedOrderNumber, // Update the order_number property
-                                languages: key.languages,
-                              };
-                            }
-                          );
-                          setSlideListData(updatedSlideListData);
+                        onClick={(evt) => {
+                          return handleAddNewSlide(evt, key, index);
                         }}
                         className="bi bi-plus-circle add-icon "
                       />

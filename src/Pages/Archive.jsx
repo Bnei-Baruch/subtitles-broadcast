@@ -116,7 +116,7 @@ const Archive = () => {
                 language: broadcastLangObj.label,
                 params: page,
               })
-            ).then(() => {
+            ).then((response) => {
               dispatch(
                 GetAllArchiveData({
                   language: broadcastLangObj.label,
@@ -159,6 +159,75 @@ const Archive = () => {
         }
       );
     }
+  };
+
+  const bookmarkHandler = (evt, key) => {
+    setUnbookmarkAction(false);
+    dispatch(
+      BookmarkSlideFromArchivePage({
+        search_keyword: localStorage.getItem("free-text"),
+        data: {
+          file_uid: key?.file_uid,
+          slide_id: key?.ID,
+          update: false,
+          order: archiveList?.slides?.find((k) => k.bookmark_id !== null)
+            ?.length,
+        },
+        language: broadcastLangObj.label,
+        params: page,
+      })
+    ).then((res) => {
+      if (
+        res.payload === "The bookmark with the same file exists" ||
+        res.payload.success
+      ) {
+        setBookmarkData({
+          file_uid: key?.file_uid,
+          slide_id: key?.ID,
+          update: true,
+        });
+        setConfirmation(true);
+      }
+    });
+  };
+
+  const unBookmarkHandler = (evt, key) => {
+    setUnbookmarkAction(true);
+    dispatch(
+      UnBookmarkSlide({
+        search_keyword: localStorage.getItem("free-text"),
+        bookmark_id: key.bookmark_id,
+        language: broadcastLangObj.label,
+        page: page.page,
+        limit: page.limit,
+      })
+    ).then((res) => {
+      if (res.payload.success) {
+        setBookmarkData({
+          file_uid: "",
+          slide_id: "",
+          update: "",
+          order: "",
+        });
+        dispatch(
+          GetAllArchiveData({
+            language: broadcastLangObj.label,
+            page: page.page,
+            limit: page.limit,
+            keyword: localStorage.getItem("free-text"),
+          })
+        )
+          .then((response) => {
+            dispatch({
+              type: "Archive/updateArchiveList",
+              payload: response.payload.data,
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching archive data:", error);
+          });
+      }
+    });
   };
 
   return (
@@ -289,59 +358,15 @@ const Archive = () => {
                       <td style={{ padding: "10px" }}>
                         {key.bookmark_id !== null ? (
                           <i
-                            onClick={() => {
-                              setUnbookmarkAction(true);
-                              dispatch(
-                                UnBookmarkSlide({
-                                  search_keyword:
-                                    localStorage.getItem("free-text"),
-                                  bookmark_id: key.bookmark_id,
-                                  language: broadcastLangObj.label,
-                                  page: page.page,
-                                  limit: page.limit,
-                                })
-                              );
-                              setBookmarkData({
-                                file_uid: "",
-                                slide_id: "",
-                                update: "",
-                                order: "",
-                              });
+                            onClick={(evt) => {
+                              return unBookmarkHandler(evt, key);
                             }}
                             className="bi bi-bookmark-check-fill m-2 cursor-pointer "
                           />
                         ) : (
                           <i
-                            onClick={() => {
-                              setUnbookmarkAction(false);
-                              dispatch(
-                                BookmarkSlideFromArchivePage({
-                                  search_keyword:
-                                    localStorage.getItem("free-text"),
-                                  data: {
-                                    file_uid: key?.file_uid,
-                                    slide_id: key?.ID,
-                                    update: false,
-                                    order: archiveList?.slides?.find(
-                                      (k) => k.bookmark_id !== null
-                                    )?.length,
-                                  },
-                                  language: broadcastLangObj.label,
-                                  params: page,
-                                })
-                              ).then((res) => {
-                                if (
-                                  res.payload ===
-                                  "The bookmark with the same file exists"
-                                ) {
-                                  setBookmarkData({
-                                    file_uid: key?.file_uid,
-                                    slide_id: key?.ID,
-                                    update: true,
-                                  });
-                                  setConfirmation(true);
-                                }
-                              });
+                            onClick={(evt) => {
+                              return bookmarkHandler(evt, key);
                             }}
                             className="bi bi-bookmark m-2 cursor-pointer "
                           />
