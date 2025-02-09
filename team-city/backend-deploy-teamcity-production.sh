@@ -10,8 +10,8 @@ docker pull bneibaruch/subtitles_backend:%dep.Subtitles_SubtitlesBackend_Docker.
 
 
 # Stop and remove the existing Docker container
-docker stop subtitles_backend
-docker rm subtitles_backend
+docker stop subtitles_backend || true
+docker rm subtitles_backend || true
 
 # Clean up Docker resources
 docker builder prune -af
