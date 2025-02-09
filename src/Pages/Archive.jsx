@@ -28,13 +28,16 @@ const Archive = () => {
     : { page: 1, limit: 10 };
   const [page, setPage] = useState(localPagination);
   const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
-  const updatePage = (page, limit) => {
-    localStorage.setItem("pagination", JSON.stringify({ page, limit }));
-    setPage({ page, limit });
+  
+  const updatePage = (targetPage, targetLimit) => {
+    if (targetPage === page.page && targetLimit === page.limit) return;
+
+    localStorage.setItem("pagination", JSON.stringify({ page: targetPage, limit: targetLimit }));
+    setPage({ page: targetPage, limit: targetLimit });
     setPageIndex({
-      startIndex: (page - 1) * limit + 1,
+      startIndex: (targetPage - 1) * targetLimit + 1,
       endIndex: Math.min(
-        page * limit,
+        targetPage * targetLimit,
         archiveList?.pagination?.total_rows,
         Number.MAX_VALUE
       ),
