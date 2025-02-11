@@ -14,6 +14,7 @@ import {
 import { broadcastLanguages } from "../Utils/Const";
 import { useSelector, useDispatch } from "react-redux";
 import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
+import { messageReceived } from "../Redux/MQTT/mqttSlice"; // Import Redux action
 
 const styles = {
   mainContainer: {
@@ -417,9 +418,15 @@ export function ActiveSlideMessaging(props) {
     const newMessageJson = event.detail.messageJson || event.detail.message;
     const topic = event.detail.mqttTopic || event.detail.topic;
 
+    // Dispatch message to Redux
+    dispatch(messageReceived({ topic, message: newMessageJson }));
+
     switch (topic) {
       case subtitleMqttTopic:
-        subtitleNewMessageHandling(event, topic, newMessageJson);
+        // subtitleNewMessageHandling(event, topic, newMessageJson);
+        dispatch(
+          messageReceived({ topic: "subtitle", message: newMessageJson })
+        );
         break;
       case questionMqttTopic:
         otherQstMessageHandling(event, topic, newMessageJson);

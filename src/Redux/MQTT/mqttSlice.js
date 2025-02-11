@@ -1,30 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  connected: false,
-  messages: [],
+  messages: [], // Stores received MQTT messages
 };
 
 const mqttSlice = createSlice({
   name: "mqtt",
   initialState,
   reducers: {
-    connect(state) {
-      state.connected = true;
+    messageReceived: (state, action) => {
+      state.messages.push(action.payload); // Store new message
     },
-    disconnect(state) {
-      state.connected = false;
-    },
-    addMessage(state, action) {
-      state.messages.push(action.payload);
-    },
-    clearMessages(state) {
-      state.messages = [];
+    clearMessages: (state) => {
+      state.messages = []; // Clear stored messages
     },
   },
 });
 
-export const { connect, disconnect, addMessage, clearMessages } =
-  mqttSlice.actions;
-
+export const { messageReceived, clearMessages } = mqttSlice.actions;
 export default mqttSlice.reducer;
