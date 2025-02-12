@@ -609,7 +609,13 @@ export function ActiveSlideMessaging(props) {
     newIndex = (newIndex + 1) % rbMsgArr.length;
 
     const slideToPublish = rbMsgArr[newIndex];
-    publishSlide(slideToPublish, subtitleMqttTopic);
+
+    if (
+      !activeMqttMessage ||
+      activeMqttMessage.slide !== slideToPublish.slide
+    ) {
+      publishSlide(slideToPublish, subtitleMqttTopic);
+    }
 
     if (rbMsgArr.length > 1) {
       sessionStorage.setItem("rounRobinIndex", String(newIndex));
