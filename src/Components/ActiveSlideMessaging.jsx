@@ -579,76 +579,42 @@ export function ActiveSlideMessaging(props) {
   }
 
   function determineSlideTypeQuestionRounRobin() {
-    let timeoutId = null;
-
-    if (props.subtitlesDisplayMode === "sources") {
-      const userAddedList = props.userAddedList;
-      const activatedTab = props.activatedTab;
-
-      if (userAddedList && activatedTab >= 0) {
-        const activeSlideObj = findActiveSlides(userAddedList, activatedTab);
-        const activeSlide = activeSlideObj.activeSlideByLang;
-        const otherSlides = activeSlideObj.otherSlides;
-
-        if (
-          activeSlide &&
-          activeSlide.slide_type === "question" &&
-          otherSlides &&
-          otherSlides.length > 0
-        ) {
-          if (
-            !Array.isArray(rounRobinQstMsgCol) ||
-            rounRobinQstMsgCol.length === 0 ||
-            rounRobinQstMsgCol.slide !== rounRobinQstMsgCol[0].slide
-          ) {
-            let rbMsgArr = [];
-            rbMsgArr.push(activeSlide, ...otherSlides);
-            setRounRobinQstMsgCol(rbMsgArr);
-
-            timeoutId = setInterval(() => {
-              const rounRobinIndexStr =
-                sessionStorage.getItem("rounRobinIndex");
-
-              let newIndex =
-                typeof rounRobinIndexStr === "string" &&
-                rounRobinIndexStr.length > 0
-                  ? Number(rounRobinIndexStr)
-                  : 0;
-
-              if (isNaN(newIndex)) {
-                newIndex = 0;
-              }
-
-              if (newIndex >= rbMsgArr.length - 1) {
-                newIndex = 0;
-              } else {
-                newIndex++;
-              }
-
-              const slideToPublish = rbMsgArr[newIndex];
-              const slideJsonMsg = publishSlide(
-                slideToPublish,
-                subtitleMqttTopic
-              );
-
-              dispatch(
-                messageReceived({ topic: "subtitle", message: slideJsonMsg })
-              );
-
-              sessionStorage.setItem(
-                "ActiveSlideMessaging",
-                JSON.stringify(slideJsonMsg)
-              );
-
-              setOtherQstColIndex(newIndex); //Doesn't work
-              sessionStorage.setItem("rounRobinIndex", String(newIndex)); //Workaround
-            }, qstSwapTime);
-          }
-        }
-      }
+    if (subtitlesDisplayMode !== "sources") {
+      return null;
     }
 
-    return timeoutId;
+    const userAddedList = props.userAddedList;
+    const activatedTab = props.activatedTab;
+
+    if (!userAddedList || activatedTab < 0) {
+      return null;
+    }
+
+    const activeSlideObj = findActiveSlides(userAddedList, activatedTab);
+    const activeSlide = activeSlideObj.activeSlideByLang;
+    const otherSlides = activeSlideObj.otherSlides;
+
+    if (
+      !activeSlide ||
+      activeSlide.slide_type !== "question" ||
+      otherSlides.length === 0
+    ) {
+      return null;
+    }
+
+    // ✅ Use Redux to store round-robin question slides
+    const rbMsgArr = [activeSlide, ...otherSlides];
+
+    // ✅ Handle round-robin logic properly
+    let newIndex = Number(sessionStorage.getItem("rounRobinIndex")) || 0;
+    newIndex = (newIndex + 1) % rbMsgArr.length;
+
+    const slideToPublish = rbMsgArr[newIndex];
+    publishSlide(slideToPublish, subtitleMqttTopic);
+
+    sessionStorage.setItem("rounRobinIndex", String(newIndex));
+
+    return setTimeout(() => determineSlideTypeQuestionRounRobin(), qstSwapTime);
   }
 
   useEffect(() => {
