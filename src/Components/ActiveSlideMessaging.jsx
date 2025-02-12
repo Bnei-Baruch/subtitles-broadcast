@@ -91,7 +91,7 @@ export function ActiveSlideMessaging(props) {
     (state) => state.mqtt.otherQuestionMsgCol
   );
   const otherQstColIndex = useRef(0); // ✅ Use `useRef()` to store index without re-renders
-  const [otherQstMsgColLength, setOtherQstMsgColLength] = useState(0);
+  const otherQstMsgColLength = Object.keys(otherQuestionMsgCol || {}).length;
 
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
