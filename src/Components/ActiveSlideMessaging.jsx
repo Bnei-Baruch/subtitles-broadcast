@@ -23,6 +23,7 @@ import {
   setSubtitleMqttMessage,
   setQuestionMqttMessage,
   addUpdateOtherQuestionMsgCol,
+  setRounRobinIndex,
 } from "../Redux/MQTT/mqttSlice"; // Import Redux action
 
 const styles = {
@@ -92,6 +93,7 @@ export function ActiveSlideMessaging(props) {
   );
   const otherQstColIndex = useRef(0); // ✅ Use `useRef()` to store index without re-renders
   const otherQstMsgColLength = Object.keys(otherQuestionMsgCol || {}).length;
+  const rounRobinIndex = useSelector((state) => state.mqtt.rounRobinIndex);
 
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
@@ -605,7 +607,7 @@ export function ActiveSlideMessaging(props) {
     const rbMsgArr = [activeSlide, ...otherSlides];
 
     // ✅ Handle round-robin logic properly
-    let newIndex = Number(sessionStorage.getItem("rounRobinIndex")) || 0;
+    let newIndex = Number(rounRobinIndex) || 0;
     newIndex = (newIndex + 1) % rbMsgArr.length;
 
     const slideToPublish = rbMsgArr[newIndex];
@@ -618,7 +620,7 @@ export function ActiveSlideMessaging(props) {
     }
 
     if (rbMsgArr.length > 1) {
-      sessionStorage.setItem("rounRobinIndex", String(newIndex));
+      dispatch(setRounRobinIndex(newIndex));
       return setTimeout(
         () => determineSlideTypeQuestionRounRobin(),
         qstSwapTime

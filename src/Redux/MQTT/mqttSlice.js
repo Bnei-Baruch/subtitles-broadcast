@@ -6,6 +6,7 @@ const initialState = {
   otherQuestionMsgCol: [],
   subtitleMqttMessage: null,
   questionMqttMessage: null,
+  rounRobinIndex: 0,
 };
 
 const mqttSlice = createSlice({
@@ -41,6 +42,9 @@ const mqttSlice = createSlice({
     setQuestionMqttMessage: (state, action) => {
       state.questionMqttMessage = action.payload;
     },
+    setRounRobinIndex: (state, action) => {
+      state.rounRobinIndex = action.payload; // ✅ Store rounRobinIndex in Redux
+    },
   },
 });
 
@@ -52,5 +56,6 @@ export const {
   setSubtitleMqttMessage,
   setQuestionMqttMessage,
   addUpdateOtherQuestionMsgCol,
+  setRounRobinIndex,
 } = mqttSlice.actions;
 export default mqttSlice.reducer;
