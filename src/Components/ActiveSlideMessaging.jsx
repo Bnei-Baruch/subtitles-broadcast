@@ -17,7 +17,11 @@ import {
   resetUserInitiatedChange,
   setSubtitlesDisplayModeFromMQTT,
 } from "../Redux/BroadcastParams/BroadcastParamsSlice";
-import { messageReceived, setActiveMqttMessage } from "../Redux/MQTT/mqttSlice"; // Import Redux action
+import {
+  messageReceived,
+  setActiveMqttMessage,
+  setOtherQuestionMsgCol,
+} from "../Redux/MQTT/mqttSlice"; // Import Redux action
 
 const styles = {
   mainContainer: {
@@ -85,7 +89,9 @@ export function ActiveSlideMessaging(props) {
   ); // ✅ Read from Redux
 
   const displayModeTopic = subtitlesDisplayModeTopic;
-  const [otherQuestionMsgCol, setOtherQuestionMsgCol] = useState({});
+  const otherQuestionMsgCol = useSelector(
+    (state) => state.mqtt.otherQuestionMsgCol
+  );
   const [otherQstColIndex, setOtherQstColIndex] = useState(1);
   const [otherQstMsgColLength, setOtherQstMsgColLength] = useState(0);
   const [rounRobinQstMsgCol, setRounRobinQstMsgCol] = useState([]);
@@ -232,9 +238,17 @@ export function ActiveSlideMessaging(props) {
       publishComplexQstMsg();
     }, 500);
 
+    // ✅ Integrate MQTT subscriptions inside the same useEffect
+    publishEvent("mqttSubscribe", { mqttTopic: subtitleMqttTopic });
+    publishEvent("mqttSubscribe", { mqttTopic: questionMqttTopic });
+    publishEvent("mqttSubscribe", { mqttTopic: displayModeTopic });
+
+    compSubscribeEvents(); // ✅ Ensure MQTT event subscriptions happen once
+
     return () => {
       window.onbeforeunload = null;
       clearTimeout(timeoutId);
+      compUnSubscribeAppEvents(); // ✅ Ensure MQTT is unsubscribed on unmount
     };
   }, []);
 
@@ -396,7 +410,7 @@ export function ActiveSlideMessaging(props) {
         }
 
         newOtherQuestionMsgCol[newMessageJson.lang] = newMessageJson;
-        setOtherQuestionMsgCol(newOtherQuestionMsgCol);
+        dispatch(setOtherQuestionMsgCol(newOtherQuestionMsgCol));
         setOtherQstMsgColLength(qstMsgColLength);
 
         const otherQstMsgJsonListStr = JSON.stringify(newOtherQuestionMsgCol);

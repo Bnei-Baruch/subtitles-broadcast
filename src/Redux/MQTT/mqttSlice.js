@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   messages: [],
   activeMqttMessage: null,
+  otherQuestionMsgCol: {},
 };
 
 const mqttSlice = createSlice({
@@ -16,10 +17,18 @@ const mqttSlice = createSlice({
       state.messages = [];
     },
     setActiveMqttMessage: (state, action) => {
-      state.activeMqttMessage = action.payload; // ✅ Store the latest selected message
+      state.activeMqttMessage = action.payload;
+    },
+    setOtherQuestionMsgCol: (state, action) => {
+      state.otherQuestionMsgCol = action.payload;
     },
   },
 });
 
-export const { messageReceived, setActiveMqttMessage } = mqttSlice.actions;
+export const {
+  messageReceived,
+  setActiveMqttMessage,
+  setOtherQuestionMsgCol,
+  clearMessages,
+} = mqttSlice.actions;
 export default mqttSlice.reducer;
