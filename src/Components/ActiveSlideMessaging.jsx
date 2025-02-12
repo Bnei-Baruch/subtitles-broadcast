@@ -14,7 +14,7 @@ import {
 import { broadcastLanguages } from "../Utils/Const";
 import { useSelector, useDispatch } from "react-redux";
 import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
-import { messageReceived } from "../Redux/MQTT/mqttSlice"; // Import Redux action
+import { messageReceived, setActiveMqttMessage } from "../Redux/MQTT/mqttSlice"; // Import Redux action
 
 const styles = {
   mainContainer: {
@@ -36,8 +36,13 @@ export function ActiveSlideMessaging(props) {
     return getMqttClientId();
   });
 
-  const [subtitleMqttMessage, setSubtitleMqttMessage] = useState(null);
-  const [questionMqttMessage, setQuestionMqttMessage] = useState(null);
+  const subtitleMqttMessage = useSelector((state) =>
+    state.mqtt.messages.find((msg) => msg.topic === "subtitle")
+  );
+  const questionMqttMessage = useSelector((state) =>
+    state.mqtt.messages.find((msg) => msg.topic === "question")
+  );
+
   const [subtitlesDisplayModeMsg, setSubtitlesDisplayModeMsg] = useState(null);
 
   const broadcastProgrammObj = useSelector(
@@ -65,13 +70,10 @@ export function ActiveSlideMessaging(props) {
     (state) => state.BroadcastParams.subtitlesDisplayMode
   );
 
-  const [contextMqttMessage, setContextMqttMessage] = useState(() => {
-    return subtitlesDisplayMode === "sources"
-      ? subtitleMqttMessage
-      : subtitlesDisplayMode === "questions"
-        ? questionMqttMessage
-        : "";
-  });
+  const activeMqttMessage = useSelector(
+    (state) => state.mqtt.activeMqttMessage
+  ); // ✅ Read from Redux
+
   const displayModeTopic = subtitlesDisplayModeTopic;
   const [otherQuestionMsgCol, setOtherQuestionMsgCol] = useState({});
   const [otherQstColIndex, setOtherQstColIndex] = useState(1);
@@ -172,7 +174,9 @@ export function ActiveSlideMessaging(props) {
             lastMqttMessageJson.slide !== activeSlide.slide
           ) {
             const slideJsonMsg = publishSlide(activeSlide, subtitleMqttTopic);
-            setSubtitleMqttMessage(slideJsonMsg);
+            dispatch(
+              messageReceived({ topic: "subtitle", message: slideJsonMsg })
+            );
 
             sessionStorage.setItem(
               "ActiveSlideMessaging",
@@ -261,30 +265,22 @@ export function ActiveSlideMessaging(props) {
   }, [subtitlesDisplayMode, subtitleMqttTopic]);
 
   useEffect(() => {
-    let contextMessage;
+    const selectedMessage =
+      subtitlesDisplayMode === "sources"
+        ? subtitleMqttMessage
+        : subtitlesDisplayMode === "questions"
+          ? questionMqttMessage
+          : "";
 
-    switch (subtitlesDisplayMode) {
-      case "sources":
-        contextMessage = subtitleMqttMessage;
-        break;
-      case "questions":
-        contextMessage = questionMqttMessage; //JSON.parse(JSON.stringify(questionMqttMessage));
-        break;
-      case "none":
-        contextMessage = "";
-        break;
-      default:
-        contextMessage = subtitleMqttMessage;
-        break;
+    // ✅ Prevent unnecessary updates
+    if (selectedMessage !== activeMqttMessage) {
+      dispatch(setActiveMqttMessage(selectedMessage));
     }
-
-    setContextMqttMessage(contextMessage);
   }, [
-    otherQuestionMsgCol,
     subtitlesDisplayMode,
     subtitleMqttMessage,
     questionMqttMessage,
-    otherQstColIndex,
+    activeMqttMessage,
   ]);
 
   function findNextVisibleQstMsg(questionMsgCol, startIndex) {
@@ -360,7 +356,7 @@ export function ActiveSlideMessaging(props) {
       !lastMqttMessageJson ||
       lastMqttMessageJson.slide !== newMessageJson.slide
     ) {
-      setSubtitleMqttMessage(newMessageJson);
+      dispatch(messageReceived({ topic: "subtitle", message: newMessageJson }));
 
       sessionStorage.setItem(
         "LastActiveSlidePublishedMessage",
@@ -418,25 +414,29 @@ export function ActiveSlideMessaging(props) {
     const newMessageJson = event.detail.messageJson || event.detail.message;
     const topic = event.detail.mqttTopic || event.detail.topic;
 
-    // Dispatch message to Redux
-    dispatch(messageReceived({ topic, message: newMessageJson }));
+    // ✅ Clone the object before modifying
+    const messageCopy = { ...newMessageJson };
+
+    // ✅ Now it's safe to add properties
+    messageCopy.dateUtcJs = new Date().toUTCString();
 
     switch (topic) {
       case subtitleMqttTopic:
-        // subtitleNewMessageHandling(event, topic, newMessageJson);
-        dispatch(
-          messageReceived({ topic: "subtitle", message: newMessageJson })
-        );
+        dispatch(messageReceived({ topic: "subtitle", message: messageCopy }));
         break;
+
       case questionMqttTopic:
-        otherQstMessageHandling(event, topic, newMessageJson);
-        setQuestionMqttMessage(newMessageJson);
+        otherQstMessageHandling(event, topic, messageCopy);
+        dispatch(messageReceived({ topic: "question", message: messageCopy }));
         break;
+
       case displayModeTopic:
-        disModeNewMqttMsgHandling(event, topic, newMessageJson);
+        disModeNewMqttMsgHandling(event, topic, messageCopy);
+        dispatch(setSubtitlesDisplayMode(messageCopy.slide));
         break;
+
       default:
-        otherQstMessageHandling(event, topic, newMessageJson);
+        otherQstMessageHandling(event, topic, messageCopy);
         break;
     }
   };
@@ -524,7 +524,9 @@ export function ActiveSlideMessaging(props) {
             contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
             publishSlide(contextMessage, questionMqttTopic, true);
             isPublishOrgSlide = false;
-            setQuestionMqttMessage(contextMessage);
+            dispatch(
+              messageReceived({ topic: "question", message: contextMessage })
+            );
           }
         }
       }
@@ -628,7 +630,10 @@ export function ActiveSlideMessaging(props) {
                 subtitleMqttTopic
               );
 
-              setSubtitleMqttMessage(slideJsonMsg);
+              dispatch(
+                messageReceived({ topic: "subtitle", message: slideJsonMsg })
+              );
+
               sessionStorage.setItem(
                 "ActiveSlideMessaging",
                 JSON.stringify(slideJsonMsg)
@@ -684,29 +689,27 @@ export function ActiveSlideMessaging(props) {
       <div style={styles.mainContainer}>
         <div
           className={`green-part-cont active-slide-messaging${
-            !contextMqttMessage || !contextMqttMessage.slide
-              ? " display-mode-none"
-              : ""
+            activeMqttMessage?.message?.slide ? "" : " display-mode-none"
           }`}
         >
           &nbsp;{" "}
         </div>
         <div className="slide-part-cont">
-          {contextMqttMessage && contextMqttMessage.slide && (
+          {activeMqttMessage?.message?.slide && (
             <Slide
-              data-key={contextMqttMessage.ID}
-              key={contextMqttMessage.ID}
-              content={contextMqttMessage.slide}
+              data-key={activeMqttMessage.message.ID}
+              key={activeMqttMessage.message.ID}
+              content={activeMqttMessage.message.slide}
               isLtr={
-                typeof contextMqttMessage.isLtr === "boolean"
-                  ? contextMqttMessage.isLtr
-                  : typeof contextMqttMessage.left_to_right === "boolean"
+                typeof activeMqttMessage.message.isLtr === "boolean"
+                  ? activeMqttMessage.message.isLtr
+                  : typeof activeMqttMessage.message.left_to_right === "boolean"
                     ? props.left_to_right
                     : props.isLtr
               }
               isQuestion={
-                contextMqttMessage.type === "question" ||
-                contextMqttMessage.slide_type === "question"
+                activeMqttMessage.message.type === "question" ||
+                activeMqttMessage.message.slide_type === "question"
               }
             ></Slide>
           )}
