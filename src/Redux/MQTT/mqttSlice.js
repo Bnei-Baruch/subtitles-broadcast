@@ -3,7 +3,9 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   messages: [],
   activeMqttMessage: null,
-  otherQuestionMsgCol: {},
+  otherQuestionMsgCol: [],
+  subtitleMqttMessage: null,
+  questionMqttMessage: null,
 };
 
 const mqttSlice = createSlice({
@@ -22,6 +24,23 @@ const mqttSlice = createSlice({
     setOtherQuestionMsgCol: (state, action) => {
       state.otherQuestionMsgCol = action.payload;
     },
+    addUpdateOtherQuestionMsgCol: (state, action) => {
+      const existingIndex = state.otherQuestionMsgCol.findIndex(
+        (slide) => slide.ID === action.payload.ID
+      );
+
+      if (existingIndex !== -1) {
+        state.otherQuestionMsgCol[existingIndex] = action.payload;
+      } else {
+        state.otherQuestionMsgCol.push(action.payload);
+      }
+    },
+    setSubtitleMqttMessage: (state, action) => {
+      state.subtitleMqttMessage = action.payload;
+    },
+    setQuestionMqttMessage: (state, action) => {
+      state.questionMqttMessage = action.payload;
+    },
   },
 });
 
@@ -30,5 +49,8 @@ export const {
   setActiveMqttMessage,
   setOtherQuestionMsgCol,
   clearMessages,
+  setSubtitleMqttMessage,
+  setQuestionMqttMessage,
+  addUpdateOtherQuestionMsgCol,
 } = mqttSlice.actions;
 export default mqttSlice.reducer;
