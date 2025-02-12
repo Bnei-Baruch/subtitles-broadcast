@@ -90,9 +90,8 @@ export function ActiveSlideMessaging(props) {
   const otherQuestionMsgCol = useSelector(
     (state) => state.mqtt.otherQuestionMsgCol
   );
-  const [otherQstColIndex, setOtherQstColIndex] = useState(1);
+  const otherQstColIndex = useRef(0); // ✅ Use `useRef()` to store index without re-renders
   const [otherQstMsgColLength, setOtherQstMsgColLength] = useState(0);
-  const [rounRobinQstMsgCol, setRounRobinQstMsgCol] = useState([]);
 
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
@@ -366,7 +365,7 @@ export function ActiveSlideMessaging(props) {
         publishComplexQstMsg();
       }, qstSwapTime);
     } else {
-      setOtherQstColIndex(0);
+      otherQstColIndex.current = 0;
       timeoutId = determineSlideTypeQuestionRounRobin();
     }
 
@@ -561,7 +560,7 @@ export function ActiveSlideMessaging(props) {
       newIndex = 0;
     }
 
-    setOtherQstColIndex(newIndex);
+    otherQstColIndex.current = newIndex;
   }
 
   function getLangCodeByIndex(index) {
@@ -612,9 +611,13 @@ export function ActiveSlideMessaging(props) {
     const slideToPublish = rbMsgArr[newIndex];
     publishSlide(slideToPublish, subtitleMqttTopic);
 
-    sessionStorage.setItem("rounRobinIndex", String(newIndex));
-
-    return setTimeout(() => determineSlideTypeQuestionRounRobin(), qstSwapTime);
+    if (rbMsgArr.length > 1) {
+      sessionStorage.setItem("rounRobinIndex", String(newIndex));
+      return setTimeout(
+        () => determineSlideTypeQuestionRounRobin(),
+        qstSwapTime
+      );
+    }
   }
 
   useEffect(() => {
