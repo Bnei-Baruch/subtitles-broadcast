@@ -6,6 +6,7 @@ const initialState = {
   subtitlesDisplayMode: "none",
   broadcastLang: broadcastLanguages[0],
   broadcastProgramm: brodcastProgrammArr[0],
+  isUserInitiatedChange: false, // ✅ Track if user changed display mode
 };
 
 const BroadcastParamsSlice = createSlice({
@@ -14,6 +15,14 @@ const BroadcastParamsSlice = createSlice({
   reducers: {
     setSubtitlesDisplayMode: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
+      state.isUserInitiatedChange = true; // ✅ Mark as user action
+    },
+    setSubtitlesDisplayModeFromMQTT: (state, action) => {
+      state.subtitlesDisplayMode = action.payload;
+      state.isUserInitiatedChange = false; // ✅ Prevent publishing loop
+    },
+    resetUserInitiatedChange: (state) => {
+      state.isUserInitiatedChange = false;
     },
     initializeSubtitlesDisplayMode: (state, action) => {
       if (state.subtitlesDisplayMode === "none") {
@@ -29,13 +38,13 @@ const BroadcastParamsSlice = createSlice({
   },
 });
 
-// Export the actions
 export const {
   setSubtitlesDisplayMode,
+  setSubtitlesDisplayModeFromMQTT, // ✅ New action
   initializeSubtitlesDisplayMode,
   setBroadcastLang,
   setBroadcastProgramm,
+  resetUserInitiatedChange,
 } = BroadcastParamsSlice.actions;
 
-// Export the reducer
 export default BroadcastParamsSlice.reducer;
