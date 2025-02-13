@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { broadcastLangMapObj } from "../Utils/Const";
 import {
-  getCurrentBroadcastLanguage,
   getCurrentBroadcastProgramm,
   getQuestionMqttTopic,
 } from "../Utils/Common";
@@ -11,17 +10,21 @@ import {
   unSubscribeEvent,
 } from "../Utils/Events";
 import { Slide } from "./Slide";
+import { useSelector, useDispatch } from "react-redux";
+import { questionMessageReceived } from "../Redux/MQTT/mqttSlice";
 
 const QuestionMessage = (props) => {
-  const [broadcastProgrammObj, setBroadcastProgrammObj] = useState(() => {
+  const dispatch = useDispatch();
+
+  const [broadcastProgrammObj] = useState(() => {
     return getCurrentBroadcastProgramm();
   });
   const broadcastProgrammCode = broadcastProgrammObj.value;
-  const [broadcastLang, setBroadcastLang] = useState(() => {
-    return getCurrentBroadcastLanguage();
-  });
-  const broadcastLangCode = broadcastLang.value;
-  const [notificationList, setNotificationList] = useState([]);
+
+  const questionMessagesList = useSelector(
+    (state) => state.mqtt.questionMessagesList
+  );
+
   const langList = props.languagesList;
   const mqttTopicList = langList.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
@@ -40,7 +43,6 @@ const QuestionMessage = (props) => {
             newMessageHandling(event);
             subscribed = true;
           });
-          // console.log("QuestionMessage mqttSubscribe DONE", mqttTopic);
         }
       });
 
@@ -53,8 +55,6 @@ const QuestionMessage = (props) => {
   };
 
   useEffect(() => {
-    // console.log("QuestionMessage mqttSubscribe");
-
     const timeoutId = setTimeout(() => {
       mqttTopicList.forEach((mqttTopic, index) => {
         publishEvent("mqttSubscribe", {
@@ -77,37 +77,15 @@ const QuestionMessage = (props) => {
     };
   }, []);
 
-  let notificationListTmp = notificationList;
-
   const newMessageHandling = (event) => {
-    // console.log("QuestionMessage newMessageHandling", event);
     const newMessage = event.detail.messageJson;
-    const currMqttTopic = getQuestionMqttTopic(
-      broadcastProgrammCode,
-      broadcastLangCode
-    );
-
-    if (event.detail.mqttTopic === currMqttTopic) {
-      sessionStorage.setItem("currentBroadcastquestions", newMessage);
-    }
 
     if (newMessage) {
-      if (newMessage.date) {
-        const msgExistObj = isMessageExist(newMessage, notificationListTmp);
-
-        if (msgExistObj.isExit) {
-          if (msgExistObj.message.visible !== newMessage.visible) {
-            msgExistObj.message.visible = newMessage.visible ? true : false;
-            newMessage.dateUtcJs = new Date(newMessage.date);
-            notificationListTmp = [...notificationListTmp];
-            setNotificationList(notificationListTmp);
-          }
-        } else {
-          newMessage.dateUtcJs = new Date(newMessage.date);
-          notificationListTmp = [...notificationListTmp, newMessage];
-          setNotificationList(notificationListTmp);
-        }
+      if (!newMessage.date) {
+        newMessage.date = new Date();
       }
+
+      dispatch(questionMessageReceived(newMessage)); // ✅ Update Redux state
     }
   };
 
@@ -140,27 +118,6 @@ const QuestionMessage = (props) => {
     return isLeftToRight;
   };
 
-  const isMessageExist = (newMessage, messageList) => {
-    let exist = false;
-    let retMsg = null;
-
-    for (let index = 0; index < messageList.length; index++) {
-      const lupMsg = messageList[index];
-      const lupMsgSlide = lupMsg.orgSlide ? lupMsg.orgSlide : lupMsg.slide;
-      const newMsgSlide = newMessage.orgSlide
-        ? newMessage.orgSlide
-        : newMessage.slide;
-
-      if (lupMsgSlide === newMsgSlide) {
-        exist = true;
-        retMsg = lupMsg;
-        break;
-      }
-    }
-
-    return { isExit: exist, message: retMsg };
-  };
-
   const sendQuestionButtonClickHandler = (questionMsg) => {
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
@@ -178,8 +135,9 @@ const QuestionMessage = (props) => {
   if (props.mode === "subtitle") {
     return (
       <>
-        {notificationList
-          .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+        {[...questionMessagesList] // ✅ Copy before sorting
+          .slice() // ✅ Ensures no mutation
+          .sort((a, b) => (new Date(a.date) < new Date(b.date) ? 1 : -1))
           .map((obj) => (
             <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
               <div className="d-flex h-auto p-2">
@@ -205,8 +163,9 @@ const QuestionMessage = (props) => {
   } else if (props.mode === "slide") {
     return (
       <>
-        {notificationList
-          .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+        {[...questionMessagesList] // ✅ Copy before sorting
+          .slice() // ✅ Ensures no mutation
+          .sort((a, b) => (new Date(a.date) < new Date(b.date) ? 1 : -1))
           .map((obj) => (
             <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
               <Slide
@@ -223,8 +182,9 @@ const QuestionMessage = (props) => {
   } else {
     return (
       <>
-        {notificationList
-          .sort((a, b) => (a.dateUtcJs < b.dateUtcJs ? 1 : -1))
+        {[...questionMessagesList] // ✅ Copy before sorting
+          .slice() // ✅ Ensures no mutation
+          .sort((a, b) => (new Date(a.date) < new Date(b.date) ? 1 : -1))
           .map((obj) => (
             <div data-key={obj.ID} key={obj.ID}>
               <div>
