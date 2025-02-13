@@ -578,17 +578,27 @@ export function ActiveSlideMessaging(props) {
       return null;
     }
 
-    // ✅ Use Redux to store round-robin question slides
+    // ✅ Create round-robin slide array
     const rbMsgArr = [activeSlide, ...otherSlides];
 
-    // ✅ Handle round-robin logic properly
-    let newIndex = Number(rounRobinIndex) || 0;
+    // ✅ Get the current index and ensure it wraps correctly
+    const rounRobinIndexStr = sessionStorage.getItem("rounRobinIndex");
+    let newIndex =
+      typeof rounRobinIndexStr === "string" && rounRobinIndexStr.length > 0
+        ? Number(rounRobinIndexStr)
+        : 0;
     newIndex = (newIndex + 1) % rbMsgArr.length;
+
+    // ✅ Ensure `newIndex` does not get stuck
+    if (isNaN(newIndex) || newIndex >= rbMsgArr.length || newIndex < 0) {
+      newIndex = 0; // ✅ Reset if out of bounds
+    }
 
     const slideToPublish = rbMsgArr[newIndex];
     debugLog("newIndex: " + newIndex);
     debugLog("slideToPublish: " + slideToPublish.slide);
 
+    // ✅ Prevent duplicate publishing
     if (
       !activeMqttMessage ||
       activeMqttMessage.slide !== slideToPublish.slide
@@ -598,9 +608,12 @@ export function ActiveSlideMessaging(props) {
       debugLog("Slide published and dispatched");
     }
 
+    // ✅ Ensure `rounRobinIndex` is updated correctly in Redux
+    dispatch(setRounRobinIndex(newIndex));
+    sessionStorage.setItem("rounRobinIndex", String(newIndex)); //Workaround
+    debugLog("newIndex dispatch: " + newIndex);
+
     if (rbMsgArr.length > 1) {
-      dispatch(setRounRobinIndex(newIndex));
-      debugLog("newIndex dispatch: " + newIndex);
       return setTimeout(
         () => determineSlideTypeQuestionRounRobin(),
         qstSwapTime
