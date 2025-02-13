@@ -1,11 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-
 const initialState = {
-  messages: [],
-  activeMqttMessage: null,
-  otherQuestionMsgCol: [],
-  subtitleMqttMessage: null,
-  questionMqttMessage: null,
+  questionMessagesList: [], // ✅ Holds only "type": "question" messages
+  activeBroadcastMessage: null, // ✅ Active message for broadcasting
+  subtitleRelatedQuestionMessagesList: [], // ✅ Subtitle slides with "slide_type": "question"
+  selectedSubtitleSlide: null, // ✅ Currently selected subtitle slide
+  selectedQuestionMessage: null, // ✅ Currently selected question message by language
   rounRobinIndex: 0,
 };
 
@@ -13,49 +12,50 @@ const mqttSlice = createSlice({
   name: "mqtt",
   initialState,
   reducers: {
-    messageReceived: (state, action) => {
-      state.messages.push(action.payload);
+    questionMessageReceived: (state, action) => {
+      state.questionMessagesList.push(action.payload);
     },
-    clearMessages: (state) => {
-      state.messages = [];
+    clearQuestionMessages: (state) => {
+      state.questionMessagesList = [];
     },
-    setActiveMqttMessage: (state, action) => {
-      state.activeMqttMessage = action.payload;
+    setActiveBroadcastMessage: (state, action) => {
+      state.activeBroadcastMessage = action.payload;
     },
-    setOtherQuestionMsgCol: (state, action) => {
-      state.otherQuestionMsgCol = action.payload;
+    setSubtitleRelatedQuestionMessagesList: (state, action) => {
+      state.subtitleRelatedQuestionMessagesList = action.payload;
     },
-    addUpdateOtherQuestionMsgCol: (state, action) => {
-      const existingIndex = state.otherQuestionMsgCol.findIndex(
-        (slide) => slide.ID === action.payload.ID
+    addUpdateSubtitleRelatedQuestionMessagesList: (state, action) => {
+      const existingIndex = state.subtitleRelatedQuestionMessagesList.findIndex(
+        (msg) => msg.ID === action.payload.ID
       );
 
       if (existingIndex !== -1) {
-        state.otherQuestionMsgCol[existingIndex] = action.payload;
+        state.subtitleRelatedQuestionMessagesList[existingIndex] =
+          action.payload;
       } else {
-        state.otherQuestionMsgCol.push(action.payload);
+        state.subtitleRelatedQuestionMessagesList.push(action.payload);
       }
     },
-    setSubtitleMqttMessage: (state, action) => {
-      state.subtitleMqttMessage = action.payload;
+    setSelectedSubtitleSlide: (state, action) => {
+      state.selectedSubtitleSlide = action.payload;
     },
-    setQuestionMqttMessage: (state, action) => {
-      state.questionMqttMessage = action.payload;
+    setSelectedQuestionMessage: (state, action) => {
+      state.selectedQuestionMessage = action.payload;
     },
     setRounRobinIndex: (state, action) => {
-      state.rounRobinIndex = action.payload; // ✅ Store rounRobinIndex in Redux
+      state.rounRobinIndex = action.payload;
     },
   },
 });
 
 export const {
-  messageReceived,
-  setActiveMqttMessage,
-  setOtherQuestionMsgCol,
-  clearMessages,
-  setSubtitleMqttMessage,
-  setQuestionMqttMessage,
-  addUpdateOtherQuestionMsgCol,
+  questionMessageReceived,
+  setActiveBroadcastMessage,
+  setSubtitleRelatedQuestionMessagesList,
+  clearQuestionMessages,
+  setSelectedSubtitleSlide,
+  setSelectedQuestionMessage,
+  addUpdateSubtitleRelatedQuestionMessagesList,
   setRounRobinIndex,
 } = mqttSlice.actions;
 export default mqttSlice.reducer;

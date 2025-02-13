@@ -18,11 +18,10 @@ import {
   setSubtitlesDisplayModeFromMQTT,
 } from "../Redux/BroadcastParams/BroadcastParamsSlice";
 import {
-  messageReceived,
-  setActiveMqttMessage,
-  setSubtitleMqttMessage,
-  setQuestionMqttMessage,
-  addUpdateOtherQuestionMsgCol,
+  setActiveBroadcastMessage,
+  setSelectedSubtitleSlide,
+  setSelectedQuestionMessage,
+  addUpdateSubtitleRelatedQuestionMessagesList,
   setRounRobinIndex,
 } from "../Redux/MQTT/mqttSlice";
 import debugLog from "../Utils/debugLog";
@@ -47,12 +46,12 @@ export function ActiveSlideMessaging(props) {
     return getMqttClientId();
   });
 
-  const subtitleMqttMessage = useSelector((state) => {
-    return state.mqtt.subtitleMqttMessage;
+  const selectedSubtitleSlide = useSelector((state) => {
+    return state.mqtt.selectedSubtitleSlide;
   });
 
-  const questionMqttMessage = useSelector((state) => {
-    return state.mqtt.questionMqttMessage;
+  const selectedQuestionMessage = useSelector((state) => {
+    return state.mqtt.selectedQuestionMessage;
   });
 
   const broadcastProgrammObj = useSelector(
@@ -84,17 +83,19 @@ export function ActiveSlideMessaging(props) {
     (state) => state.BroadcastParams.isUserInitiatedChange
   );
 
-  const activeMqttMessage = useSelector(
-    (state) => state.mqtt.activeMqttMessage
+  const activeBroadcastMessage = useSelector(
+    (state) => state.mqtt.activeBroadcastMessage
   );
 
   const displayModeTopic = subtitlesDisplayModeTopic;
-  const otherQuestionMsgCol = useSelector(
-    (state) => state.mqtt.otherQuestionMsgCol
+  const subtitleRelatedQuestionMessagesList = useSelector(
+    (state) => state.mqtt.subtitleRelatedQuestionMessagesList
   );
   const otherQstColIndex = useRef(0); // ✅ Use `useRef()` to store index without re-renders
-  const otherQstMsgColLength = Object.keys(otherQuestionMsgCol || {}).length;
-  const rounRobinIndex = useSelector((state) => state.mqtt.rounRobinIndex);
+  const otherQstMsgColLength = Object.keys(
+    subtitleRelatedQuestionMessagesList || {}
+  ).length;
+  // const rounRobinIndex = useSelector((state) => state.mqtt.rounRobinIndex);
 
   const qstMqttTopicList = broadcastLanguages.map((langItem, index) => {
     const mqttTopic = getQuestionMqttTopic(
@@ -196,7 +197,10 @@ export function ActiveSlideMessaging(props) {
     }
 
     // ✅ Prevent Redux updates if the slide has not changed
-    if (!activeMqttMessage || activeMqttMessage.slide !== activeSlide.slide) {
+    if (
+      !activeBroadcastMessage ||
+      activeBroadcastMessage.slide !== activeSlide.slide
+    ) {
       publishSlide(activeSlide, subtitleMqttTopic, false, broadcastLangCode);
     }
 
@@ -213,12 +217,12 @@ export function ActiveSlideMessaging(props) {
         );
 
         // ✅ Avoid duplicate publishing
-        if (!activeMqttMessage || activeMqttMessage.slide !== slide.slide) {
+        if (
+          !activeBroadcastMessage ||
+          activeBroadcastMessage.slide !== slide.slide
+        ) {
           const slideJsonMsg = publishSlide(slide, topic, false, slideLanguage);
-          dispatch(
-            messageReceived({ topic: "subtitle", message: slideJsonMsg })
-          );
-          dispatch(addUpdateOtherQuestionMsgCol(slideJsonMsg));
+          dispatch(addUpdateSubtitleRelatedQuestionMessagesList(slideJsonMsg));
         }
       });
     }
@@ -296,9 +300,9 @@ export function ActiveSlideMessaging(props) {
     updateActiveMessage();
   }, [
     subtitlesDisplayMode,
-    subtitleMqttMessage,
-    questionMqttMessage,
-    activeMqttMessage,
+    selectedSubtitleSlide,
+    selectedQuestionMessage,
+    activeBroadcastMessage,
     dispatch,
     updateActiveMessage,
   ]);
@@ -306,14 +310,14 @@ export function ActiveSlideMessaging(props) {
   function updateActiveMessage() {
     const selectedMessage =
       subtitlesDisplayMode === "sources"
-        ? subtitleMqttMessage
+        ? selectedSubtitleSlide
         : subtitlesDisplayMode === "questions"
-          ? questionMqttMessage
+          ? selectedQuestionMessage
           : "";
 
     // ✅ Prevent unnecessary updates
-    if (selectedMessage !== activeMqttMessage) {
-      dispatch(setActiveMqttMessage(selectedMessage));
+    if (selectedMessage !== activeBroadcastMessage) {
+      dispatch(setActiveBroadcastMessage(selectedMessage));
     }
   }
 
@@ -360,19 +364,22 @@ export function ActiveSlideMessaging(props) {
   }, [
     subtitlesDisplayMode,
     otherQstColIndex,
-    otherQuestionMsgCol,
-    questionMqttMessage,
+    subtitleRelatedQuestionMessagesList,
+    selectedQuestionMessage,
     props.userAddedList,
   ]);
 
   const subtitleNewMessageHandling = (newMessageJson) => {
     if (
-      !subtitleMqttMessage ||
-      subtitleMqttMessage.slide !== newMessageJson.slide
+      !selectedSubtitleSlide ||
+      selectedSubtitleSlide.slide !== newMessageJson.slide
     ) {
-      dispatch(setSubtitleMqttMessage(newMessageJson));
+      dispatch(setSelectedSubtitleSlide(newMessageJson));
       dispatch(
-        setActiveMqttMessage({ topic: "subtitle", message: newMessageJson })
+        setActiveBroadcastMessage({
+          topic: "subtitle",
+          message: newMessageJson,
+        })
       );
     }
   };
@@ -394,7 +401,7 @@ export function ActiveSlideMessaging(props) {
           ? false
           : true;
 
-    dispatch(addUpdateOtherQuestionMsgCol(newMessageJson)); // ✅ Update Redux state
+    dispatch(addUpdateSubtitleRelatedQuestionMessagesList(newMessageJson)); // ✅ Update Redux state
   }
 
   const newMessageHandling = (event) => {
@@ -412,8 +419,7 @@ export function ActiveSlideMessaging(props) {
         subtitleNewMessageHandling(messageCopy);
         break;
       case questionMqttTopic:
-        dispatch(setQuestionMqttMessage(messageCopy));
-        dispatch(messageReceived({ topic: "question", message: messageCopy }));
+        dispatch(setSelectedQuestionMessage(messageCopy));
         break;
       case displayModeTopic:
         dispatch(setSubtitlesDisplayModeFromMQTT(messageCopy.slide));
@@ -451,7 +457,7 @@ export function ActiveSlideMessaging(props) {
   }
 
   function publishComplexQstMsg() {
-    if (!questionMqttMessage) {
+    if (!selectedQuestionMessage) {
       return;
     }
 
@@ -462,7 +468,7 @@ export function ActiveSlideMessaging(props) {
       newIndex = 0;
     }
 
-    const contextMessage = JSON.parse(JSON.stringify(questionMqttMessage));
+    const contextMessage = JSON.parse(JSON.stringify(selectedQuestionMessage));
     const isTimeExceeded = determineTimeDiffExceeded(
       contextMessage,
       qstSwapTime,
@@ -472,11 +478,11 @@ export function ActiveSlideMessaging(props) {
     if (
       !isTimeExceeded &&
       contextMessage.visible &&
-      otherQuestionMsgCol.length > 0
+      subtitleRelatedQuestionMessagesList.length > 0
     ) {
       let curOtherQstMsg = null;
       const otherVisibleQstMsgObj = findNextVisibleQstMsg(
-        otherQuestionMsgCol,
+        subtitleRelatedQuestionMessagesList,
         newIndex
       );
 
@@ -489,9 +495,9 @@ export function ActiveSlideMessaging(props) {
         if (contextMessage.clientId === mqttClientId) {
           if (!curOtherQstMsg.orgSlide) {
             contextMessage.orgSlide =
-              questionMqttMessage.orgSlide || questionMqttMessage.slide;
+              selectedQuestionMessage.orgSlide || selectedQuestionMessage.slide;
             contextMessage.orgLang =
-              questionMqttMessage.orgLang || questionMqttMessage.lang;
+              selectedQuestionMessage.orgLang || selectedQuestionMessage.lang;
           }
 
           contextMessage.slide = curOtherQstMsg.slide;
@@ -500,13 +506,11 @@ export function ActiveSlideMessaging(props) {
 
           // ✅ Prevent duplicate publishing
           if (
-            !activeMqttMessage ||
-            activeMqttMessage.slide !== contextMessage.slide
+            !activeBroadcastMessage ||
+            activeBroadcastMessage.slide !== contextMessage.slide
           ) {
             publishSlide(contextMessage, questionMqttTopic, true);
-            dispatch(
-              messageReceived({ topic: "question", message: contextMessage })
-            );
+            dispatch(setSelectedQuestionMessage(contextMessage));
           }
 
           isPublishOrgSlide = false;
@@ -600,11 +604,11 @@ export function ActiveSlideMessaging(props) {
 
     // ✅ Prevent duplicate publishing
     if (
-      !activeMqttMessage ||
-      activeMqttMessage.slide !== slideToPublish.slide
+      !activeBroadcastMessage ||
+      activeBroadcastMessage.slide !== slideToPublish.slide
     ) {
       publishSlide(slideToPublish, subtitleMqttTopic);
-      dispatch(setActiveMqttMessage(slideToPublish));
+      dispatch(setActiveBroadcastMessage(slideToPublish));
       debugLog("Slide published and dispatched");
     }
 
@@ -639,27 +643,27 @@ export function ActiveSlideMessaging(props) {
       <div style={styles.mainContainer}>
         <div
           className={`green-part-cont active-slide-messaging${
-            activeMqttMessage?.slide ? "" : " display-mode-none"
+            activeBroadcastMessage?.slide ? "" : " display-mode-none"
           }`}
         >
           &nbsp;{" "}
         </div>
         <div className="slide-part-cont">
-          {activeMqttMessage?.slide && (
+          {activeBroadcastMessage?.slide && (
             <Slide
-              data-key={activeMqttMessage.ID}
-              key={activeMqttMessage.ID}
-              content={activeMqttMessage.slide}
+              data-key={activeBroadcastMessage.ID}
+              key={activeBroadcastMessage.ID}
+              content={activeBroadcastMessage.slide}
               isLtr={
-                typeof activeMqttMessage.isLtr === "boolean"
-                  ? activeMqttMessage.isLtr
-                  : typeof activeMqttMessage.left_to_right === "boolean"
+                typeof activeBroadcastMessage.isLtr === "boolean"
+                  ? activeBroadcastMessage.isLtr
+                  : typeof activeBroadcastMessage.left_to_right === "boolean"
                     ? props.left_to_right
                     : props.isLtr
               }
               isQuestion={
-                activeMqttMessage.type === "question" ||
-                activeMqttMessage.slide_type === "question"
+                activeBroadcastMessage.type === "question" ||
+                activeBroadcastMessage.slide_type === "question"
               }
             ></Slide>
           )}
