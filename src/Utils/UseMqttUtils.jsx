@@ -26,7 +26,6 @@ const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
 export default function useMqtt() {
   const clientRef = useRef(null);
   const clientIdRef = useRef(null);
-  const userRef = useRef(null);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
   const username = useSelector(
@@ -38,7 +37,7 @@ export default function useMqtt() {
   const lastName = useSelector(
     (state) => state.UserProfile.userProfile.profile.lastName
   );
-  let clientID;
+  //let clientID;
 
   const broadcastProgrammCode = useSelector(
     (state) => state.BroadcastParams.broadcastProgramm.value
@@ -52,11 +51,18 @@ export default function useMqtt() {
     broadcastLangCode
   );
 
-  if (!useSelector((state) => state.mqtt.clientId)) {
-    let clientIdTmp = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-    dispatch(setClientId(clientIdTmp));
-    clientID = clientIdTmp;
+  // if (!useSelector((state) => state.mqtt.clientId)) {
+  //   let clientIdTmp = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
+  //   dispatch(setClientId(clientIdTmp));
+  //   clientID = clientIdTmp;
+  // }
+  // ✅ Retrieve `clientId` from Redux
+  let clientId = useSelector((state) => state.mqtt.clientId);
+  if (!clientId) {
+    clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
+    dispatch(setClientId(clientId));
   }
+  clientIdRef.current = clientId; // ✅ Store it in a ref to prevent re-renders
 
   useEffect(() => {
     if (!clientRef.current) {
@@ -118,7 +124,7 @@ export default function useMqtt() {
         // ✅ Add user info to all messages
         const enhancedMessage = {
           ...message,
-          clientId: clientID || "unknown_client",
+          clientId: clientIdRef.current || "unknown_client",
           username: username || "unknown_user",
           firstName: firstName || "Unknown",
           lastName: lastName || "User",
@@ -154,6 +160,8 @@ export default function useMqtt() {
         console.log("🔴 Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
+        clientIdRef.current.end();
+        clientIdRef.current = null;
       }
     };
   }, [dispatch]);
