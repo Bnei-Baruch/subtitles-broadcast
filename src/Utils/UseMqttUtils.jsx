@@ -1,11 +1,21 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import mqtt from "mqtt";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  subscribeEvent,
-  unsubscribeEvent,
-  publishEvent,
-} from "../Utils/Events";
-import { getMqttClientId } from "../Utils/Common";
+  setConnected,
+  addMqttTopic,
+  removeMqttTopic,
+  mqttMessageReceived,
+  setSubtitlesDisplayModeFromMQTT,
+  setClientId,
+} from "../Redux/MQTT/mqttSlice";
+import { broadcastLanguages } from "../Utils/Const";
+import {
+  getSubtitleMqttTopic,
+  getQuestionMqttTopic,
+  subtitlesDisplayModeTopic,
+} from "../Utils/Common";
+import { subscribeEvent } from "../Utils/Events";
 
 const mqttUrl = process.env.REACT_APP_MQTT_URL;
 const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
@@ -13,172 +23,151 @@ const mqttPort = process.env.REACT_APP_MQTT_PORT;
 const mqttPath = process.env.REACT_APP_MQTT_PATH;
 const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
 
-const setting = {
-  protocol: mqttProtocol,
-  url: mqttBrokerUrl,
-  config: {
-    username: "",
-    password: "",
-    port: mqttPort,
-  },
-};
-
-const clientId = getMqttClientId();
-
 export default function useMqtt() {
-  const [mqttClient, setMqttClient] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [payload, setPayload] = useState({});
-  const [mqttClientId, setMqttClientId] = useState(false);
-  let tmpMqttClient = null;
+  const clientRef = useRef(null);
+  const clientIdRef = useRef(null);
+  const userRef = useRef(null);
+  const dispatch = useDispatch();
+  const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
+  const username = useSelector(
+    (state) => state.UserProfile.userProfile.profile.username
+  );
+  const firstName = useSelector(
+    (state) => state.UserProfile.userProfile.profile.firstName
+  );
+  const lastName = useSelector(
+    (state) => state.UserProfile.userProfile.profile.lastName
+  );
+  let clientID;
 
-  const mqttConnect = async () => {
-    const url = setting.url;
-    const options = {
-      clientId,
-      ...setting.config,
-    };
-    const clientMqtt = await mqtt.connect(url, options);
-    tmpMqttClient = clientMqtt;
-    setMqttClient(clientMqtt);
-    setMqttClientId(clientId);
-    sessionStorage.setItem("mqttClientId", clientId);
-    // console.log("useMqtt mqttclientId", clientId);
-  };
+  const broadcastProgrammCode = useSelector(
+    (state) => state.BroadcastParams.broadcastProgramm.value
+  );
+  const broadcastLangCode = useSelector(
+    (state) => state.BroadcastParams.broadcastLang.value
+  );
 
-  const mqttPublush = async (mqttTopic, msgText, mqttClientObj) => {
-    const trgMqttClient = mqttClient
-      ? mqttClient
-      : mqttClientObj
-        ? mqttClientObj
-        : tmpMqttClient;
+  const subtitleMqttTopic = getSubtitleMqttTopic(
+    broadcastProgrammCode,
+    broadcastLangCode
+  );
 
-    if (trgMqttClient) {
-      trgMqttClient.publish(
-        mqttTopic,
-        msgText,
-        { label: "0", value: 0, retain: true },
-        (error) => {
-          if (error) {
-            console.log("useMqtt  Publish error:", error);
-          } else {
-            // console.log(`"useMqtt  Published Topic: ${mqttTopic} Message: ${msgText}`);
+  if (!useSelector((state) => state.mqtt.clientId)) {
+    let clientIdTmp = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
+    dispatch(setClientId(clientIdTmp));
+    clientID = clientIdTmp;
+  }
 
-            publishEvent("mqttMessagePublished", {
-              mqttTopic: mqttTopic,
-              messageText: msgText,
-            });
+  useEffect(() => {
+    if (!clientRef.current) {
+      console.log("🔵 Connecting to MQTT Broker...");
+      clientRef.current = mqtt.connect(mqttBrokerUrl);
+
+      clientRef.current.on("connect", () => {
+        console.log("🟢 MQTT Connected");
+
+        dispatch(setConnected(true));
+
+        let broadcastMqttTopics = broadcastLanguages.map((langItem, index) => {
+          const mqttTopic = getQuestionMqttTopic(
+            broadcastProgrammCode,
+            langItem.value
+          );
+          return mqttTopic;
+        });
+
+        broadcastMqttTopics.push(subtitlesDisplayModeTopic);
+        broadcastMqttTopics.push(subtitleMqttTopic);
+
+        // ✅ Subscribe only if not already subscribed
+        broadcastMqttTopics.forEach((topic) => {
+          if (!mqttTopics.includes(topic)) {
+            dispatch(addMqttTopic(topic));
+            clientRef.current.subscribe(topic);
           }
-        },
-      );
-    }
-  };
+        });
 
-  const mqttDisconnect = () => {
-    if (mqttClient) {
-      mqttClient.end(() => {
-        console.log("useMqtt  MQTT Disconnected", mqttClientId);
-        setIsConnected(false);
+        mqttTopics.forEach((topic) => clientRef.current.subscribe(topic));
       });
-    }
-  };
 
-  const mqttSubscribe = async (topic) => {
-    if (mqttClient) {
-      // console.log("useMqtt MQTT subscribe ", topic, mqttClientId);
-      const clientMqtt = await mqttClient.subscribe(
-        topic,
-        {
-          qos: 0,
-          rap: false,
-          rh: 0,
-        },
-        (error) => {
-          if (error) {
-            console.log("useMqtt MQTT Subscribe to topics error", error);
-            return;
-          }
-        },
-      );
-      setMqttClient(clientMqtt);
-    }
-  };
+      clientRef.current.on("message", (topic, message) => {
+        console.log("📩 MQTT Message Received:", topic, message.toString());
+        dispatch(mqttMessageReceived({ topic, message: message.toString() }));
 
-  const mqttUnSubscribe = async (topic) => {
-    if (mqttClient) {
-      const clientMqtt = await mqttClient.unsubscribe(topic, (error) => {
-        if (error) {
-          console.log("useMqtt MQTT Unsubscribe error", error);
-          return;
+        if (topic === "subtitles/display_mode") {
+          const parsedMessage = JSON.parse(message);
+          dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
         }
       });
-      setMqttClient(clientMqtt);
-    }
-  };
 
-  useEffect(() => {
-    mqttConnect();
-    return () => {
-      mqttDisconnect();
-    };
-  }, []);
+      clientRef.current.on("error", (err) => {
+        console.error("❌ MQTT Connection Error:", err);
+        clientRef.current.end();
+        dispatch(setConnected(false));
+      });
 
-  useEffect(() => {
-    if (mqttClient) {
-      mqttClient.on("connect", () => {
-        setIsConnected(true);
-        // console.log("useMqtt MQTT Connected", mqttClientId);
-      });
-      mqttClient.on("error", (err) => {
-        console.error("useMqtt MQTT Connection error: ", err);
-        mqttClient.end();
-      });
-      mqttClient.on("reconnect", () => {
-        setIsConnected(true);
-      });
-      mqttClient.on("message", (_topic, message) => {
-        const payloadMessage = { topic: _topic, message: message.toString() };
-        const newMessage = JSON.parse(payloadMessage.message);
-        const argData = {
-          mqttTopic: _topic,
-          clientId: mqttClientId,
-          messageJson: newMessage,
+      // ✅ Listen for "mqttPublush" and publish messages to MQTT
+      subscribeEvent("mqttPublush", (event) => {
+        let { mqttTopic, message } = event.detail;
+
+        if (typeof message !== "object") {
+          console.error("❌ MQTT Publish Error: Message must be an object");
+          return;
+        }
+
+        // ✅ Add user info to all messages
+        const enhancedMessage = {
+          ...message,
+          clientId: clientID || "unknown_client",
+          username: username || "unknown_user",
+          firstName: firstName || "Unknown",
+          lastName: lastName || "User",
+          date: new Date().toUTCString(),
         };
 
-        publishEvent(_topic, argData);
-        publishEvent("mqttNewmessage", argData);
-        setPayload(payloadMessage);
+        if (clientRef.current) {
+          const payloadString = JSON.stringify(enhancedMessage);
+          console.log("🚀 Publishing to MQTT:", mqttTopic, payloadString);
 
-        // console.log(`useMqtt MQTT message: ${message.toString()} \n topic: ${_topic}`);
+          clientRef.current.publish(
+            mqttTopic,
+            payloadString,
+            { retain: true },
+            (err) => {
+              if (err) {
+                console.error("❌ MQTT Publish Error:", err);
+              } else {
+                console.log(
+                  "✅ MQTT Publish Successful:",
+                  mqttTopic,
+                  enhancedMessage
+                );
+              }
+            }
+          );
+        }
       });
     }
-  }, [mqttClient]);
+
+    return () => {
+      if (clientRef.current) {
+        console.log("🔴 Disconnecting MQTT...");
+        clientRef.current.end();
+        clientRef.current = null;
+      }
+    };
+  }, [dispatch]);
 
   return {
-    mqttConnect,
-    mqttDisconnect,
-    mqttSubscribe,
-    mqttUnSubscribe,
-    mqttPublush,
-    payload,
-    isConnected,
-    mqttClientId,
-    mqttClient,
-  };
-}
-
-export function parseMqttMessage(mqttMessage) {
-  if (mqttMessage) {
-    try {
-      if (typeof mqttMessage === "string") {
-        let msgJson = JSON.parse(mqttMessage);
-
-        return msgJson;
+    subscribe: (topic) => {
+      if (!mqttTopics.includes(topic)) {
+        dispatch(addMqttTopic(topic));
+        clientRef.current.subscribe(topic);
       }
-    } catch (err) {
-      console.log(err);
-    }
-
-    return mqttMessage;
-  }
+    },
+    unsubscribe: (topic) => {
+      dispatch(removeMqttTopic(topic));
+      clientRef.current.unsubscribe(topic);
+    },
+  };
 }

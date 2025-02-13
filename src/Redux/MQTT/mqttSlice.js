@@ -1,67 +1,91 @@
 import { createSlice } from "@reduxjs/toolkit";
+
 const initialState = {
-  questionMessagesList: [], // ✅ Holds only "type": "question" messages
-  activeBroadcastMessage: null, // ✅ Active message for broadcasting
-  subtitleRelatedQuestionMessagesList: [], // ✅ Subtitle slides with "slide_type": "question"
-  selectedSubtitleSlide: null, // ✅ Currently selected subtitle slide
-  selectedQuestionMessage: null, // ✅ Currently selected question message by language
+  isConnected: false,
+  clientId: null,
+  mqttTopics: [],
+  mqttMessages: {},
+  questionMessagesList: {},
+  activeBroadcastMessage: null, // ✅ Store active message
+  subtitleRelatedQuestionMessagesList: [],
+  selectedSubtitleSlide: null,
+  selectedQuestionMessage: null,
+  subtitlesDisplayMode: "none",
   rounRobinIndex: 0,
+  isUserInitiatedChange: false, // ✅ Track if user changed display mode
 };
 
 const mqttSlice = createSlice({
   name: "mqtt",
   initialState,
   reducers: {
-    questionMessageReceived: (state, action) => {
-      const existingIndex = state.questionMessagesList.findIndex(
-        (msg) => msg.ID === action.payload.ID
-      );
-
-      if (existingIndex === -1) {
-        state.questionMessagesList.push(action.payload);
+    setConnected(state, action) {
+      state.isConnected = action.payload;
+    },
+    addMqttTopic(state, action) {
+      if (!state.mqttTopics.includes(action.payload)) {
+        state.mqttTopics.push(action.payload);
       }
     },
-    clearQuestionMessages: (state) => {
-      state.questionMessagesList = [];
+    removeMqttTopic(state, action) {
+      state.mqttTopics = state.mqttTopics.filter((t) => t !== action.payload);
     },
-    setActiveBroadcastMessage: (state, action) => {
-      state.activeBroadcastMessage = action.payload;
-    },
-    setSubtitleRelatedQuestionMessagesList: (state, action) => {
-      state.subtitleRelatedQuestionMessagesList = action.payload;
-    },
-    addUpdateSubtitleRelatedQuestionMessagesList: (state, action) => {
-      const existingIndex = state.subtitleRelatedQuestionMessagesList.findIndex(
-        (msg) => msg.ID === action.payload.ID
-      );
+    mqttMessageReceived(state, action) {
+      const { topic, message } = action.payload;
+      const parsedMessage = JSON.parse(message);
+      state.mqttMessages[topic] = parsedMessage;
 
-      if (existingIndex !== -1) {
-        state.subtitleRelatedQuestionMessagesList[existingIndex] =
-          action.payload;
-      } else {
-        state.subtitleRelatedQuestionMessagesList.push(action.payload);
+      if (topic.includes("/question")) {
+        const lang = parsedMessage.lang;
+        state.selectedQuestionMessage = parsedMessage;
+
+        if (!state.questionMessagesList[lang]) {
+          state.questionMessagesList[lang] = [];
+        }
+
+        if (
+          !state.questionMessagesList[lang].some(
+            (msg) => msg.ID === parsedMessage.ID
+          )
+        ) {
+          state.questionMessagesList[lang].push(parsedMessage);
+        }
+      } else if (topic.includes("/slide")) {
+        state.selectedSubtitleSlide = parsedMessage;
+      } else if (topic.includes("display_mode")) {
+        state.subtitlesDisplayMode = parsedMessage.slide;
       }
     },
-    setSelectedSubtitleSlide: (state, action) => {
-      state.selectedSubtitleSlide = action.payload;
+    setActiveBroadcastMessage(state, action) {
+      state.activeBroadcastMessage = action.payload; // ✅ Store active message
     },
-    setSelectedQuestionMessage: (state, action) => {
-      state.selectedQuestionMessage = action.payload;
+    setSubtitlesDisplayMode: (state, action) => {
+      state.subtitlesDisplayMode = action.payload;
+      state.isUserInitiatedChange = true; // ✅ Mark as user action
     },
-    setRounRobinIndex: (state, action) => {
-      state.rounRobinIndex = action.payload;
+    setSubtitlesDisplayModeFromMQTT: (state, action) => {
+      state.subtitlesDisplayMode = action.payload;
+      state.isUserInitiatedChange = false; // ✅ Prevent publishing loop
+    },
+    resetUserInitiatedChange: (state) => {
+      state.isUserInitiatedChange = false;
+    },
+    setClientId: (state, action) => {
+      state.clientId = action.payload;
     },
   },
 });
 
 export const {
-  questionMessageReceived,
-  setActiveBroadcastMessage,
-  setSubtitleRelatedQuestionMessagesList,
-  clearQuestionMessages,
-  setSelectedSubtitleSlide,
-  setSelectedQuestionMessage,
-  addUpdateSubtitleRelatedQuestionMessagesList,
-  setRounRobinIndex,
+  setConnected,
+  addMqttTopic,
+  removeMqttTopic,
+  mqttMessageReceived,
+  setActiveBroadcastMessage, // ✅ Added action
+  setSubtitlesDisplayMode,
+  setSubtitlesDisplayModeFromMQTT,
+  resetUserInitiatedChange,
+  setClientId,
 } = mqttSlice.actions;
+
 export default mqttSlice.reducer;

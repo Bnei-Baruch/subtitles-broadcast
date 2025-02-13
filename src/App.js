@@ -1,171 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Navigate } from "react-router-dom";
-import "./App.css";
-
-import SideNavBar from "./Layout/SideNavBar";
-
-import MainRoutes from "./Routes/Routes";
+import { useSelector, useDispatch } from "react-redux";
 import useMqtt from "./Utils/UseMqttUtils";
-import { publishEvent, subscribeEvent, unSubscribeEvent } from "./Utils/Events";
+import "./App.css";
+import SideNavBar from "./Layout/SideNavBar";
+import MainRoutes from "./Routes/Routes";
 
 const App = ({ auth }) => {
-  const { mqttUnSubscribe, mqttSubscribe, mqttPublush, isConnected, payload } =
-    useMqtt();
-  const [mqttTopicList, setMqttTopicList] = useState([]);
-  const [notificationList, setNotificationList] = useState([]);
-  const [subscribeCandidateList, setSubscribeCandidateList] = useState([]);
-
-  const mqttUnSubscribeEventHandler = (data) => {
-    const mqttTopic = data.detail.mqttTopic;
-
-    setMqttTopicList(mqttTopicList.filter((e) => e !== mqttTopic));
-
-    if (isConnected) {
-      mqttUnSubscribe(mqttTopic);
-      // console.log("App mqttUnSubscribed", data);
-    }
-  };
-
-  const mqttSubscribeEventHandler = (data) => {
-    const mqttTopic = data.detail.mqttTopic;
-    let isIncludes = false;
-    let locNotificationList = [];
-
-    let msgListStorageArrJsonStr = sessionStorage.getItem(
-      "AppNotificationList"
-    );
-    let msgListStorageJson = JSON.parse(msgListStorageArrJsonStr);
-
-    if (msgListStorageJson) {
-      locNotificationList = msgListStorageJson;
-    }
-
-    locNotificationList.forEach((message, index) => {
-      if (message.topic === mqttTopic) {
-        publishEvent(mqttTopic, message);
-
-        // console.log("App mqttSubscribe already subscribed, raised custome event", message);
-      }
-    });
-
-    if (!isIncludes) {
-      if (!mqttTopicList.includes(mqttTopic)) {
-        mqttTopicList.push(mqttTopic);
-      }
-
-      if (isConnected) {
-        mqttSubscribe(mqttTopic);
-        subscribeCandidate(mqttTopic);
-        // console.log("App mqttSubscribe DONE", mqttTopic);
-      } else {
-        const notif = [...subscribeCandidateList, mqttTopic];
-        setSubscribeCandidateList(notif);
-        // console.log("App mqttSubscribe Candidate", mqttTopic);
-      }
-    }
-  };
-
-  const subscribeCandidate = (mqttTopic) => {
-    if (subscribeCandidateList.length > 0) {
-      subscribeCandidateList.forEach((topic, index) => {
-        if (topic !== mqttTopic) {
-          // console.log("App mqttSubscribe Candidate DONE", mqttTopic);
-
-          if (!mqttTopicList.includes(mqttTopic)) {
-            mqttTopicList.push(mqttTopic);
-          }
-
-          mqttSubscribe(topic);
-          setSubscribeCandidateList([]);
-        }
-      });
-    }
-  };
-
-  const mqttPublushEventHandler = (data) => {
-    const mqttTopic = data.detail.mqttTopic;
-    const message = data.detail.message;
-    const sesStorageName = `LastMqttMsg-${mqttTopic}`;
-    const lastMqttMessageStr = sessionStorage.getItem(sesStorageName);
-
-    if (!lastMqttMessageStr || lastMqttMessageStr !== message) {
-      sessionStorage.setItem(sesStorageName, message);
-      mqttPublush(mqttTopic, message).then(() => {
-        // console.log("App mqttPublushed", data);
-      });
-    }
-  };
-
-  const mqttNewmessageEventHandler = (data) => {
-    let locNotificationList = [];
-    const mqttTopic = data.detail.mqttTopic;
-    const newMessage = data.detail.messageJson;
-
-    let msgListStorageArrJsonStr = sessionStorage.getItem(
-      "AppNotificationList"
-    );
-
-    let msgListStorageJson = JSON.parse(msgListStorageArrJsonStr);
-    if (msgListStorageJson) {
-      locNotificationList = msgListStorageJson;
-    }
-
-    const newNotif = { topic: mqttTopic, message: newMessage };
-    const notif = [...locNotificationList, newNotif];
-    setNotificationList(notif);
-    const newNotifStr = JSON.stringify(notif);
-    sessionStorage.setItem("AppNotificationList", newNotifStr);
-    // console.log("App payload New Message", newNotif);
-  };
-
-  let subscribed = false;
-
-  const subscribeAppEvents = () => {
-    if (!subscribed) {
-      subscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-      subscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-      subscribeEvent("mqttPublush", mqttPublushEventHandler);
-      subscribeEvent("mqttNewmessage", mqttNewmessageEventHandler);
-    }
-    subscribed = true;
-  };
-  const unSubscribeAppEvents = () => {
-    unSubscribeEvent("mqttSubscribe", mqttSubscribeEventHandler);
-    unSubscribeEvent("mqttUnSubscribe", mqttUnSubscribeEventHandler);
-    unSubscribeEvent("mqttPublush", mqttUnSubscribeEventHandler);
-    unSubscribeEvent("mqttNewmessage", mqttNewmessageEventHandler);
-  };
-
-  const [broadcastLang, setBroadcastLang] = useState();
-  const [broadcastProgramm, setBroadcastProgramm] = useState();
-
-  useEffect(() => {
-    subscribeAppEvents();
-
-    return () => {
-      unSubscribeAppEvents();
-    };
-  }, []);
+  const { subscribe, unsubscribe } = useMqtt();
+  const dispatch = useDispatch();
+  const isConnected = useSelector((state) => state.mqtt.isConnected);
+  const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
 
   useEffect(() => {
     if (isConnected) {
-      subscribeAppEvents();
-      mqttTopicList.forEach((mqttTopic, index) => {
-        mqttSubscribe(mqttTopic);
-        // console.log("App useEffect mqttSubscribe DONE", mqttTopic);
-      });
+      console.log("✅ MQTT Connected, subscribing to topics...");
+      mqttTopics.forEach((topic) => subscribe(topic));
     }
 
     return () => {
-      unSubscribeAppEvents();
+      console.log("❌ Unsubscribing from topics...");
+      mqttTopics.forEach((topic) => unsubscribe(topic));
     };
-  }, [isConnected]);
-
-  useEffect(() => {
-    return () => {
-      unSubscribeAppEvents();
-    };
-  }, [payload]);
+  }, [isConnected, mqttTopics, subscribe, unsubscribe, dispatch]);
 
   return (
     <BrowserRouter

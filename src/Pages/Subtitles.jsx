@@ -25,10 +25,9 @@ import QuestionMessage from "../Components/QuestionMessage";
 import { useNavigate } from "react-router-dom";
 import GetLangaugeCode, {
   MAX_SLIDE_LIMIT,
-  DEF_BROADCAST_LANG,
   broadcastLanguages,
 } from "../Utils/Const";
-import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
+import { setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -44,7 +43,7 @@ const Subtitles = () => {
   );
 
   const subtitlesDisplayMode = useSelector(
-    (state) => state.BroadcastParams.subtitlesDisplayMode
+    (state) => state.mqtt.subtitlesDisplayMode
   );
 
   const btnSubtitlesRef = React.createRef();
