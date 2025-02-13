@@ -62,6 +62,12 @@ export function ActiveSlideMessaging() {
     subtitleRelatedQuestionMessagesList || {}
   ).length;
 
+  // ✅ Get `clientId` from Redux
+  const clientId = useSelector((state) => state.mqtt.clientId);
+
+  // ✅ Store `clientId` in a ref to prevent unnecessary re-renders
+  const clientIdRef = useRef(clientId);
+
   function findNextVisibleQstMsg(questionList, startIndex) {
     const keys = Object.keys(questionList);
     const length = keys.length;
@@ -80,12 +86,11 @@ export function ActiveSlideMessaging() {
     return null;
   }
 
-  // ✅ Publish active slide/message to be used elsewhere in the app
-  // useEffect(() => {
-  //   if (activeMessage) {
-  //     publishEvent("ActiveSlideChanged", { activeMessage });
-  //   }
-  // }, [activeMessage]);
+  useEffect(() => {
+    if (!clientIdRef.current && clientId) {
+      clientIdRef.current = clientId; // ✅ Ensure clientId is stored once
+    }
+  }, [clientId]);
 
   // ✅ Automatically switch between questions in a round-robin style
   useEffect(() => {
@@ -154,7 +159,10 @@ export function ActiveSlideMessaging() {
       }
 
       if (curOtherQstMsg && curOtherQstMsg.visible) {
-        if (contextMessage.clientId) {
+        if (
+          contextMessage.clientId &&
+          contextMessage.clientId !== clientIdRef.current
+        ) {
           contextMessage.slide = curOtherQstMsg.slide;
           contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
 
@@ -162,6 +170,7 @@ export function ActiveSlideMessaging() {
             !activeBroadcastMessage ||
             activeBroadcastMessage.slide !== contextMessage.slide
           ) {
+            console.log("📡 Publishing new question message:", contextMessage);
             publishEvent("mqttPublush", {
               mqttTopic: questionMqttTopic,
               message: contextMessage,
@@ -174,8 +183,9 @@ export function ActiveSlideMessaging() {
       }
     }
 
-    if (isPublishOrgSlide) {
-      if (contextMessage.visible) {
+    if (isPublishOrgSlide && contextMessage.visible) {
+      if (contextMessage.clientId !== clientIdRef.current) {
+        console.log("📡 Publishing original question message:", contextMessage);
         publishEvent("mqttPublush", {
           mqttTopic: questionMqttTopic,
           message: contextMessage,
