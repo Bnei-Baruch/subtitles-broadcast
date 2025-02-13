@@ -24,7 +24,8 @@ import {
   setQuestionMqttMessage,
   addUpdateOtherQuestionMsgCol,
   setRounRobinIndex,
-} from "../Redux/MQTT/mqttSlice"; // Import Redux action
+} from "../Redux/MQTT/mqttSlice";
+import debugLog from "../Utils/debugLog";
 
 const styles = {
   mainContainer: {
@@ -252,10 +253,6 @@ export function ActiveSlideMessaging(props) {
   };
 
   useEffect(() => {
-    window.onbeforeunload = function () {
-      sessionStorage.removeItem("LastActiveSlidePublishedMessage");
-    };
-
     const timeoutId = setTimeout(() => {
       publishComplexQstMsg();
     }, 500);
@@ -321,42 +318,26 @@ export function ActiveSlideMessaging(props) {
   }
 
   function findNextVisibleQstMsg(questionMsgCol, startIndex) {
-    let retObj = null;
-    let currentIndex = startIndex; // = (startIndex + 1) % questionMsgCol.length;
-    const langCodeByIdx = getLangCodeByIndex(currentIndex);
-    const lupQstMqttMsg = questionMsgCol[langCodeByIdx];
+    let currentIndex = startIndex;
+    const totalMessages = Object.keys(questionMsgCol).length;
 
-    if (lupQstMqttMsg && lupQstMqttMsg.visible) {
-      retObj = {
-        index: currentIndex,
-        message: lupQstMqttMsg,
-        lnagCode: langCodeByIdx,
-      };
-    } else {
-      for (const landCode in questionMsgCol) {
-        if (Object.hasOwn(questionMsgCol, landCode)) {
-          const lupQstMqttMsg = questionMsgCol[questionMsgCol[landCode]];
+    if (totalMessages === 0) return null; // ✅ No messages available
 
-          if (!retObj) {
-            //In order to return the first message
-            retObj = { index: currentIndex, message: lupQstMqttMsg };
-            break;
-          }
+    // ✅ Start searching for the next visible message
+    for (let i = 0; i < totalMessages; i++) {
+      const langCode = getLangCodeByIndex((currentIndex + i) % totalMessages);
+      const qstMessage = questionMsgCol[langCode];
 
-          if (lupQstMqttMsg.visible) {
-            if (currentIndex === startIndex) {
-              if (!retObj) {
-                retObj = { index: currentIndex, message: lupQstMqttMsg };
-                break;
-              }
-            }
-          }
-          currentIndex++;
-        }
+      if (qstMessage && qstMessage.visible) {
+        return {
+          index: (currentIndex + i) % totalMessages,
+          message: qstMessage,
+          langCode,
+        };
       }
     }
 
-    return retObj;
+    return null; // ✅ No visible messages found
   }
 
   useEffect(() => {
@@ -605,16 +586,21 @@ export function ActiveSlideMessaging(props) {
     newIndex = (newIndex + 1) % rbMsgArr.length;
 
     const slideToPublish = rbMsgArr[newIndex];
+    debugLog("newIndex: " + newIndex);
+    debugLog("slideToPublish: " + slideToPublish.slide);
 
     if (
       !activeMqttMessage ||
       activeMqttMessage.slide !== slideToPublish.slide
     ) {
       publishSlide(slideToPublish, subtitleMqttTopic);
+      dispatch(setActiveMqttMessage(slideToPublish));
+      debugLog("Slide published and dispatched");
     }
 
     if (rbMsgArr.length > 1) {
       dispatch(setRounRobinIndex(newIndex));
+      debugLog("newIndex dispatch: " + newIndex);
       return setTimeout(
         () => determineSlideTypeQuestionRounRobin(),
         qstSwapTime
