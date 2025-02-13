@@ -475,7 +475,7 @@ export function ActiveSlideMessaging(props) {
     }
 
     let isPublishOrgSlide = true;
-    let newIndex = otherQstColIndex;
+    let newIndex = otherQstColIndex.current;
 
     if (isNaN(newIndex) || newIndex >= otherQstMsgColLength) {
       newIndex = 0;
@@ -491,45 +491,44 @@ export function ActiveSlideMessaging(props) {
     if (
       !isTimeExceeded &&
       contextMessage.visible &&
-      otherQuestionMsgCol &&
-      otherQstMsgColLength > 0
+      otherQuestionMsgCol.length > 0
     ) {
       let curOtherQstMsg = null;
-      const otherVisbleQstMsgObj = findNextVisibleQstMsg(
+      const otherVisibleQstMsgObj = findNextVisibleQstMsg(
         otherQuestionMsgCol,
         newIndex
       );
 
-      if (otherVisbleQstMsgObj) {
-        curOtherQstMsg = otherVisbleQstMsgObj.message;
-        newIndex = otherVisbleQstMsgObj.index;
+      if (otherVisibleQstMsgObj) {
+        curOtherQstMsg = otherVisibleQstMsgObj.message;
+        newIndex = otherVisibleQstMsgObj.index;
       }
 
-      if (curOtherQstMsg) {
-        if (curOtherQstMsg.visible) {
-          if (contextMessage && contextMessage.clientId === mqttClientId) {
-            if (curOtherQstMsg.orgSlide) {
-              contextMessage.slide = contextMessage.orgSlide;
-              contextMessage.lang = contextMessage.orgLang;
-            } else {
-              contextMessage.orgSlide = questionMqttMessage.orgSlide
-                ? questionMqttMessage.orgSlide
-                : questionMqttMessage.slide;
-              contextMessage.orgLang = questionMqttMessage.orgLang
-                ? questionMqttMessage.orgLang
-                : questionMqttMessage.lang;
+      if (curOtherQstMsg && curOtherQstMsg.visible) {
+        if (contextMessage.clientId === mqttClientId) {
+          if (!curOtherQstMsg.orgSlide) {
+            contextMessage.orgSlide =
+              questionMqttMessage.orgSlide || questionMqttMessage.slide;
+            contextMessage.orgLang =
+              questionMqttMessage.orgLang || questionMqttMessage.lang;
+          }
 
-              contextMessage.slide = curOtherQstMsg.slide;
-            }
+          contextMessage.slide = curOtherQstMsg.slide;
+          contextMessage.slide = `<div class="d-flex justify-content-center">${contextMessage.slide}<div>`;
+          contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
 
-            contextMessage.slide = `<div class="d-flex justify-content-center">${contextMessage.slide}<div>`;
-            contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
+          // ✅ Prevent duplicate publishing
+          if (
+            !activeMqttMessage ||
+            activeMqttMessage.slide !== contextMessage.slide
+          ) {
             publishSlide(contextMessage, questionMqttTopic, true);
-            isPublishOrgSlide = false;
             dispatch(
               messageReceived({ topic: "question", message: contextMessage })
             );
           }
+
+          isPublishOrgSlide = false;
         }
       }
     }
@@ -556,12 +555,7 @@ export function ActiveSlideMessaging(props) {
       }
     }
 
-    newIndex++;
-
-    if (newIndex >= otherQstMsgColLength) {
-      newIndex = 0;
-    }
-
+    newIndex = (newIndex + 1) % otherQstMsgColLength;
     otherQstColIndex.current = newIndex;
   }
 
