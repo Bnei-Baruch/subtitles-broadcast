@@ -13,7 +13,13 @@ const mqttSlice = createSlice({
   initialState,
   reducers: {
     questionMessageReceived: (state, action) => {
-      state.questionMessagesList.push(action.payload);
+      const existingIndex = state.questionMessagesList.findIndex(
+        (msg) => msg.ID === action.payload.ID
+      );
+
+      if (existingIndex === -1) {
+        state.questionMessagesList.push(action.payload);
+      }
     },
     clearQuestionMessages: (state) => {
       state.questionMessagesList = [];

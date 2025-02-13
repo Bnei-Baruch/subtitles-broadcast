@@ -23,6 +23,7 @@ import {
   setSelectedQuestionMessage,
   addUpdateSubtitleRelatedQuestionMessagesList,
   setRounRobinIndex,
+  questionMessageReceived,
 } from "../Redux/MQTT/mqttSlice";
 import debugLog from "../Utils/debugLog";
 
@@ -385,14 +386,14 @@ export function ActiveSlideMessaging(props) {
   };
 
   function otherQstMessageHandling(event, topic, newMessageJson) {
-    if (
-      !newMessageJson ||
-      !newMessageJson.lang ||
-      !newMessageJson.slide_type !== "question"
-    ) {
+    if (!newMessageJson || !newMessageJson.lang) {
       return;
     }
 
+    if (newMessageJson.type === "question") {
+      dispatch(questionMessageReceived(newMessageJson)); // ✅ Update Redux state
+      return;
+    }
     // ✅ Ensure message structure is valid
     newMessageJson.isLtr =
       typeof newMessageJson.isLtr === "boolean"
