@@ -10,6 +10,7 @@ import {
 import {
   subtitlesDisplayModeTopic,
   getQuestionMqttTopic,
+  getSubtitleMqttTopic,
 } from "../Utils/Common";
 
 const styles = {
@@ -51,36 +52,46 @@ export function ActiveSlideMessaging() {
   const broadcastLangCode = useSelector(
     (state) => state.BroadcastParams.broadcastLang.value
   );
+
+  const subtitleMqttTopic = getSubtitleMqttTopic(
+    broadcastProgrammCode,
+    broadcastLangCode
+  );
+
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
     broadcastLangCode
   );
-  const otherQstColIndex = useRef(0);
-  const otherQstMsgColLength = Object.keys(
-    subtitleRelatedQuestionMessagesList || {}
-  ).length;
+
   // ✅ Get `clientId` from Redux
   const clientId = useSelector((state) => state.mqtt.clientId);
   // ✅ Store `clientId` in a ref to prevent unnecessary re-renders
   const clientIdRef = useRef(clientId);
 
-  function findNextVisibleQstMsg(questionList, startIndex) {
-    const keys = Object.keys(questionList);
-    const length = keys.length;
+  const publishSlide = (slide, topic, isJsonMsg) => {
+    let slideJsonMsg;
 
-    if (length === 0) {
-      return null;
+    if (!isJsonMsg) {
+      slideJsonMsg = {
+        type: "subtitle",
+        ID: slide.ID,
+        bookmark_id: slide.bookmark_id,
+        file_uid: slide.file_uid,
+        order_number: slide.order_number,
+        slide: slide.slide,
+        source_uid: slide.source_uid,
+        isLtr: slide.left_to_right === false ? false : true,
+        slide_type: slide.slide_type,
+      };
     }
 
-    for (let i = 0; i < length; i++) {
-      const index = (startIndex + i) % length;
-      const question = questionList[keys[index]];
-      if (question && question.visible) {
-        return { message: question, index };
-      }
-    }
-    return null;
-  }
+    publishEvent("mqttPublush", {
+      mqttTopic: topic,
+      message: slideJsonMsg,
+    });
+
+    return slideJsonMsg;
+  };
 
   useEffect(() => {
     if (!clientIdRef.current && clientId) {
@@ -88,23 +99,8 @@ export function ActiveSlideMessaging() {
     }
   }, [clientId]);
 
-  // ✅ Publish display mode to MQTT **only if it has changed**
   useEffect(() => {
-    if (isUserInitiatedChange) {
-      console.log("📡 Publishing display mode change:", subtitlesDisplayMode);
-      dispatch(resetUserInitiatedChange());
-
-      publishEvent("mqttPublush", {
-        mqttTopic: subtitlesDisplayModeTopic,
-        message: {
-          type: subtitlesDisplayModeTopic,
-          slide: subtitlesDisplayMode,
-        },
-      });
-    }
-  }, [subtitlesDisplayMode]);
-
-  useEffect(() => {
+    // ✅ Publish display mode to MQTT **only if it has changed**
     if (isUserInitiatedChange) {
       publishEvent("mqttPublush", {
         mqttTopic: subtitlesDisplayModeTopic,
@@ -115,9 +111,10 @@ export function ActiveSlideMessaging() {
       });
       dispatch(resetUserInitiatedChange());
     }
-  }, [subtitlesDisplayMode, isUserInitiatedChange]);
-  // ✅ Update `activeBroadcastMessage` when the display mode changes
+  }, [subtitlesDisplayMode, isUserInitiatedChange, dispatch]);
+
   useEffect(() => {
+    // ✅ Update `activeBroadcastMessage` when the display mode changes
     let newActiveMessage = null;
 
     if (subtitlesDisplayMode === "sources") {
@@ -144,7 +141,41 @@ export function ActiveSlideMessaging() {
 
     console.log("📡 Updating activeBroadcastMessage:", newActiveMessage);
     dispatch(setActiveBroadcastMessage(newActiveMessage));
-  }, [subtitlesDisplayMode, selectedSubtitleSlide, selectedQuestionMessage]);
+  }, [
+    subtitlesDisplayMode,
+    selectedSubtitleSlide,
+    selectedQuestionMessage,
+    activeBroadcastMessage,
+    dispatch,
+  ]);
+
+  useEffect(() => {
+    // ✅ Publish selected slide to MQTT **only if display mode is "sources"** and a slide is selected and it has changed
+    if (
+      subtitlesDisplayMode === "sources" &&
+      selectedSubtitleSlide &&
+      selectedSubtitleSlide.slide &&
+      broadcastLangCode && // ✅ Ensure we use the broadcast language
+      (!activeBroadcastMessage ||
+        activeBroadcastMessage.slide !== selectedSubtitleSlide.slide)
+    ) {
+      const updateMsg = publishSlide(
+        selectedSubtitleSlide,
+        subtitleMqttTopic,
+        false
+      );
+
+      dispatch(setActiveBroadcastMessage(updateMsg));
+    }
+  }, [
+    selectedSubtitleSlide,
+    subtitlesDisplayMode,
+    broadcastProgrammCode,
+    broadcastLangCode,
+    activeBroadcastMessage,
+    dispatch,
+    subtitleMqttTopic,
+  ]);
 
   return (
     <div style={styles.mainContainer}>

@@ -30,6 +30,9 @@ const mqttSlice = createSlice({
     removeMqttTopic(state, action) {
       state.mqttTopics = state.mqttTopics.filter((t) => t !== action.payload);
     },
+    setUserSelectedSlide(state, action) {
+      state.selectedSubtitleSlide = action.payload; // ✅ UI-Selected Slide (Not Overwritten by MQTT)
+    },
     mqttMessageReceived(state, action) {
       const { topic, message } = action.payload;
       const parsedMessage = JSON.parse(message);
@@ -51,7 +54,7 @@ const mqttSlice = createSlice({
           state.questionMessagesList[lang].push(parsedMessage);
         }
       } else if (topic.includes("/slide")) {
-        state.selectedSubtitleSlide = parsedMessage;
+        state.activeBroadcastMessage = parsedMessage; // ✅ MQTT-Received Slide (Separate from UI selection)
       } else if (topic.includes("display_mode")) {
         state.subtitlesDisplayMode = parsedMessage.slide;
       }
@@ -86,6 +89,7 @@ export const {
   setSubtitlesDisplayModeFromMQTT,
   resetUserInitiatedChange,
   setClientId,
+  setUserSelectedSlide,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;

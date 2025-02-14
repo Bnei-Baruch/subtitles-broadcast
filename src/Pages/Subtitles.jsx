@@ -27,7 +27,10 @@ import GetLangaugeCode, {
   MAX_SLIDE_LIMIT,
   broadcastLanguages,
 } from "../Utils/Const";
-import { setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
+import {
+  setSubtitlesDisplayMode,
+  setUserSelectedSlide,
+} from "../Redux/MQTT/mqttSlice";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -65,6 +68,8 @@ const Subtitles = () => {
   const navigate = useNavigate();
 
   const updateSelectedSlide = (newSelectedSlide) => {
+    console.log("newSelectedSlide", newSelectedSlide);
+
     if (newSelectedSlide < 0) {
       newSelectedSlide = 0;
     } else if (newSelectedSlide > maxSlideIndex) {
@@ -89,7 +94,9 @@ const Subtitles = () => {
         language: broadcastLangObj.label,
       })
     );
+
     setSelectedSlide(newSelectedSlide);
+    dispatch(setUserSelectedSlide(slideID));
     localStorage.setItem("activeSlideFileUid", newSelectedSlide);
   };
 

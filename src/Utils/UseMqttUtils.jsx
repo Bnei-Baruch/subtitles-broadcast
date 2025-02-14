@@ -120,40 +120,27 @@ export default function useMqtt() {
           return;
         }
 
-        // ✅ Use the previously fetched `mqttMessages` instead of calling `useSelector`
-        // const lastPublishedMessage = mqttMessages[mqttTopic];
+        // TODO:  // ✅ Prevent republishing the same message
 
-        // // ✅ Prevent republishing the same message
-        // if (
-        //   lastPublishedMessage &&
-        //   lastPublishedMessage.slide !== message.slide
-        // ) {
-        //   console.log(
-        //     "🔄 Preventing duplicate MQTT publish:",
-        //     mqttTopic,
-        //     message
-        //   );
-        //   return;
-        // }
+        // ✅ Add user info to all messages
+        const enhancedMessage = {
+          ...message,
+          clientId: clientIdRef.current || "unknown_client",
+          username: username || "unknown_user",
+          firstName: firstName || "Unknown",
+          lastName: lastName || "User",
+          date: new Date().toUTCString(),
+        };
 
         // ✅ Store updated message in Redux before publishing
         dispatch(
           mqttMessageReceived({
             topic: mqttTopic,
-            message: JSON.stringify(message),
+            message: JSON.stringify(enhancedMessage),
           })
         );
 
         if (clientRef.current) {
-          // ✅ Add user info to all messages
-          const enhancedMessage = {
-            ...message,
-            clientId: clientIdRef.current || "unknown_client",
-            username: username || "unknown_user",
-            firstName: firstName || "Unknown",
-            lastName: lastName || "User",
-            date: new Date().toUTCString(),
-          };
           const payloadString = JSON.stringify(enhancedMessage);
           console.log("🚀 Publishing to MQTT:", mqttTopic, payloadString);
 

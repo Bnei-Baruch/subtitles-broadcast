@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
+import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
 
 const BookContent = ({
   setActivatedTab,
@@ -54,6 +55,9 @@ const BookContent = ({
               setSearchSlide("");
               setActivatedTab(+item?.order_number);
               localStorage.setItem("activatedTabData", +item?.order_number);
+
+              // ✅ Dispatch Redux action to update `selectedSubtitleSlide`
+              dispatch(setUserSelectedSlide(item));
 
               dispatch(
                 BookmarkSlide({
