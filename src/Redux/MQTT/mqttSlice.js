@@ -6,13 +6,13 @@ const initialState = {
   mqttTopics: [],
   mqttMessages: {},
   questionMessagesList: {},
-  activeBroadcastMessage: null, // ✅ Store active message
+  activeBroadcastMessage: null,
   subtitleRelatedQuestionMessagesList: [],
   selectedSubtitleSlide: null,
   selectedQuestionMessage: null,
   subtitlesDisplayMode: "none",
   rounRobinIndex: 0,
-  isUserInitiatedChange: false, // ✅ Track if user changed display mode
+  isUserInitiatedChange: false,
 };
 
 const mqttSlice = createSlice({
@@ -41,18 +41,7 @@ const mqttSlice = createSlice({
       if (topic.includes("/question")) {
         const lang = parsedMessage.lang;
         state.selectedQuestionMessage = parsedMessage;
-
-        if (!state.questionMessagesList[lang]) {
-          state.questionMessagesList[lang] = [];
-        }
-
-        if (
-          !state.questionMessagesList[lang].some(
-            (msg) => msg.ID === parsedMessage.ID
-          )
-        ) {
-          state.questionMessagesList[lang].push(parsedMessage);
-        }
+        state.questionMessagesList[lang] = parsedMessage;
       } else if (topic.includes("/slide")) {
         state.activeBroadcastMessage = parsedMessage; // ✅ MQTT-Received Slide (Separate from UI selection)
       } else if (topic.includes("display_mode")) {

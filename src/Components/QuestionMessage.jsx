@@ -63,9 +63,7 @@ const QuestionMessage = (props) => {
     });
   };
 
-  const allQuestions = Object.values(questionMessagesList)
-    .flat()
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const allQuestions = Object.values(questionMessagesList).flat();
 
   if (props.mode === "subtitle") {
     return (
