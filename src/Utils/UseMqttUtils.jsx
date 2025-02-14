@@ -51,11 +51,9 @@ export default function useMqtt() {
     broadcastLangCode
   );
 
-  // if (!useSelector((state) => state.mqtt.clientId)) {
-  //   let clientIdTmp = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-  //   dispatch(setClientId(clientIdTmp));
-  //   clientID = clientIdTmp;
-  // }
+  // ✅ Get MQTT messages from Redux **before** the event callback
+  // const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+
   // ✅ Retrieve `clientId` from Redux
   let clientId = useSelector((state) => state.mqtt.clientId);
   if (!clientId) {
@@ -98,6 +96,7 @@ export default function useMqtt() {
 
       clientRef.current.on("message", (topic, message) => {
         console.log("📩 MQTT Message Received:", topic, message.toString());
+
         dispatch(mqttMessageReceived({ topic, message: message.toString() }));
 
         if (topic === "subtitles/display_mode") {
@@ -121,17 +120,40 @@ export default function useMqtt() {
           return;
         }
 
-        // ✅ Add user info to all messages
-        const enhancedMessage = {
-          ...message,
-          clientId: clientIdRef.current || "unknown_client",
-          username: username || "unknown_user",
-          firstName: firstName || "Unknown",
-          lastName: lastName || "User",
-          date: new Date().toUTCString(),
-        };
+        // ✅ Use the previously fetched `mqttMessages` instead of calling `useSelector`
+        // const lastPublishedMessage = mqttMessages[mqttTopic];
+
+        // // ✅ Prevent republishing the same message
+        // if (
+        //   lastPublishedMessage &&
+        //   lastPublishedMessage.slide !== message.slide
+        // ) {
+        //   console.log(
+        //     "🔄 Preventing duplicate MQTT publish:",
+        //     mqttTopic,
+        //     message
+        //   );
+        //   return;
+        // }
+
+        // ✅ Store updated message in Redux before publishing
+        dispatch(
+          mqttMessageReceived({
+            topic: mqttTopic,
+            message: JSON.stringify(message),
+          })
+        );
 
         if (clientRef.current) {
+          // ✅ Add user info to all messages
+          const enhancedMessage = {
+            ...message,
+            clientId: clientIdRef.current || "unknown_client",
+            username: username || "unknown_user",
+            firstName: firstName || "Unknown",
+            lastName: lastName || "User",
+            date: new Date().toUTCString(),
+          };
           const payloadString = JSON.stringify(enhancedMessage);
           console.log("🚀 Publishing to MQTT:", mqttTopic, payloadString);
 
