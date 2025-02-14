@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   setActiveBroadcastMessage,
   resetUserInitiatedChange,
+  setSubtitlesDisplayMode,
 } from "../Redux/MQTT/mqttSlice";
 import {
   subtitlesDisplayModeTopic,
@@ -44,27 +45,22 @@ export function ActiveSlideMessaging() {
   const subtitleRelatedQuestionMessagesList = useSelector(
     (state) => state.mqtt.subtitleRelatedQuestionMessagesList
   );
-
   const broadcastProgrammCode = useSelector(
     (state) => state.BroadcastParams.broadcastProgramm.value
   );
   const broadcastLangCode = useSelector(
     (state) => state.BroadcastParams.broadcastLang.value
   );
-
   const questionMqttTopic = getQuestionMqttTopic(
     broadcastProgrammCode,
     broadcastLangCode
   );
-
   const otherQstColIndex = useRef(0);
   const otherQstMsgColLength = Object.keys(
     subtitleRelatedQuestionMessagesList || {}
   ).length;
-
   // ✅ Get `clientId` from Redux
   const clientId = useSelector((state) => state.mqtt.clientId);
-
   // ✅ Store `clientId` in a ref to prevent unnecessary re-renders
   const clientIdRef = useRef(clientId);
 
@@ -92,32 +88,12 @@ export function ActiveSlideMessaging() {
     }
   }, [clientId]);
 
-  // ✅ Automatically switch between questions in a round-robin style
-  useEffect(() => {
-    let timeoutId;
-
-    if (subtitlesDisplayMode === "questions") {
-      timeoutId = setInterval(() => {
-        publishComplexQstMsg();
-      }, qstSwapTime);
-    } else {
-      otherQstColIndex.current = 0;
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [
-    subtitlesDisplayMode,
-    subtitleRelatedQuestionMessagesList,
-    selectedQuestionMessage,
-  ]);
-  // ✅ Publish display mode to MQTT when changed
+  // ✅ Publish display mode to MQTT **only if it has changed**
   useEffect(() => {
     if (isUserInitiatedChange) {
       console.log("📡 Publishing display mode change:", subtitlesDisplayMode);
+      dispatch(resetUserInitiatedChange());
+
       publishEvent("mqttPublush", {
         mqttTopic: subtitlesDisplayModeTopic,
         message: {
@@ -125,77 +101,8 @@ export function ActiveSlideMessaging() {
           slide: subtitlesDisplayMode,
         },
       });
-      dispatch(resetUserInitiatedChange());
     }
-  }, [subtitlesDisplayMode, isUserInitiatedChange]);
-
-  function publishComplexQstMsg() {
-    if (!selectedQuestionMessage) {
-      return;
-    }
-
-    let isPublishOrgSlide = true;
-    let newIndex = otherQstColIndex.current;
-
-    if (isNaN(newIndex) || newIndex >= otherQstMsgColLength) {
-      newIndex = 0;
-    }
-
-    const contextMessage = JSON.parse(JSON.stringify(selectedQuestionMessage));
-
-    if (
-      contextMessage.visible &&
-      subtitleRelatedQuestionMessagesList.length > 0
-    ) {
-      let curOtherQstMsg = null;
-      const otherVisibleQstMsgObj = findNextVisibleQstMsg(
-        subtitleRelatedQuestionMessagesList,
-        newIndex
-      );
-
-      if (otherVisibleQstMsgObj) {
-        curOtherQstMsg = otherVisibleQstMsgObj.message;
-        newIndex = otherVisibleQstMsgObj.index;
-      }
-
-      if (curOtherQstMsg && curOtherQstMsg.visible) {
-        if (
-          contextMessage.clientId &&
-          contextMessage.clientId !== clientIdRef.current
-        ) {
-          contextMessage.slide = curOtherQstMsg.slide;
-          contextMessage.isLtr = curOtherQstMsg.lang === "he" ? false : true;
-
-          if (
-            !activeBroadcastMessage ||
-            activeBroadcastMessage.slide !== contextMessage.slide
-          ) {
-            console.log("📡 Publishing new question message:", contextMessage);
-            publishEvent("mqttPublush", {
-              mqttTopic: questionMqttTopic,
-              message: contextMessage,
-            });
-            dispatch(setActiveBroadcastMessage(contextMessage));
-          }
-
-          isPublishOrgSlide = false;
-        }
-      }
-    }
-
-    if (isPublishOrgSlide && contextMessage.visible) {
-      if (contextMessage.clientId !== clientIdRef.current) {
-        console.log("📡 Publishing original question message:", contextMessage);
-        publishEvent("mqttPublush", {
-          mqttTopic: questionMqttTopic,
-          message: contextMessage,
-        });
-      }
-    }
-
-    newIndex = (newIndex + 1) % otherQstMsgColLength;
-    otherQstColIndex.current = newIndex;
-  }
+  }, [subtitlesDisplayMode]);
 
   useEffect(() => {
     if (isUserInitiatedChange) {
@@ -209,6 +116,35 @@ export function ActiveSlideMessaging() {
       dispatch(resetUserInitiatedChange());
     }
   }, [subtitlesDisplayMode, isUserInitiatedChange]);
+  // ✅ Update `activeBroadcastMessage` when the display mode changes
+  useEffect(() => {
+    let newActiveMessage = null;
+
+    if (subtitlesDisplayMode === "sources") {
+      newActiveMessage = selectedSubtitleSlide;
+    } else if (subtitlesDisplayMode === "questions") {
+      newActiveMessage = selectedQuestionMessage;
+    } else if (subtitlesDisplayMode === "none") {
+      newActiveMessage = null;
+    }
+
+    // ✅ If both are `null`, do nothing
+    if (newActiveMessage === null && activeBroadcastMessage === null) {
+      return; // ✅ Avoid unnecessary dispatches
+    }
+
+    // ✅ If both are not null but have the same slide, do nothing
+    if (
+      newActiveMessage !== null &&
+      activeBroadcastMessage !== null &&
+      newActiveMessage.slide === activeBroadcastMessage.slide
+    ) {
+      return; // ✅ Avoid unnecessary updates
+    }
+
+    console.log("📡 Updating activeBroadcastMessage:", newActiveMessage);
+    dispatch(setActiveBroadcastMessage(newActiveMessage));
+  }, [subtitlesDisplayMode, selectedSubtitleSlide, selectedQuestionMessage]);
 
   return (
     <div style={styles.mainContainer}>
