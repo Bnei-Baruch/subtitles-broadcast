@@ -54,7 +54,7 @@ const BookContent = ({
             onClick={() => {
               setSearchSlide("");
               setActivatedTab(+item?.order_number);
-              localStorage.setItem("activatedTabData", +item?.order_number);
+              localStorage.setItem("activeSlideFileUid", +item?.order_number);
 
               // ✅ Dispatch Redux action to update `selectedSubtitleSlide`
               dispatch(setUserSelectedSlide(item));
