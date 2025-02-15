@@ -132,11 +132,6 @@ export function ActiveSlideMessaging() {
       newActiveMessage = null;
     }
 
-    // ✅ If both are `null`, do nothing
-    if (!newActiveMessage || !activeBroadcastMessage) {
-      return; // ✅ Avoid unnecessary dispatches
-    }
-
     // ✅ If both are not null but have the same slide, do nothing
     if (
       newActiveMessage &&
