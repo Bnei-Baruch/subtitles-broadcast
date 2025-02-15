@@ -9,8 +9,8 @@ import {
   setRounRobinIndex,
 } from "../Redux/MQTT/mqttSlice";
 import {
-  subtitlesDisplayModeTopic,
   getSubtitleMqttTopic,
+  getSubtitlesDisplayModeTopic,
 } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
 
@@ -97,10 +97,15 @@ export function ActiveSlideMessaging() {
   useEffect(() => {
     // ✅ Publish display mode to MQTT **only if it has changed**
     if (isUserInitiatedChange) {
+      const displayModeTopic = getSubtitlesDisplayModeTopic(
+        broadcastProgrammCode,
+        broadcastLangCode
+      );
+
       publishEvent("mqttPublush", {
-        mqttTopic: subtitlesDisplayModeTopic,
+        mqttTopic: displayModeTopic,
         message: {
-          type: subtitlesDisplayModeTopic,
+          type: displayModeTopic,
           slide: subtitlesDisplayMode,
         },
       });

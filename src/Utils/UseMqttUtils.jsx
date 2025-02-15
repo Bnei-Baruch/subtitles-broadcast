@@ -13,7 +13,7 @@ import { broadcastLanguages } from "../Utils/Const";
 import {
   getSubtitleMqttTopic,
   getQuestionMqttTopic,
-  subtitlesDisplayModeTopic,
+  getSubtitlesDisplayModeTopic,
 } from "../Utils/Common";
 import { subscribeEvent } from "../Utils/Events";
 import debugLog from "../Utils/debugLog";
@@ -73,16 +73,22 @@ export default function useMqtt() {
 
         dispatch(setConnected(true));
 
-        let broadcastMqttTopics = broadcastLanguages.map((langItem, index) => {
-          const mqttTopic = getQuestionMqttTopic(
-            broadcastProgrammCode,
-            langItem.value
-          );
-          return mqttTopic;
-        });
+        let broadcastMqttTopics = broadcastLanguages
+          .map((langItem) => {
+            return [
+              getQuestionMqttTopic(broadcastProgrammCode, langItem.value), // ✅ Per-language questions
+              getSubtitlesDisplayModeTopic(
+                broadcastProgrammCode,
+                langItem.value
+              ), // ✅ Per-language display mode with program code
+            ];
+          })
+          .flat(); // ✅ Flatten array so topics are not nested
 
-        broadcastMqttTopics.push(subtitlesDisplayModeTopic);
-        broadcastMqttTopics.push(subtitleMqttTopic);
+        // ✅ Add slide topics
+        broadcastMqttTopics.push(
+          getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode)
+        );
 
         // ✅ Subscribe only if not already subscribed
         broadcastMqttTopics.forEach((topic) => {
@@ -100,9 +106,32 @@ export default function useMqtt() {
 
         dispatch(mqttMessageReceived({ topic, message: message.toString() }));
 
-        if (topic === "subtitles/display_mode") {
+        // if (topic === "subtitles/display_mode") {
+        //   const parsedMessage = JSON.parse(message);
+        //   dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
+        // }
+
+        if (topic.includes("/display_mode")) {
           const parsedMessage = JSON.parse(message);
-          dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
+          const topicParts = topic.split("/");
+          const topicProgramCode = topicParts[1]; // Extract program code
+          const topicLang = topicParts[2]; // Extract language
+
+          if (
+            topicLang === broadcastLangCode &&
+            topicProgramCode === broadcastProgrammCode
+          ) {
+            debugLog(
+              "🔄 Updating subtitlesDisplayMode for:",
+              topicProgramCode,
+              topicLang
+            );
+            dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
+          } else {
+            debugLog(
+              "🛑 Ignoring subtitlesDisplayMode update (wrong program or language)"
+            );
+          }
         }
       });
 

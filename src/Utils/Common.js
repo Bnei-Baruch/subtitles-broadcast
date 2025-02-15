@@ -54,6 +54,13 @@ export function getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) {
   return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/question`;
 }
 
+export function getSubtitlesDisplayModeTopic(
+  broadcastProgrammCode,
+  broadcastLangCode
+) {
+  return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/display_mode`;
+}
+
 export const subtitlesDisplayModeTopic = "subtitles/display_mode";
 
 export const getMqttClientId = () => {
