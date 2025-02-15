@@ -72,6 +72,9 @@ export function ActiveSlideMessaging() {
     (state) => state.mqtt.questionMessagesList
   );
 
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+  const lastSubtitleMessage = mqttMessages[subtitleMqttTopic];
+
   const publishSlide = (slide, topic, isJsonMsg) => {
     let slideJsonMsg;
 
@@ -122,7 +125,7 @@ export function ActiveSlideMessaging() {
     let newActiveMessage = null;
 
     if (subtitlesDisplayMode === "sources") {
-      newActiveMessage = selectedSubtitleSlide;
+      newActiveMessage = selectedSubtitleSlide || lastSubtitleMessage;
     } else if (subtitlesDisplayMode === "questions") {
       newActiveMessage = selectedQuestionMessage;
     } else if (subtitlesDisplayMode === "none") {
@@ -130,14 +133,14 @@ export function ActiveSlideMessaging() {
     }
 
     // ✅ If both are `null`, do nothing
-    if (newActiveMessage === null && activeBroadcastMessage === null) {
+    if (!newActiveMessage || !activeBroadcastMessage) {
       return; // ✅ Avoid unnecessary dispatches
     }
 
     // ✅ If both are not null but have the same slide, do nothing
     if (
-      newActiveMessage !== null &&
-      activeBroadcastMessage !== null &&
+      newActiveMessage &&
+      activeBroadcastMessage &&
       newActiveMessage.slide === activeBroadcastMessage.slide
     ) {
       return; // ✅ Avoid unnecessary updates

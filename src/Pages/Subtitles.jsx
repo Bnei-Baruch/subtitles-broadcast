@@ -113,7 +113,11 @@ const Subtitles = () => {
 
   const handleKeyPress = useCallback(
     (event) => {
-      if (!UserAddedList.slides || UserAddedList.slides.length === 0) {
+      if (
+        !UserAddedList ||
+        !UserAddedList.slides ||
+        UserAddedList.slides.length === 0
+      ) {
         return;
       }
 

@@ -61,7 +61,7 @@ export const GreenWindowButton = (props) => {
               }`}
               style={styles.slidePartContainer}
             >
-              {activeBroadcastMessage && activeBroadcastMessage.slide && (
+              {activeBroadcastMessage?.slide && (
                 <Slide
                   content={
                     activeBroadcastMessage.slide
