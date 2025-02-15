@@ -36,8 +36,10 @@ export const Search = () => {
   }, [param.pathname]);
 
   useEffect(() => {
-    if (param.pathname === "/archive" &&
-      DebouncingFreeText.trim() !== localStorage.getItem("free-text")) {
+    if (
+      param.pathname === "/archive" &&
+      (DebouncingFreeText || "").trim() !== localStorage.getItem("free-text")
+    ) {
       localStorage.setItem(
         "pagination",
         JSON.stringify({ page: 1, limit: localPagination?.limit })
@@ -56,8 +58,10 @@ export const Search = () => {
         });
       });
       localStorage.setItem("headerSearchKeyword", "");
-    } else if (param.pathname === "/source" &&
-      DebouncingFreeText.trim() !== localStorage.getItem("free-text")) {
+    } else if (
+      param.pathname === "/source" &&
+      (DebouncingFreeText || "").trim() !== localStorage.getItem("free-text")
+    ) {
       localStorage.setItem(
         "source_pagination",
         JSON.stringify({ page: 1, limit: localPagination?.limit })
