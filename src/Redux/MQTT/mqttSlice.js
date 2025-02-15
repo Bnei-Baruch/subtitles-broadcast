@@ -40,7 +40,6 @@ const mqttSlice = createSlice({
 
       if (topic.includes("/question")) {
         const lang = parsedMessage.lang;
-        state.selectedQuestionMessage = parsedMessage;
         state.questionMessagesList[lang] = parsedMessage;
       } else if (topic.includes("/slide")) {
         state.activeBroadcastMessage = parsedMessage; // ✅ MQTT-Received Slide (Separate from UI selection)
