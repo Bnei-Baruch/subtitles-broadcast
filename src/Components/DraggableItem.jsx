@@ -6,6 +6,7 @@ import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
+import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
 
 const ItemTypes = {
   CARD: "card",
@@ -21,6 +22,8 @@ const DraggableItem = ({
   setActivatedTab,
   setIsLtr,
 }) => {
+  const bookmarkList = useSelector((state) => state.ArchiveList.bookmarkList);
+
   const broadcastLangObj = useSelector(
     (state) => state.BroadcastParams.broadcastLang
   );
@@ -46,6 +49,22 @@ const DraggableItem = ({
     dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT })).then(
       (response) => {
         setIsLtr(response.payload.data.slides[0].left_to_right);
+
+        if (!bookmarkList?.data) return;
+        // ✅ Find the bookmarked slide_id for this file
+        const bookmark = bookmarkList?.data?.find(
+          (b) => b.file_uid === fileUid
+        );
+
+        if (bookmark) {
+          const selectedSlide = response.payload.data.slides.find(
+            (slide) => slide.ID === bookmark.slide_id
+          );
+
+          if (selectedSlide) {
+            dispatch(setUserSelectedSlide(selectedSlide));
+          }
+        }
       }
     );
   };

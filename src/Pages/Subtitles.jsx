@@ -96,7 +96,7 @@ const Subtitles = () => {
     );
 
     setSelectedSlide(newSelectedSlide);
-    dispatch(setUserSelectedSlide(slideID));
+    dispatch(setUserSelectedSlide(newSelectedSlide));
     localStorage.setItem("activeSlideFileUid", newSelectedSlide);
   };
 
