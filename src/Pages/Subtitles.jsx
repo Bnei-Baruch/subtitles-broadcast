@@ -66,6 +66,12 @@ const Subtitles = () => {
   );
   const languages = GetLangaugeCode();
   const navigate = useNavigate();
+  const selectedSubtitleSlide = useSelector(
+    (state) => state.mqtt.selectedSubtitleSlide
+  );
+  const userSlides = useSelector(
+    (state) => state.SubtitleData?.contentList?.data?.slides
+  );
 
   const updateSelectedSlide = (newSelectedSlide) => {
     console.log("newSelectedSlide", newSelectedSlide);
@@ -185,6 +191,34 @@ const Subtitles = () => {
       }
     }
   }, [searchSlide, previousSearch]);
+
+  useEffect(() => {
+    if (
+      !selectedSubtitleSlide &&
+      allBookmarkList?.length > 0 &&
+      userSlides?.length > 0
+    ) {
+      const bookmarkedSlideId = allBookmarkList.find(
+        (b) => b.slide_id === selectedSlide
+      )?.slide_id;
+
+      if (bookmarkedSlideId) {
+        const selectedSlide = userSlides.find(
+          (slide) => slide.ID === bookmarkedSlideId
+        );
+
+        if (selectedSlide) {
+          dispatch(setUserSelectedSlide(selectedSlide));
+        }
+      }
+    }
+  }, [
+    selectedSubtitleSlide,
+    allBookmarkList,
+    userSlides,
+    dispatch,
+    selectedSlide,
+  ]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedItems = [...items];
