@@ -64,6 +64,9 @@ const mqttSlice = createSlice({
     setClientId: (state, action) => {
       state.clientId = action.payload;
     },
+    setSelectedQuestionMessage: (state, action) => {
+      state.selectedQuestionMessage = action.payload;
+    },
   },
 });
 
@@ -78,6 +81,7 @@ export const {
   resetUserInitiatedChange,
   setClientId,
   setUserSelectedSlide,
+  setSelectedQuestionMessage,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;
