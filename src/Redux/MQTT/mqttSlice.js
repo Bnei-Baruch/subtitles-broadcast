@@ -67,6 +67,9 @@ const mqttSlice = createSlice({
     setSelectedQuestionMessage: (state, action) => {
       state.selectedQuestionMessage = action.payload;
     },
+    setRounRobinIndex: (state, action) => {
+      state.rounRobinIndex = action.payload;
+    },
   },
 });
 
@@ -82,6 +85,7 @@ export const {
   setClientId,
   setUserSelectedSlide,
   setSelectedQuestionMessage,
+  setRounRobinIndex,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;

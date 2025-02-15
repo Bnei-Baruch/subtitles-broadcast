@@ -6,10 +6,10 @@ import {
   setActiveBroadcastMessage,
   resetUserInitiatedChange,
   setSelectedQuestionMessage,
+  setRounRobinIndex,
 } from "../Redux/MQTT/mqttSlice";
 import {
   subtitlesDisplayModeTopic,
-  getQuestionMqttTopic,
   getSubtitleMqttTopic,
 } from "../Utils/Common";
 
@@ -43,9 +43,6 @@ export function ActiveSlideMessaging() {
   const activeBroadcastMessage = useSelector(
     (state) => state.mqtt.activeBroadcastMessage
   );
-  const subtitleRelatedQuestionMessagesList = useSelector(
-    (state) => state.mqtt.subtitleRelatedQuestionMessagesList
-  );
   const broadcastProgrammCode = useSelector(
     (state) => state.BroadcastParams.broadcastProgramm.value
   );
@@ -58,14 +55,15 @@ export function ActiveSlideMessaging() {
     broadcastLangCode
   );
 
-  const questionMqttTopic = getQuestionMqttTopic(
-    broadcastProgrammCode,
-    broadcastLangCode
+  const rounRobinIndex = useSelector((state) => state.mqtt.rounRobinIndex);
+  const rounRobinIndexRef = useRef(rounRobinIndex);
+  const isRoundRobinActiveRef = useRef(false);
+
+  const userSlides = useSelector(
+    (state) => state.SubtitleData?.contentList?.data?.slides
   );
 
-  // ✅ Get `clientId` from Redux
   const clientId = useSelector((state) => state.mqtt.clientId);
-  // ✅ Store `clientId` in a ref to prevent unnecessary re-renders
   const clientIdRef = useRef(clientId);
 
   const questionMessagesList = useSelector(
@@ -121,42 +119,15 @@ export function ActiveSlideMessaging() {
   }, [subtitlesDisplayMode, isUserInitiatedChange, dispatch]);
 
   useEffect(() => {
-    // ✅ Update `activeBroadcastMessage` when the display mode changes
-    let newActiveMessage = null;
-
-    if (subtitlesDisplayMode === "sources") {
-      newActiveMessage = selectedSubtitleSlide || lastSubtitleMessage;
-    } else if (subtitlesDisplayMode === "questions") {
-      // ✅ Hide the question if `visible: false`
-      if (selectedQuestionMessage?.visible === false) {
-        newActiveMessage = null;
-      } else {
-        newActiveMessage = selectedQuestionMessage;
-      }
-    } else if (subtitlesDisplayMode === "none") {
-      newActiveMessage = null;
+    // ✅ Prevent resetting `activeBroadcastMessage` if round-robin is active
+    if (isRoundRobinActiveRef.current) {
+      console.log(
+        "🛑 Skipping activeBroadcastMessage reset (Round-Robin is active)"
+      );
+      isRoundRobinActiveRef.current = false; // ✅ Reset round-robin flag after first cycle
+      return;
     }
 
-    // ✅ If both are not null but have the same slide, do nothing
-    if (
-      newActiveMessage &&
-      activeBroadcastMessage &&
-      newActiveMessage.slide === activeBroadcastMessage.slide
-    ) {
-      return; // ✅ Avoid unnecessary updates
-    }
-
-    console.log("📡 Updating activeBroadcastMessage:", newActiveMessage);
-    dispatch(setActiveBroadcastMessage(newActiveMessage));
-  }, [
-    subtitlesDisplayMode,
-    selectedSubtitleSlide,
-    selectedQuestionMessage,
-    activeBroadcastMessage,
-    dispatch,
-  ]);
-
-  useEffect(() => {
     // ✅ Publish selected slide to MQTT **only if display mode is "sources"** and a slide is selected and it has changed
     if (
       subtitlesDisplayMode === "sources" &&
@@ -166,13 +137,7 @@ export function ActiveSlideMessaging() {
       (!activeBroadcastMessage ||
         activeBroadcastMessage.slide !== selectedSubtitleSlide.slide)
     ) {
-      const updateMsg = publishSlide(
-        selectedSubtitleSlide,
-        subtitleMqttTopic,
-        false
-      );
-
-      dispatch(setActiveBroadcastMessage(updateMsg));
+      publishSlide(selectedSubtitleSlide, subtitleMqttTopic, false);
     }
   }, [
     selectedSubtitleSlide,
@@ -193,6 +158,99 @@ export function ActiveSlideMessaging() {
       );
     }
   }, [broadcastLangCode, questionMessagesList, dispatch]);
+
+  useEffect(() => {
+    // ✅ Update `activeBroadcastMessage` based on the current display mode and available messages
+    let newActiveMessage = null;
+
+    if (subtitlesDisplayMode === "sources") {
+      newActiveMessage =
+        mqttMessages[subtitleMqttTopic] ||
+        selectedSubtitleSlide ||
+        lastSubtitleMessage;
+    } else if (subtitlesDisplayMode === "questions") {
+      if (selectedQuestionMessage?.visible === false) {
+        newActiveMessage = null;
+      } else {
+        newActiveMessage = selectedQuestionMessage;
+      }
+    } else if (subtitlesDisplayMode === "none") {
+      newActiveMessage = null;
+    }
+
+    // ✅ Ensure updates only if the message has actually changed
+    if (
+      newActiveMessage &&
+      activeBroadcastMessage &&
+      newActiveMessage.slide === activeBroadcastMessage.slide
+    ) {
+      return;
+    }
+
+    console.log("📡 Updating activeBroadcastMessage:", newActiveMessage);
+    dispatch(setActiveBroadcastMessage(newActiveMessage));
+  }, [
+    subtitlesDisplayMode,
+    mqttMessages[subtitleMqttTopic], // ✅ Now tracking MQTT messages directly
+    selectedSubtitleSlide,
+    selectedQuestionMessage,
+    activeBroadcastMessage,
+    dispatch,
+  ]);
+
+  useEffect(() => {
+    let timeoutId;
+    rounRobinIndexRef.current = rounRobinIndex; // ✅ Ensure ref stays updated
+
+    if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
+      const questionSlides = userSlides.filter(
+        (slide) => slide.slide_type === "question"
+      );
+
+      if (questionSlides.length > 1) {
+        timeoutId = setTimeout(() => {
+          let nextIndex =
+            (rounRobinIndexRef.current + 1) % questionSlides.length;
+          let nextSlide = questionSlides[nextIndex];
+
+          console.log("🔄 Round-Robin nextIndex:", nextIndex);
+          console.log("🔄 Round-Robin nextSlide.ID:", nextSlide.ID);
+          console.log(
+            "🔄 Round-Robin activeBroadcastMessage?.ID:",
+            activeBroadcastMessage?.ID
+          );
+
+          // ✅ Ensure the next slide is actually different
+          if (nextSlide.ID !== activeBroadcastMessage?.ID) {
+            console.log("🔄 Round-Robin Switching to:", nextSlide);
+
+            isRoundRobinActiveRef.current = true;
+
+            dispatch(setRounRobinIndex(nextIndex));
+            rounRobinIndexRef.current = nextIndex; // ✅ Update ref to avoid stale values
+            //dispatch(setActiveBroadcastMessage(nextSlide));
+
+            // ✅ Publish the new question to MQTT
+            publishEvent("mqttPublush", {
+              mqttTopic: getSubtitleMqttTopic(
+                broadcastProgrammCode,
+                broadcastLangCode
+              ),
+              message: nextSlide,
+            });
+          } else {
+            console.log("🔄 Skipping round-robin update (same slide)");
+          }
+        }, qstSwapTime);
+      }
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId); // ✅ Cleanup to prevent memory leaks
+      }
+    };
+  }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]); // ✅ Removed `rounRobinIndex` to prevent unnecessary re-renders
 
   return (
     <div style={styles.mainContainer}>
