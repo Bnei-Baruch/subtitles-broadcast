@@ -127,7 +127,12 @@ export function ActiveSlideMessaging() {
     if (subtitlesDisplayMode === "sources") {
       newActiveMessage = selectedSubtitleSlide || lastSubtitleMessage;
     } else if (subtitlesDisplayMode === "questions") {
-      newActiveMessage = selectedQuestionMessage;
+      // ✅ Hide the question if `visible: false`
+      if (selectedQuestionMessage?.visible === false) {
+        newActiveMessage = null;
+      } else {
+        newActiveMessage = selectedQuestionMessage;
+      }
     } else if (subtitlesDisplayMode === "none") {
       newActiveMessage = null;
     }
