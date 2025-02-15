@@ -26,7 +26,7 @@ const styles = {
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
-  const qstSwapTime = 5000; // 5s
+  const qstSwapTime = 10000; //10s
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide
