@@ -13,17 +13,6 @@ import {
   getSubtitleMqttTopic,
 } from "../Utils/Common";
 
-const styles = {
-  mainContainer: {
-    outline: "1px solid rgb(204, 204, 204)",
-    margin: "0 0 1px 0",
-  },
-  greenPartContainer: {
-    backgroundColor: "green",
-    height: "71.29%",
-  },
-};
-
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
   const qstSwapTime = 10000; //10s
@@ -253,7 +242,7 @@ export function ActiveSlideMessaging() {
   }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]); // ✅ Removed `rounRobinIndex` to prevent unnecessary re-renders
 
   return (
-    <div style={styles.mainContainer}>
+    <div class="active-slide-msg-main-cont">
       <div
         className={`green-part-cont active-slide-messaging${
           activeBroadcastMessage?.slide ? "" : " display-mode-none"

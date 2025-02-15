@@ -255,7 +255,6 @@ bdo {
     line-height: 51px;
   }
 
-
   hr {
     opacity: 1;
     margin: 0.5rem 0;
@@ -522,7 +521,12 @@ dropdown-toggle {
 }
 
 .active-slide-messaging.green-part-cont {
-  height: 5px;
+  outline: 1px solid rgb(204, 204, 204);
+  margin: 0 0 1px 0;
+}
+
+.active-slide-msg-main-cont {
+  height: 100%;
 }
 
 .green-part-cont.display-mode-none {
