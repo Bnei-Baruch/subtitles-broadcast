@@ -12,6 +12,7 @@ import {
   subtitlesDisplayModeTopic,
   getSubtitleMqttTopic,
 } from "../Utils/Common";
+import debugLog from "../Utils/debugLog";
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
@@ -110,7 +111,7 @@ export function ActiveSlideMessaging() {
   useEffect(() => {
     // ✅ Prevent resetting `activeBroadcastMessage` if round-robin is active
     if (isRoundRobinActiveRef.current) {
-      console.log(
+      debugLog(
         "🛑 Skipping activeBroadcastMessage reset (Round-Robin is active)"
       );
       isRoundRobinActiveRef.current = false; // ✅ Reset round-robin flag after first cycle
@@ -141,7 +142,7 @@ export function ActiveSlideMessaging() {
   useEffect(() => {
     // ✅ Update selected question message when the broadcast language changes or the question messages list is updated
     if (broadcastLangCode && questionMessagesList[broadcastLangCode]) {
-      console.log("📡 Updating selectedQuestionMessage for", broadcastLangCode);
+      debugLog("📡 Updating selectedQuestionMessage for", broadcastLangCode);
       dispatch(
         setSelectedQuestionMessage(questionMessagesList[broadcastLangCode])
       );
@@ -176,7 +177,7 @@ export function ActiveSlideMessaging() {
       return;
     }
 
-    console.log("📡 Updating activeBroadcastMessage:", newActiveMessage);
+    debugLog("📡 Updating activeBroadcastMessage:", newActiveMessage);
     dispatch(setActiveBroadcastMessage(newActiveMessage));
   }, [
     subtitlesDisplayMode,
@@ -202,16 +203,16 @@ export function ActiveSlideMessaging() {
             (rounRobinIndexRef.current + 1) % questionSlides.length;
           let nextSlide = questionSlides[nextIndex];
 
-          console.log("🔄 Round-Robin nextIndex:", nextIndex);
-          console.log("🔄 Round-Robin nextSlide.ID:", nextSlide.ID);
-          console.log(
+          debugLog("🔄 Round-Robin nextIndex:", nextIndex);
+          debugLog("🔄 Round-Robin nextSlide.ID:", nextSlide.ID);
+          debugLog(
             "🔄 Round-Robin activeBroadcastMessage?.ID:",
             activeBroadcastMessage?.ID
           );
 
           // ✅ Ensure the next slide is actually different
           if (nextSlide.ID !== activeBroadcastMessage?.ID) {
-            console.log("🔄 Round-Robin Switching to:", nextSlide);
+            debugLog("🔄 Round-Robin Switching to:", nextSlide);
 
             isRoundRobinActiveRef.current = true;
 
@@ -228,7 +229,7 @@ export function ActiveSlideMessaging() {
               message: nextSlide,
             });
           } else {
-            console.log("🔄 Skipping round-robin update (same slide)");
+            debugLog("🔄 Skipping round-robin update (same slide)");
           }
         }, qstSwapTime);
       }
@@ -242,7 +243,7 @@ export function ActiveSlideMessaging() {
   }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]); // ✅ Removed `rounRobinIndex` to prevent unnecessary re-renders
 
   return (
-    <div class="active-slide-msg-main-cont">
+    <div className="active-slide-msg-main-cont">
       <div
         className={`green-part-cont active-slide-messaging${
           activeBroadcastMessage?.slide ? "" : " display-mode-none"

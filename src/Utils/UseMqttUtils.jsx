@@ -16,6 +16,7 @@ import {
   subtitlesDisplayModeTopic,
 } from "../Utils/Common";
 import { subscribeEvent } from "../Utils/Events";
+import debugLog from "../Utils/debugLog";
 
 const mqttUrl = process.env.REACT_APP_MQTT_URL;
 const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
@@ -64,11 +65,11 @@ export default function useMqtt() {
 
   useEffect(() => {
     if (!clientRef.current) {
-      console.log("🔵 Connecting to MQTT Broker...");
+      debugLog("🔵 Connecting to MQTT Broker...");
       clientRef.current = mqtt.connect(mqttBrokerUrl);
 
       clientRef.current.on("connect", () => {
-        console.log("🟢 MQTT Connected");
+        debugLog("🟢 MQTT Connected");
 
         dispatch(setConnected(true));
 
@@ -95,7 +96,7 @@ export default function useMqtt() {
       });
 
       clientRef.current.on("message", (topic, message) => {
-        console.log("📩 MQTT Message Received:", topic, message.toString());
+        debugLog("📩 MQTT Message Received:", topic, message.toString());
 
         dispatch(mqttMessageReceived({ topic, message: message.toString() }));
 
@@ -142,7 +143,7 @@ export default function useMqtt() {
 
         if (clientRef.current) {
           const payloadString = JSON.stringify(enhancedMessage);
-          console.log("🚀 Publishing to MQTT:", mqttTopic, payloadString);
+          debugLog("🚀 Publishing to MQTT:", mqttTopic, payloadString);
 
           clientRef.current.publish(
             mqttTopic,
@@ -152,7 +153,7 @@ export default function useMqtt() {
               if (err) {
                 console.error("❌ MQTT Publish Error:", err);
               } else {
-                console.log(
+                debugLog(
                   "✅ MQTT Publish Successful:",
                   mqttTopic,
                   enhancedMessage
@@ -166,7 +167,7 @@ export default function useMqtt() {
 
     return () => {
       if (clientRef.current) {
-        console.log("🔴 Disconnecting MQTT...");
+        debugLog("🔴 Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
         clientIdRef.current.end();
