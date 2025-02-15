@@ -50,10 +50,8 @@ const QuestionModule = () => {
     const jsonMsg = {
       type: "question",
       ID: Math.random().toString(16).substring(2, 8),
-      clientId: mqttClientId,
       lang: broadcastLangCode,
       slide: questionText,
-      date: new Date().toISOString(),
       visible: true,
       isLtr: isLtr,
     };
@@ -64,7 +62,7 @@ const QuestionModule = () => {
     );
     publishEvent("mqttPublush", {
       mqttTopic,
-      message: JSON.stringify(jsonMsg),
+      message: jsonMsg,
     });
 
     setHandleSuccess(true);
