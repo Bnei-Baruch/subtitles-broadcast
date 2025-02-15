@@ -1,5 +1,5 @@
 // List.js
-import React from "react";
+import React, { useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
@@ -7,6 +7,7 @@ import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
 import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
+import LoadingOverlay from "../Components/LoadingOverlay";
 
 const ItemTypes = {
   CARD: "card",
@@ -22,6 +23,7 @@ const DraggableItem = ({
   setActivatedTab,
   setIsLtr,
 }) => {
+  const [loading, setLoading] = useState(false);
   const bookmarkList = useSelector((state) => state.ArchiveList.bookmarkList);
 
   const broadcastLangObj = useSelector(
@@ -44,10 +46,11 @@ const DraggableItem = ({
   });
 
   const handleBookMarkClick = (e) => {
+    setLoading(true); // ✅ Show loading
     setActivatedTab(+text?.split("/")?.at(-1) - 1);
     localStorage.setItem("fileUid", e);
-    dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT })).then(
-      (response) => {
+    dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT }))
+      .then((response) => {
         setIsLtr(response.payload.data.slides[0].left_to_right);
 
         if (!bookmarkList?.data) return;
@@ -65,43 +68,52 @@ const DraggableItem = ({
             dispatch(setUserSelectedSlide(selectedSlide));
           }
         }
-      }
-    );
+      })
+      .finally(() => setLoading(false)); // ✅ Hide loading after completion
   };
 
   const selected = localStorage.getItem("fileUid") === fileUid;
   return (
-    <div
-      className={
-        "d-flex justify-content-between cursor-pointer" +
-        (selected ? " bookmark-selected" : "")
-      }
-      ref={(node) => ref(drop(node))}
-      style={{ padding: "8px", border: "1px solid #ccc", marginBottom: "4px" }}
-    >
-      <i className="bi bi-grip-vertical me-3" />
-      <i
-        onClick={() =>
-          dispatch(
-            UnBookmarkSlide({
-              bookmark_id: bookmarkDelete,
-              language: broadcastLangObj.label,
-            })
-          )
+    <>
+      <LoadingOverlay loading={loading} />
+      <div
+        className={
+          "d-flex justify-content-between cursor-pointer" +
+          (selected ? " bookmark-selected" : "")
         }
-        className="bi bi-trash"
-      />
-      <span
-        className="text-truncate mx-3 text-primary bookmarkTruncate "
-        data-bs-toggle="tooltip"
-        data-bs-placement="top"
-        title={text}
-        style={{ width: "600px" }}
-        onClick={() => handleBookMarkClick(fileUid)}
+        ref={(node) => ref(drop(node))}
+        style={{
+          padding: "8px",
+          border: "1px solid #ccc",
+          marginBottom: "4px",
+          position: "relative", // ✅ Allow overlay to be positioned properly
+          zIndex: loading ? 1000 : "auto", // ✅ Ensure overlay is above everything
+        }}
       >
-        {text}
-      </span>
-    </div>
+        <i className="bi bi-grip-vertical me-3" />
+        <i
+          onClick={() =>
+            dispatch(
+              UnBookmarkSlide({
+                bookmark_id: bookmarkDelete,
+                language: broadcastLangObj.label,
+              })
+            )
+          }
+          className="bi bi-trash"
+        />
+        <span
+          className="text-truncate mx-3 text-primary bookmarkTruncate "
+          data-bs-toggle="tooltip"
+          data-bs-placement="top"
+          title={text}
+          style={{ width: "600px" }}
+          onClick={() => handleBookMarkClick(fileUid)}
+        >
+          {text}
+        </span>
+      </div>
+    </>
   );
 };
 

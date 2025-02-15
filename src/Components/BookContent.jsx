@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { Slide } from "./Slide";
@@ -7,6 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
 import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
+import LoadingOverlay from "../Components/LoadingOverlay";
 
 const BookContent = ({
   setActivatedTab,
@@ -19,6 +20,7 @@ const BookContent = ({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const focusSlides = useRef();
+  const [loading, setLoading] = useState(false);
   const broadcastLangObj = useSelector(
     (state) => state.BroadcastParams.broadcastLang
   );
@@ -42,8 +44,37 @@ const BookContent = ({
     });
   };
 
+  function handleSlideClick(
+    setLoading,
+    setSearchSlide,
+    setActivatedTab,
+    item,
+    dispatch,
+    broadcastLangObj
+  ) {
+    setLoading(true); // ✅ Show loading
+    setSearchSlide("");
+    setActivatedTab(+item?.order_number);
+    localStorage.setItem("activeSlideFileUid", +item?.ID);
+
+    // ✅ Dispatch Redux action to update `selectedSubtitleSlide`
+    dispatch(setUserSelectedSlide(item));
+
+    dispatch(
+      BookmarkSlide({
+        data: {
+          file_uid: item.file_uid,
+          slide_id: item.ID,
+          update: true,
+        },
+        language: broadcastLangObj.label,
+      })
+    ).finally(() => setLoading(false));
+  }
+
   return (
     <>
+      <LoadingOverlay loading={loading} />
       {contents?.slides?.length > 0 &&
         +activatedTab >= 0 &&
         contents?.slides?.map((item, index) => (
@@ -52,23 +83,14 @@ const BookContent = ({
             id={`slide_${item.ID}`}
             source-uid={item.source_uid}
             onClick={() => {
-              setSearchSlide("");
-              setActivatedTab(+item?.order_number);
-              localStorage.setItem("activeSlideFileUid", +item?.ID);
-
-              // ✅ Dispatch Redux action to update `selectedSubtitleSlide`
-              dispatch(setUserSelectedSlide(item));
-
-              dispatch(
-                BookmarkSlide({
-                  data: {
-                    file_uid: item.file_uid,
-                    slide_id: item.ID,
-                    update: true,
-                  },
-                  language: broadcastLangObj.label,
-                })
-              );
+              handleSlideClick(
+                setLoading,
+                setSearchSlide,
+                setActivatedTab,
+                item,
+                dispatch,
+                broadcastLangObj
+              ); // ✅ Hide loading after completion
             }}
             ref={
               +activatedTab + 1 === item.order_number + 1 ? focusSlides : null
