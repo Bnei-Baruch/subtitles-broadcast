@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   setActiveBroadcastMessage,
   resetUserInitiatedChange,
-  setSubtitlesDisplayMode,
+  setSelectedQuestionMessage,
 } from "../Redux/MQTT/mqttSlice";
 import {
   subtitlesDisplayModeTopic,
@@ -67,6 +67,10 @@ export function ActiveSlideMessaging() {
   const clientId = useSelector((state) => state.mqtt.clientId);
   // ✅ Store `clientId` in a ref to prevent unnecessary re-renders
   const clientIdRef = useRef(clientId);
+
+  const questionMessagesList = useSelector(
+    (state) => state.mqtt.questionMessagesList
+  );
 
   const publishSlide = (slide, topic, isJsonMsg) => {
     let slideJsonMsg;
@@ -176,6 +180,16 @@ export function ActiveSlideMessaging() {
     dispatch,
     subtitleMqttTopic,
   ]);
+
+  useEffect(() => {
+    // ✅ Update selected question message when the broadcast language changes or the question messages list is updated
+    if (broadcastLangCode && questionMessagesList[broadcastLangCode]) {
+      console.log("📡 Updating selectedQuestionMessage for", broadcastLangCode);
+      dispatch(
+        setSelectedQuestionMessage(questionMessagesList[broadcastLangCode])
+      );
+    }
+  }, [broadcastLangCode, questionMessagesList, dispatch]);
 
   return (
     <div style={styles.mainContainer}>
