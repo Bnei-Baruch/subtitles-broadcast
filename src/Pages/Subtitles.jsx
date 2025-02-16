@@ -167,13 +167,14 @@ const Subtitles = () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
   }, [handleKeyPress]);
+
   useEffect(() => {
     if (broadcastLangObj.label) {
       dispatch(UserBookmarkList({ language: broadcastLangObj.label }));
       dispatch(clearAllBookmarks());
     }
   }, [dispatch, broadcastLangObj.label]);
-  // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
+
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     if (!allBookmarkListLoading) {
