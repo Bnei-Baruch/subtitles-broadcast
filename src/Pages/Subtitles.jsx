@@ -181,6 +181,7 @@ const Subtitles = () => {
       setItems(allBookmarkList);
     }
   }, [allBookmarkList, allBookmarkListLoading]);
+
   useEffect(() => {
     if (searchSlide.length > 0 || searchSlide !== previousSearch) {
       let file_uid = localStorage.getItem("fileUid");
