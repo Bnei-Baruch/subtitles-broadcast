@@ -18,6 +18,7 @@ import {
 } from "../Utils/Common";
 import { subscribeEvent } from "../Utils/Events";
 import debugLog from "../Utils/debugLog";
+import { store } from "../Redux/Store";
 
 const mqttUrl = process.env.REACT_APP_MQTT_URL;
 const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
@@ -137,7 +138,19 @@ export default function useMqtt() {
           return;
         }
 
-        // TODO:  // ✅ Prevent republishing the same message
+        // ✅ Check if the current stored message by topic has the same slide value
+        const mqttMessageForTopic =
+          store.getState().mqtt.mqttMessages[mqttTopic];
+
+        if (mqttMessageForTopic?.slide === message.slide) {
+          debugLog(
+            "Skipping duplicate MQTT publish (same slide):",
+            mqttTopic,
+            message
+          );
+          return;
+        }
+
         const enhancedMessage = {
           ...message,
           clientId: clientIdRef.current || "unknown_client",
