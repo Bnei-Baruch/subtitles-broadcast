@@ -13,6 +13,7 @@ const initialState = {
   subtitlesDisplayMode: "none",
   rounRobinIndex: 0,
   isUserInitiatedChange: false,
+  errorLogs: [],
 };
 
 const mqttSlice = createSlice({
@@ -70,6 +71,12 @@ const mqttSlice = createSlice({
     setRounRobinIndex: (state, action) => {
       state.rounRobinIndex = action.payload;
     },
+    addMqttError: (state, action) => {
+      state.errorLogs.push(action.payload);
+    },
+    clearMqttErrors: (state) => {
+      state.errorLogs = [];
+    },
   },
 });
 
@@ -86,6 +93,8 @@ export const {
   setUserSelectedSlide,
   setSelectedQuestionMessage,
   setRounRobinIndex,
+  addMqttError,
+  clearMqttErrors,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;

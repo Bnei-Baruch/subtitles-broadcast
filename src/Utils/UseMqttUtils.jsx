@@ -8,6 +8,7 @@ import {
   mqttMessageReceived,
   setSubtitlesDisplayModeFromMQTT,
   setClientId,
+  addMqttError,
 } from "../Redux/MQTT/mqttSlice";
 import { broadcastLanguages } from "../Utils/Const";
 import {
@@ -119,6 +120,7 @@ export default function useMqtt() {
 
       clientRef.current.on("error", (err) => {
         console.error("❌ MQTT Connection Error:", err);
+        dispatch(addMqttError("MQTT Connection Failed. Please try again."));
         clientRef.current.end();
         dispatch(setConnected(false));
       });
@@ -129,6 +131,10 @@ export default function useMqtt() {
 
         if (typeof message !== "object") {
           console.error("❌ MQTT Publish Error: Message must be an object");
+          dispatch(
+            addMqttError("MQTT Publish Error: Message must be an object")
+          );
+
           return;
         }
 
@@ -153,6 +159,7 @@ export default function useMqtt() {
             (err) => {
               if (err) {
                 console.error("❌ MQTT Publish Error:", err);
+                dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
               } else {
                 debugLog(
                   "✅ MQTT Publish Successful:",
