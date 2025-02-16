@@ -72,10 +72,37 @@ const mqttSlice = createSlice({
       state.rounRobinIndex = action.payload;
     },
     addMqttError: (state, action) => {
-      state.errorLogs.push(action.payload);
+      const generateErrorId = () => Math.random().toString(36).substr(2, 9);
+
+      const errorData =
+        typeof action.payload === "string"
+          ? {
+              id: generateErrorId(),
+              message: action.payload,
+              timestamp: new Date().toISOString(),
+              type: "General",
+              uiPresented: false,
+            }
+          : {
+              id: generateErrorId(),
+              message: action.payload.message || "Unknown MQTT Error",
+              timestamp: action.payload.timestamp || new Date().toISOString(),
+              type: action.payload.type || "General",
+              uiPresented: false,
+            };
+
+      state.errorLogs.push(errorData);
     },
     clearMqttErrors: (state) => {
       state.errorLogs = [];
+    },
+    markErrorAsUiPresented: (state, action) => {
+      const index = state.errorLogs.findIndex(
+        (error) => error.id === action.payload
+      );
+      if (index !== -1) {
+        state.errorLogs[index].uiPresented = true;
+      }
     },
   },
 });
@@ -95,6 +122,7 @@ export const {
   setRounRobinIndex,
   addMqttError,
   clearMqttErrors,
+  markErrorAsUiPresented,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;

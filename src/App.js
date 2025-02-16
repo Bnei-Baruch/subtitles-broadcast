@@ -8,6 +8,7 @@ import MainRoutes from "./Routes/Routes";
 import debugLog from "./Utils/debugLog";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { markErrorAsUiPresented } from "./Redux/MQTT/mqttSlice";
 
 const App = ({ auth }) => {
   const { subscribe, unsubscribe } = useMqtt();
@@ -18,9 +19,9 @@ const App = ({ auth }) => {
 
   useEffect(() => {
     // Log the error if there is one
-    if (mqttErrors && mqttErrors.length > 0) {
-      mqttErrors.forEach((error) => {
-        toast.error(error, {
+    mqttErrors.forEach((errorObj) => {
+      if (!errorObj.uiPresented) {
+        toast.error(errorObj.message, {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: false,
@@ -29,9 +30,11 @@ const App = ({ auth }) => {
           draggable: true,
           theme: "colored",
         });
-      });
-    }
-  }, [mqttErrors]);
+
+        dispatch(markErrorAsUiPresented(errorObj.id));
+      }
+    });
+  }, [mqttErrors, dispatch]);
 
   useEffect(() => {
     if (isConnected) {

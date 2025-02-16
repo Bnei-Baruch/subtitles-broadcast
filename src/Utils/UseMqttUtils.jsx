@@ -61,7 +61,6 @@ export default function useMqtt() {
 
       clientRef.current.on("connect", () => {
         debugLog("🟢 MQTT Connected");
-
         dispatch(setConnected(true));
 
         // ✅ Populate MQTT topics for the questions and display mode
@@ -132,7 +131,7 @@ export default function useMqtt() {
         if (typeof message !== "object") {
           console.error("❌ MQTT Publish Error: Message must be an object");
           dispatch(
-            addMqttError("MQTT Publish Error: Message must be an object")
+            addMqttError("❌ MQTT Publish Error: Message must be an object")
           );
 
           return;
