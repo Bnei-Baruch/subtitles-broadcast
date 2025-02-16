@@ -19,7 +19,7 @@ const LoadingOverlay = ({ loading }) => {
         fontSize: "24px",
       }}
     >
-      Saving, please wait...
+      Please wait...
     </div>
   ) : null;
 };
