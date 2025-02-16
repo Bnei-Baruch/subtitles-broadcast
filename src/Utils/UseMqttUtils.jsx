@@ -38,7 +38,6 @@ export default function useMqtt() {
   const lastName = useSelector(
     (state) => state.UserProfile.userProfile.profile.lastName
   );
-  //let clientID;
 
   const broadcastProgrammCode = useSelector(
     (state) => state.BroadcastParams.broadcastProgramm.value
@@ -47,21 +46,12 @@ export default function useMqtt() {
     (state) => state.BroadcastParams.broadcastLang.value
   );
 
-  const subtitleMqttTopic = getSubtitleMqttTopic(
-    broadcastProgrammCode,
-    broadcastLangCode
-  );
-
-  // ✅ Get MQTT messages from Redux **before** the event callback
-  // const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
-
-  // ✅ Retrieve `clientId` from Redux
   let clientId = useSelector((state) => state.mqtt.clientId);
   if (!clientId) {
     clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
     dispatch(setClientId(clientId));
   }
-  clientIdRef.current = clientId; // ✅ Store it in a ref to prevent re-renders
+  clientIdRef.current = clientId;
 
   useEffect(() => {
     if (!clientRef.current) {
@@ -73,17 +63,18 @@ export default function useMqtt() {
 
         dispatch(setConnected(true));
 
+        // ✅ Populate MQTT topics for the questions and display mode
         let broadcastMqttTopics = broadcastLanguages
           .map((langItem) => {
             return [
-              getQuestionMqttTopic(broadcastProgrammCode, langItem.value), // ✅ Per-language questions
+              getQuestionMqttTopic(broadcastProgrammCode, langItem.value),
               getSubtitlesDisplayModeTopic(
                 broadcastProgrammCode,
                 langItem.value
-              ), // ✅ Per-language display mode with program code
+              ),
             ];
           })
-          .flat(); // ✅ Flatten array so topics are not nested
+          .flat();
 
         // ✅ Add slide topics
         broadcastMqttTopics.push(
@@ -106,16 +97,11 @@ export default function useMqtt() {
 
         dispatch(mqttMessageReceived({ topic, message: message.toString() }));
 
-        // if (topic === "subtitles/display_mode") {
-        //   const parsedMessage = JSON.parse(message);
-        //   dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
-        // }
-
         if (topic.includes("/display_mode")) {
           const parsedMessage = JSON.parse(message);
           const topicParts = topic.split("/");
-          const topicProgramCode = topicParts[1]; // Extract program code
-          const topicLang = topicParts[2]; // Extract language
+          const topicProgramCode = topicParts[1];
+          const topicLang = topicParts[2];
 
           if (
             topicLang === broadcastLangCode &&
@@ -151,7 +137,6 @@ export default function useMqtt() {
         }
 
         // TODO:  // ✅ Prevent republishing the same message
-
         // ✅ Add user info to all messages
         const enhancedMessage = {
           ...message,
