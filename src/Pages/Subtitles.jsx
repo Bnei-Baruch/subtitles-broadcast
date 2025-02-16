@@ -44,11 +44,9 @@ const Subtitles = () => {
   const broadcastLangObj = useSelector(
     (state) => state.BroadcastParams.broadcastLang
   );
-
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
-
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
@@ -61,9 +59,6 @@ const Subtitles = () => {
   const previousSearch = usePrevious(searchSlide);
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const [selectedSlide, setSelectedSlide] = useState(
-    +localStorage.getItem("activeSlideFileUid")
-  );
   const languages = GetLangaugeCode();
   const navigate = useNavigate();
   const selectedSubtitleSlide = useSelector(
@@ -101,7 +96,6 @@ const Subtitles = () => {
       })
     );
 
-    setSelectedSlide(newSelectedSlide);
     dispatch(setUserSelectedSlide(newSelectedSlide));
     localStorage.setItem("activeSlideFileUid", newSelectedSlide);
   };
@@ -122,7 +116,8 @@ const Subtitles = () => {
       }
 
       let currentIndex = UserAddedList.slides.findIndex(
-        (slide) => slide.order_number === selectedSlide
+        (slide) =>
+          slide.order_number === selectedSubtitleSlide?.order_number + 1
       );
 
       if (currentIndex === -1) {
@@ -155,7 +150,7 @@ const Subtitles = () => {
         }
       }
     },
-    [UserAddedList, selectedSlide, updateSelectedSlide]
+    [UserAddedList, updateSelectedSlide]
   );
 
   useEffect(() => {
@@ -205,7 +200,7 @@ const Subtitles = () => {
       userSlides?.length > 0
     ) {
       const bookmarkedSlideId = allBookmarkList.find(
-        (b) => b.slide_id === selectedSlide
+        (b) => b.slide_id === selectedSubtitleSlide?.ID
       )?.slide_id;
 
       if (bookmarkedSlideId) {
@@ -218,13 +213,7 @@ const Subtitles = () => {
         }
       }
     }
-  }, [
-    selectedSubtitleSlide,
-    allBookmarkList,
-    userSlides,
-    dispatch,
-    selectedSlide,
-  ]);
+  }, [selectedSubtitleSlide, allBookmarkList, userSlides, dispatch]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedItems = [...items];
@@ -262,7 +251,7 @@ const Subtitles = () => {
   const navigatToEditSubtitle = () => {
     const file_uid = UserAddedList?.slides?.[0]?.file_uid;
     const slide = UserAddedList?.slides?.find(
-      (key) => key?.order_number === selectedSlide
+      (key) => key?.order_number === selectedSubtitleSlide?.order_number
     );
     const slideID = slide ? slide.ID : null;
     const editUrl = `/archive/edit?file_uid=${file_uid}&slide_id=${slideID}`;
@@ -342,7 +331,9 @@ const Subtitles = () => {
                 type="button"
                 onClick={(evt) => navigatToEditSubtitle(evt)}
                 className="btn btn-tr"
-                disabled={!UserAddedList?.slides?.length || !selectedSlide}
+                disabled={
+                  !UserAddedList?.slides?.length || !selectedSubtitleSlide
+                }
               >
                 Edit Subtitle
               </button>
@@ -369,9 +360,7 @@ const Subtitles = () => {
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
-                    setActivatedTab={setSelectedSlide}
-                    activatedTab={selectedSlide}
-                    targetItemId={selectedSlide}
+                    slideOrderNumber={selectedSubtitleSlide?.order_number}
                     contents={UserAddedList}
                     searchKeyword={searchSlide}
                   />
@@ -382,11 +371,13 @@ const Subtitles = () => {
           <div className="d-flex justify-content-center align-items-center mt-2 paginationStyle">
             <i
               className={`bi bi-chevron-left me-1 cursor-pointer ${
-                selectedSlide <= 1 ? "disablecolor" : "custom-pagination"
+                selectedSubtitleSlide?.order_number <= 0
+                  ? "disablecolor"
+                  : "custom-pagination"
               }`}
               onClick={() => {
-                if (selectedSlide > 0) {
-                  updateSelectedSlide(selectedSlide - 1);
+                if (selectedSubtitleSlide?.order_number > 0) {
+                  updateSelectedSlide(selectedSubtitleSlide?.order_number - 1);
                 }
               }}
             >
@@ -421,8 +412,8 @@ const Subtitles = () => {
                   isNaN(+maxSlideIndex)
                     ? { value: "/", label: "- / -" }
                     : {
-                        value: `${selectedSlide}/${+maxSlideIndex + 1}`,
-                        label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`,
+                        value: `${selectedSubtitleSlide?.order_number}/${+maxSlideIndex + 1}`,
+                        label: `${selectedSubtitleSlide?.order_number + 1}/${+maxSlideIndex + 1}`,
                       }
                 }
                 onChange={handleChange}
@@ -437,10 +428,10 @@ const Subtitles = () => {
             </div>
             <span
               onClick={() => {
-                updateSelectedSlide(selectedSlide + 1);
+                updateSelectedSlide(selectedSubtitleSlide?.order_number + 1);
               }}
               className={` cursor-pointer ${
-                maxSlideIndex < selectedSlide
+                maxSlideIndex < selectedSubtitleSlide?.order_number
                   ? "disablecolor"
                   : "custom-pagination"
               }`}
@@ -448,7 +439,7 @@ const Subtitles = () => {
               Next{" "}
               <i
                 className={`bi bi-chevron-right  cursor-pointer  ${
-                  maxSlideIndex < selectedSlide
+                  maxSlideIndex < selectedSubtitleSlide?.order_number
                     ? "disablecolor"
                     : "custom-pagination"
                 }`}
@@ -459,12 +450,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <ActiveSlideMessaging
-              userAddedList={UserAddedList}
-              activatedTab={selectedSlide}
-              setActivatedTab={setSelectedSlide}
-              isLtr={isLtr}
-            />
+            <ActiveSlideMessaging />
           </div>
           <div className="book-mark whit-s overflow-auto">
             <div className="top-head">
@@ -477,7 +463,6 @@ const Subtitles = () => {
                     <DraggableItem
                       key={index}
                       id={item.id}
-                      setActivatedTab={setSelectedSlide}
                       bookmarkDelete={item.bookmark_id}
                       text={item?.bookmark_path}
                       fileUid={item?.file_uid}

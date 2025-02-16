@@ -47,7 +47,6 @@ const DraggableItem = ({
 
   const handleBookMarkClick = (e) => {
     setLoading(true); // ✅ Show loading
-    setActivatedTab(+text?.split("/")?.at(-1) - 1);
     localStorage.setItem("fileUid", e);
     dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT }))
       .then((response) => {
@@ -65,6 +64,7 @@ const DraggableItem = ({
           );
 
           if (selectedSlide) {
+            localStorage.setItem("activeSlideFileUid", +selectedSlide.ID);
             dispatch(setUserSelectedSlide(selectedSlide));
           }
         }
