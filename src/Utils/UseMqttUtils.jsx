@@ -113,10 +113,6 @@ export default function useMqtt() {
               topicLang
             );
             dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
-          } else {
-            debugLog(
-              "🛑 Ignoring subtitlesDisplayMode update (wrong program or language)"
-            );
           }
         }
       });
@@ -137,7 +133,6 @@ export default function useMqtt() {
         }
 
         // TODO:  // ✅ Prevent republishing the same message
-        // ✅ Add user info to all messages
         const enhancedMessage = {
           ...message,
           clientId: clientIdRef.current || "unknown_client",
@@ -146,14 +141,6 @@ export default function useMqtt() {
           lastName: lastName || "User",
           date: new Date().toUTCString(),
         };
-
-        // ✅ Store updated message in Redux before publishing
-        dispatch(
-          mqttMessageReceived({
-            topic: mqttTopic,
-            message: JSON.stringify(enhancedMessage),
-          })
-        );
 
         if (clientRef.current) {
           const payloadString = JSON.stringify(enhancedMessage);
