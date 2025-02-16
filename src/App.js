@@ -5,6 +5,7 @@ import useMqtt from "./Utils/UseMqttUtils";
 import "./App.css";
 import SideNavBar from "./Layout/SideNavBar";
 import MainRoutes from "./Routes/Routes";
+import debugLog from "./Utils/debugLog";
 
 const App = ({ auth }) => {
   const { subscribe, unsubscribe } = useMqtt();
@@ -14,13 +15,17 @@ const App = ({ auth }) => {
 
   useEffect(() => {
     if (isConnected) {
-      console.log("✅ MQTT Connected, subscribing to topics...");
-      mqttTopics.forEach((topic) => subscribe(topic));
+      mqttTopics.forEach((topic) => {
+        subscribe(topic);
+        debugLog("Subscribed to topic: ", topic);
+      });
     }
 
     return () => {
-      console.log("❌ Unsubscribing from topics...");
-      mqttTopics.forEach((topic) => unsubscribe(topic));
+      mqttTopics.forEach((topic) => {
+        unsubscribe(topic);
+        debugLog("Unsubscribed from topic: ", topic);
+      });
     };
   }, [isConnected, mqttTopics, subscribe, unsubscribe, dispatch]);
 
