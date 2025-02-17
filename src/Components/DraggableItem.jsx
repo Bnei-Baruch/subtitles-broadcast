@@ -35,6 +35,13 @@ const DraggableItem = ({
     item: { id, index },
   });
 
+  const appSettings = useSelector((state) => state.userSettings.userSettings);
+  const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
+
+  const selected =
+    useSelector((state) => state.ArchiveList.lastSelectedFileUID) ===
+    lastSelectedFileUID;
+
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
     hover: (draggedItem) => {
@@ -47,7 +54,7 @@ const DraggableItem = ({
 
   const handleBookMarkClick = (e) => {
     setLoading(true); // ✅ Show loading
-    localStorage.setItem("fileUid", e);
+
     dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT }))
       .then((response) => {
         setIsLtr(response.payload.data.slides[0].left_to_right);
@@ -64,7 +71,6 @@ const DraggableItem = ({
           );
 
           if (selectedSlide) {
-            localStorage.setItem("activeSlideFileUid", +selectedSlide.ID);
             dispatch(setUserSelectedSlide(selectedSlide));
           }
         }
@@ -72,7 +78,6 @@ const DraggableItem = ({
       .finally(() => setLoading(false)); // ✅ Hide loading after completion
   };
 
-  const selected = localStorage.getItem("fileUid") === fileUid;
   return (
     <>
       <LoadingOverlay loading={loading} />

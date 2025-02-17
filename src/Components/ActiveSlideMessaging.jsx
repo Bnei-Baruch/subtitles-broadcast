@@ -19,7 +19,8 @@ export function ActiveSlideMessaging() {
   const qstSwapTime = 10000; //10s
 
   const selectedSubtitleSlide = useSelector(
-    (state) => state.mqtt.selectedSubtitleSlide
+    (state) => state.mqtt.selectedSubtitleSlide,
+    (prev, next) => prev?.ID === next?.ID
   );
   const selectedQuestionMessage = useSelector(
     (state) => state.mqtt.selectedQuestionMessage
@@ -128,9 +129,10 @@ export function ActiveSlideMessaging() {
       subtitlesDisplayMode === "sources" &&
       selectedSubtitleSlide &&
       selectedSubtitleSlide.slide &&
-      broadcastLangCode && // ✅ Ensure we use the broadcast language
+      broadcastLangCode &&
       (!activeBroadcastMessage ||
-        activeBroadcastMessage.slide !== selectedSubtitleSlide.slide)
+        (activeBroadcastMessage.slide !== selectedSubtitleSlide.slide &&
+          !isUserInitiatedChange))
     ) {
       publishSlide(selectedSubtitleSlide, subtitleMqttTopic, false);
     }
@@ -142,6 +144,7 @@ export function ActiveSlideMessaging() {
     activeBroadcastMessage,
     dispatch,
     subtitleMqttTopic,
+    isUserInitiatedChange,
   ]);
 
   useEffect(() => {

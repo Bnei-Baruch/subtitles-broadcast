@@ -9,6 +9,7 @@ import debugLog from "./Utils/debugLog";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { markErrorAsUiPresented } from "./Redux/MQTT/mqttSlice";
+import { fetchUserSettings } from "./Redux/UserSettings/UserSettingsSlice";
 
 const App = ({ auth }) => {
   const { subscribe, unsubscribe } = useMqtt();
@@ -51,6 +52,10 @@ const App = ({ auth }) => {
       });
     };
   }, [isConnected, mqttTopics, subscribe, unsubscribe, dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchUserSettings());
+  }, [dispatch]);
 
   return (
     <div>

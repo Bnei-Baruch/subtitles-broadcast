@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { Slide } from "./Slide";
 import { useSelector } from "react-redux";
 import IconButton from "@mui/material/IconButton";
@@ -8,6 +9,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
 import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
+import debugLog from "../Utils/debugLog";
+import { MAX_SLIDE_LIMIT } from "../Utils/Const";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 
 const BookContent = ({
   slideOrderNumber,
@@ -23,38 +27,36 @@ const BookContent = ({
     (state) => state.BroadcastParams.broadcastLang
   );
   const contents = useSelector((state) => state.SubtitleData.contentList.data);
-  const gridCont = useRef();
+  const appSettings = useSelector((state) => state.userSettings.userSettings);
+  const lastSelectedSlideID = appSettings?.last_selected_slide_id || null;
+  const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
+  const [activeSlideID, setActiveSlideID] = useState(null);
 
   useEffect(() => {
-    const slideIdFromLocalStorage = localStorage.getItem("activeSlideFileUid");
+    setActiveSlideID(lastSelectedSlideID);
+  }, [lastSelectedSlideID]);
 
-    if (gridCont && gridCont.current && slideIdFromLocalStorage) {
-      const activeSlides = gridCont.current.querySelectorAll(".activeSlide");
-      activeSlides.forEach((slide) => {
-        slide.classList.remove("activeSlide");
-      });
+  useEffect(() => {
+    if (lastSelectedFileUID) {
+      dispatch(
+        GetSubtitleData({
+          lastSelectedFileUID,
+          keyword: "",
+          limit: MAX_SLIDE_LIMIT,
+        })
+      ).then((response) => {
+        if (response.payload?.data?.slides?.length > 0) {
+          const selectedSlide = response.payload.data.slides.find(
+            (slide) => slide.ID === lastSelectedSlideID
+          );
 
-      const targetSlide = gridCont.current.querySelector(
-        "#slide_" + slideIdFromLocalStorage
-      );
-
-      if (targetSlide) {
-        const selectedSlide = contents.slides.find(
-          (slide) => slide.ID === +slideIdFromLocalStorage
-        );
-
-        if (selectedSlide) {
-          dispatch(setUserSelectedSlide(selectedSlide));
+          if (selectedSlide) {
+            dispatch(setUserSelectedSlide(selectedSlide));
+          }
         }
-
-        targetSlide.classList.add("activeSlide");
-        targetSlide.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
+      });
     }
-  }, [contents, slideOrderNumber, gridCont]);
+  }, [lastSelectedFileUID, dispatch, lastSelectedSlideID]);
 
   const handleEditSlide = (slide) => {
     const fileUid = slide.file_uid;
@@ -68,36 +70,48 @@ const BookContent = ({
     });
   };
 
-  function handleSlideClick(
+  const handleSlideClick = async (
     setLoading,
     setSearchSlide,
     item,
-    dispatch,
-    broadcastLangObj
-  ) {
-    setLoading(true); // ✅ Show loading
+    dispatch
+  ) => {
+    setLoading(true);
     setSearchSlide("");
-    localStorage.setItem("activeSlideFileUid", +item.ID);
-    // ✅ Dispatch Redux action to update `selectedSubtitleSlide`
-    dispatch(setUserSelectedSlide(item));
 
-    dispatch(
-      BookmarkSlide({
-        data: {
-          file_uid: item.file_uid,
-          slide_id: item.ID,
-          update: true,
-        },
-        language: broadcastLangObj.label,
-      })
-    ).finally(() => setLoading(false));
-  }
+    dispatch(setUserSelectedSlide(item));
+    setActiveSlideID(item.ID);
+
+    try {
+      dispatch(
+        BookmarkSlide({
+          data: {
+            file_uid: item.file_uid,
+            slide_id: item.ID,
+            update: true,
+          },
+          language: broadcastLangObj.label,
+        })
+      );
+
+      dispatch(
+        updateMergedUserSettings({
+          last_selected_slide_id: item.ID,
+          last_selected_file_uid: item.file_uid,
+        })
+      );
+    } catch (error) {
+      debugLog("❌ updateMergedUserSettings Error:", error);
+    }
+
+    setLoading(false);
+  };
 
   return (
     <>
       <LoadingOverlay loading={loading} />
       {contents?.slides?.length > 0 && (
-        <div ref={gridCont} className="grid-container">
+        <div className="grid-container">
           {contents?.slides?.map((item, index) => (
             <div
               key={`slide_${item.ID}`}
@@ -117,9 +131,7 @@ const BookContent = ({
                   ? focusSlides
                   : null
               }
-              className={`box-content d-flex  cursor-pointer  ${
-                +slideOrderNumber + 1 === +item.ID + 1 && "activeSlide"
-              }`}
+              className={`box-content d-flex cursor-pointer ${activeSlideID === item.ID ? "activeSlide" : ""}`}
             >
               <Slide
                 content={item?.slide}

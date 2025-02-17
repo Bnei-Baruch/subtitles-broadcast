@@ -62,11 +62,14 @@ const Subtitles = () => {
   const languages = GetLangaugeCode();
   const navigate = useNavigate();
   const selectedSubtitleSlide = useSelector(
-    (state) => state.mqtt.selectedSubtitleSlide
+    (state) => state.mqtt.selectedSubtitleSlide,
+    (prev, next) => prev?.ID === next?.ID
   );
   const userSlides = useSelector(
     (state) => state.SubtitleData?.contentList?.data?.slides
   );
+  const appSettings = useSelector((state) => state.userSettings.userSettings);
+  const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
 
   const updateSelectedSlide = (newSelectedSlide) => {
     console.log("newSelectedSlide", newSelectedSlide);
@@ -97,7 +100,6 @@ const Subtitles = () => {
     );
 
     dispatch(setUserSelectedSlide(newSelectedSlide));
-    localStorage.setItem("activeSlideFileUid", newSelectedSlide);
   };
 
   const handleChange = (selectedOption) => {
@@ -179,7 +181,7 @@ const Subtitles = () => {
 
   useEffect(() => {
     if (searchSlide.length > 0 || searchSlide !== previousSearch) {
-      let file_uid = localStorage.getItem("fileUid");
+      let file_uid = lastSelectedFileUID;
       if (file_uid) {
         dispatch(
           GetSubtitleData({
@@ -191,7 +193,7 @@ const Subtitles = () => {
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
     }
-  }, [searchSlide, previousSearch]);
+  }, [searchSlide, previousSearch, lastSelectedFileUID, dispatch]);
 
   useEffect(() => {
     if (
