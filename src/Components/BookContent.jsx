@@ -37,6 +37,16 @@ const BookContent = ({
   }, [lastSelectedSlideID]);
 
   useEffect(() => {
+    const targetSlide = document.getElementById(`slide_${activeSlideID}`);
+    if (targetSlide) {
+      targetSlide.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [contents, activeSlideID]);
+
+  useEffect(() => {
     if (lastSelectedFileUID) {
       dispatch(
         GetSubtitleData({
