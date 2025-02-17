@@ -37,10 +37,7 @@ const DraggableItem = ({
 
   const appSettings = useSelector((state) => state.userSettings.userSettings);
   const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
-
-  const selected =
-    useSelector((state) => state.ArchiveList.lastSelectedFileUID) ===
-    lastSelectedFileUID;
+  const selected = lastSelectedFileUID === fileUid;
 
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
