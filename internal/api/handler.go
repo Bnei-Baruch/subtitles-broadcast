@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -78,7 +79,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 	}
 	userId, _ := ctx.Get("user_id")
 	for _, req := range reqs {
-    now := time.Now()
+		now := time.Now()
 		if err = tx.Create(&Slide{
 			FileUid:     req.FileUid,
 			Slide:       req.Slide,
@@ -87,8 +88,8 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			SlideType:   req.SlideType,
 			CreatedAt:   now,
 			UpdatedAt:   now,
-      CreatedBy:   userId.(string),
-      UpdatedBy:   userId.(string),
+			CreatedBy:   userId.(string),
+			UpdatedBy:   userId.(string),
 		}).Error; err != nil {
 			tx.Rollback()
 			log.Error(err)
@@ -150,16 +151,16 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		}
 		req.SourcePath = sourcePath.Path
 	}
-  now := time.Now()
+	now := time.Now()
 	userId, _ := ctx.Get("user_id")
 	sourcePathData := &SourcePath{
 		Languages: pq.StringArray(req.Languages),
 		SourceUid: req.SourceUid,
 		Path:      req.SourcePath,
-    CreatedBy: userId.(string),
-    UpdatedBy: userId.(string),
-    CreatedAt: now,
-    UpdatedAt: now,
+		CreatedBy: userId.(string),
+		UpdatedBy: userId.(string),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
 		tx.Rollback()
@@ -180,10 +181,10 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		SourceUid: req.SourceUid,
 		FileUid:   req.FileUid,
 		Filename:  req.FileName,
-    CreatedBy: userId.(string),
-    UpdatedBy: userId.(string),
-    CreatedAt: now,
-    UpdatedAt: now,
+		CreatedBy: userId.(string),
+		UpdatedBy: userId.(string),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	if err = tx.Table(DBTableFiles).Create(fileData).Error; err != nil {
 		tx.Rollback()
@@ -198,10 +199,10 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			OrderNumber: idx / len(req.Languages),
 			LeftToRight: req.LeftToRight,
 			SlideType:   req.SlidesTypes[idx],
-      CreatedBy: userId.(string),
-      UpdatedBy: userId.(string),
-      CreatedAt: now,
-      UpdatedAt: now,
+			CreatedBy:   userId.(string),
+			UpdatedBy:   userId.(string),
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		}
 		if len(req.FileUid) > 0 {
 			slideData.FileUid = req.FileUid
@@ -256,9 +257,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			query.Where("(slides.slide LIKE ? OR source_paths.path LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 		}
 	}
-  if hidden != "true" {
-    query = query.Where("slides.hidden = FALSE")
-  }
+	if hidden != "true" {
+		query = query.Where("slides.hidden = FALSE")
+	}
 	result := query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -519,16 +520,16 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 		return
 	}
 
-  // We don't delete, we hide the slides.
-  // result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+	// We don't delete, we hide the slides.
+	// result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
 	userId, _ := ctx.Get("user_id")
-  updates := map[string]interface{}{
-    "hidden": true,
-    "updated_by": userId,
-    "updated_at": time.Now(),
-  }
+	updates := map[string]interface{}{
+		"hidden":     true,
+		"updated_by": userId,
+		"updated_at": time.Now(),
+	}
 	result = tx.Model(&Slide{}).
-    Where("file_uid in ?", fileUids).
+		Where("file_uid in ?", fileUids).
 		Updates(updates)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -541,11 +542,11 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, fmt.Sprintf("No file slides in source %s", sourceUid), fmt.Sprintf("No file slides in source %s", sourceUid)))
 		return
 	}
-  // We don't delete, we hide the file.
+	// We don't delete, we hide the file.
 	// result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
 	result = tx.Model(&File{}).
-    Where("source_uid = ?", sourceUid).
-    Updates(updates)
+		Where("source_uid = ?", sourceUid).
+		Updates(updates)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -557,7 +558,7 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, fmt.Sprintf("No file with %s", sourceUid), fmt.Sprintf("No file with %s", sourceUid)))
 		return
 	}
-  // When hiding slides and files, we don't need to delete or hide source paths.
+	// When hiding slides and files, we don't need to delete or hide source paths.
 	// result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
 	// if result.Error != nil {
 	// 	log.Error(result.Error)
@@ -619,7 +620,7 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			return
 		}
 	} else {
-    now := time.Now()
+		now := time.Now()
 		bookmark.SlideId = req.SlideId
 		bookmark.FileUid = req.FileUid
 		bookmark.UserId = userId.(string)
@@ -859,10 +860,10 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
       %s
   `
 	hidden := ctx.Query("hidden")
-  hiddenSql := ""
-  if hidden != "true" {
-    hiddenSql = "AND slides.hidden = FALSE"
-  }
+	hiddenSql := ""
+	if hidden != "true" {
+		hiddenSql = "AND slides.hidden = FALSE"
+	}
 	querySql := fmt.Sprintf(templateSql,
 		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
 		fields, userId, language, keyword, hiddenSql)
@@ -915,10 +916,10 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 
 	var uploadSourcePath int64
 	result := h.Database.Debug().WithContext(ctx).
-    Table(DBTableSourcePaths).
+		Table(DBTableSourcePaths).
 		Where("id = ?", sourcePathID).
 		Where("source_uid LIKE 'upload_%'").
-    Count(&uploadSourcePath)
+		Count(&uploadSourcePath)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -935,11 +936,11 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 
 	// Update the source_path in the database
 	userId, _ := ctx.Get("user_id")
-  updates := map[string]interface{}{
-    "path": req.SourcePath,
-    "updated_by": userId,
-    "updated_at": time.Now(),
-  }
+	updates := map[string]interface{}{
+		"path":       req.SourcePath,
+		"updated_by": userId,
+		"updated_at": time.Now(),
+	}
 	result = h.Database.Debug().Model(&SourcePath{}).
 		Where("id = ?", sourcePathID).
 		Updates(updates)
@@ -952,6 +953,83 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 
 	// Respond with a success message
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "message": "Source path updated successfully"})
+}
+
+func (h *Handler) GetUserSettings(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, getResponse(false, nil, "Unauthorized", "User ID is missing"))
+		return
+	}
+
+	var userSettings struct {
+		AppSettings string `json:"app_settings"`
+	}
+
+	err := h.Database.Table("user_settings").
+		Select("app_settings").
+		Where("user_id = ?", userID).
+		Limit(1).
+		Scan(&userSettings).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("⚠️ No user settings found for user: %s. Returning default settings.", userID)
+			defaultSettings := "{}"
+			ctx.JSON(http.StatusOK, getResponse(true, defaultSettings, "", "User settings not found, returning defaults"))
+			return
+		}
+		log.Printf("❌ Error fetching user settings: %v", err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to retrieve user settings"))
+		return
+	}
+
+	log.Printf("✅ Retrieved User Settings for User: %s - %v", userID, userSettings.AppSettings)
+
+	var parsedSettings map[string]interface{}
+	if err := json.Unmarshal([]byte(userSettings.AppSettings), &parsedSettings); err != nil {
+		log.Printf("❌ JSON Unmarshal Error: %v", err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to parse user settings"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, getResponse(true, parsedSettings, "", "User settings retrieved successfully"))
+}
+
+func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, getResponse(false, nil, "Unauthorized", "User ID is missing"))
+		return
+	}
+
+	var requestData map[string]interface{}
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&requestData); err != nil {
+		log.Printf("❌ JSON Decoding Error: %v", err)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Invalid JSON format"))
+		return
+	}
+
+	log.Printf("🛠️ Received User Settings Update - UserID: %s, Data: %+v", userID, requestData)
+
+	err := h.Database.Exec(`
+        INSERT INTO user_settings (user_id, app_settings, created_by, updated_by, updated_at)
+        VALUES (?, ?, ?, ?, NOW())
+        ON CONFLICT (user_id) DO UPDATE 
+        SET app_settings = EXCLUDED.app_settings, 
+            updated_by = EXCLUDED.updated_by,
+            updated_at = NOW()`,
+		userID, requestData, userID, userID,
+	).Error
+
+	if err != nil {
+		log.Printf("❌ Error Updating User Settings: %v", err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to update user settings"))
+		return
+	}
+
+	log.Printf("✅ User Settings Successfully Updated for User: %s", userID)
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "User settings updated successfully"))
 }
 
 // For checking user role verification for the permissions (need to define user roles soon)
