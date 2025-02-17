@@ -84,6 +84,13 @@ const BookContent = ({
 
     try {
       dispatch(
+        updateMergedUserSettings({
+          last_selected_slide_id: item.ID,
+          last_selected_file_uid: item.file_uid,
+        })
+      );
+
+      dispatch(
         BookmarkSlide({
           data: {
             file_uid: item.file_uid,
@@ -92,19 +99,14 @@ const BookContent = ({
           },
           language: broadcastLangObj.label,
         })
-      );
-
-      dispatch(
-        updateMergedUserSettings({
-          last_selected_slide_id: item.ID,
-          last_selected_file_uid: item.file_uid,
-        })
-      );
+      ).finally(() => {
+        // ✅ Hide loading
+        setLoading(false);
+      });
     } catch (error) {
       debugLog("❌ updateMergedUserSettings Error:", error);
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

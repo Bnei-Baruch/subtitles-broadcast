@@ -72,7 +72,10 @@ const DraggableItem = ({
           }
         }
       })
-      .finally(() => setLoading(false)); // ✅ Hide loading after completion
+      .finally(() => {
+        // ✅ Hide loading after completion
+        setLoading(false);
+      });
   };
 
   return (
