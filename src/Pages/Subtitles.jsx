@@ -471,6 +471,7 @@ const Subtitles = () => {
                       index={index}
                       moveCard={moveCard}
                       setIsLtr={setIsLtr}
+                      slideId={item.slide_id}
                     />
                   ))}
               </div>

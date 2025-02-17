@@ -64,7 +64,14 @@ export const updateMergedUserSettings =
 const UserSettingsSlice = createSlice({
   name: "userSettings",
   initialState,
-  reducers: {},
+  reducers: {
+    setLastSelectedFileUId(state, action) {
+      state.last_selected_file_uid = action.payload;
+    },
+    setLastSelectedSlideId(state, action) {
+      state.last_selected_slide_id = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(fetchUserSettings.fulfilled, (state, action) => {
       debugLog("✅ User Settings Loaded", action.payload);
@@ -77,5 +84,8 @@ const UserSettingsSlice = createSlice({
     });
   },
 });
+
+export const { setLastSelectedFileUId, setLastSelectedSlideId } =
+  UserSettingsSlice.actions;
 
 export default UserSettingsSlice.reducer;
