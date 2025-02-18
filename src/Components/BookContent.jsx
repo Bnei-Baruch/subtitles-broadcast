@@ -50,7 +50,7 @@ const BookContent = ({
     if (lastSelectedFileUID) {
       dispatch(
         GetSubtitleData({
-          lastSelectedFileUID,
+          file_uid: lastSelectedFileUID,
           keyword: "",
           limit: MAX_SLIDE_LIMIT,
         })

@@ -8,7 +8,10 @@ import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
 import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
-import { setLastSelectedSlideId } from "../Redux/UserSettings/UserSettingsSlice";
+import {
+  setLastSelectedSlideId,
+  setLastSelectedFileUId,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const ItemTypes = {
   CARD: "card",
@@ -53,6 +56,8 @@ const DraggableItem = ({
 
   const handleBookMarkClick = (e) => {
     setLoading(true); // ✅ Show loading
+
+    dispatch(setLastSelectedFileUId(e));
 
     if (slideId) {
       dispatch(setLastSelectedSlideId(slideId));
