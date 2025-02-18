@@ -36,9 +36,9 @@ const DraggableItem = ({
     item: { parentId, parentIndex },
   });
 
-  const appSettings = useSelector((state) => state.userSettings.userSettings);
-  const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
-  const selected = lastSelectedFileUID === parentBookmarkFileUid;
+  const userSettings = useSelector((state) => state.userSettings.userSettings);
+  const userSelectedFileUID = userSettings?.selected_file_uid || null;
+  const selected = userSelectedFileUID === parentBookmarkFileUid;
 
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
@@ -55,8 +55,8 @@ const DraggableItem = ({
 
     dispatch(
       updateMergedUserSettings({
-        last_selected_slide_id: targetSlideId,
-        last_selected_file_uid: targetBookmarkFileUid,
+        selected_slide_id: targetSlideId,
+        selected_file_uid: targetBookmarkFileUid,
       })
     );
 

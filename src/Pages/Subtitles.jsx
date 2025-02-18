@@ -68,8 +68,8 @@ const Subtitles = () => {
   const userSlides = useSelector(
     (state) => state.SubtitleData?.contentList?.data?.slides
   );
-  const appSettings = useSelector((state) => state.userSettings.userSettings);
-  const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
+  const userSettings = useSelector((state) => state.userSettings.userSettings);
+  const userSelectedFileUID = userSettings?.selected_file_uid || null;
 
   const updateSelectedSlide = (newSelectedSlide) => {
     console.log("newSelectedSlide", newSelectedSlide);
@@ -181,7 +181,7 @@ const Subtitles = () => {
 
   useEffect(() => {
     if (searchSlide.length > 0 || searchSlide !== previousSearch) {
-      let file_uid = lastSelectedFileUID;
+      let file_uid = userSelectedFileUID;
       if (file_uid) {
         dispatch(
           GetSubtitleData({
@@ -193,7 +193,7 @@ const Subtitles = () => {
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
     }
-  }, [searchSlide, previousSearch, lastSelectedFileUID, dispatch]);
+  }, [searchSlide, previousSearch, userSelectedFileUID, dispatch]);
 
   useEffect(() => {
     if (

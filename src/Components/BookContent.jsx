@@ -27,37 +27,37 @@ const BookContent = ({
     (state) => state.BroadcastParams.broadcastLang
   );
   const contents = useSelector((state) => state.SubtitleData.contentList.data);
-  const appSettings = useSelector((state) => state.userSettings.userSettings);
-  const lastSelectedSlideID = appSettings?.last_selected_slide_id || null;
-  const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
-  const [activeSlideID, setActiveSlideID] = useState(null);
+  const userSettings = useSelector((state) => state.userSettings.userSettings);
+  const userSelectedSlideId = userSettings?.selected_slide_id || null;
+  const userSelectedFileUID = userSettings?.selected_file_uid || null;
+  const [activeSlideId, setActiveSlideID] = useState(null);
 
   useEffect(() => {
-    setActiveSlideID(lastSelectedSlideID);
-  }, [lastSelectedSlideID]);
+    setActiveSlideID(userSelectedSlideId);
+  }, [userSelectedSlideId]);
 
   useEffect(() => {
-    const targetSlide = document.getElementById(`slide_${activeSlideID}`);
+    const targetSlide = document.getElementById(`slide_${activeSlideId}`);
     if (targetSlide) {
       targetSlide.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }
-  }, [contents, activeSlideID]);
+  }, [contents, activeSlideId]);
 
   useEffect(() => {
-    if (lastSelectedFileUID) {
+    if (userSelectedFileUID) {
       dispatch(
         GetSubtitleData({
-          file_uid: lastSelectedFileUID,
+          file_uid: userSelectedFileUID,
           keyword: "",
           limit: MAX_SLIDE_LIMIT,
         })
       ).then((response) => {
         if (response.payload?.data?.slides?.length > 0) {
           const selectedSlide = response.payload.data.slides.find(
-            (slide) => slide.ID === lastSelectedSlideID
+            (slide) => slide.ID === userSelectedSlideId
           );
 
           if (selectedSlide) {
@@ -66,7 +66,7 @@ const BookContent = ({
         }
       });
     }
-  }, [lastSelectedFileUID, dispatch, lastSelectedSlideID]);
+  }, [userSelectedFileUID, dispatch, userSelectedSlideId]);
 
   const handleEditSlide = (slide) => {
     const fileUid = slide.file_uid;
@@ -95,8 +95,8 @@ const BookContent = ({
     try {
       dispatch(
         updateMergedUserSettings({
-          last_selected_slide_id: item.ID,
-          last_selected_file_uid: item.file_uid,
+          selected_slide_id: item.ID,
+          selected_file_uid: item.file_uid,
         })
       );
 
@@ -143,7 +143,7 @@ const BookContent = ({
                   ? focusSlides
                   : null
               }
-              className={`box-content d-flex cursor-pointer ${activeSlideID === item.ID ? "activeSlide" : ""}`}
+              className={`box-content d-flex cursor-pointer ${activeSlideId === item.ID ? "activeSlide" : ""}`}
             >
               <Slide
                 content={item?.slide}

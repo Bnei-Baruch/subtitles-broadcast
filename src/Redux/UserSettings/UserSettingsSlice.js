@@ -5,7 +5,12 @@ import debugLog from "../../Utils/debugLog";
 const API = process.env.REACT_APP_API_BASE_URL;
 
 const initialState = {
-  userSettings: {}, // Stores all user settings
+  userSettings: {
+    selected_slide_id: null,
+    selected_file_uid: null,
+    broadcast_programm_code: "morning_lesson",
+    broadcast_language_code: "he",
+  },
   loading: false,
 };
 
@@ -63,11 +68,11 @@ const UserSettingsSlice = createSlice({
   name: "userSettings",
   initialState,
   reducers: {
-    setLastSelectedFileUId(state, action) {
-      state.last_selected_file_uid = action.payload;
+    setSelectedFileUid(state, action) {
+      state.selected_file_uid = action.payload;
     },
-    setLastSelectedSlideId(state, action) {
-      state.last_selected_slide_id = action.payload;
+    setSelectedSlideId(state, action) {
+      state.selected_slide_id = action.payload;
     },
     setSettings(state, action) {
       const currentSettings = state || {};
@@ -88,7 +93,7 @@ const UserSettingsSlice = createSlice({
   },
 });
 
-export const { setLastSelectedFileUId, setLastSelectedSlideId, setSettings } =
+export const { setSelectedFileUid, setSelectedSlideId, setSettings } =
   UserSettingsSlice.actions;
 
 export default UserSettingsSlice.reducer;
