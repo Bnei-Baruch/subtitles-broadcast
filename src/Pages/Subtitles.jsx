@@ -185,7 +185,7 @@ const Subtitles = () => {
       if (file_uid) {
         dispatch(
           GetSubtitleData({
-            file_uid,
+            file_uid: file_uid,
             keyword: searchSlide,
             limit: MAX_SLIDE_LIMIT,
           })
