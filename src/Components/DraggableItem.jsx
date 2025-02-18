@@ -8,25 +8,21 @@ import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
 import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
-import {
-  setLastSelectedSlideId,
-  setLastSelectedFileUId,
-} from "../Redux/UserSettings/UserSettingsSlice";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 
 const ItemTypes = {
   CARD: "card",
 };
 
 const DraggableItem = ({
-  id,
+  parentId,
   text,
-  index,
+  parentIndex,
   moveCard,
-  fileUid,
-  bookmarkDelete,
-  setActivatedTab,
+  parentBookmarkFileUid,
+  parentBookmarkId,
   setIsLtr,
-  slideId,
+  parentSlideId,
 }) => {
   const [loading, setLoading] = useState(false);
   const bookmarkList = useSelector((state) => state.ArchiveList.bookmarkList);
@@ -37,40 +33,44 @@ const DraggableItem = ({
   const dispatch = useDispatch();
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
-    item: { id, index },
+    item: { parentId, parentIndex },
   });
 
   const appSettings = useSelector((state) => state.userSettings.userSettings);
   const lastSelectedFileUID = appSettings?.last_selected_file_uid || null;
-  const selected = lastSelectedFileUID === fileUid;
+  const selected = lastSelectedFileUID === parentBookmarkFileUid;
 
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
     hover: (draggedItem) => {
-      if (draggedItem.index !== index) {
-        moveCard(draggedItem.index, index);
-        draggedItem.index = index;
+      if (draggedItem.index !== parentIndex) {
+        moveCard(draggedItem.index, parentIndex);
+        draggedItem.index = parentIndex;
       }
     },
   });
 
-  const handleBookMarkClick = (e) => {
-    setLoading(true); // ✅ Show loading
+  const handleBookMarkClick = (targetBookmarkFileUid, targetSlideId) => {
+    setLoading(true);
 
-    dispatch(setLastSelectedFileUId(e));
+    dispatch(
+      updateMergedUserSettings({
+        last_selected_slide_id: targetSlideId,
+        last_selected_file_uid: targetBookmarkFileUid,
+      })
+    );
 
-    if (slideId) {
-      dispatch(setLastSelectedSlideId(slideId));
-    }
-
-    dispatch(GetSubtitleData({ file_uid: e, limit: MAX_SLIDE_LIMIT }))
+    dispatch(
+      GetSubtitleData({
+        file_uid: targetBookmarkFileUid,
+        limit: MAX_SLIDE_LIMIT,
+      })
+    )
       .then((response) => {
-        setIsLtr(response.payload.data.slides[0].left_to_right);
-
         if (!bookmarkList?.data) return;
         // ✅ Find the bookmarked slide_id for this file
         const bookmark = bookmarkList?.data?.find(
-          (b) => b.file_uid === fileUid
+          (b) => b.file_uid === targetBookmarkFileUid
         );
 
         if (bookmark) {
@@ -84,7 +84,7 @@ const DraggableItem = ({
         }
       })
       .finally(() => {
-        // ✅ Hide loading after completion
+        //
         setLoading(false);
       });
   };
@@ -111,7 +111,7 @@ const DraggableItem = ({
           onClick={() =>
             dispatch(
               UnBookmarkSlide({
-                bookmark_id: bookmarkDelete,
+                bookmark_id: parentBookmarkId,
                 language: broadcastLangObj.label,
               })
             )
@@ -124,7 +124,9 @@ const DraggableItem = ({
           data-bs-placement="top"
           title={text}
           style={{ width: "600px" }}
-          onClick={() => handleBookMarkClick(fileUid)}
+          onClick={() =>
+            handleBookMarkClick(parentBookmarkFileUid, parentSlideId)
+          }
         >
           {text}
         </span>

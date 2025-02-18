@@ -48,16 +48,14 @@ export const updateUserSettings = createAsyncThunk(
  */
 export const updateMergedUserSettings =
   (newSettings) => (dispatch, getState) => {
-    if (!newSettings || Object.keys(newSettings).length === 0) {
-      debugLog("⚠️ No new settings provided. Skipping update.");
-      return;
+    if (!newSettings) {
+      newSettings = {};
     }
 
     const currentSettings = getState().userSettings.userSettings || {};
     const updatedSettings = { ...currentSettings, ...newSettings };
 
     debugLog("🚀 Merging and updating user settings:", updatedSettings);
-
     dispatch(updateUserSettings(updatedSettings));
   };
 
@@ -70,6 +68,11 @@ const UserSettingsSlice = createSlice({
     },
     setLastSelectedSlideId(state, action) {
       state.last_selected_slide_id = action.payload;
+    },
+    setSettings(state, action) {
+      const currentSettings = state || {};
+      const updatedSettings = { ...currentSettings, ...(action.payload || {}) };
+      state = updatedSettings;
     },
   },
   extraReducers: (builder) => {
@@ -85,7 +88,7 @@ const UserSettingsSlice = createSlice({
   },
 });
 
-export const { setLastSelectedFileUId, setLastSelectedSlideId } =
+export const { setLastSelectedFileUId, setLastSelectedSlideId, setSettings } =
   UserSettingsSlice.actions;
 
 export default UserSettingsSlice.reducer;

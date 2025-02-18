@@ -464,14 +464,13 @@ const Subtitles = () => {
                   items?.map((item, index) => (
                     <DraggableItem
                       key={index}
-                      id={item.id}
-                      bookmarkDelete={item.bookmark_id}
+                      parentId={item.id}
+                      parentBookmarkId={item.bookmark_id}
                       text={item?.bookmark_path}
-                      fileUid={item?.file_uid}
-                      index={index}
+                      parentBookmarkFileUid={item?.file_uid}
+                      parentIndex={index}
                       moveCard={moveCard}
-                      setIsLtr={setIsLtr}
-                      slideId={item.slide_id}
+                      parentSlideId={item.slide_id}
                     />
                   ))}
               </div>
