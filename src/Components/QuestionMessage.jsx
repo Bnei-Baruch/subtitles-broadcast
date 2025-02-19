@@ -7,10 +7,12 @@ import { useSelector } from "react-redux";
 
 const QuestionMessage = (props) => {
   const broadcastLangCode = useSelector(
-    (state) => state.BroadcastParams.broadcastLang.value
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const broadcastProgrammCode = useSelector(
-    (state) => state.BroadcastParams.broadcastProgramm.value
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
   );
 
   const questionMessagesList = useSelector(

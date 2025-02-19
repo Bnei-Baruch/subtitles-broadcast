@@ -31,29 +31,36 @@ export default function useMqtt() {
   const clientIdRef = useRef(null);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
+
   const username = useSelector(
     (state) => state.UserProfile.userProfile.profile.username
   );
+
   const firstName = useSelector(
     (state) => state.UserProfile.userProfile.profile.firstName
   );
+
   const lastName = useSelector(
     (state) => state.UserProfile.userProfile.profile.lastName
   );
 
-  const broadcastProgrammCode = useSelector(
-    (state) => state.BroadcastParams.broadcastProgramm.value
-  );
   const broadcastLangCode = useSelector(
-    (state) => state.BroadcastParams.broadcastLang.value
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
+
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
   );
 
   let clientId = useSelector((state) => state.mqtt.clientId);
   if (!clientId) {
     clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
     dispatch(setClientId(clientId));
+  } else {
+    clientIdRef.current = clientId;
   }
-  clientIdRef.current = clientId;
 
   useEffect(() => {
     if (!clientRef.current) {

@@ -13,13 +13,12 @@ import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
 import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
-import GetLangaugeCode from "../Utils/Const";
 import { Search } from "../Layout/Search";
 import { useNavigate } from "react-router-dom";
 
 const Source = () => {
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
@@ -31,11 +30,14 @@ const Source = () => {
     : { page: 1, limit: 10 };
   const [page, setPage] = useState(localPagination);
   const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
-  
+
   const updatePage = (targetPage, targetLimit) => {
     if (targetPage === page.page && targetLimit === page.limit) return;
 
-    localStorage.setItem("pagination", JSON.stringify({ page: targetPage, limit: targetLimit }));
+    localStorage.setItem(
+      "pagination",
+      JSON.stringify({ page: targetPage, limit: targetLimit })
+    );
     setPage({ page: targetPage, limit: targetLimit });
     setPageIndex({
       startIndex: (targetPage - 1) * targetLimit + 1,
@@ -78,13 +80,13 @@ const Source = () => {
   useEffect(() => {
     dispatch(
       GetAllSourcePathData({
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         page: page.page,
         limit: page.limit,
         keyword: sessionStorage.getItem("headerSearchKeywordSource"),
       })
     );
-  }, [page.page, page.limit, broadcastLangObj.label]);
+  }, [page.page, page.limit, broadcastLangCode]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -92,7 +94,7 @@ const Source = () => {
         DeleteSource({
           search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           source_uid: SourceUidForDeleteSlide,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
       setFinalConfirm(false);
@@ -102,7 +104,7 @@ const Source = () => {
         BookmarkSlideFromArchivePage({
           search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           data: deleteId,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
       setToggle(false);
@@ -131,7 +133,7 @@ const Source = () => {
                   "headerSearchKeywordSource"
                 ),
                 data: bookmarkData,
-                language: broadcastLangObj.label,
+                language: broadcastLangCode,
                 params: page,
               })
             );
@@ -272,7 +274,7 @@ const Source = () => {
                                     "headerSearchKeywordSource"
                                   ),
                                   bookmark_id: key.bookmark_id,
-                                  language: broadcastLangObj.label,
+                                  language: broadcastLangCode,
                                   page: page.page,
                                   limit: page.limit,
                                 })
@@ -290,7 +292,7 @@ const Source = () => {
                               setUnbookmarkAction(false);
                               dispatch(
                                 UserBookmarkList({
-                                  language: broadcastLangObj.label,
+                                  language: broadcastLangCode,
                                 })
                               ).then((res) => {
                                 let update = false;
@@ -320,7 +322,7 @@ const Source = () => {
                                         (k) => k.bookmark_id !== null
                                       )?.length,
                                     },
-                                    language: broadcastLangObj.label,
+                                    language: broadcastLangCode,
                                     params: page,
                                   })
                                 ).then((res) => {

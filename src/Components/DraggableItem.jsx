@@ -26,10 +26,6 @@ const DraggableItem = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const bookmarkList = useSelector((state) => state.ArchiveList.bookmarkList);
-
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
   const dispatch = useDispatch();
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
@@ -39,6 +35,10 @@ const DraggableItem = ({
   const userSettings = useSelector((state) => state.userSettings.userSettings);
   const userSelectedFileUID = userSettings?.selected_file_uid || null;
   const selected = userSelectedFileUID === parentBookmarkFileUid;
+
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
 
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
@@ -112,7 +112,7 @@ const DraggableItem = ({
             dispatch(
               UnBookmarkSlide({
                 bookmark_id: parentBookmarkId,
-                language: broadcastLangObj.label,
+                language: broadcastLangCode,
               })
             )
           }

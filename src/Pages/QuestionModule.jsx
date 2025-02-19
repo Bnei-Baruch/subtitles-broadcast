@@ -7,29 +7,24 @@ import { publishEvent } from "../Utils/Events";
 import { useSelector } from "react-redux";
 
 const QuestionModule = () => {
-  const mqttClientId = localStorage.getItem("mqttClientId");
   const [questionText, setQuestionText] = useState("");
   const [handleSuccess, setHandleSuccess] = useState(false);
-  const textAreaRef = useRef(null); // ✅ Ref for focusing textarea
-
-  const broadcastProgrammObj = useSelector(
-    (state) => state.BroadcastParams.broadcastProgramm
+  const textAreaRef = useRef(null);
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
   );
-
-  const broadcastProgrammCode = broadcastProgrammObj.value;
-  const broadcastLangCode = broadcastLangObj.value;
   const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
 
   useEffect(() => {
-    // ✅ Update LTR/RTL when language changes
     setIsLtr(languageIsLtr(broadcastLangCode));
   }, [broadcastLangCode]);
 
   useEffect(() => {
-    // ✅ Focus and select text in the textarea on component mount
     if (textAreaRef.current) {
       textAreaRef.current.focus();
       textAreaRef.current.select();
@@ -109,7 +104,7 @@ const QuestionModule = () => {
             </span>
           )}
           <textarea
-            ref={textAreaRef} // ✅ Set ref for focus/select
+            ref={textAreaRef}
             className="new-question-txt form-control"
             id="new_question_txt"
             rows="8"

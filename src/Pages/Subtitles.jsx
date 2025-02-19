@@ -41,9 +41,6 @@ function usePrevious(value) {
 }
 
 const Subtitles = () => {
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
@@ -59,7 +56,6 @@ const Subtitles = () => {
   const previousSearch = usePrevious(searchSlide);
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const languages = GetLangaugeCode();
   const navigate = useNavigate();
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
@@ -70,6 +66,10 @@ const Subtitles = () => {
   );
   const userSettings = useSelector((state) => state.userSettings.userSettings);
   const userSelectedFileUID = userSettings?.selected_file_uid || null;
+
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
 
   const updateSelectedSlide = (newSelectedSlide) => {
     console.log("newSelectedSlide", newSelectedSlide);
@@ -86,7 +86,7 @@ const Subtitles = () => {
     const targetBookmarkSlideID =
       slideID.ID +
         slideID?.languages.findIndex(
-          (langCode) => langCode === languages[broadcastLangObj.label]
+          (langCode) => langCode === broadcastLangCode
         ) || 0;
     dispatch(
       BookmarkSlide({
@@ -95,7 +95,7 @@ const Subtitles = () => {
           slide_id: targetBookmarkSlideID,
           update: true,
         },
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
       })
     );
 
@@ -166,11 +166,11 @@ const Subtitles = () => {
   }, [handleKeyPress]);
 
   useEffect(() => {
-    if (broadcastLangObj.label) {
-      dispatch(UserBookmarkList({ language: broadcastLangObj.label }));
+    if (broadcastLangCode) {
+      dispatch(UserBookmarkList({ language: broadcastLangCode }));
       dispatch(clearAllBookmarks());
     }
-  }, [dispatch, broadcastLangObj.label]);
+  }, [dispatch, broadcastLangCode]);
 
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {

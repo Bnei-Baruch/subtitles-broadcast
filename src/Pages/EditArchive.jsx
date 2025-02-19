@@ -18,8 +18,8 @@ const EditArchive = ({ handleClose }) => {
   const [loading, setLoading] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const navigate = useNavigate();
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const dispatch = useDispatch();
   const [isLtr, setIsLtr] = useState(true);
@@ -50,7 +50,7 @@ const EditArchive = ({ handleClose }) => {
     dispatch(
       GetAllArchiveData({
         file_uid: localStorage.getItem("file_uid_for_edit_slide"),
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         limit: 2000,
       })
     )
@@ -215,7 +215,7 @@ const EditArchive = ({ handleClose }) => {
       dispatch(
         deleteNewSlide({
           data: deleteParams,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
     }
@@ -249,7 +249,7 @@ const EditArchive = ({ handleClose }) => {
       dispatch(
         addNewSlide({
           list: addNewSlideList,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
     }

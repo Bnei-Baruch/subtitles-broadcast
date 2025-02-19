@@ -16,8 +16,8 @@ import { Search } from "../Layout/Search";
 
 const Archive = () => {
   const navigate = useNavigate();
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
@@ -28,11 +28,14 @@ const Archive = () => {
     : { page: 1, limit: 10 };
   const [page, setPage] = useState(localPagination);
   const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
-  
+
   const updatePage = (targetPage, targetLimit) => {
     if (targetPage === page.page && targetLimit === page.limit) return;
 
-    localStorage.setItem("pagination", JSON.stringify({ page: targetPage, limit: targetLimit }));
+    localStorage.setItem(
+      "pagination",
+      JSON.stringify({ page: targetPage, limit: targetLimit })
+    );
     setPage({ page: targetPage, limit: targetLimit });
     setPageIndex({
       startIndex: (targetPage - 1) * targetLimit + 1,
@@ -57,9 +60,6 @@ const Archive = () => {
 
   const [editSlide, setEditSlide] = useState("");
   const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
-
-  const [toggle, setToggle] = useState(false);
-  const [finalConfirm, setFinalConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
@@ -72,7 +72,7 @@ const Archive = () => {
     if (!editSlide) {
       dispatch(
         GetAllArchiveData({
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
           page: page.page,
           limit: page.limit,
           keyword: localStorage?.getItem("free-text"),
@@ -88,7 +88,7 @@ const Archive = () => {
           console.error("Error fetching archive data:", error);
         });
     }
-  }, [editSlide, page.page, page.limit, broadcastLangObj.label, dispatch]);
+  }, [editSlide, page.page, page.limit, broadcastLangCode, dispatch]);
 
   useEffect(() => {
     if (fileUidForEditSlide !== null) {
@@ -113,13 +113,13 @@ const Archive = () => {
               BookmarkSlideFromArchivePage({
                 search_keyword: localStorage.getItem("free-text"),
                 data: bookmarkData,
-                language: broadcastLangObj.label,
+                language: broadcastLangCode,
                 params: page,
               })
             ).then((response) => {
               dispatch(
                 GetAllArchiveData({
-                  language: broadcastLangObj.label,
+                  language: broadcastLangCode,
                   page: page.page,
                   limit: page.limit,
                   keyword: localStorage.getItem("free-text"),
@@ -140,7 +140,7 @@ const Archive = () => {
       );
     }
   }, [
-    broadcastLangObj.label,
+    broadcastLangCode,
     bookmarkData,
     confirmation,
     dispatch,
@@ -173,7 +173,7 @@ const Archive = () => {
           order: archiveList?.slides?.find((k) => k.bookmark_id !== null)
             ?.length,
         },
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         params: page,
       })
     ).then((res) => {
@@ -197,7 +197,7 @@ const Archive = () => {
       UnBookmarkSlide({
         search_keyword: localStorage.getItem("free-text"),
         bookmark_id: key.bookmark_id,
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         page: page.page,
         limit: page.limit,
       })
@@ -211,7 +211,7 @@ const Archive = () => {
         });
         dispatch(
           GetAllArchiveData({
-            language: broadcastLangObj.label,
+            language: broadcastLangCode,
             page: page.page,
             limit: page.limit,
             keyword: localStorage.getItem("free-text"),

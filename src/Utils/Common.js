@@ -1,34 +1,4 @@
-import { broadcastLangMapObj, broadcastLanguages } from "./Const";
-
-export function getCurrentBroadcastLanguage() {
-  let bcLangObj;
-  const broadcastLangObjStr = localStorage.getItem("broadcastLangObj");
-
-  if (broadcastLangObjStr) {
-    bcLangObj = JSON.parse(broadcastLangObjStr);
-  } else {
-    const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
-
-    bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
-      ? broadcastLangMapObj[bcLanglocalStorageVal]
-      : broadcastLanguages[0];
-  }
-
-  return bcLangObj;
-}
-
-export function getCurrentBroadcastProgramm() {
-  let bcProgrammObj;
-  const broadcastProgrammObjStr = localStorage.getItem("broadcastProgrammObj");
-
-  if (broadcastProgrammObjStr) {
-    bcProgrammObj = JSON.parse(broadcastProgrammObjStr);
-  } else {
-    bcProgrammObj = { value: "morning_lesson", label: "Morning lesson" };
-  }
-
-  return bcProgrammObj;
-}
+import { broadcastLangMapObj } from "./Const";
 
 export function parseMqttMessage(mqttMessage) {
   if (mqttMessage) {
@@ -63,20 +33,6 @@ export function getSubtitlesDisplayModeTopic(
 
 export const subtitlesDisplayModeTopic = "subtitles/display_mode";
 
-export const getMqttClientId = () => {
-  let clientId;
-  const ssMqttClientId = sessionStorage.getItem("mqttClientId");
-
-  if (ssMqttClientId) {
-    clientId = ssMqttClientId;
-  } else {
-    clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-    sessionStorage.setItem("mqttClientId", clientId);
-  }
-
-  return clientId;
-};
-
 export function languageIsLtr(langCode) {
   let isLeftToRight = true;
 
@@ -85,23 +41,6 @@ export function languageIsLtr(langCode) {
 
     if (lnagObj) {
       isLeftToRight = !(lnagObj.isLtr === false);
-    }
-  }
-
-  return isLeftToRight;
-}
-
-export function messageIsLtr(message) {
-  let isLeftToRight = true;
-
-  if (message) {
-    if (typeof message.isLtr !== "undefined") {
-      isLeftToRight = !(message.isLtr === false);
-    } else if (typeof message.lang !== "undefined") {
-      isLeftToRight = languageIsLtr(message.lang);
-    } else {
-      const langObj = getCurrentBroadcastLanguage();
-      isLeftToRight = languageIsLtr(langObj.value);
     }
   }
 

@@ -2,11 +2,10 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
-import GetLangaugeCode, { MAX_SLIDE_LIMIT } from "../../Utils/Const";
+import { MAX_SLIDE_LIMIT } from "../../Utils/Const";
 import debugLog from "../../Utils/debugLog";
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const languages = GetLangaugeCode();
 
 const initialState = {
   archiveList: [],
@@ -26,9 +25,6 @@ const API_URL = {
 export const GetAllArchiveData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    if (data.language) {
-      data.language = languages[data.language];
-    }
     const response = await axios.get(`${API}${API_URL.GetALL}`, {
       params: data,
     });
@@ -67,7 +63,7 @@ export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}bookmark`, {
-      params: { language: languages[data.language] },
+      params: { language: data.language },
     });
     return response.data;
   }
@@ -301,7 +297,9 @@ export const updateSourcePath = createAsyncThunk(
       response.data.success && toast.success(response.data.message);
       return response.data;
     } catch (error) {
-      toast.error(`${error.response.data.error} ${error.response.data.description}`);
+      toast.error(
+        `${error.response.data.error} ${error.response.data.description}`
+      );
       return thunkAPI.rejectWithValue(error.response.data);
     }
   }

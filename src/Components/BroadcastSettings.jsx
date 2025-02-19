@@ -5,12 +5,14 @@ import Container from "react-bootstrap/Container";
 import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import DropdownButtonDef from "../Components/DropdownButtonDef";
-import { broadcastLanguages, brodcastProgrammArr } from "../Utils/Const";
-import { useDispatch, useSelector } from "react-redux";
 import {
-  setBroadcastLang,
-  setBroadcastProgramm,
-} from "../Redux/BroadcastParams/BroadcastParamsSlice";
+  broadcastLanguages,
+  brodcastProgrammArr,
+  broadcastLangMapObj,
+  brodcastProgrammMapObj,
+} from "../Utils/Const";
+import { useDispatch, useSelector } from "react-redux";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 
 const leftColSize = 4;
 const rightColSize = 8;
@@ -64,19 +66,32 @@ export function BroadcastSettings({ props }) {
       : true;
   });
 
-  const broadcastLang = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
-  const broadcastProgramm = useSelector(
-    (state) => state.BroadcastParams.broadcastProgramm
-  );
+  const currentLangItem = broadcastLangMapObj[broadcastLangCode];
+  const broadcastLangLabel = currentLangItem.label || "Unknown";
 
-  const updateBroadcastProgramm = (newProgramm) => {
-    dispatch(setBroadcastProgramm(newProgramm));
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
+  );
+  const currentProgrammItem = brodcastProgrammMapObj[broadcastProgrammCode];
+  const currentProgrammLabel = currentProgrammItem?.label || "Unknown";
+
+  const updateBroadcastProgramm = (newProgrammItem) => {
+    dispatch(
+      updateMergedUserSettings({
+        broadcast_programm_code: newProgrammItem.value,
+      })
+    );
   };
 
-  const updateBroadcastLang = (newLang) => {
-    dispatch(setBroadcastLang(newLang));
+  const updateBroadcastLang = (newLangItem) => {
+    dispatch(
+      updateMergedUserSettings({ broadcast_language_code: newLangItem.value })
+    );
   };
 
   const handleClose = () => {
@@ -90,13 +105,12 @@ export function BroadcastSettings({ props }) {
     <>
       <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
         <div className="side-menu-item-holder">
-          {/* <label style={styles.labelMain}>Chanel: </label> */}
           <img
             src="/image/new_channel_icon.svg"
             alt="Channel Icon"
             className="icon"
           />
-          <span style={styles.labelMainVal}>{broadcastProgramm.label}</span>
+          <span style={styles.labelMainVal}>{currentProgrammLabel}</span>
         </div>
         <div className="side-menu-item-holder">
           {/* <label style={styles.labelMain}>Language: </label> */}
@@ -105,7 +119,7 @@ export function BroadcastSettings({ props }) {
             alt="Language Icon"
             className="icon"
           />
-          <span style={styles.labelMainLast}>{broadcastLang.label}</span>
+          <span style={styles.labelMainLast}>{broadcastLangLabel}</span>
         </div>
       </Button>
 
@@ -127,7 +141,7 @@ export function BroadcastSettings({ props }) {
                 <DropdownButtonDef
                   id="brodcast_programm"
                   data={brodcastProgrammArr}
-                  currentValue={broadcastProgramm}
+                  currentValue={currentProgrammItem}
                   setDataRef={updateBroadcastProgramm}
                   style={styles.dropDown}
                   variant="light"
@@ -147,7 +161,7 @@ export function BroadcastSettings({ props }) {
                 <DropdownButtonDef
                   id="brodcast_lang"
                   data={broadcastLanguages}
-                  currentValue={broadcastLang}
+                  currentValue={currentLangItem}
                   setDataRef={updateBroadcastLang}
                   style={styles.dropDown}
                   variant="light"

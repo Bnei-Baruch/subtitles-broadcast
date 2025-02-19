@@ -43,6 +43,11 @@ export const brodcastProgrammArr = [
   { value: "brodcast_3", label: "Brodcast 3" },
 ];
 
+export let brodcastProgrammMapObj = {};
+brodcastProgrammArr.forEach((programmItem, index) => {
+  brodcastProgrammMapObj[programmItem.value] = programmItem;
+});
+
 export const MAX_SLIDE_LIMIT = 2000;
 export const DEF_BROADCAST_LANG = "he";
 export const DEF_BROADCAST_PROG = "morning_lessone";

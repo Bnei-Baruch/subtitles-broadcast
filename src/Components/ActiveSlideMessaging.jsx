@@ -22,23 +22,31 @@ export function ActiveSlideMessaging() {
     (state) => state.mqtt.selectedSubtitleSlide,
     (prev, next) => prev?.ID === next?.ID
   );
+
   const selectedQuestionMessage = useSelector(
     (state) => state.mqtt.selectedQuestionMessage
   );
+
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
+
   const isUserInitiatedChange = useSelector(
     (state) => state.mqtt.isUserInitiatedChange
   );
+
   const activeBroadcastMessage = useSelector(
     (state) => state.mqtt.activeBroadcastMessage
   );
-  const broadcastProgrammCode = useSelector(
-    (state) => state.BroadcastParams.broadcastProgramm.value
-  );
+
   const broadcastLangCode = useSelector(
-    (state) => state.BroadcastParams.broadcastLang.value
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
+
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
   );
 
   const subtitleMqttTopic = getSubtitleMqttTopic(

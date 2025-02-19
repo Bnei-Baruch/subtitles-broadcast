@@ -23,14 +23,14 @@ const BookContent = ({
   const dispatch = useDispatch();
   const focusSlides = useRef();
   const [loading, setLoading] = useState(false);
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
   const contents = useSelector((state) => state.SubtitleData.contentList.data);
   const userSettings = useSelector((state) => state.userSettings.userSettings);
   const userSelectedSlideId = userSettings?.selected_slide_id || null;
   const userSelectedFileUID = userSettings?.selected_file_uid || null;
   const [activeSlideId, setActiveSlideID] = useState(null);
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
 
   useEffect(() => {
     setActiveSlideID(userSelectedSlideId);
@@ -107,7 +107,7 @@ const BookContent = ({
             slide_id: item.ID,
             update: true,
           },
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       ).finally(() => {
         // ✅ Hide loading
@@ -130,13 +130,7 @@ const BookContent = ({
               id={`slide_${item.ID}`}
               source-uid={item.source_uid}
               onClick={() => {
-                handleSlideClick(
-                  setLoading,
-                  setSearchSlide,
-                  item,
-                  dispatch,
-                  broadcastLangObj
-                );
+                handleSlideClick(setLoading, setSearchSlide, item, dispatch);
               }}
               ref={
                 +slideOrderNumber + 1 === item.order_number + 1
