@@ -23,10 +23,8 @@ import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
 import { useNavigate } from "react-router-dom";
-import GetLangaugeCode, {
-  MAX_SLIDE_LIMIT,
-  broadcastLanguages,
-} from "../Utils/Const";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import { MAX_SLIDE_LIMIT, broadcastLanguages } from "../Utils/Const";
 import {
   setSubtitlesDisplayMode,
   setUserSelectedSlide,
@@ -71,35 +69,36 @@ const Subtitles = () => {
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
 
-  const updateSelectedSlide = (newSelectedSlide) => {
-    console.log("newSelectedSlide", newSelectedSlide);
-
-    if (newSelectedSlide < 0) {
-      newSelectedSlide = 0;
-    } else if (newSelectedSlide > maxSlideIndex) {
-      newSelectedSlide = maxSlideIndex;
+  const updateSelectedSlide = (newSelectedSlideOrderNum, newSlide) => {
+    if (newSelectedSlideOrderNum < 0) {
+      newSelectedSlideOrderNum = 0;
+    } else if (newSelectedSlideOrderNum > maxSlideIndex) {
+      newSelectedSlideOrderNum = maxSlideIndex;
     }
-    const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-    const slideID = UserAddedList?.slides?.find(
-      (key) => key?.order_number == newSelectedSlide
-    );
-    const targetBookmarkSlideID =
-      slideID.ID +
-        slideID?.languages.findIndex(
-          (langCode) => langCode === broadcastLangCode
-        ) || 0;
-    dispatch(
-      BookmarkSlide({
-        data: {
-          file_uid: file_uid,
-          slide_id: targetBookmarkSlideID,
-          update: true,
-        },
-        language: broadcastLangCode,
-      })
+
+    const targetSlideObj = UserAddedList?.slides?.find(
+      (key) => key?.order_number === newSelectedSlideOrderNum
     );
 
-    dispatch(setUserSelectedSlide(newSelectedSlide));
+    if (targetSlideObj) {
+      dispatch(setUserSelectedSlide(targetSlideObj));
+      dispatch(
+        updateMergedUserSettings({
+          selected_slide_id: targetSlideObj.ID,
+        })
+      );
+
+      dispatch(
+        BookmarkSlide({
+          data: {
+            file_uid: targetSlideObj.file_uid,
+            slide_id: targetSlideObj.ID,
+            update: true,
+          },
+          language: broadcastLangCode,
+        })
+      );
+    }
   };
 
   const handleChange = (selectedOption) => {
@@ -118,8 +117,7 @@ const Subtitles = () => {
       }
 
       let currentIndex = UserAddedList.slides.findIndex(
-        (slide) =>
-          slide.order_number === selectedSubtitleSlide?.order_number + 1
+        (slide) => slide.order_number === selectedSubtitleSlide?.order_number
       );
 
       if (currentIndex === -1) {
@@ -148,7 +146,7 @@ const Subtitles = () => {
       if (newIndex !== currentIndex) {
         const newSlide = UserAddedList.slides[newIndex];
         if (newSlide) {
-          updateSelectedSlide(newSlide.order_number);
+          updateSelectedSlide(newSlide.order_number, newSlide);
         }
       }
     },
