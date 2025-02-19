@@ -962,37 +962,47 @@ func (h *Handler) GetUserSettings(ctx *gin.Context) {
 		return
 	}
 
-	var userSettings struct {
-		AppSettings string `json:"app_settings"`
+	var count int64
+	err := h.Database.Table("user_settings").
+		Where("user_id = ?", userID).
+		Count(&count).Error
+
+	// ✅ If no record exists, return 404 Not Found
+	if count == 0 {
+		log.Printf("❌ No user settings record found for user: %s.", userID)
+		ctx.JSON(http.StatusNotFound, getResponse(false, nil, "User settings not found", "User settings do not exist"))
+		return
 	}
 
-	err := h.Database.Table("user_settings").
+	var existingSettings string
+	err = h.Database.Table("user_settings").
 		Select("app_settings").
 		Where("user_id = ?", userID).
 		Limit(1).
-		Scan(&userSettings).Error
+		Scan(&existingSettings).Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("⚠️ No user settings found for user: %s. Returning default settings.", userID)
-			defaultSettings := "{}"
-			ctx.JSON(http.StatusOK, getResponse(true, defaultSettings, "", "User settings not found, returning defaults"))
-			return
-		}
 		log.Printf("❌ Error fetching user settings: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to retrieve user settings"))
 		return
 	}
 
-	log.Printf("✅ Retrieved User Settings for User: %s - %v", userID, userSettings.AppSettings)
+	// ✅ If `app_settings` is empty, return 404 (record exists but is empty)
+	if existingSettings == "" {
+		log.Printf("❌ User settings exist but `app_settings` is empty for user: %s.", userID)
+		ctx.JSON(http.StatusNotFound, getResponse(false, nil, "User settings not found", "User settings do not exist"))
+		return
+	}
 
+	// ✅ Parse JSON settings
 	var parsedSettings map[string]interface{}
-	if err := json.Unmarshal([]byte(userSettings.AppSettings), &parsedSettings); err != nil {
+	if err := json.Unmarshal([]byte(existingSettings), &parsedSettings); err != nil {
 		log.Printf("❌ JSON Unmarshal Error: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to parse user settings"))
 		return
 	}
 
+	log.Printf("✅ Retrieved User Settings for User: %s - %v", userID, parsedSettings)
 	ctx.JSON(http.StatusOK, getResponse(true, parsedSettings, "", "User settings retrieved successfully"))
 }
 
@@ -1004,7 +1014,10 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 	}
 
 	var requestData map[string]interface{}
-	if err := json.NewDecoder(ctx.Request.Body).Decode(&requestData); err != nil {
+	decoder := json.NewDecoder(ctx.Request.Body)
+	decoder.DisallowUnknownFields() // Prevents invalid fields from being processed
+
+	if err := decoder.Decode(&requestData); err != nil {
 		log.Printf("❌ JSON Decoding Error: %v", err)
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Invalid JSON format"))
 		return
@@ -1012,14 +1025,61 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 
 	log.Printf("🛠️ Received User Settings Update - UserID: %s, Data: %+v", userID, requestData)
 
-	err := h.Database.Exec(`
+	// Initialize a map for new merged settings
+	var mergedSettings map[string]interface{}
+
+	// Fetch existing settings if they exist
+	var existingSettings string
+	err := h.Database.Table("user_settings").
+		Select("app_settings").
+		Where("user_id = ?", userID).
+		Limit(1).
+		Scan(&existingSettings).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Printf("⚠️ No existing settings found. Creating new entry for user: %s", userID)
+		mergedSettings = map[string]interface{}{}
+	} else if err != nil {
+		log.Printf("❌ Error fetching existing user settings: %v", err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to retrieve user settings"))
+		return
+	} else {
+		// Parse existing settings only if they exist and are not empty
+		if existingSettings != "" {
+			if err := json.Unmarshal([]byte(existingSettings), &mergedSettings); err != nil {
+				log.Printf("❌ JSON Unmarshal Error: %v", err)
+				ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to parse user settings"))
+				return
+			}
+		} else {
+			mergedSettings = map[string]interface{}{}
+		}
+	}
+
+	// Merge new settings with existing settings, avoiding nil values
+	for key, value := range requestData {
+		if value != nil { // ✅ Only update non-nil values
+			mergedSettings[key] = value
+		}
+	}
+
+	// Convert updated settings to JSON
+	mergedSettingsJSON, err := json.Marshal(mergedSettings)
+	if err != nil {
+		log.Printf("❌ JSON Marshal Error: %v", err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to encode user settings"))
+		return
+	}
+
+	// Insert or update user settings
+	err = h.Database.Exec(`
         INSERT INTO user_settings (user_id, app_settings, created_by, updated_by, updated_at)
         VALUES (?, ?, ?, ?, NOW())
         ON CONFLICT (user_id) DO UPDATE 
         SET app_settings = EXCLUDED.app_settings, 
             updated_by = EXCLUDED.updated_by,
             updated_at = NOW()`,
-		userID, requestData, userID, userID,
+		userID, mergedSettingsJSON, userID, userID,
 	).Error
 
 	if err != nil {
