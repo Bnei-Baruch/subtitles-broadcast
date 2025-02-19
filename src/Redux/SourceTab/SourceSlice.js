@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import GetLangaugeCode from "../../Utils/Const";
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const languages = GetLangaugeCode()
+const languages = GetLangaugeCode();
 
 const initialState = {
   sourcePathList: [],
@@ -21,9 +21,6 @@ const API_URL = {
 export const GetAllSourcePathData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    if (data.language) {
-      data.language = languages[data.language];
-    }
     const response = await axios.get(`${API}${API_URL.GetALL}`, {
       params: data,
     });
@@ -35,10 +32,17 @@ export const GetAllSourcePathData = createAsyncThunk(
 export const DeleteSource = createAsyncThunk(
   `DeleteSource`,
   async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}${API_URL.Delete+"/"+data.source_uid+"?force_delete_bookmarks=true"}`, {
-    });
+    const response = await axios.delete(
+      `${API}${API_URL.Delete + "/" + data.source_uid + "?force_delete_bookmarks=true"}`,
+      {}
+    );
 
-    thunkAPI.dispatch(GetAllSourcePathData({ language: data.language, keyword: data.search_keyword }));
+    thunkAPI.dispatch(
+      GetAllSourcePathData({
+        language: data.language,
+        keyword: data.search_keyword,
+      })
+    );
 
     return response.data;
   }
@@ -47,7 +51,9 @@ export const DeleteSource = createAsyncThunk(
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
-    const response = await axios.get(`${API}bookmark`, { params: { language: languages[data.language] } });
+    const response = await axios.get(`${API}bookmark`, {
+      params: { language: data.language },
+    });
     return response.data;
   }
 );
@@ -77,7 +83,13 @@ export const BookmarkSlideFromArchivePage = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await axios.post(`${API}bookmark`, data.data);
-      thunkAPI.dispatch(GetAllSourcePathData({ language: data.language, ...data.params, keyword:data.search_keyword }));
+      thunkAPI.dispatch(
+        GetAllSourcePathData({
+          language: data.language,
+          ...data.params,
+          keyword: data.search_keyword,
+        })
+      );
       thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
       return response.data;
     } catch (error) {
@@ -107,12 +119,14 @@ export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
     const response = await axios.delete(`${API}bookmark/${data.bookmark_id}`);
-    thunkAPI.dispatch(GetAllSourcePathData({
-      language: data.language,
-      keyword: data.search_keyword,
-      page: data.page, 
-      limit: data.limit,
-    }));
+    thunkAPI.dispatch(
+      GetAllSourcePathData({
+        language: data.language,
+        keyword: data.search_keyword,
+        page: data.page,
+        limit: data.limit,
+      })
+    );
     thunkAPI.dispatch(UserBookmarkList({ language: data.language }));
     return response.data;
   }
@@ -151,7 +165,7 @@ const SourceSlice = createSlice({
       return { ...state, bookmarkListLoading: true };
     });
     builder.addCase(UserBookmarkList.fulfilled, (state, { payload }) => {
-      return { ...state, bookmarkList: payload, bookmarkListLoading: false};
+      return { ...state, bookmarkList: payload, bookmarkListLoading: false };
     });
     builder.addCase(BookmarkSlide.fulfilled, (state, { payload }) => {
       return { ...state, bookmarkList: payload };
