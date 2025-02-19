@@ -13,36 +13,72 @@ import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "../Layout/Search";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 
 const Archive = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+
   const queryParams = new URLSearchParams(useLocation().search);
-  const dispatch = useDispatch();
   const archiveList = useSelector(getAllArchiveList);
   const [unbookmarkAction, setUnbookmarkAction] = useState(false);
-  const localPagination = localStorage?.getItem("pagination")
-    ? JSON?.parse(localStorage?.getItem("pagination"))
-    : { page: 1, limit: 10 };
-  const [page, setPage] = useState(localPagination);
-  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
+
+  const userSettingsPagination = useSelector(
+    (state) => state.userSettings.userSettings.source_pagination
+  );
+  const memoizedPagination = useMemo(
+    () => userSettingsPagination || { page: 1, limit: 10 },
+    [userSettingsPagination]
+  );
+
+  const [page, setPage] = useState(memoizedPagination);
+
+  const [editSlide, setEditSlide] = useState("");
+  const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
+  const [confirmation, setConfirmation] = useState(false);
+  const [bookmarkData, setBookmarkData] = useState({
+    file_uid: "",
+    slide_id: "",
+    update: "",
+    order: "",
+  });
+
+  const [pageIndex, setPageIndex] = useState(() => ({
+    startIndex:
+      ((userSettingsPagination?.page || 1) - 1) *
+        (userSettingsPagination?.limit || 10) +
+      1,
+    endIndex: Math.min(
+      (userSettingsPagination?.page || 1) *
+        (userSettingsPagination?.limit || 10),
+      Number.MAX_VALUE
+    ),
+  }));
 
   const updatePage = (targetPage, targetLimit) => {
-    if (targetPage === page.page && targetLimit === page.limit) return;
+    if (
+      targetPage === memoizedPagination.page &&
+      targetLimit === memoizedPagination.limit
+    )
+      return;
 
-    localStorage.setItem(
-      "pagination",
-      JSON.stringify({ page: targetPage, limit: targetLimit })
+    dispatch(
+      updateMergedUserSettings({
+        archive_pagination: { page: targetPage, limit: targetLimit },
+      })
     );
+
     setPage({ page: targetPage, limit: targetLimit });
+
     setPageIndex({
       startIndex: (targetPage - 1) * targetLimit + 1,
       endIndex: Math.min(
         targetPage * targetLimit,
-        archiveList?.pagination?.total_rows,
-        Number.MAX_VALUE
+        archiveList?.pagination?.total_rows || Number.MAX_VALUE
       ),
     });
   };
@@ -57,16 +93,6 @@ const Archive = () => {
       ),
     });
   }, [archiveList, page.limit, page.page]);
-
-  const [editSlide, setEditSlide] = useState("");
-  const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
-  const [confirmation, setConfirmation] = useState(false);
-  const [bookmarkData, setBookmarkData] = useState({
-    file_uid: "",
-    slide_id: "",
-    update: "",
-    order: "",
-  });
 
   useEffect(() => {
     if (!editSlide) {

@@ -15,39 +15,30 @@ import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
 import { Search } from "../Layout/Search";
 import { useNavigate } from "react-router-dom";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 
 const Source = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+
   const queryParams = new URLSearchParams(useLocation().search);
-  const dispatch = useDispatch();
   const sourcePathList = useSelector(getAllSourcePathList);
-
   const [unbookmarkAction, setUnbookmarkAction] = useState(false);
-  const localPagination = localStorage?.getItem("source_pagination")
-    ? JSON?.parse(localStorage?.getItem("source_pagination"))
-    : { page: 1, limit: 10 };
-  const [page, setPage] = useState(localPagination);
-  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
 
-  const updatePage = (targetPage, targetLimit) => {
-    if (targetPage === page.page && targetLimit === page.limit) return;
+  const userSettingsPagination = useSelector(
+    (state) => state.userSettings.userSettings.source_pagination
+  );
 
-    localStorage.setItem(
-      "pagination",
-      JSON.stringify({ page: targetPage, limit: targetLimit })
-    );
-    setPage({ page: targetPage, limit: targetLimit });
-    setPageIndex({
-      startIndex: (targetPage - 1) * targetLimit + 1,
-      endIndex: Math.min(
-        targetPage * targetLimit,
-        sourcePathList?.pagination?.total_rows,
-        Number.MAX_VALUE
-      ),
-    });
-  };
+  const memoizedPagination = useMemo(
+    () => userSettingsPagination || { page: 1, limit: 10 },
+    [userSettingsPagination]
+  );
+
+  const [page, setPage] = useState(memoizedPagination);
 
   const message = "";
   const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
@@ -64,7 +55,41 @@ const Source = () => {
     update: "",
   });
 
-  const navigate = useNavigate();
+  const [pageIndex, setPageIndex] = useState(() => ({
+    startIndex:
+      ((userSettingsPagination?.page || 1) - 1) *
+        (userSettingsPagination?.limit || 10) +
+      1,
+    endIndex: Math.min(
+      (userSettingsPagination?.page || 1) *
+        (userSettingsPagination?.limit || 10),
+      Number.MAX_VALUE
+    ),
+  }));
+
+  const updatePage = (targetPage, targetLimit) => {
+    if (
+      targetPage === memoizedPagination.page &&
+      targetLimit === memoizedPagination.limit
+    )
+      return;
+
+    dispatch(
+      updateMergedUserSettings({
+        source_pagination: { page: targetPage, limit: targetLimit },
+      })
+    );
+
+    setPage({ page: targetPage, limit: targetLimit });
+
+    setPageIndex({
+      startIndex: (targetPage - 1) * targetLimit + 1,
+      endIndex: Math.min(
+        targetPage * targetLimit,
+        sourcePathList?.pagination?.total_rows || Number.MAX_VALUE
+      ),
+    });
+  };
 
   useEffect(() => {
     setPageIndex({

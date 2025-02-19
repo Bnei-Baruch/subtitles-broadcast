@@ -10,6 +10,8 @@ const initialState = {
     selected_file_uid: null,
     broadcast_programm_code: "morning_lesson",
     broadcast_language_code: "he",
+    source_pagination: { page: 1, limit: 10 },
+    archive_pagination: { page: 1, limit: 10 },
   },
   loading: false,
 };
@@ -19,51 +21,15 @@ export const fetchUserSettings = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const response = await axios.get(`${API}user/settings`);
-      return response.data.data; // Expecting JSON object from backend
+      return response.data.data;
     } catch (error) {
       debugLog("❌ fetchUserSettings Error:", error);
 
-      // ✅ If 404 Not Found, create initial user settings
       if (error.response?.status === 404) {
         debugLog("⚠️ User settings not found. Creating initial settings...");
         thunkAPI.dispatch(createInitialUserSettings());
       }
 
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.description || "Unknown error"
-      );
-    }
-  }
-);
-
-export const updateUserSettings = createAsyncThunk(
-  "userSettings/updateUserSettings",
-  async (updatedSettings, thunkAPI) => {
-    debugLog("🚀 Updating User Settings", updatedSettings);
-    try {
-      await axios.post(`${API}user/settings`, updatedSettings);
-      return updatedSettings;
-    } catch (error) {
-      debugLog("❌ updateUserSettings Error:", error);
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.description || "Unknown error"
-      );
-    }
-  }
-);
-
-export const createInitialUserSettings = createAsyncThunk(
-  "userSettings/createInitialUserSettings",
-  async (_, thunkAPI) => {
-    const { userSettings } = thunkAPI.getState().userSettings; // ✅ Get from Redux state
-
-    debugLog("🚀 Creating initial user settings:", userSettings);
-
-    try {
-      await axios.post(`${API}user/settings`, userSettings);
-      return userSettings;
-    } catch (error) {
-      debugLog("❌ createInitialUserSettings Error:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.description || "Unknown error"
       );
@@ -78,32 +44,37 @@ export const createInitialUserSettings = createAsyncThunk(
  * @param {Object} getState - Function to get the current Redux state.
  */
 export const updateMergedUserSettings =
-  (newSettings) => (dispatch, getState) => {
-    if (!newSettings) {
-      newSettings = {};
-    }
+  (newSettings) => async (dispatch, getState) => {
+    if (!newSettings) return;
 
     const currentSettings = getState().userSettings.userSettings || {};
     const updatedSettings = { ...currentSettings, ...newSettings };
 
     debugLog("🚀 Merging and updating user settings:", updatedSettings);
-    dispatch(updateUserSettings(updatedSettings));
+
+    try {
+      await axios.post(`${API}user/settings`, updatedSettings);
+      dispatch(setSettings(updatedSettings));
+    } catch (error) {
+      debugLog("❌ updateMergedUserSettings Error:", error);
+    }
   };
+
+/**
+ * Creates initial user settings in the database by using updateMergedUserSettings.
+ */
+export const createInitialUserSettings = () => (dispatch, getState) => {
+  const initialSettings = getState().userSettings.userSettings;
+  debugLog("🚀 Creating initial user settings:", initialSettings);
+  dispatch(updateMergedUserSettings(initialSettings));
+};
 
 const UserSettingsSlice = createSlice({
   name: "userSettings",
   initialState,
   reducers: {
-    setSelectedFileUid(state, action) {
-      state.selected_file_uid = action.payload;
-    },
-    setSelectedSlideId(state, action) {
-      state.selected_slide_id = action.payload;
-    },
     setSettings(state, action) {
-      const currentSettings = state || {};
-      const updatedSettings = { ...currentSettings, ...(action.payload || {}) };
-      state = updatedSettings;
+      state.userSettings = { ...state.userSettings, ...action.payload };
     },
   },
   extraReducers: (builder) => {
@@ -111,15 +82,8 @@ const UserSettingsSlice = createSlice({
       debugLog("✅ User Settings Loaded", action.payload);
       state.userSettings = action.payload;
     });
-
-    builder.addCase(updateUserSettings.fulfilled, (state, action) => {
-      debugLog("🛠️ User Settings Updated", action.payload);
-      state.userSettings = { ...state.userSettings, ...action.payload };
-    });
   },
 });
 
-export const { setSelectedFileUid, setSelectedSlideId, setSettings } =
-  UserSettingsSlice.actions;
-
+export const { setSettings } = UserSettingsSlice.actions;
 export default UserSettingsSlice.reducer;
