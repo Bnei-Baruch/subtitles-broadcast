@@ -174,7 +174,9 @@ const Source = () => {
             {/* Content for the second flex box centered */}
             <Search className="top-autocomplete" />
             <ReactPaginate
-              pageCount={sourcePathList?.pagination?.total_pages}
+              pageCount={Math.ceil(
+                sourcePathList?.pagination?.total_pages || 1
+              )}
               onPageChange={(e) => {
                 const selectedPage = e.selected + 1;
                 if (selectedPage <= sourcePathList?.pagination?.total_pages) {
@@ -225,8 +227,11 @@ const Source = () => {
           >
             <span>Row per page:</span>
             <select
-              value={/*localPagination?.limit ||*/ page.limit}
+              value={page.limit}
               className="ms-2"
+              onChange={(e) => {
+                updatePage(1, +e.target.value);
+              }}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -242,11 +247,11 @@ const Source = () => {
           {sourcePathList ? (
             <div style={{ overflowX: "auto" }}>
               <table className="" style={{ padding: "20px", minWidth: "100%" }}>
+                <colgroup>
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "15%" }} />
+                </colgroup>
                 <thead>
-                  <colgroup>
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "15%" }} />
-                  </colgroup>
                   <tr>
                     <th style={{ width: "20%", padding: "10px" }}>Path</th>
                     <th style={{ width: "15%", padding: "10px" }}>Action</th>
@@ -255,7 +260,7 @@ const Source = () => {
                 <tbody>
                   {sourcePathList?.paths?.map((key, index) => (
                     <tr
-                      key={key.ID}
+                      key={key.file_uid}
                       className={
                         key.bookmark_id !== null ? "bookmarkedrow" : ""
                       }
