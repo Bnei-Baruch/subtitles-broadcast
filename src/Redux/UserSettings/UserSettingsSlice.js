@@ -22,6 +22,13 @@ export const fetchUserSettings = createAsyncThunk(
       return response.data.data; // Expecting JSON object from backend
     } catch (error) {
       debugLog("❌ fetchUserSettings Error:", error);
+
+      // ✅ If 404 Not Found, create initial user settings
+      if (error.response?.status === 404) {
+        debugLog("⚠️ User settings not found. Creating initial settings...");
+        thunkAPI.dispatch(createInitialUserSettings());
+      }
+
       return thunkAPI.rejectWithValue(
         error.response?.data?.description || "Unknown error"
       );
@@ -38,6 +45,25 @@ export const updateUserSettings = createAsyncThunk(
       return updatedSettings;
     } catch (error) {
       debugLog("❌ updateUserSettings Error:", error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.description || "Unknown error"
+      );
+    }
+  }
+);
+
+export const createInitialUserSettings = createAsyncThunk(
+  "userSettings/createInitialUserSettings",
+  async (_, thunkAPI) => {
+    const { userSettings } = thunkAPI.getState().userSettings; // ✅ Get from Redux state
+
+    debugLog("🚀 Creating initial user settings:", userSettings);
+
+    try {
+      await axios.post(`${API}user/settings`, userSettings);
+      return userSettings;
+    } catch (error) {
+      debugLog("❌ createInitialUserSettings Error:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.description || "Unknown error"
       );
