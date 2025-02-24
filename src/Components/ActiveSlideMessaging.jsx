@@ -3,7 +3,6 @@ import { Slide } from "../Components/Slide";
 import { publishEvent } from "../Utils/Events";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  setActiveBroadcastMessage,
   resetUserInitiatedChange,
   setSelectedQuestionMessage,
   setRounRobinIndex,
@@ -70,7 +69,6 @@ export function ActiveSlideMessaging() {
   );
 
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
-  const lastSubtitleMessage = mqttMessages[subtitleMqttTopic];
 
   const publishSlide = (slide, topic, isJsonMsg) => {
     let slideJsonMsg;
@@ -176,15 +174,9 @@ export function ActiveSlideMessaging() {
   useEffect(() => {
     if (!isUserInitiatedChange) return;
 
-    let newActiveMessage = null;
+    if (subtitlesDisplayMode === "questions") {
+      let newActiveMessage = null;
 
-    if (subtitlesDisplayMode === "none") {
-      newActiveMessage = { type: "none", slide: "" };
-      publishEvent("mqttPublush", {
-        mqttTopic: subtitleMqttTopic,
-        message: newActiveMessage,
-      });
-    } else if (subtitlesDisplayMode === "questions") {
       if (
         !selectedQuestionMessage ||
         selectedQuestionMessage.visible === false
@@ -197,17 +189,8 @@ export function ActiveSlideMessaging() {
         mqttTopic: subtitleMqttTopic,
         message: newActiveMessage,
       });
-    } else if (subtitlesDisplayMode === "sources") {
-      // if (selectedSubtitleSlide && selectedSubtitleSlide.slide) {
-      //   newActiveMessage = publishSlide(
-      //     selectedSubtitleSlide,
-      //     subtitleMqttTopic,
-      //     false
-      //   );
-      // }
     }
 
-    debugLog("📡 Publishing new active message:", newActiveMessage);
     dispatch(resetUserInitiatedChange());
   }, [
     subtitlesDisplayMode,
