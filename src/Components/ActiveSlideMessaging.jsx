@@ -133,11 +133,10 @@ export function ActiveSlideMessaging() {
 
   useEffect(() => {
     // ✅ Prevent resetting `activeBroadcastMessage` if round-robin is active
+    if (!isUserInitiatedChange) return;
+
     if (isRoundRobinActiveRef.current) {
-      debugLog(
-        "🛑 Skipping activeBroadcastMessage reset (Round-Robin is active)"
-      );
-      isRoundRobinActiveRef.current = false; // ✅ Reset round-robin flag after first cycle
+      isRoundRobinActiveRef.current = false; // Reset round-robin flag after first cycle
       return;
     }
 
@@ -199,13 +198,13 @@ export function ActiveSlideMessaging() {
         message: newActiveMessage,
       });
     } else if (subtitlesDisplayMode === "sources") {
-      if (selectedSubtitleSlide && selectedSubtitleSlide.slide) {
-        newActiveMessage = publishSlide(
-          selectedSubtitleSlide,
-          subtitleMqttTopic,
-          false
-        );
-      }
+      // if (selectedSubtitleSlide && selectedSubtitleSlide.slide) {
+      //   newActiveMessage = publishSlide(
+      //     selectedSubtitleSlide,
+      //     subtitleMqttTopic,
+      //     false
+      //   );
+      // }
     }
 
     debugLog("📡 Publishing new active message:", newActiveMessage);
