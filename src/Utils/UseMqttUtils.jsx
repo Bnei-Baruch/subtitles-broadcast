@@ -103,26 +103,14 @@ export default function useMqtt() {
       clientRef.current.on("message", (topic, message) => {
         debugLog("📩 MQTT Message Received:", topic, message.toString());
 
-        dispatch(mqttMessageReceived({ topic, message: message.toString() }));
-
-        if (topic.includes("/display_mode")) {
-          const parsedMessage = JSON.parse(message);
-          const topicParts = topic.split("/");
-          const topicProgramCode = topicParts[1];
-          const topicLang = topicParts[2];
-
-          if (
-            topicLang === broadcastLangCode &&
-            topicProgramCode === broadcastProgrammCode
-          ) {
-            debugLog(
-              "🔄 Updating subtitlesDisplayMode for:",
-              topicProgramCode,
-              topicLang
-            );
-            dispatch(setSubtitlesDisplayModeFromMQTT(parsedMessage.slide));
-          }
-        }
+        dispatch(
+          mqttMessageReceived({
+            topic,
+            message: message.toString(),
+            broadcastLangCode,
+            broadcastProgrammCode,
+          })
+        );
       });
 
       clientRef.current.on("error", (err) => {

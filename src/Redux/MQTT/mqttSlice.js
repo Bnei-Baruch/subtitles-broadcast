@@ -1,4 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
+import {
+  getSubtitleMqttTopic,
+  getSubtitlesDisplayModeTopic,
+} from "../../Utils/Common";
 
 const initialState = {
   isConnected: false,
@@ -32,32 +36,46 @@ const mqttSlice = createSlice({
       state.mqttTopics = state.mqttTopics.filter((t) => t !== action.payload);
     },
     setUserSelectedSlide(state, action) {
-      state.selectedSubtitleSlide = action.payload; // ✅ UI-Selected Slide (Not Overwritten by MQTT)
+      state.selectedSubtitleSlide = action.payload;
     },
     mqttMessageReceived(state, action) {
-      const { topic, message } = action.payload;
+      const { topic, message, broadcastLangCode, broadcastProgrammCode } =
+        action.payload;
       const parsedMessage = JSON.parse(message);
       state.mqttMessages[topic] = parsedMessage;
 
       if (topic.includes("/question")) {
         const lang = parsedMessage.lang;
         state.questionMessagesList[lang] = parsedMessage;
-      } else if (topic.includes("/slide")) {
-        state.activeBroadcastMessage = parsedMessage; // ✅ MQTT-Received Slide (Separate from UI selection)
-      } else if (topic.includes("display_mode")) {
-        state.subtitlesDisplayMode = parsedMessage.slide;
+      } else {
+        if (broadcastProgrammCode && broadcastLangCode) {
+          const subtitleMqttTopic = getSubtitleMqttTopic(
+            broadcastProgrammCode,
+            broadcastLangCode
+          );
+          const displayModeTopic = getSubtitlesDisplayModeTopic(
+            broadcastProgrammCode,
+            broadcastLangCode
+          );
+
+          if (topic === subtitleMqttTopic) {
+            state.activeBroadcastMessage = parsedMessage;
+          } else if (topic === displayModeTopic) {
+            state.subtitlesDisplayMode = parsedMessage.slide;
+          }
+        }
       }
     },
     setActiveBroadcastMessage(state, action) {
-      state.activeBroadcastMessage = action.payload; // ✅ Store active message
+      state.activeBroadcastMessage = action.payload;
     },
     setSubtitlesDisplayMode: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
-      state.isUserInitiatedChange = true; // ✅ Mark as user action
+      state.isUserInitiatedChange = true;
     },
     setSubtitlesDisplayModeFromMQTT: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
-      state.isUserInitiatedChange = false; // ✅ Prevent publishing loop
+      state.isUserInitiatedChange = false;
     },
     resetUserInitiatedChange: (state) => {
       state.isUserInitiatedChange = false;
@@ -115,7 +133,7 @@ export const {
   addMqttTopic,
   removeMqttTopic,
   mqttMessageReceived,
-  setActiveBroadcastMessage, // ✅ Added action
+  setActiveBroadcastMessage,
   setSubtitlesDisplayMode,
   setSubtitlesDisplayModeFromMQTT,
   resetUserInitiatedChange,
