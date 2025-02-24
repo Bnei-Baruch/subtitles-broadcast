@@ -166,22 +166,37 @@ export function ActiveSlideMessaging() {
   }, [broadcastLangCode, questionMessagesList, dispatch]);
 
   useEffect(() => {
-    // ✅ Update `activeBroadcastMessage` based on the current display mode and available messages
+    if (!isUserInitiatedChange) return;
+
     let newActiveMessage = null;
 
-    if (subtitlesDisplayMode === "sources") {
-      newActiveMessage =
-        mqttMessages[subtitleMqttTopic] ||
-        selectedSubtitleSlide ||
-        lastSubtitleMessage;
+    if (subtitlesDisplayMode === "none") {
+      newActiveMessage = { type: "none", slide: "" };
+      publishEvent("mqttPublush", {
+        mqttTopic: subtitleMqttTopic,
+        message: newActiveMessage,
+      });
     } else if (subtitlesDisplayMode === "questions") {
-      if (selectedQuestionMessage?.visible === false) {
-        newActiveMessage = null;
+      if (
+        !selectedQuestionMessage ||
+        selectedQuestionMessage.visible === false
+      ) {
+        newActiveMessage = { type: "question", slide: "" };
       } else {
-        newActiveMessage = selectedQuestionMessage;
+        newActiveMessage = { ...selectedQuestionMessage };
       }
-    } else if (subtitlesDisplayMode === "none") {
-      newActiveMessage = null;
+      publishEvent("mqttPublush", {
+        mqttTopic: subtitleMqttTopic,
+        message: newActiveMessage,
+      });
+    } else if (subtitlesDisplayMode === "sources") {
+      if (selectedSubtitleSlide && selectedSubtitleSlide.slide) {
+        newActiveMessage = publishSlide(
+          selectedSubtitleSlide,
+          subtitleMqttTopic,
+          false
+        );
+      }
     }
 
     // ✅ Ensure updates only if the message has actually changed
@@ -193,16 +208,14 @@ export function ActiveSlideMessaging() {
       return;
     }
 
-    if (isUserInitiatedChange) {
-      debugLog("📡 Updating activeBroadcastMessage:", newActiveMessage);
-      dispatch(setActiveBroadcastMessage(newActiveMessage));
-    }
+    debugLog("📡 Publishing new active message:", newActiveMessage);
+    dispatch(resetUserInitiatedChange());
   }, [
     subtitlesDisplayMode,
-    mqttMessages[subtitleMqttTopic], // ✅ Now tracking MQTT messages directly
     selectedSubtitleSlide,
     selectedQuestionMessage,
-    activeBroadcastMessage,
+    isUserInitiatedChange,
+    subtitleMqttTopic,
     dispatch,
   ]);
 
