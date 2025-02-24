@@ -7,7 +7,10 @@ import { useSelector } from "react-redux";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
-import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
+import {
+  setUserSelectedSlide,
+  setUserInitiatedChange,
+} from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import debugLog from "../Utils/debugLog";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
@@ -89,6 +92,7 @@ const BookContent = ({
     setLoading(true);
     setSearchSlide("");
 
+    dispatch(setUserInitiatedChange(true));
     dispatch(setUserSelectedSlide(item));
     setActiveSlideID(item.ID);
 
@@ -110,12 +114,13 @@ const BookContent = ({
           language: broadcastLangCode,
         })
       ).finally(() => {
-        // ✅ Hide loading
         setLoading(false);
+        dispatch(setUserInitiatedChange(false));
       });
     } catch (error) {
       debugLog("❌ updateMergedUserSettings Error:", error);
       setLoading(false);
+      dispatch(setUserInitiatedChange(false));
     }
   };
 

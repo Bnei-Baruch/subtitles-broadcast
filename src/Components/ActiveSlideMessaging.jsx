@@ -140,7 +140,7 @@ export function ActiveSlideMessaging() {
       broadcastLangCode &&
       (!activeBroadcastMessage ||
         (activeBroadcastMessage.slide !== selectedSubtitleSlide.slide &&
-          !isUserInitiatedChange))
+          isUserInitiatedChange))
     ) {
       publishSlide(selectedSubtitleSlide, subtitleMqttTopic, false);
     }
@@ -193,8 +193,10 @@ export function ActiveSlideMessaging() {
       return;
     }
 
-    debugLog("📡 Updating activeBroadcastMessage:", newActiveMessage);
-    dispatch(setActiveBroadcastMessage(newActiveMessage));
+    if (isUserInitiatedChange) {
+      debugLog("📡 Updating activeBroadcastMessage:", newActiveMessage);
+      dispatch(setActiveBroadcastMessage(newActiveMessage));
+    }
   }, [
     subtitlesDisplayMode,
     mqttMessages[subtitleMqttTopic], // ✅ Now tracking MQTT messages directly

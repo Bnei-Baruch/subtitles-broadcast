@@ -62,6 +62,9 @@ const mqttSlice = createSlice({
     resetUserInitiatedChange: (state) => {
       state.isUserInitiatedChange = false;
     },
+    setUserInitiatedChange: (state, action) => {
+      state.isUserInitiatedChange = action.payload;
+    },
     setClientId: (state, action) => {
       state.clientId = action.payload;
     },
@@ -123,6 +126,7 @@ export const {
   addMqttError,
   clearMqttErrors,
   markErrorAsUiPresented,
+  setUserInitiatedChange,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;
