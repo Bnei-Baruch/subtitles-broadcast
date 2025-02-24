@@ -181,15 +181,18 @@ export default function useMqtt() {
     }
 
     return () => {
-      if (clientRef.current) {
+      if (clientRef.current && clientRef.current && clientRef.current.end) {
         debugLog("🔴 Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
+      }
+
+      if (clientIdRef && clientIdRef.current && clientIdRef.current.end) {
         clientIdRef.current.end();
         clientIdRef.current = null;
       }
     };
-  }, [dispatch]);
+  }, [dispatch, broadcastLangCode]);
 
   return {
     subscribe: (topic) => {

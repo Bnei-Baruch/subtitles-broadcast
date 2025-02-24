@@ -111,6 +111,15 @@ export function ActiveSlideMessaging() {
         broadcastLangCode
       );
 
+      const displayModeMessage = mqttMessages[displayModeTopic];
+
+      if (
+        displayModeMessage &&
+        displayModeMessage.slide === subtitlesDisplayMode
+      ) {
+        return;
+      }
+
       publishEvent("mqttPublush", {
         mqttTopic: displayModeTopic,
         message: {
@@ -197,15 +206,6 @@ export function ActiveSlideMessaging() {
           false
         );
       }
-    }
-
-    // ✅ Ensure updates only if the message has actually changed
-    if (
-      newActiveMessage &&
-      activeBroadcastMessage &&
-      newActiveMessage.slide === activeBroadcastMessage.slide
-    ) {
-      return;
     }
 
     debugLog("📡 Publishing new active message:", newActiveMessage);
