@@ -46,12 +46,14 @@ const App = ({ auth }) => {
     }
 
     return () => {
-      mqttTopics.forEach((topic) => {
-        unsubscribe(topic);
-        debugLog("Unsubscribed from topic: ", topic);
-      });
+     if (isConnected) {
+       mqttTopics.forEach((topic) => {
+         unsubscribe(topic);
+         debugLog("Unsubscribed from topic: ", topic);
+       });
+     }
     };
-  }, [isConnected, mqttTopics, subscribe, unsubscribe, dispatch]);
+  }, [isConnected]);
 
   useEffect(() => {
     dispatch(fetchUserSettings());
