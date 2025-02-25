@@ -29,6 +29,7 @@ import {
   setSubtitlesDisplayMode,
   setUserSelectedSlide,
 } from "../Redux/MQTT/mqttSlice";
+import LoadingOverlay from "../Components/LoadingOverlay";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -68,6 +69,12 @@ const Subtitles = () => {
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+
+  const isUserInitiatedChange = useSelector(
+    (state) => state.mqtt.isUserInitiatedChange
+  );
+
+  const [loading, setLoading] = useState(false);
 
   const updateSelectedSlide = (newSelectedSlideOrderNum, newSlide) => {
     if (newSelectedSlideOrderNum < 0) {
@@ -152,6 +159,10 @@ const Subtitles = () => {
     },
     [UserAddedList, updateSelectedSlide]
   );
+
+  useEffect(() => {
+    setLoading(isUserInitiatedChange);
+  }, [isUserInitiatedChange]);
 
   useEffect(() => {
     // Add event listener when the component mounts
@@ -277,45 +288,51 @@ const Subtitles = () => {
               role="group"
               aria-label="Basic mixed styles example"
             >
-              <button
-                ref={btnSubtitlesRef}
-                id="btnSubtitles"
-                type="button"
-                className={`btn sources-mod${
-                  subtitlesDisplayMode === "sources"
-                    ? " btn-success display-mod-selected"
-                    : ""
-                }`}
-                onClick={(evt) => subtitlesBtnOnClick(evt)}
+              <div
+                className="subtitles-container"
+                style={{ position: "relative" }}
               >
-                Subtitles
-              </button>
-              <button
-                ref={btnQuestionsRef}
-                id="btnQuestions"
-                type="button"
-                className={`btn questions-mod${
-                  subtitlesDisplayMode === "questions"
-                    ? " btn-success display-mod-selected"
-                    : ""
-                }`}
-                onClick={(evt) => questionsBtnOnClick(evt)}
-              >
-                Questions
-              </button>
-              <button
-                ref={btnNoneRef}
-                id="btnNone"
-                type="button"
-                className={`btn none-mod${
-                  subtitlesDisplayMode === "none"
-                    ? " btn-success display-mod-selected"
-                    : ""
-                }`}
-                onClick={(evt) => noneBtnOnClick(evt)}
-              >
-                None
-              </button>
+                <LoadingOverlay loading={loading} />
+                <button
+                  ref={btnSubtitlesRef}
+                  id="btnSubtitles"
+                  type="button"
+                  className={`btn sources-mod${
+                    subtitlesDisplayMode === "sources"
+                      ? " btn-success display-mod-selected"
+                      : ""
+                  }`}
+                  onClick={(evt) => subtitlesBtnOnClick(evt)}
+                >
+                  Subtitles
+                </button>
+                <button
+                  ref={btnQuestionsRef}
+                  id="btnQuestions"
+                  type="button"
+                  className={`btn questions-mod${
+                    subtitlesDisplayMode === "questions"
+                      ? " btn-success display-mod-selected"
+                      : ""
+                  }`}
+                  onClick={(evt) => questionsBtnOnClick(evt)}
+                >
+                  Questions
+                </button>
+                <button
+                  ref={btnNoneRef}
+                  id="btnNone"
+                  type="button"
+                  className={`btn none-mod${
+                    subtitlesDisplayMode === "none"
+                      ? " btn-success display-mod-selected"
+                      : ""
+                  }`}
+                  onClick={(evt) => noneBtnOnClick(evt)}
+                >
+                  None
+                </button>
+              </div>
             </div>
             <div className="right-sec">
               <div
