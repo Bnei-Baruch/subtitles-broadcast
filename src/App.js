@@ -39,19 +39,18 @@ const App = ({ auth }) => {
 
   useEffect(() => {
     if (isConnected) {
-      mqttTopics.forEach((topic) => {
+      Object.keys(mqttTopics).forEach((topic) => {
         subscribe(topic);
-        debugLog("Subscribed to topic: ", topic);
       });
     }
 
     return () => {
-     if (isConnected) {
-       mqttTopics.forEach((topic) => {
-         unsubscribe(topic);
-         debugLog("Unsubscribed from topic: ", topic);
-       });
-     }
+      if (isConnected) {
+        Object.keys(mqttTopics).forEach((topic) => {
+          unsubscribe(topic);
+          debugLog("App Unsubscribed from topic: ", topic);
+        });
+      }
     };
   }, [isConnected]);
 

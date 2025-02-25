@@ -3,7 +3,7 @@ import mqtt from "mqtt";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setConnected,
-  addMqttTopic,
+  updateMqttTopic,
   removeMqttTopic,
   mqttMessageReceived,
   setSubtitlesDisplayModeFromMQTT,
@@ -80,24 +80,14 @@ export default function useMqtt() {
                 broadcastProgrammCode,
                 langItem.value
               ),
+              getSubtitleMqttTopic(broadcastProgrammCode, langItem.value),
             ];
           })
           .flat();
 
-        // ✅ Add slide topics
-        broadcastMqttTopics.push(
-          getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode)
-        );
-
-        // ✅ Subscribe only if not already subscribed
         broadcastMqttTopics.forEach((topic) => {
-          if (!mqttTopics.includes(topic)) {
-            dispatch(addMqttTopic(topic));
-            clientRef.current.subscribe(topic);
-          }
+          dispatch(updateMqttTopic({ topic: topic, isSubscribed: false }));
         });
-
-        mqttTopics.forEach((topic) => clientRef.current.subscribe(topic));
       });
 
       clientRef.current.on("message", (topic, message) => {
@@ -196,14 +186,16 @@ export default function useMqtt() {
 
   return {
     subscribe: (topic) => {
-      if (!mqttTopics.includes(topic)) {
-        dispatch(addMqttTopic(topic));
+      if (!mqttTopics[topic]?.isSubscribed) {
         clientRef.current.subscribe(topic);
+        dispatch(updateMqttTopic({ topic: topic, isSubscribed: true }));
+        debugLog("MQTT Subscribed to topic: ", topic);
       }
     },
     unsubscribe: (topic) => {
-      dispatch(removeMqttTopic(topic));
       clientRef.current.unsubscribe(topic);
+      dispatch(updateMqttTopic({ topic: topic, isSubscribed: false }));
+      debugLog("MQTT UnSubscribed to topic: ", topic);
     },
   };
 }

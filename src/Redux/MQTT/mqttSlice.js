@@ -7,7 +7,7 @@ import {
 const initialState = {
   isConnected: false,
   clientId: null,
-  mqttTopics: [],
+  mqttTopics: {},
   mqttMessages: {},
   questionMessagesList: {},
   activeBroadcastMessage: null,
@@ -27,13 +27,19 @@ const mqttSlice = createSlice({
     setConnected(state, action) {
       state.isConnected = action.payload;
     },
-    addMqttTopic(state, action) {
-      if (!state.mqttTopics.includes(action.payload)) {
-        state.mqttTopics.push(action.payload);
+    updateMqttTopic(state, action) {
+      const { topic, isSubscribed } = action.payload;
+
+      if (topic) {
+        state.mqttTopics[topic] = isSubscribed;
       }
     },
     removeMqttTopic(state, action) {
-      state.mqttTopics = state.mqttTopics.filter((t) => t !== action.payload);
+      const { topic } = action.payload;
+
+      if (topic && typeof state.mqttTopics[topic] !== "undefined") {
+        delete state.mqttTopics[topic];
+      }
     },
     setUserSelectedSlide(state, action) {
       state.selectedSubtitleSlide = action.payload;
@@ -130,7 +136,7 @@ const mqttSlice = createSlice({
 
 export const {
   setConnected,
-  addMqttTopic,
+  updateMqttTopic,
   removeMqttTopic,
   mqttMessageReceived,
   setActiveBroadcastMessage,
