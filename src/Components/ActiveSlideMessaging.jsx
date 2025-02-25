@@ -70,6 +70,10 @@ export function ActiveSlideMessaging() {
 
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
+  const publishMqttMessage = (topic, message) => {
+    publishEvent("mqttPublush", { mqttTopic: topic, message });
+  };
+
   const publishSlide = (slide, topic, isJsonMsg) => {
     let slideJsonMsg;
 
@@ -87,10 +91,7 @@ export function ActiveSlideMessaging() {
       };
     }
 
-    publishEvent("mqttPublush", {
-      mqttTopic: topic,
-      message: slideJsonMsg,
-    });
+    publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
 
     return slideJsonMsg;
   };
@@ -102,51 +103,53 @@ export function ActiveSlideMessaging() {
   }, [clientId]);
 
   useEffect(() => {
-    // ✅ Publish display mode to MQTT **only if it has changed**
+    // ✅ Publish display mode to MQTT and reset active message if display mode is "none"
     if (isUserInitiatedChange) {
       const displayModeTopic = getSubtitlesDisplayModeTopic(
         broadcastProgrammCode,
         broadcastLangCode
       );
-
       const displayModeMessage = mqttMessages[displayModeTopic];
+      let newActiveMsg = null;
 
       if (
-        displayModeMessage &&
-        displayModeMessage.slide === subtitlesDisplayMode
+        !displayModeMessage ||
+        displayModeMessage.slide !== subtitlesDisplayMode
       ) {
-        return;
+        newActiveMsg = { type: displayModeTopic, slide: subtitlesDisplayMode };
+        publishMqttMessage(displayModeTopic, newActiveMsg);
       }
 
-      publishEvent("mqttPublush", {
-        mqttTopic: displayModeTopic,
-        message: {
-          type: displayModeTopic,
-          slide: subtitlesDisplayMode,
-        },
-      });
+      if (subtitlesDisplayMode === "none") {
+        if (
+          !activeBroadcastMessage ||
+          activeBroadcastMessage.type !== "none" ||
+          activeBroadcastMessage.slide !== ""
+        ) {
+          newActiveMsg = { type: "none", slide: "" };
+          publishMqttMessage(subtitleMqttTopic, newActiveMsg);
+        }
+      }
+
       dispatch(resetUserInitiatedChange());
     }
-  }, [subtitlesDisplayMode, isUserInitiatedChange, dispatch]);
+  }, [subtitlesDisplayMode, isUserInitiatedChange]);
 
   useEffect(() => {
-    // ✅ Prevent resetting `activeBroadcastMessage` if round-robin is active
-    if (!isUserInitiatedChange) return;
-
+    // ✅ Publish selected slide to MQTT **only if display mode is "sources"** and a slide is selected and it has changed
     if (isRoundRobinActiveRef.current) {
       isRoundRobinActiveRef.current = false; // Reset round-robin flag after first cycle
       return;
     }
 
-    // ✅ Publish selected slide to MQTT **only if display mode is "sources"** and a slide is selected and it has changed
+    if (!isUserInitiatedChange) return;
+
     if (
       subtitlesDisplayMode === "sources" &&
       selectedSubtitleSlide &&
-      selectedSubtitleSlide.slide &&
       broadcastLangCode &&
       (!activeBroadcastMessage ||
-        (activeBroadcastMessage.slide !== selectedSubtitleSlide.slide &&
-          isUserInitiatedChange))
+        activeBroadcastMessage.slide !== selectedSubtitleSlide.slide)
     ) {
       publishSlide(selectedSubtitleSlide, subtitleMqttTopic, false);
     }
@@ -172,6 +175,7 @@ export function ActiveSlideMessaging() {
   }, [broadcastLangCode, questionMessagesList, dispatch]);
 
   useEffect(() => {
+    // ✅ Publish selected question message to MQTT **only if display mode is "questions"** and a question is selected
     if (!isUserInitiatedChange) return;
 
     if (subtitlesDisplayMode === "questions") {
@@ -185,10 +189,8 @@ export function ActiveSlideMessaging() {
       } else {
         newActiveMessage = { ...selectedQuestionMessage };
       }
-      publishEvent("mqttPublush", {
-        mqttTopic: subtitleMqttTopic,
-        message: newActiveMessage,
-      });
+
+      publishMqttMessage(subtitleMqttTopic, newActiveMessage);
     }
 
     dispatch(resetUserInitiatedChange());
@@ -202,6 +204,7 @@ export function ActiveSlideMessaging() {
   ]);
 
   useEffect(() => {
+    // ✅ Implement round-robin for questions
     let timeoutId;
     rounRobinIndexRef.current = rounRobinIndex; // ✅ Ensure ref stays updated
 
@@ -231,16 +234,13 @@ export function ActiveSlideMessaging() {
 
             dispatch(setRounRobinIndex(nextIndex));
             rounRobinIndexRef.current = nextIndex; // ✅ Update ref to avoid stale values
-            //dispatch(setActiveBroadcastMessage(nextSlide));
 
             // ✅ Publish the new question to MQTT
-            publishEvent("mqttPublush", {
-              mqttTopic: getSubtitleMqttTopic(
-                broadcastProgrammCode,
-                broadcastLangCode
-              ),
-              message: nextSlide,
-            });
+            const topic = getSubtitleMqttTopic(
+              broadcastProgrammCode,
+              broadcastLangCode
+            );
+            publishMqttMessage(topic, nextSlide);
           } else {
             debugLog("🔄 Skipping round-robin update (same slide)");
           }
