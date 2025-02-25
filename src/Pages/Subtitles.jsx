@@ -70,8 +70,8 @@ const Subtitles = () => {
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
 
-  const isUserInitiatedChange = useSelector(
-    (state) => state.mqtt.isUserInitiatedChange
+  const isSubtitlesModeLoading = useSelector(
+    (state) => state.mqtt.isSubtitlesModeLoading
   );
 
   const [loading, setLoading] = useState(false);
@@ -161,8 +161,8 @@ const Subtitles = () => {
   );
 
   useEffect(() => {
-    setLoading(isUserInitiatedChange);
-  }, [isUserInitiatedChange]);
+    setLoading(isSubtitlesModeLoading);
+  }, [isSubtitlesModeLoading]);
 
   useEffect(() => {
     // Add event listener when the component mounts
@@ -274,6 +274,7 @@ const Subtitles = () => {
 
   return (
     <>
+      <LoadingOverlay loading={loading} />
       <div className="body-content d-flex ">
         <div className="left-section row">
           <div className="innerhead d-flex justify-content-between subtitle-header">
@@ -288,51 +289,45 @@ const Subtitles = () => {
               role="group"
               aria-label="Basic mixed styles example"
             >
-              <div
-                className="subtitles-container"
-                style={{ position: "relative" }}
+              <button
+                ref={btnSubtitlesRef}
+                id="btnSubtitles"
+                type="button"
+                className={`btn sources-mod${
+                  subtitlesDisplayMode === "sources"
+                    ? " btn-success display-mod-selected"
+                    : ""
+                }`}
+                onClick={(evt) => subtitlesBtnOnClick(evt)}
               >
-                <LoadingOverlay loading={loading} />
-                <button
-                  ref={btnSubtitlesRef}
-                  id="btnSubtitles"
-                  type="button"
-                  className={`btn sources-mod${
-                    subtitlesDisplayMode === "sources"
-                      ? " btn-success display-mod-selected"
-                      : ""
-                  }`}
-                  onClick={(evt) => subtitlesBtnOnClick(evt)}
-                >
-                  Subtitles
-                </button>
-                <button
-                  ref={btnQuestionsRef}
-                  id="btnQuestions"
-                  type="button"
-                  className={`btn questions-mod${
-                    subtitlesDisplayMode === "questions"
-                      ? " btn-success display-mod-selected"
-                      : ""
-                  }`}
-                  onClick={(evt) => questionsBtnOnClick(evt)}
-                >
-                  Questions
-                </button>
-                <button
-                  ref={btnNoneRef}
-                  id="btnNone"
-                  type="button"
-                  className={`btn none-mod${
-                    subtitlesDisplayMode === "none"
-                      ? " btn-success display-mod-selected"
-                      : ""
-                  }`}
-                  onClick={(evt) => noneBtnOnClick(evt)}
-                >
-                  None
-                </button>
-              </div>
+                Subtitles
+              </button>
+              <button
+                ref={btnQuestionsRef}
+                id="btnQuestions"
+                type="button"
+                className={`btn questions-mod${
+                  subtitlesDisplayMode === "questions"
+                    ? " btn-success display-mod-selected"
+                    : ""
+                }`}
+                onClick={(evt) => questionsBtnOnClick(evt)}
+              >
+                Questions
+              </button>
+              <button
+                ref={btnNoneRef}
+                id="btnNone"
+                type="button"
+                className={`btn none-mod${
+                  subtitlesDisplayMode === "none"
+                    ? " btn-success display-mod-selected"
+                    : ""
+                }`}
+                onClick={(evt) => noneBtnOnClick(evt)}
+              >
+                None
+              </button>
             </div>
             <div className="right-sec">
               <div

@@ -18,6 +18,7 @@ const initialState = {
   rounRobinIndex: 0,
   isUserInitiatedChange: false,
   errorLogs: [],
+  isSubtitlesModeLoading: false,
 };
 
 const mqttSlice = createSlice({
@@ -68,6 +69,7 @@ const mqttSlice = createSlice({
             state.activeBroadcastMessage = parsedMessage;
           } else if (topic === displayModeTopic) {
             state.subtitlesDisplayMode = parsedMessage.slide;
+            state.isSubtitlesModeLoading = false;
           }
         }
       }
@@ -78,10 +80,12 @@ const mqttSlice = createSlice({
     setSubtitlesDisplayMode: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
       state.isUserInitiatedChange = true;
+      state.isSubtitlesModeLoading = true;
     },
     setSubtitlesDisplayModeFromMQTT: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
       state.isUserInitiatedChange = false;
+      state.isSubtitlesModeLoading = false;
     },
     resetUserInitiatedChange: (state) => {
       state.isUserInitiatedChange = false;
@@ -131,6 +135,9 @@ const mqttSlice = createSlice({
         state.errorLogs[index].uiPresented = true;
       }
     },
+    setSubtitlesModeLoading: (state, action) => {
+      state.isSubtitlesModeLoading = action.payload;
+    },
   },
 });
 
@@ -151,6 +158,7 @@ export const {
   clearMqttErrors,
   markErrorAsUiPresented,
   setUserInitiatedChange,
+  setSubtitlesModeLoading,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;
