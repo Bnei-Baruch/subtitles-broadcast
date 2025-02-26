@@ -42,6 +42,7 @@ function usePrevious(value) {
 }
 
 const Subtitles = () => {
+  const loadingTimeoutDuration = 5000;
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
@@ -175,7 +176,7 @@ useEffect(() => {
     const newTimeout = setTimeout(() => {
       dispatch(setSubtitlesModeLoading(false));
       dispatch(addMqttError({ message: "⚠️ Subtitle mode change timeout: No MQTT response received.", type: "Timeout" }));
-    }, 5000); 
+    }, loadingTimeoutDuration); 
 
     setLoadingTimeoutId(newTimeout);
   } else {
@@ -190,7 +191,7 @@ useEffect(() => {
       clearTimeout(loadingTimeoutId);
     }
   };
-}, [isSubtitlesModeLoading, dispatch]);
+}, [isSubtitlesModeLoading]);
 
   useEffect(() => {
     // Add event listener when the component mounts
