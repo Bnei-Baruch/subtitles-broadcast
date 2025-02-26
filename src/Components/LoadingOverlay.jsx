@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import "../Pages/PagesCSS/LoadingOverlay.css";
 
-const LoadingOverlay = ({ loading, message = "Please wait...", timeout = 7000 }) => {
+const LoadingOverlay = ({ loading, message = "Please wait", timeout = 7000 }) => {
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
 
   useEffect(() => {
@@ -19,7 +19,10 @@ const LoadingOverlay = ({ loading, message = "Please wait...", timeout = 7000 })
 
   return loading ? (
     <div className="loading-overlay">
-      <p className="loading-message">{message}</p>
+      <p className="loading-message">
+        {message}
+        <span className="loading-dots"></span>
+      </p>
       {showTimeoutMessage && (
         <p className="loading-timeout">
           ⚠️ This is taking longer than expected...
