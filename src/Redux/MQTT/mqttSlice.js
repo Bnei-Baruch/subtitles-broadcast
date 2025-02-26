@@ -3,6 +3,7 @@ import {
   getSubtitleMqttTopic,
   getSubtitlesDisplayModeTopic,
 } from "../../Utils/Common";
+import debugLog from "../../Utils/debugLog";
 
 const initialState = {
   isConnected: false,
@@ -45,33 +46,39 @@ const mqttSlice = createSlice({
     setUserSelectedSlide(state, action) {
       state.selectedSubtitleSlide = action.payload;
     },
-    mqttMessageReceived(state, action) {
+    mqttMessageReceived(state, action, dispatch) {
       const { topic, message, broadcastLangCode, broadcastProgrammCode } =
         action.payload;
-      const parsedMessage = JSON.parse(message);
-      state.mqttMessages[topic] = parsedMessage;
+      try {
+        const parsedMessage = JSON.parse(message);
+        state.mqttMessages[topic] = parsedMessage;
 
-      if (topic.includes("/question")) {
-        const lang = parsedMessage.lang;
-        state.questionMessagesList[lang] = parsedMessage;
-      } else {
-        if (broadcastProgrammCode && broadcastLangCode) {
-          const subtitleMqttTopic = getSubtitleMqttTopic(
-            broadcastProgrammCode,
-            broadcastLangCode
-          );
-          const displayModeTopic = getSubtitlesDisplayModeTopic(
-            broadcastProgrammCode,
-            broadcastLangCode
-          );
+        if (topic.includes("/question")) {
+          const lang = parsedMessage.lang;
+          state.questionMessagesList[lang] = parsedMessage;
+        } else {
+          if (broadcastProgrammCode && broadcastLangCode) {
+        const subtitleMqttTopic = getSubtitleMqttTopic(
+          broadcastProgrammCode,
+          broadcastLangCode
+        );
+        const displayModeTopic = getSubtitlesDisplayModeTopic(
+          broadcastProgrammCode,
+          broadcastLangCode
+        );
 
-          if (topic === subtitleMqttTopic) {
-            state.activeBroadcastMessage = parsedMessage;
-          } else if (topic === displayModeTopic) {
-            state.subtitlesDisplayMode = parsedMessage.slide;
-            state.isSubtitlesModeLoading = false;
+        if (topic === subtitleMqttTopic) {
+          state.activeBroadcastMessage = parsedMessage;
+        } else if (topic === displayModeTopic) {
+          state.subtitlesDisplayMode = parsedMessage.slide;
+          state.isSubtitlesModeLoading = false;
+        }
           }
         }
+      } catch (error) {
+        debugLog("❌ MQTT Message Processing Error:", error);
+        state.isSubtitlesModeLoading = false; 
+        dispatch(addMqttError({ message: "MQTT Message Processing Error", type: "Processing" }));
       }
     },
     setActiveBroadcastMessage(state, action) {

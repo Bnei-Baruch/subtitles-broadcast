@@ -4,11 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   setConnected,
   updateMqttTopic,
-  removeMqttTopic,
   mqttMessageReceived,
-  setSubtitlesDisplayModeFromMQTT,
   setClientId,
   addMqttError,
+  setSubtitlesModeLoading
 } from "../Redux/MQTT/mqttSlice";
 import { broadcastLanguages } from "../Utils/Const";
 import {
@@ -107,6 +106,7 @@ export default function useMqtt() {
         console.error("❌ MQTT Connection Error:", err);
         dispatch(addMqttError("MQTT Connection Failed. Please try again."));
         clientRef.current.end();
+        dispatch(setSubtitlesModeLoading(false));
         dispatch(setConnected(false));
       });
 
@@ -119,6 +119,7 @@ export default function useMqtt() {
           dispatch(
             addMqttError("❌ MQTT Publish Error: Message must be an object")
           );
+          dispatch(setSubtitlesModeLoading(false));
 
           return;
         }
@@ -157,6 +158,7 @@ export default function useMqtt() {
               if (err) {
                 console.error("❌ MQTT Publish Error:", err);
                 dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
+                dispatch(setSubtitlesModeLoading(false));
               } else {
                 debugLog(
                   "✅ MQTT Publish Successful:",
@@ -175,6 +177,7 @@ export default function useMqtt() {
         debugLog("🔴 Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
+        dispatch(setSubtitlesModeLoading(false));
       }
 
       if (clientIdRef && clientIdRef.current && clientIdRef.current.end) {
