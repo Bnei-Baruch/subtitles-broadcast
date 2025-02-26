@@ -11,7 +11,6 @@ const Settings = () => {
     (state) => state.UserProfile?.userProfile?.profile
   );
   const securityRole = userProfile?.securityRole;
-  const userName = userProfile?.name || "Unknown User";
   const userEmail = userProfile?.email || "No Email Provided";
 
   const [debugMode, setDebugMode] = useState(
