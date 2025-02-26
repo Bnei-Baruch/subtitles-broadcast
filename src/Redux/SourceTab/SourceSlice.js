@@ -1,10 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import { toast } from "react-toastify";
-import GetLangaugeCode from "../../Utils/Const";
+import { showSuccessToast, showErrorToast } from "../../Utils/Common";
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const languages = GetLangaugeCode();
 
 const initialState = {
   sourcePathList: [],
@@ -154,11 +152,11 @@ const SourceSlice = createSlice({
       return { ...state, sourcePathList: action?.payload };
     });
     builder.addCase(DeleteSource.rejected, (state, action) => {
-      toast.error("Something went wrong");
+      showErrorToast("Something went wrong");
       return state;
     });
     builder.addCase(DeleteSource.fulfilled, (state, action) => {
-      toast.success("Successfully deleted");
+      showSuccessToast("Successfully deleted");
       return state;
     });
     builder.addCase(UserBookmarkList.pending, (state) => {

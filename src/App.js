@@ -6,10 +6,11 @@ import "./App.css";
 import SideNavBar from "./Layout/SideNavBar";
 import MainRoutes from "./Routes/Routes";
 import debugLog from "./Utils/debugLog";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { markErrorAsUiPresented } from "./Redux/MQTT/mqttSlice";
 import { fetchUserSettings } from "./Redux/UserSettings/UserSettingsSlice";
+import {  showErrorToast } from "./Utils/Common";
 
 const App = ({ auth }) => {
   const { subscribe, unsubscribe } = useMqtt();
@@ -25,16 +26,7 @@ const App = ({ auth }) => {
     // Log the error if there is one
     mqttErrors.forEach((errorObj) => {
       if (!errorObj.uiPresented) {
-        toast.error(errorObj.message, {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: "colored",
-        });
-
+        showErrorToast(errorObj.message);
         dispatch(markErrorAsUiPresented(errorObj.id));
       }
     });

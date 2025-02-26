@@ -1,4 +1,33 @@
 import { broadcastLangMapObj } from "./Const";
+import { toast } from "react-toastify";
+
+export const defaultToastOptions = {
+  position: "bottom-right",
+  autoClose: 5000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "colored",
+};
+
+/**
+ * Shows a success toast notification with default options.
+ * @param {string} message - The message to display.
+ * @param {object} options - Additional options to override defaults.
+ */
+export const showSuccessToast = (message, options = {}) => {
+  toast.success(message, { ...defaultToastOptions, ...options });
+};
+
+/**
+ * Shows an error toast notification with default options.
+ * @param {string} message - The message to display.
+ * @param {object} options - Additional options to override defaults.
+ */
+export const showErrorToast = (message, options = {}) => {
+  toast.error(message, { ...defaultToastOptions, ...options });
+};
 
 export function parseMqttMessage(mqttMessage) {
   if (mqttMessage) {
