@@ -14,6 +14,7 @@ const initialState = {
     archive_pagination: { page: 1, limit: 10 },
   },
   loading: false,
+  isLoaded: false,
 };
 
 export const fetchUserSettings = createAsyncThunk(
@@ -75,12 +76,14 @@ const UserSettingsSlice = createSlice({
   reducers: {
     setSettings(state, action) {
       state.userSettings = { ...state.userSettings, ...action.payload };
+      state.isLoaded = true;
     },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchUserSettings.fulfilled, (state, action) => {
       debugLog("✅ User Settings Loaded", action.payload);
       state.userSettings = action.payload;
+      state.isLoaded = true;
     });
   },
 });

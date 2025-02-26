@@ -17,6 +17,9 @@ const App = ({ auth }) => {
   const isConnected = useSelector((state) => state.mqtt.isConnected);
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
   const mqttErrors = useSelector((state) => state.mqtt.errorLogs);
+  const userSettingsLoaded = useSelector(
+    (state) => state.userSettings.isLoaded
+  );
 
   useEffect(() => {
     // Log the error if there is one
@@ -38,7 +41,7 @@ const App = ({ auth }) => {
   }, [mqttErrors, dispatch]);
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && userSettingsLoaded) {
       Object.keys(mqttTopics).forEach((topic) => {
         subscribe(topic);
       });
@@ -52,7 +55,7 @@ const App = ({ auth }) => {
         });
       }
     };
-  }, [isConnected]);
+  }, [isConnected, userSettingsLoaded]);
 
   useEffect(() => {
     dispatch(fetchUserSettings());
