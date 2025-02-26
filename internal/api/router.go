@@ -21,8 +21,8 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.GET("/slide", handler.GetSlides)
 	v1.PATCH("/slide", handler.UpdateSlides)
 	v1.DELETE("/slide", handler.DeleteSlides)
-  // We support only delete (hide) from sources page, not from archive page.
-  // v1.DELETE("/file-slide/:file_uid", handler.DeleteFileSlides)
+	// We support only delete (hide) from sources page, not from archive page.
+	// v1.DELETE("/file-slide/:file_uid", handler.DeleteFileSlides)
 	v1.DELETE("/source-slide/:source_uid", handler.DeleteSourceSlides)
 	v1.POST("/custom_slide", handler.AddCustomSlides)
 
@@ -33,6 +33,9 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.GET("/source_path", handler.GetSourcePath)
 	v1.PATCH("/source_path_id/:id", handler.UpdateSourcePath)
+
+	v1.GET("/user/settings", handler.GetUserSettings)
+	v1.POST("/user/settings", handler.UpdateUserSettings)
 
 	router.NoMethod(func(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{

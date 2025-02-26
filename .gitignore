@@ -4,3 +4,4 @@ bin
 .env
 .env_dev
 config_test.yaml
+pkg
