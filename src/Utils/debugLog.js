@@ -1,7 +1,12 @@
-const isLogMode = process.env.NODE_ENV === "development";
+export const isDebugLogEnabled = () =>
+  localStorage.getItem("debugLog") === "true";
+
+export const setDebugLogMode = (enabled) => {
+  localStorage.setItem("debugLog", enabled);
+};
 
 const debugLog = (message, ...optionalParams) => {
-  if (isLogMode) {
+  if (isDebugLogEnabled()) {
     console.log(`${message}`, ...optionalParams);
   }
 };

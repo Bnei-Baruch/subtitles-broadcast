@@ -64,6 +64,20 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
               </NavLink>
             </li>
           )}
+
+          {securityRole && securityRole === "admin" && (
+            <li>
+              <NavLink to={"/settings"} className="nav-link text-white">
+                <img
+                  alt="settings"
+                  src="image/settings.svg"
+                  width="24"
+                  height="24"
+                />{" "}
+                Settings
+              </NavLink>
+            </li>
+          )}
         </ul>
 
         <HeaderBar logout={authKeycloak} />
