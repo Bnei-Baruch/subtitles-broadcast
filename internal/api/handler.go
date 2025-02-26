@@ -967,7 +967,7 @@ func (h *Handler) GetUserSettings(ctx *gin.Context) {
 		Where("user_id = ?", userID).
 		Count(&count).Error
 
-	// ✅ If no record exists, return 404 Not Found
+	// If no record exists, return 404 Not Found
 	if count == 0 {
 		log.Printf("❌ No user settings record found for user: %s.", userID)
 		ctx.JSON(http.StatusNotFound, getResponse(false, nil, "User settings not found", "User settings do not exist"))
@@ -982,14 +982,14 @@ func (h *Handler) GetUserSettings(ctx *gin.Context) {
 		Scan(&existingSettings).Error
 
 	if err != nil {
-		log.Printf("❌ Error fetching user settings: %v", err)
+		log.Printf("Error fetching user settings: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to retrieve user settings"))
 		return
 	}
 
 	// ✅ If `app_settings` is empty, return 404 (record exists but is empty)
 	if existingSettings == "" {
-		log.Printf("❌ User settings exist but `app_settings` is empty for user: %s.", userID)
+		log.Printf("User settings exist but `app_settings` is empty for user: %s.", userID)
 		ctx.JSON(http.StatusNotFound, getResponse(false, nil, "User settings not found", "User settings do not exist"))
 		return
 	}
@@ -997,7 +997,7 @@ func (h *Handler) GetUserSettings(ctx *gin.Context) {
 	// ✅ Parse JSON settings
 	var parsedSettings map[string]interface{}
 	if err := json.Unmarshal([]byte(existingSettings), &parsedSettings); err != nil {
-		log.Printf("❌ JSON Unmarshal Error: %v", err)
+		log.Printf("JSON Unmarshal Error: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to parse user settings"))
 		return
 	}
@@ -1018,7 +1018,7 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 	decoder.DisallowUnknownFields() // Prevents invalid fields from being processed
 
 	if err := decoder.Decode(&requestData); err != nil {
-		log.Printf("❌ JSON Decoding Error: %v", err)
+		log.Printf("JSON Decoding Error: %v", err)
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Invalid JSON format"))
 		return
 	}
@@ -1037,17 +1037,17 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 		Scan(&existingSettings).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Printf("⚠️ No existing settings found. Creating new entry for user: %s", userID)
+		log.Printf("No existing settings found. Creating new entry for user: %s", userID)
 		mergedSettings = map[string]interface{}{}
 	} else if err != nil {
-		log.Printf("❌ Error fetching existing user settings: %v", err)
+		log.Printf("Error fetching existing user settings: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to retrieve user settings"))
 		return
 	} else {
 		// Parse existing settings only if they exist and are not empty
 		if existingSettings != "" {
 			if err := json.Unmarshal([]byte(existingSettings), &mergedSettings); err != nil {
-				log.Printf("❌ JSON Unmarshal Error: %v", err)
+				log.Printf("JSON Unmarshal Error: %v", err)
 				ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to parse user settings"))
 				return
 			}
@@ -1066,7 +1066,7 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 	// Convert updated settings to JSON
 	mergedSettingsJSON, err := json.Marshal(mergedSettings)
 	if err != nil {
-		log.Printf("❌ JSON Marshal Error: %v", err)
+		log.Printf("JSON Marshal Error: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to encode user settings"))
 		return
 	}
@@ -1083,12 +1083,12 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 	).Error
 
 	if err != nil {
-		log.Printf("❌ Error Updating User Settings: %v", err)
+		log.Printf("Error Updating User Settings: %v", err)
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to update user settings"))
 		return
 	}
 
-	log.Printf("✅ User Settings Successfully Updated for User: %s", userID)
+	log.Printf("User Settings Successfully Updated for User: %s", userID)
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "User settings updated successfully"))
 }
 
