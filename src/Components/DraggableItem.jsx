@@ -6,7 +6,10 @@ import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
-import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
+import {
+  setUserSelectedSlide,
+  setUserInitiatedChange,
+} from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 
@@ -80,6 +83,7 @@ const DraggableItem = ({
 
           if (selectedSlide) {
             dispatch(setUserSelectedSlide(selectedSlide));
+            dispatch(setUserInitiatedChange(true));
           }
         }
       })
