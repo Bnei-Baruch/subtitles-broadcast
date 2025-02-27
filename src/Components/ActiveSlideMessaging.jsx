@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { Slide } from "../Components/Slide";
 import { publishEvent } from "../Utils/Events";
 import { useSelector, useDispatch } from "react-redux";
@@ -63,29 +63,26 @@ export function ActiveSlideMessaging() {
   );
 
   /** Publishes MQTT message */
-  const publishMqttMessage = useCallback((topic, message) => {
+  const publishMqttMessage = (topic, message) => {
     publishEvent("mqttPublush", { mqttTopic: topic, message });
-  }, []);
+  };
 
   /** Publishes slide to MQTT */
-  const publishSlide = useCallback(
-    (slide) => {
-      const slideJsonMsg = {
-        type: "subtitle",
-        ID: slide.ID,
-        bookmark_id: slide.bookmark_id,
-        file_uid: slide.file_uid,
-        order_number: slide.order_number,
-        slide: slide.slide,
-        source_uid: slide.source_uid,
-        isLtr: slide.left_to_right !== false,
-        slide_type: slide.slide_type,
-      };
+  const publishSlide = (slide) => {
+    const slideJsonMsg = {
+      type: "subtitle",
+      ID: slide.ID,
+      bookmark_id: slide.bookmark_id,
+      file_uid: slide.file_uid,
+      order_number: slide.order_number,
+      slide: slide.slide,
+      source_uid: slide.source_uid,
+      isLtr: slide.left_to_right !== false,
+      slide_type: slide.slide_type,
+    };
 
-      publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
-    },
-    [publishMqttMessage, subtitleMqttTopic]
-  );
+    publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
+  };
 
   /** Handles publishing "none" message when display mode is "none" */
   useEffect(() => {
@@ -104,8 +101,6 @@ export function ActiveSlideMessaging() {
     subtitlesDisplayMode,
     isUserInitiatedChange,
     activeBroadcastMessage,
-    publishMqttMessage,
-    subtitleMqttTopic,
     dispatch,
   ]);
 
@@ -132,7 +127,6 @@ export function ActiveSlideMessaging() {
     subtitlesDisplayMode,
     activeBroadcastMessage,
     isUserInitiatedChange,
-    publishSlide,
   ]);
 
   /** Updates selected question message */
@@ -163,8 +157,6 @@ export function ActiveSlideMessaging() {
     selectedQuestionMessage,
     isUserInitiatedChange,
     activeBroadcastMessage,
-    publishMqttMessage,
-    subtitleMqttTopic,
     dispatch,
   ]);
 
@@ -196,13 +188,7 @@ export function ActiveSlideMessaging() {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [
-    subtitlesDisplayMode,
-    userSlides,
-    activeBroadcastMessage,
-    publishMqttMessage,
-    dispatch,
-  ]);
+  }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]);
 
   return (
     <div className="active-slide-msg-main-cont">
