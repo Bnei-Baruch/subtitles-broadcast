@@ -1,8 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import {
-  getSubtitleMqttTopic,
-  getSubtitlesDisplayModeTopic,
-} from "../../Utils/Common";
+import { getSubtitleMqttTopic } from "../../Utils/Common";
 import debugLog from "../../Utils/debugLog";
 
 const initialState = {
@@ -58,27 +55,37 @@ const mqttSlice = createSlice({
           state.questionMessagesList[lang] = parsedMessage;
         } else {
           if (broadcastProgrammCode && broadcastLangCode) {
-        const subtitleMqttTopic = getSubtitleMqttTopic(
-          broadcastProgrammCode,
-          broadcastLangCode
-        );
-        const displayModeTopic = getSubtitlesDisplayModeTopic(
-          broadcastProgrammCode,
-          broadcastLangCode
-        );
+            const subtitleMqttTopic = getSubtitleMqttTopic(
+              broadcastProgrammCode,
+              broadcastLangCode
+            );
 
-        if (topic === subtitleMqttTopic) {
-          state.activeBroadcastMessage = parsedMessage;
-        } else if (topic === displayModeTopic) {
-          state.subtitlesDisplayMode = parsedMessage.slide;
-          state.isSubtitlesModeLoading = false;
-        }
+            if (topic === subtitleMqttTopic) {
+              state.isSubtitlesModeLoading = false;
+              state.activeBroadcastMessage = parsedMessage;
+
+              const msgSubtitlesDisplayMode =
+                parsedMessage?.type === "subtitle"
+                  ? "sources"
+                  : parsedMessage?.type === "question"
+                    ? "questions"
+                    : "none";
+
+              if (state.subtitlesDisplayMode !== msgSubtitlesDisplayMode) {
+                state.subtitlesDisplayMode = msgSubtitlesDisplayMode;
+              }
+            }
           }
         }
       } catch (error) {
         debugLog("❌ MQTT Message Processing Error:", error);
-        state.isSubtitlesModeLoading = false; 
-        dispatch(addMqttError({ message: "MQTT Message Processing Error", type: "Processing" }));
+        state.isSubtitlesModeLoading = false;
+        dispatch(
+          addMqttError({
+            message: "MQTT Message Processing Error",
+            type: "Processing",
+          })
+        );
       }
     },
     setActiveBroadcastMessage(state, action) {

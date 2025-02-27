@@ -7,14 +7,10 @@ import {
   mqttMessageReceived,
   setClientId,
   addMqttError,
-  setSubtitlesModeLoading
+  setSubtitlesModeLoading,
 } from "../Redux/MQTT/mqttSlice";
 import { broadcastLanguages } from "../Utils/Const";
-import {
-  getSubtitleMqttTopic,
-  getQuestionMqttTopic,
-  getSubtitlesDisplayModeTopic,
-} from "../Utils/Common";
+import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
 import { subscribeEvent } from "../Utils/Events";
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
@@ -75,10 +71,6 @@ export default function useMqtt() {
           .map((langItem) => {
             return [
               getQuestionMqttTopic(broadcastProgrammCode, langItem.value),
-              getSubtitlesDisplayModeTopic(
-                broadcastProgrammCode,
-                langItem.value
-              ),
               getSubtitleMqttTopic(broadcastProgrammCode, langItem.value),
             ];
           })

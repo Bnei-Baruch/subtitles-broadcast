@@ -7,10 +7,7 @@ import {
   setSelectedQuestionMessage,
   setRounRobinIndex,
 } from "../Redux/MQTT/mqttSlice";
-import {
-  getSubtitleMqttTopic,
-  getSubtitlesDisplayModeTopic,
-} from "../Utils/Common";
+import { getSubtitleMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
 
 export function ActiveSlideMessaging() {
@@ -26,16 +23,16 @@ export function ActiveSlideMessaging() {
     (state) => state.mqtt.selectedQuestionMessage
   );
 
+  const activeBroadcastMessage = useSelector(
+    (state) => state.mqtt.activeBroadcastMessage
+  );
+
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
 
   const isUserInitiatedChange = useSelector(
     (state) => state.mqtt.isUserInitiatedChange
-  );
-
-  const activeBroadcastMessage = useSelector(
-    (state) => state.mqtt.activeBroadcastMessage
   );
 
   const broadcastLangCode = useSelector(
@@ -67,8 +64,6 @@ export function ActiveSlideMessaging() {
   const questionMessagesList = useSelector(
     (state) => state.mqtt.questionMessagesList
   );
-
-  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
   const publishMqttMessage = (topic, message) => {
     publishEvent("mqttPublush", { mqttTopic: topic, message });
@@ -103,36 +98,20 @@ export function ActiveSlideMessaging() {
   }, [clientId]);
 
   useEffect(() => {
-    // ✅ Publish display mode to MQTT and reset active message if display mode is "none"
-    if (isUserInitiatedChange) {
-      const displayModeTopic = getSubtitlesDisplayModeTopic(
-        broadcastProgrammCode,
-        broadcastLangCode
-      );
-      const displayModeMessage = mqttMessages[displayModeTopic];
-      let newActiveMsg = null;
-
+    if (!isUserInitiatedChange) return;
+    // ✅ Publish  active message  type: "none", slide: "", if display mode is "none"
+    if (subtitlesDisplayMode === "none") {
       if (
-        !displayModeMessage ||
-        displayModeMessage.slide !== subtitlesDisplayMode
+        !activeBroadcastMessage ||
+        activeBroadcastMessage.type !== "none" ||
+        activeBroadcastMessage.slide !== ""
       ) {
-        newActiveMsg = { type: displayModeTopic, slide: subtitlesDisplayMode };
-        publishMqttMessage(displayModeTopic, newActiveMsg);
+        const newActiveMsg = { type: "none", slide: "" };
+        publishMqttMessage(subtitleMqttTopic, newActiveMsg);
       }
-
-      if (subtitlesDisplayMode === "none") {
-        if (
-          !activeBroadcastMessage ||
-          activeBroadcastMessage.type !== "none" ||
-          activeBroadcastMessage.slide !== ""
-        ) {
-          newActiveMsg = { type: "none", slide: "" };
-          publishMqttMessage(subtitleMqttTopic, newActiveMsg);
-        }
-      }
-
-      dispatch(resetUserInitiatedChange());
     }
+
+    dispatch(resetUserInitiatedChange());
   }, [subtitlesDisplayMode, isUserInitiatedChange]);
 
   useEffect(() => {
