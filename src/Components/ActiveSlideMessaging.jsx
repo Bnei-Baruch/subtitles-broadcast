@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { Slide } from "../Components/Slide";
 import { publishEvent } from "../Utils/Events";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,7 +12,7 @@ import debugLog from "../Utils/debugLog";
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
-  const qstSwapTime = 10000; //10s
+  const qstSwapTime = 10000; // 10s
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
@@ -58,22 +58,19 @@ export function ActiveSlideMessaging() {
     (state) => state.SubtitleData?.contentList?.data?.slides
   );
 
-  const clientId = useSelector((state) => state.mqtt.clientId);
-  const clientIdRef = useRef(clientId);
-
   const questionMessagesList = useSelector(
     (state) => state.mqtt.questionMessagesList
   );
 
-  const publishMqttMessage = (topic, message) => {
+  /** Publishes MQTT message */
+  const publishMqttMessage = useCallback((topic, message) => {
     publishEvent("mqttPublush", { mqttTopic: topic, message });
-  };
+  }, []);
 
-  const publishSlide = (slide, topic, isJsonMsg) => {
-    let slideJsonMsg;
-
-    if (!isJsonMsg) {
-      slideJsonMsg = {
+  /** Publishes slide to MQTT */
+  const publishSlide = useCallback(
+    (slide) => {
+      const slideJsonMsg = {
         type: "subtitle",
         ID: slide.ID,
         bookmark_id: slide.bookmark_id,
@@ -81,43 +78,41 @@ export function ActiveSlideMessaging() {
         order_number: slide.order_number,
         slide: slide.slide,
         source_uid: slide.source_uid,
-        isLtr: slide.left_to_right === false ? false : true,
+        isLtr: slide.left_to_right !== false,
         slide_type: slide.slide_type,
       };
-    }
 
-    publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
+      publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
+    },
+    [publishMqttMessage, subtitleMqttTopic]
+  );
 
-    return slideJsonMsg;
-  };
-
+  /** Handles publishing "none" message when display mode is "none" */
   useEffect(() => {
-    if (!clientIdRef.current && clientId) {
-      clientIdRef.current = clientId; // ✅ Ensure clientId is stored once
-    }
-  }, [clientId]);
+    if (!isUserInitiatedChange || subtitlesDisplayMode !== "none") return;
 
-  useEffect(() => {
-    if (!isUserInitiatedChange) return;
-    // ✅ Publish  active message  type: "none", slide: "", if display mode is "none"
-    if (subtitlesDisplayMode === "none") {
-      if (
-        !activeBroadcastMessage ||
-        activeBroadcastMessage.type !== "none" ||
-        activeBroadcastMessage.slide !== ""
-      ) {
-        const newActiveMsg = { type: "none", slide: "" };
-        publishMqttMessage(subtitleMqttTopic, newActiveMsg);
-      }
+    if (
+      !activeBroadcastMessage ||
+      activeBroadcastMessage.type !== "none" ||
+      activeBroadcastMessage.slide !== ""
+    ) {
+      publishMqttMessage(subtitleMqttTopic, { type: "none", slide: "" });
     }
 
     dispatch(resetUserInitiatedChange());
-  }, [subtitlesDisplayMode, isUserInitiatedChange]);
+  }, [
+    subtitlesDisplayMode,
+    isUserInitiatedChange,
+    activeBroadcastMessage,
+    publishMqttMessage,
+    subtitleMqttTopic,
+    dispatch,
+  ]);
 
+  /** Publishes selected slide when display mode is "sources" */
   useEffect(() => {
-    // ✅ Publish selected slide to MQTT **only if display mode is "sources"** and a slide is selected and it has changed
     if (isRoundRobinActiveRef.current) {
-      isRoundRobinActiveRef.current = false; // Reset round-robin flag after first cycle
+      isRoundRobinActiveRef.current = false;
       return;
     }
 
@@ -130,21 +125,18 @@ export function ActiveSlideMessaging() {
       (!activeBroadcastMessage ||
         activeBroadcastMessage.slide !== selectedSubtitleSlide.slide)
     ) {
-      publishSlide(selectedSubtitleSlide, subtitleMqttTopic, false);
+      publishSlide(selectedSubtitleSlide);
     }
   }, [
     selectedSubtitleSlide,
     subtitlesDisplayMode,
-    broadcastProgrammCode,
-    broadcastLangCode,
     activeBroadcastMessage,
-    dispatch,
-    subtitleMqttTopic,
     isUserInitiatedChange,
+    publishSlide,
   ]);
 
+  /** Updates selected question message */
   useEffect(() => {
-    // ✅ Update selected question message when the broadcast language changes or the question messages list is updated
     if (broadcastLangCode && questionMessagesList[broadcastLangCode]) {
       debugLog("📡 Updating selectedQuestionMessage for", broadcastLangCode);
       dispatch(
@@ -153,42 +145,33 @@ export function ActiveSlideMessaging() {
     }
   }, [broadcastLangCode, questionMessagesList, dispatch]);
 
+  /** Publishes selected question message when display mode is "questions" */
   useEffect(() => {
-    // ✅ Publish selected question message to MQTT **only if display mode is "questions"** and a question is selected
-    if (!isUserInitiatedChange) return;
+    if (!isUserInitiatedChange || subtitlesDisplayMode !== "questions") return;
 
-    if (subtitlesDisplayMode === "questions") {
-      let newActiveMessage = null;
+    const newActiveMessage = selectedQuestionMessage?.visible
+      ? { ...selectedQuestionMessage }
+      : { type: "question", slide: "" };
 
-      if (
-        !selectedQuestionMessage ||
-        selectedQuestionMessage.visible === false
-      ) {
-        newActiveMessage = { type: "question", slide: "" };
-      } else {
-        newActiveMessage = { ...selectedQuestionMessage };
-      }
-
-      if (activeBroadcastMessage?.slide === selectedQuestionMessage?.slide)
-        return;
-
+    if (activeBroadcastMessage?.slide !== selectedQuestionMessage?.slide) {
       publishMqttMessage(subtitleMqttTopic, newActiveMessage);
     }
 
     dispatch(resetUserInitiatedChange());
   }, [
     subtitlesDisplayMode,
-    selectedSubtitleSlide,
     selectedQuestionMessage,
     isUserInitiatedChange,
+    activeBroadcastMessage,
+    publishMqttMessage,
     subtitleMqttTopic,
     dispatch,
   ]);
 
+  /** Implements round-robin for questions */
   useEffect(() => {
-    // ✅ Implement round-robin for questions
     let timeoutId;
-    rounRobinIndexRef.current = rounRobinIndex; // ✅ Ensure ref stays updated
+    rounRobinIndexRef.current = rounRobinIndex;
 
     if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
       const questionSlides = userSlides.filter(
@@ -201,48 +184,30 @@ export function ActiveSlideMessaging() {
             (rounRobinIndexRef.current + 1) % questionSlides.length;
           let nextSlide = questionSlides[nextIndex];
 
-          debugLog("🔄 Round-Robin nextIndex:", nextIndex);
-          debugLog("🔄 Round-Robin nextSlide.ID:", nextSlide.ID);
-          debugLog(
-            "🔄 Round-Robin activeBroadcastMessage?.ID:",
-            activeBroadcastMessage?.ID
-          );
-
-          // ✅ Ensure the next slide is actually different
           if (nextSlide.ID !== activeBroadcastMessage?.ID) {
-            debugLog("🔄 Round-Robin Switching to:", nextSlide);
-
             isRoundRobinActiveRef.current = true;
-
             dispatch(setRounRobinIndex(nextIndex));
-            rounRobinIndexRef.current = nextIndex; // ✅ Update ref to avoid stale values
-
-            // ✅ Publish the new question to MQTT
-            const topic = getSubtitleMqttTopic(
-              broadcastProgrammCode,
-              broadcastLangCode
-            );
-            publishMqttMessage(topic, nextSlide);
-          } else {
-            debugLog("🔄 Skipping round-robin update (same slide)");
+            publishMqttMessage(subtitleMqttTopic, nextSlide);
           }
         }, qstSwapTime);
       }
     }
 
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId); // ✅ Cleanup to prevent memory leaks
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]); // ✅ Removed `rounRobinIndex` to prevent unnecessary re-renders
+  }, [
+    subtitlesDisplayMode,
+    userSlides,
+    activeBroadcastMessage,
+    publishMqttMessage,
+    dispatch,
+  ]);
 
   return (
     <div className="active-slide-msg-main-cont">
       <div
-        className={`green-part-cont active-slide-messaging${
-          activeBroadcastMessage?.slide ? "" : " display-mode-none"
-        }`}
+        className={`green-part-cont active-slide-messaging${activeBroadcastMessage?.slide ? "" : " display-mode-none"}`}
       >
         &nbsp;
       </div>
