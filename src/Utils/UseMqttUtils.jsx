@@ -11,7 +11,7 @@ import {
 } from "../Redux/MQTT/mqttSlice";
 import { broadcastLanguages } from "../Utils/Const";
 import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
-import { subscribeEvent } from "../Utils/Events";
+import { subscribeEvent, unSubscribeEvent } from "../Utils/Events"; // Ensure `unsubscribeEvent` exists
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
 
@@ -101,83 +101,90 @@ export default function useMqtt() {
         dispatch(setSubtitlesModeLoading(false));
         dispatch(setConnected(false));
       });
-
-      // ✅ Listen for "mqttPublush" and publish messages to MQTT
-      subscribeEvent("mqttPublush", (event) => {
-        let { mqttTopic, message } = event.detail;
-
-        if (typeof message !== "object") {
-          console.error("❌ MQTT Publish Error: Message must be an object");
-          dispatch(
-            addMqttError("❌ MQTT Publish Error: Message must be an object")
-          );
-          dispatch(setSubtitlesModeLoading(false));
-
-          return;
-        }
-
-        // ✅ Check if the current stored message by topic has the same slide value
-        const mqttMessageForTopic =
-          store.getState().mqtt.mqttMessages[mqttTopic];
-
-        if (mqttMessageForTopic?.slide === message.slide) {
-          debugLog(
-            "Skipping duplicate MQTT publish (same slide):",
-            mqttTopic,
-            message
-          );
-          return;
-        }
-
-        const enhancedMessage = {
-          ...message,
-          clientId: clientIdRef.current || "unknown_client",
-          username: username || "unknown_user",
-          firstName: firstName || "Unknown",
-          lastName: lastName || "User",
-          date: new Date().toUTCString(),
-        };
-
-        if (clientRef.current) {
-          const payloadString = JSON.stringify(enhancedMessage);
-          debugLog("🚀 Publishing to MQTT:", mqttTopic, payloadString);
-
-          clientRef.current.publish(
-            mqttTopic,
-            payloadString,
-            { retain: true },
-            (err) => {
-              if (err) {
-                console.error("❌ MQTT Publish Error:", err);
-                dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
-                dispatch(setSubtitlesModeLoading(false));
-              } else {
-                debugLog(
-                  "✅ MQTT Publish Successful:",
-                  mqttTopic,
-                  enhancedMessage
-                );
-              }
-            }
-          );
-        }
-      });
     }
 
     return () => {
-      if (clientRef.current && clientRef.current && clientRef.current.end) {
+      if (clientRef.current && clientRef.current.end) {
         debugLog("🔴 Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
         dispatch(setSubtitlesModeLoading(false));
       }
 
-      if (clientIdRef && clientIdRef.current && clientIdRef.current.end) {
-        clientIdRef.current.end();
+      if (clientIdRef && clientIdRef.current) {
         clientIdRef.current = null;
       }
     };
   }, [dispatch, broadcastLangCode]);
+
+  useEffect(() => {
+    const mqttPublishHandler = (event) => {
+      let { mqttTopic, message } = event.detail;
+
+      if (typeof message !== "object") {
+        console.error("❌ MQTT Publish Error: Message must be an object");
+        dispatch(
+          addMqttError("❌ MQTT Publish Error: Message must be an object")
+        );
+        dispatch(setSubtitlesModeLoading(false));
+        return;
+      }
+
+      // Prevent duplicate publishing if the last message was the same
+      const mqttMessageForTopic = store.getState().mqtt.mqttMessages[mqttTopic];
+      if (mqttMessageForTopic?.slide === message.slide) {
+        debugLog("Skipping duplicate MQTT publish:", mqttTopic, message);
+        return;
+      }
+
+      const enhancedMessage = {
+        ...message,
+        clientId: clientIdRef.current || "unknown_client",
+        username: username || "unknown_user",
+        firstName: firstName || "Unknown",
+        lastName: lastName || "User",
+        date: new Date().toUTCString(),
+      };
+
+      if (clientRef.current) {
+        const payloadString = JSON.stringify(enhancedMessage);
+        debugLog("🚀 Publishing to MQTT:", mqttTopic, payloadString);
+        clientRef.current.publish(
+          mqttTopic,
+          payloadString,
+          { retain: true },
+          (err) => {
+            if (err) {
+              console.error("❌ MQTT Publish Error:", err);
+              dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
+              dispatch(setSubtitlesModeLoading(false));
+            } else {
+              debugLog(
+                "✅ MQTT Publish Successful:",
+                mqttTopic,
+                enhancedMessage
+              );
+            }
+          }
+        );
+      }
+    };
+
+    // ✅ Add listener only once
+    subscribeEvent("mqttPublush", mqttPublishHandler);
+
+    // ✅ Remove listener on component unmount correctly
+    return () => {
+      debugLog("🔴 Removing MQTT publish listener");
+      if (typeof unSubscribeEvent === "function") {
+        unSubscribeEvent("mqttPublush", mqttPublishHandler);
+      } else {
+        console.warn(
+          "⚠ Unable to remove event listener: unSubscribeEvent is not defined"
+        );
+      }
+    };
+  }, []); // ✅ Runs only once
 
   return {
     subscribe: (topic) => {

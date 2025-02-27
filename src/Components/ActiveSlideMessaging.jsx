@@ -169,6 +169,9 @@ export function ActiveSlideMessaging() {
         newActiveMessage = { ...selectedQuestionMessage };
       }
 
+      if (activeBroadcastMessage?.slide === selectedQuestionMessage?.slide)
+        return;
+
       publishMqttMessage(subtitleMqttTopic, newActiveMessage);
     }
 
