@@ -3,9 +3,15 @@ import { broadcastLangMapObj } from "../Utils/Const";
 import { getQuestionMqttTopic } from "../Utils/Common";
 import { publishEvent } from "../Utils/Events";
 import { Slide } from "./Slide";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  setUserInitiatedChange,
+  setSelectedQuestionMessage,
+} from "../Redux/MQTT/mqttSlice";
 
 const QuestionMessage = (props) => {
+  const dispatch = useDispatch();
+
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
@@ -59,6 +65,8 @@ const QuestionMessage = (props) => {
       questionMsg.lang ? questionMsg.lang : broadcastLangCode
     );
 
+    dispatch(setUserInitiatedChange(true));
+    dispatch(setSelectedQuestionMessage(updatedMessage));
     publishEvent("mqttPublush", {
       mqttTopic: mqttTopic,
       message: updatedMessage,

@@ -132,7 +132,13 @@ export default function useMqtt() {
 
       // Prevent duplicate publishing if the last message was the same
       const mqttMessageForTopic = store.getState().mqtt.mqttMessages[mqttTopic];
-      if (mqttMessageForTopic?.slide === message.slide) {
+      const isDuplicate =
+        mqttMessageForTopic &&
+        mqttMessageForTopic.slide === message.slide &&
+        mqttMessageForTopic.type === message.type &&
+        mqttMessageForTopic.visible === message.visible;
+
+      if (isDuplicate) {
         debugLog("Skipping duplicate MQTT publish:", mqttTopic, message);
         return;
       }

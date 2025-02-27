@@ -147,7 +147,10 @@ export function ActiveSlideMessaging() {
       ? { ...selectedQuestionMessage }
       : { type: "question", slide: "" };
 
-    if (activeBroadcastMessage?.slide !== selectedQuestionMessage?.slide) {
+    if (
+      activeBroadcastMessage?.slide !== selectedQuestionMessage?.slide ||
+      activeBroadcastMessage?.visible !== selectedQuestionMessage?.visible
+    ) {
       publishMqttMessage(subtitleMqttTopic, newActiveMessage);
     }
 
