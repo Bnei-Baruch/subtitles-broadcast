@@ -7,14 +7,16 @@ import { broadcastLanguages, brodcastProgrammArr } from "../Utils/Const";
 
 const UserSettingsForm = () => {
   const dispatch = useDispatch();
-
   const userSettings = useSelector((state) => state.userSettings.userSettings);
+
   const [debugMode, setDebugMode] = useState(
     localStorage.getItem("debugLog") === "true"
   );
   const [useTrace, setUseTrace] = useState(
     localStorage.getItem("useTrace") === "true"
   );
+
+  const paginationOptions = [10, 20, 30];
 
   const handleProgramChange = (event) => {
     dispatch(
@@ -25,6 +27,22 @@ const UserSettingsForm = () => {
   const handleLanguageChange = (event) => {
     dispatch(
       updateMergedUserSettings({ broadcast_language_code: event.target.value })
+    );
+  };
+
+  const handleSourcePaginationChange = (event) => {
+    dispatch(
+      updateMergedUserSettings({
+        source_pagination: { page: 1, limit: Number(event.target.value) },
+      })
+    );
+  };
+
+  const handleArchivePaginationChange = (event) => {
+    dispatch(
+      updateMergedUserSettings({
+        archive_pagination: { page: 1, limit: Number(event.target.value) },
+      })
     );
   };
 
@@ -100,6 +118,41 @@ const UserSettingsForm = () => {
                   {broadcastLanguages.map((lang) => (
                     <option key={lang.value} value={lang.value}>
                       {lang.label}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={4} className="d-flex">
+          <Card className="shadow-lg p-4 flex-fill">
+            <Card.Title className="mb-3">📑 Pagination Settings</Card.Title>
+            <Card.Body>
+              <Form.Group controlId="source-pagination">
+                <Form.Label>📄 Source Page Limit:</Form.Label>
+                <Form.Select
+                  value={userSettings.source_pagination?.limit || 10}
+                  onChange={handleSourcePaginationChange}
+                >
+                  {paginationOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option} rows per page
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group controlId="archive-pagination" className="mt-3">
+                <Form.Label>📂 Archive Page Limit:</Form.Label>
+                <Form.Select
+                  value={userSettings.archive_pagination?.limit || 10}
+                  onChange={handleArchivePaginationChange}
+                >
+                  {paginationOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option} rows per page
                     </option>
                   ))}
                 </Form.Select>
