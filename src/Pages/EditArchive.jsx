@@ -399,18 +399,6 @@ const EditArchive = ({ handleClose }) => {
 
   const effectiveHandleClose = handleClose || fallbackHandleClose;
 
-  const addNewSlides = () => {
-    const retVal = slideListData
-      ?.filter((key) => key?.addedNew === true)
-      ?.map(({ file_uid, slide, order_number }) => ({
-        file_uid,
-        slide,
-        order_number,
-      }));
-
-    return retVal;
-  };
-
   const handleBackBtn = (evt) => {
     if (isSlideDataChanged) {
       setConfirmation(true);
@@ -475,6 +463,11 @@ const EditArchive = ({ handleClose }) => {
     setSlideListData(cloneSlidedataArray);
   }
 
+  const handleSaveAndBack = async () => {
+    await handleSave();
+    handleBack();
+  };
+
   return (
     <>
       <LoadingOverlay loading={loading} />
@@ -538,6 +531,14 @@ const EditArchive = ({ handleClose }) => {
                   onClick={handleSave}
                 >
                   Save
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleSaveAndBack}
+                  className={`btn save ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+                >
+                  Save & Back
                 </Button>
               </div>
             </div>
