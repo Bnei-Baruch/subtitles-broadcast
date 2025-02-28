@@ -96,6 +96,9 @@ const mqttSlice = createSlice({
       state.isUserInitiatedChange = true;
       state.isMqttLoading = true;
     },
+    updateSubtitlesDisplayMode: (state, action) => {
+      state.subtitlesDisplayMode = action.payload;
+    },
     setSubtitlesDisplayModeFromMQTT: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
       state.isUserInitiatedChange = false;
@@ -177,6 +180,7 @@ export const {
   setUserInitiatedChange,
   setMqttLoading,
   resetMqttLoading,
+  updateSubtitlesDisplayMode,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;

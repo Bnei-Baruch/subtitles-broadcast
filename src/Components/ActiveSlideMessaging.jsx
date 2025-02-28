@@ -7,8 +7,8 @@ import {
   setSelectedQuestionMessage,
   setRounRobinIndex,
   setActiveBroadcastMessage,
-  setSubtitlesDisplayMode,
   resetMqttLoading,
+  updateSubtitlesDisplayMode,
 } from "../Redux/MQTT/mqttSlice";
 import { getSubtitleMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
@@ -103,15 +103,15 @@ export function ActiveSlideMessaging() {
       }
 
       if (newActiveMessage.type === "question") {
-        dispatch(setSubtitlesDisplayMode("questions"));
+        dispatch(updateSubtitlesDisplayMode("questions"));
       }
 
       if (newActiveMessage.type === "subtitle") {
-        dispatch(setSubtitlesDisplayMode("sources"));
+        dispatch(updateSubtitlesDisplayMode("sources"));
       }
 
       if (newActiveMessage.type === "none") {
-        dispatch(setSubtitlesDisplayMode("none"));
+        dispatch(updateSubtitlesDisplayMode("none"));
       }
 
       dispatch(setActiveBroadcastMessage(newActiveMessage));
