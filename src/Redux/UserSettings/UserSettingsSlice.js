@@ -8,6 +8,7 @@ const initialState = {
   userSettings: {
     selected_slide_id: null,
     selected_file_uid: null,
+    selected_bookmark_language: null,
     broadcast_programm_code: "morning_lesson",
     broadcast_language_code: "he",
     source_pagination: { page: 1, limit: 10 },
@@ -50,6 +51,11 @@ export const updateMergedUserSettings =
 
     const currentSettings = getState().userSettings.userSettings || {};
     const updatedSettings = { ...currentSettings, ...newSettings };
+
+    if (newSettings.selected_file_uid) {
+      updatedSettings.selected_bookmark_language =
+        updatedSettings.broadcast_language_code;
+    }
 
     debugLog("Merging and updating user settings:", updatedSettings);
 

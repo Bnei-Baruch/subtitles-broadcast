@@ -28,7 +28,7 @@ import { MAX_SLIDE_LIMIT, broadcastLanguages } from "../Utils/Const";
 import {
   setSubtitlesDisplayMode,
   setUserSelectedSlide,
-  setSubtitlesModeLoading,
+  resetMqttLoading,
   addMqttError,
 } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
@@ -73,9 +73,7 @@ const Subtitles = () => {
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
 
-  const isSubtitlesModeLoading = useSelector(
-    (state) => state.mqtt.isSubtitlesModeLoading
-  );
+  const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
 
   const [loading, setLoading] = useState(false);
   const [loadingTimeoutId, setLoadingTimeoutId] = useState(null);
@@ -165,16 +163,16 @@ const Subtitles = () => {
   );
 
   useEffect(() => {
-    setLoading(isSubtitlesModeLoading);
+    setLoading(isMqttLoading);
 
-    if (isSubtitlesModeLoading) {
+    if (isMqttLoading) {
       if (loadingTimeoutId) {
         clearTimeout(loadingTimeoutId);
       }
 
       // Set a timeout to prevent indefinite loading
       const newTimeout = setTimeout(() => {
-        dispatch(setSubtitlesModeLoading(false));
+        dispatch(resetMqttLoading());
         dispatch(
           addMqttError({
             message:
@@ -197,7 +195,7 @@ const Subtitles = () => {
         clearTimeout(loadingTimeoutId);
       }
     };
-  }, [isSubtitlesModeLoading]);
+  }, [isMqttLoading]);
 
   useEffect(() => {
     // Add event listener when the component mounts

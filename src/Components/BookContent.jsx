@@ -50,7 +50,10 @@ const BookContent = ({
   }, [contents, activeSlideId]);
 
   useEffect(() => {
-    if (userSelectedFileUID) {
+    if (
+      userSelectedFileUID &&
+      userSettings.selected_bookmark_language === broadcastLangCode
+    ) {
       dispatch(
         GetSubtitleData({
           file_uid: userSelectedFileUID,
@@ -69,7 +72,13 @@ const BookContent = ({
         }
       });
     }
-  }, [userSelectedFileUID, dispatch, userSelectedSlideId]);
+  }, [
+    userSelectedFileUID,
+    dispatch,
+    userSelectedSlideId,
+    broadcastLangCode,
+    userSettings.selected_bookmark_language,
+  ]);
 
   const handleEditSlide = (slide) => {
     const fileUid = slide.file_uid;

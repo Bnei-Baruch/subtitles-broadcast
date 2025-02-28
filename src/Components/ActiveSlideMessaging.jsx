@@ -6,6 +6,9 @@ import {
   resetUserInitiatedChange,
   setSelectedQuestionMessage,
   setRounRobinIndex,
+  setActiveBroadcastMessage,
+  setSubtitlesDisplayMode,
+  resetMqttLoading,
 } from "../Redux/MQTT/mqttSlice";
 import { getSubtitleMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
@@ -62,6 +65,8 @@ export function ActiveSlideMessaging() {
     (state) => state.mqtt.questionMessagesList
   );
 
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+
   /** Publishes MQTT message */
   const publishMqttMessage = (topic, message) => {
     publishEvent("mqttPublush", { mqttTopic: topic, message });
@@ -83,6 +88,36 @@ export function ActiveSlideMessaging() {
 
     publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
   };
+
+  useEffect(() => {
+    if (broadcastLangCode) {
+      const subtitleMqttTopic = getSubtitleMqttTopic(
+        broadcastProgrammCode,
+        broadcastLangCode
+      );
+
+      let newActiveMessage = mqttMessages[subtitleMqttTopic];
+
+      if (!newActiveMessage) {
+        newActiveMessage = { type: "subtitle", slide: "" };
+      }
+
+      if (newActiveMessage.type === "question") {
+        dispatch(setSubtitlesDisplayMode("questions"));
+      }
+
+      if (newActiveMessage.type === "subtitle") {
+        dispatch(setSubtitlesDisplayMode("sources"));
+      }
+
+      if (newActiveMessage.type === "none") {
+        dispatch(setSubtitlesDisplayMode("none"));
+      }
+
+      dispatch(setActiveBroadcastMessage(newActiveMessage));
+      dispatch(resetMqttLoading());
+    }
+  }, [broadcastLangCode, mqttMessages, broadcastProgrammCode, dispatch]);
 
   /** Handles publishing "none" message when display mode is "none" */
   useEffect(() => {

@@ -7,7 +7,7 @@ import {
   mqttMessageReceived,
   setClientId,
   addMqttError,
-  setSubtitlesModeLoading,
+  resetMqttLoading,
 } from "../Redux/MQTT/mqttSlice";
 import { broadcastLanguages } from "../Utils/Const";
 import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
@@ -98,7 +98,7 @@ export default function useMqtt() {
         console.error("MQTT Connection Error:", err);
         dispatch(addMqttError("MQTT Connection Failed. Please try again."));
         clientRef.current.end();
-        dispatch(setSubtitlesModeLoading(false));
+        dispatch(resetMqttLoading());
         dispatch(setConnected(false));
       });
     }
@@ -108,7 +108,7 @@ export default function useMqtt() {
         debugLog("Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
-        dispatch(setSubtitlesModeLoading(false));
+        dispatch(resetMqttLoading());
       }
 
       if (clientIdRef && clientIdRef.current) {
@@ -124,7 +124,7 @@ export default function useMqtt() {
       if (typeof message !== "object") {
         console.error("MQTT Publish Error: Message must be an object");
         dispatch(addMqttError("MQTT Publish Error: Message must be an object"));
-        dispatch(setSubtitlesModeLoading(false));
+        dispatch(resetMqttLoading());
         return;
       }
 
@@ -161,7 +161,7 @@ export default function useMqtt() {
             if (err) {
               console.error("MQTT Publish Error:", err);
               dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
-              dispatch(setSubtitlesModeLoading(false));
+              dispatch(resetMqttLoading());
             } else {
               debugLog(" MQTT Publish Successful:", mqttTopic, enhancedMessage);
             }
