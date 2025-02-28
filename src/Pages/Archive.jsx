@@ -28,7 +28,7 @@ const Archive = () => {
   const [unbookmarkAction, setUnbookmarkAction] = useState(false);
 
   const userSettingsPagination = useSelector(
-    (state) => state.userSettings.userSettings.source_pagination
+    (state) => state.userSettings.userSettings.archive_pagination
   );
   const memoizedPagination = useMemo(
     () => userSettingsPagination || { page: 1, limit: 10 },
