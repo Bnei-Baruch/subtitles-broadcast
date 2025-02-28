@@ -13,50 +13,10 @@ import {
 } from "../Utils/Const";
 import { useDispatch, useSelector } from "react-redux";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import "../Pages/PagesCSS/BroadcastSettings.css";
 
 const leftColSize = 4;
 const rightColSize = 8;
-
-const styles = {
-  buttonPrimary: {
-    // width: "390px",
-    textAlign: "left",
-    backgroundColor: "transparent",
-    transition: "none",
-    border: "none",
-    paddingTop: "3px",
-  },
-  row: {
-    height: "50px",
-  },
-  label: {
-    marginTop: "6px",
-  },
-  dropDown: {
-    width: "160px",
-    border: "1px solid grey",
-  },
-  icon: {
-    marginLeft: "3px",
-  },
-  labelMain: {
-    marginRight: "3px",
-    cursor: "pointer",
-  },
-  labelMainVal: {
-    marginRight: "5px",
-    // fontWeight: "bold",
-    fontSize: "14px",
-    width: "135px",
-    display: "inline-block",
-  },
-  labelMainLast: {
-    // fontWeight: "bold",
-    fontSize: "14px",
-    width: "75px",
-    display: "inline-block",
-  },
-};
 
 export function BroadcastSettings({ props }) {
   const dispatch = useDispatch();
@@ -103,25 +63,28 @@ export function BroadcastSettings({ props }) {
 
   return (
     <>
-      <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
+      <Button variant="light" onClick={handleShow} className="broadcast-button">
         <div className="side-menu-item-holder">
           <img
             src="/image/new_channel_icon.svg"
             alt="Channel Icon"
-            className="icon"
+            className="broadcast-icon"
           />
-          <span style={styles.labelMainVal}>{currentProgrammLabel}</span>
+          <span className="broadcast-label-main-val">
+            {currentProgrammLabel}
+          </span>
         </div>
       </Button>
-      <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
+      <Button variant="light" onClick={handleShow} className="broadcast-button">
         <div className="side-menu-item-holder">
-          {/* <label style={styles.labelMain}>Language: </label> */}
           <img
             src="/image/globe_language_icon.svg"
             alt="Language Icon"
-            className="icon"
+            className="broadcast-icon"
           />
-          <span style={styles.labelMainLast}>{broadcastLangLabel}</span>
+          <span className="broadcast-label-main-last">
+            {broadcastLangLabel}
+          </span>
         </div>
       </Button>
 
@@ -135,9 +98,9 @@ export function BroadcastSettings({ props }) {
         </Modal.Header>
         <Modal.Body>
           <Container>
-            <Row style={styles.row}>
+            <Row className="broadcast-row">
               <Col xs={leftColSize} md={leftColSize}>
-                <label style={styles.label}>Chanel:</label>
+                <label className="broadcast-label">Chanel:</label>
               </Col>
               <Col xs={rightColSize} md={rightColSize}>
                 <DropdownButtonDef
@@ -145,19 +108,14 @@ export function BroadcastSettings({ props }) {
                   data={brodcastProgrammArr}
                   currentValue={currentProgrammItem}
                   setDataRef={updateBroadcastProgramm}
-                  style={styles.dropDown}
+                  className="btn-group broadcast-dropdown"
                   variant="light"
                 ></DropdownButtonDef>
               </Col>
             </Row>
-            <Row style={styles.row}>
+            <Row className="broadcast-row">
               <Col xs={leftColSize} md={leftColSize}>
-                <label style={styles.label}>Language:</label>
-                <i
-                  className="bi bi-exclamation-circle"
-                  style={styles.icon}
-                  title="The subtitle language is defined by user's role. Please ask admin to change it."
-                ></i>
+                <label className="broadcast-label">Language:</label>
               </Col>
               <Col xs={rightColSize} md={rightColSize}>
                 <DropdownButtonDef
@@ -165,7 +123,7 @@ export function BroadcastSettings({ props }) {
                   data={broadcastLanguages}
                   currentValue={currentLangItem}
                   setDataRef={updateBroadcastLang}
-                  style={styles.dropDown}
+                  className="btn-group broadcast-dropdown"
                   variant="light"
                   disabled={false}
                 ></DropdownButtonDef>
