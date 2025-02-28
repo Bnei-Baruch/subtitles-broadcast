@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { setDebugLogMode } from "../Utils/debugLog";
+import { setDebugLogMode, setUseTraceMode } from "../Utils/debugLog";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Container, Card, Form, Row, Col } from "react-bootstrap";
@@ -10,14 +10,12 @@ const Settings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Get user data
   const userProfile = useSelector(
     (state) => state.UserProfile?.userProfile?.profile
   );
   const securityRole = userProfile?.securityRole;
   const userEmail = userProfile?.email || "No Email Provided";
 
-  // Get Redux broadcast settings
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
@@ -27,9 +25,11 @@ const Settings = () => {
       "morning_lesson"
   );
 
-  // Debug Mode State (Still using localStorage)
   const [debugMode, setDebugMode] = useState(
     localStorage.getItem("debugLog") === "true"
+  );
+  const [useTrace, setUseTrace] = useState(
+    localStorage.getItem("useTrace") === "true"
   );
 
   useEffect(() => {
@@ -38,14 +38,18 @@ const Settings = () => {
     }
   }, [securityRole, navigate]);
 
-  // Toggle Debug Mode
   const toggleDebugMode = () => {
     const newMode = !debugMode;
     setDebugMode(newMode);
     setDebugLogMode(newMode);
   };
 
-  // Broadcast Settings Handlers
+  const toggleUseTrace = () => {
+    const newMode = !useTrace;
+    setUseTrace(newMode);
+    setUseTraceMode(newMode);
+  };
+
   const handleProgramChange = (event) => {
     dispatch(
       updateMergedUserSettings({ broadcast_programm_code: event.target.value })
@@ -62,13 +66,10 @@ const Settings = () => {
     <Container className="mt-4">
       <Row className="d-flex align-items-stretch">
         {" "}
-        {/* Ensures equal height */}
         <Col md={4} className="d-flex">
           {" "}
-          {/* General Settings */}
           <Card className="shadow-lg p-4 flex-fill">
             {" "}
-            {/* flex-fill ensures equal height */}
             <Card.Title className="mb-3">⚙️ General Settings</Card.Title>
             <Card.Body>
               <Form>
@@ -82,16 +83,24 @@ const Settings = () => {
                     className="me-2"
                   />
                 </Form.Group>
+                <Form.Group className="mb-3 d-flex align-items-center">
+                  <Form.Check
+                    type="switch"
+                    id="use-trace-toggle"
+                    label="Use Console Trace (instead of Log)"
+                    checked={useTrace}
+                    onChange={toggleUseTrace}
+                    className="me-2"
+                  />
+                </Form.Group>
               </Form>
             </Card.Body>
           </Card>
         </Col>
         <Col md={4} className="d-flex">
           {" "}
-          {/* User Information */}
           <Card className="shadow-lg p-4 flex-fill">
             {" "}
-            {/* flex-fill ensures equal height */}
             <Card.Title className="mb-3">👤 User Information</Card.Title>
             <Card.Body>
               <p>
@@ -108,7 +117,6 @@ const Settings = () => {
       <Row className="mt-4">
         <Col md={4}>
           {" "}
-          {/* Broadcast Settings */}
           <Card className="shadow-lg p-4">
             <Card.Title className="mb-3">📡 Broadcast Settings</Card.Title>
             <Card.Body>
