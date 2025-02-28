@@ -112,6 +112,8 @@ export function BroadcastSettings({ props }) {
           />
           <span style={styles.labelMainVal}>{currentProgrammLabel}</span>
         </div>
+      </Button>
+      <Button variant="light" onClick={handleShow} style={styles.buttonPrimary}>
         <div className="side-menu-item-holder">
           {/* <label style={styles.labelMain}>Language: </label> */}
           <img
