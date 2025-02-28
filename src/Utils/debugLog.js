@@ -7,7 +7,7 @@ export const setDebugLogMode = (enabled) => {
 
 const debugLog = (message, ...optionalParams) => {
   if (isDebugLogEnabled()) {
-    console.log(`${message}`, ...optionalParams);
+    console.trace(`${message}`, ...optionalParams);
   }
 };
 
