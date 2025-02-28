@@ -33,7 +33,7 @@ const HeaderBar = ({ logout }) => {
             <ul className="dropdown-menu">
               <li>
                 <Link className="dropdown-item" to="/settings">
-                  <i class="bi bi-gear me-2"></i>
+                  <i className="bi bi-gear me-2"></i>
                   <span>Settings</span>
                 </Link>
               </li>
