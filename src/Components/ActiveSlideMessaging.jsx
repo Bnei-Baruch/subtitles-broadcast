@@ -89,49 +89,67 @@ export function ActiveSlideMessaging() {
     publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
   };
 
+  const getDisplayModeByMsgType = (message) => {
+    return message?.type === "subtitle"
+      ? "sources"
+      : message?.type === "question"
+        ? "questions"
+        : "none";
+  };
+
+  const getMsgTypeByDisplayMode = (displayMode) => {
+    return displayMode === "sources"
+      ? "subtitle"
+      : displayMode === "questions"
+        ? "question"
+        : "none";
+  };
+
+  /**
+   * Updates the active broadcast message when switching languages.
+   * If no active message exists for the new language, it sets a default empty message.
+   * Also ensures subtitlesDisplayMode is updated based on the mqttMessages[subtitleMqttTopic].
+   */
   useEffect(() => {
-    if (broadcastLangCode) {
-      let isUpdated = false;
-      const subtitleMqttTopic = getSubtitleMqttTopic(
-        broadcastProgrammCode,
-        broadcastLangCode
-      );
+    if (!broadcastLangCode) return;
 
-      let newActiveMessage = mqttMessages[subtitleMqttTopic];
+    const subtitleMqttTopic = getSubtitleMqttTopic(
+      broadcastProgrammCode,
+      broadcastLangCode
+    );
 
-      if (!newActiveMessage) {
+    let newActiveMessage = mqttMessages[subtitleMqttTopic];
+    if (!newActiveMessage) {
+      if (!activeBroadcastMessage || activeBroadcastMessage.type !== "none") {
+        debugLog("No active message found. Setting to default...");
         newActiveMessage = {
-          type:
-            subtitlesDisplayMode === "sources"
-              ? "subtitle"
-              : subtitlesDisplayMode === "question"
-                ? "question"
-                : "none",
+          type: getMsgTypeByDisplayMode(subtitlesDisplayMode),
           slide: "",
         };
-      }
-
-      if (newActiveMessage.type === "question") {
-        dispatch(updateSubtitlesDisplayMode("questions"));
-        isUpdated = true;
-      }
-
-      if (newActiveMessage.type === "subtitle") {
-        dispatch(updateSubtitlesDisplayMode("sources"));
-        isUpdated = true;
-      }
-
-      if (newActiveMessage.type === "none") {
-        dispatch(updateSubtitlesDisplayMode("none"));
-        isUpdated = true;
-      }
-
-      if (isUpdated) {
-        dispatch(setActiveBroadcastMessage(newActiveMessage));
-        dispatch(resetMqttLoading());
+      } else {
+        return;
       }
     }
-  }, [broadcastLangCode, mqttMessages, broadcastProgrammCode, dispatch]);
+
+    const msgSubtitlesDisplayMode = getDisplayModeByMsgType(newActiveMessage);
+
+    if (subtitlesDisplayMode !== msgSubtitlesDisplayMode) {
+      dispatch(updateSubtitlesDisplayMode(msgSubtitlesDisplayMode));
+    }
+
+    if (activeBroadcastMessage?.slide !== newActiveMessage.slide) {
+      dispatch(setActiveBroadcastMessage(newActiveMessage));
+    }
+
+    dispatch(resetMqttLoading());
+  }, [
+    broadcastLangCode,
+    mqttMessages,
+    broadcastProgrammCode,
+    subtitlesDisplayMode,
+    activeBroadcastMessage,
+    dispatch,
+  ]);
 
   /** Handles publishing "none" message when display mode is "none" */
   useEffect(() => {
