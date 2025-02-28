@@ -91,6 +91,7 @@ export function ActiveSlideMessaging() {
 
   useEffect(() => {
     if (broadcastLangCode) {
+      let isUpdated = false;
       const subtitleMqttTopic = getSubtitleMqttTopic(
         broadcastProgrammCode,
         broadcastLangCode
@@ -99,23 +100,36 @@ export function ActiveSlideMessaging() {
       let newActiveMessage = mqttMessages[subtitleMqttTopic];
 
       if (!newActiveMessage) {
-        newActiveMessage = { type: "subtitle", slide: "" };
+        newActiveMessage = {
+          type:
+            subtitlesDisplayMode === "sources"
+              ? "subtitle"
+              : subtitlesDisplayMode === "question"
+                ? "question"
+                : "none",
+          slide: "",
+        };
       }
 
       if (newActiveMessage.type === "question") {
         dispatch(updateSubtitlesDisplayMode("questions"));
+        isUpdated = true;
       }
 
       if (newActiveMessage.type === "subtitle") {
         dispatch(updateSubtitlesDisplayMode("sources"));
+        isUpdated = true;
       }
 
       if (newActiveMessage.type === "none") {
         dispatch(updateSubtitlesDisplayMode("none"));
+        isUpdated = true;
       }
 
-      dispatch(setActiveBroadcastMessage(newActiveMessage));
-      dispatch(resetMqttLoading());
+      if (isUpdated) {
+        dispatch(setActiveBroadcastMessage(newActiveMessage));
+        dispatch(resetMqttLoading());
+      }
     }
   }, [broadcastLangCode, mqttMessages, broadcastProgrammCode, dispatch]);
 
