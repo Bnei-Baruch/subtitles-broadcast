@@ -12,7 +12,7 @@ import debugLog from "../Utils/debugLog";
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
-  const qstSwapTime = 10000; // 10s
+  const qstSwapTime = 10000;
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
@@ -132,7 +132,7 @@ export function ActiveSlideMessaging() {
   /** Updates selected question message */
   useEffect(() => {
     if (broadcastLangCode && questionMessagesList[broadcastLangCode]) {
-      debugLog("📡 Updating selectedQuestionMessage for", broadcastLangCode);
+      debugLog("Updating selectedQuestionMessage for", broadcastLangCode);
       dispatch(
         setSelectedQuestionMessage(questionMessagesList[broadcastLangCode])
       );

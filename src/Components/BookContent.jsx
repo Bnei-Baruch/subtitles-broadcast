@@ -118,7 +118,7 @@ const BookContent = ({
         dispatch(setUserInitiatedChange(false));
       });
     } catch (error) {
-      debugLog("❌ updateMergedUserSettings Error:", error);
+      debugLog(" updateMergedUserSettings Error:", error);
       setLoading(false);
       dispatch(setUserInitiatedChange(false));
     }

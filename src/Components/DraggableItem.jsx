@@ -71,7 +71,6 @@ const DraggableItem = ({
     )
       .then((response) => {
         if (!bookmarkList?.data) return;
-        // ✅ Find the bookmarked slide_id for this file
         const bookmark = bookmarkList?.data?.find(
           (b) => b.file_uid === targetBookmarkFileUid
         );
@@ -88,7 +87,6 @@ const DraggableItem = ({
         }
       })
       .finally(() => {
-        //
         setLoading(false);
       });
   };
@@ -106,8 +104,8 @@ const DraggableItem = ({
           padding: "8px",
           border: "1px solid #ccc",
           marginBottom: "4px",
-          position: "relative", // ✅ Allow overlay to be positioned properly
-          zIndex: loading ? 1000 : "auto", // ✅ Ensure overlay is above everything
+          position: "relative",
+          zIndex: loading ? 1000 : "auto",
         }}
       >
         <i className="bi bi-grip-vertical me-3" />

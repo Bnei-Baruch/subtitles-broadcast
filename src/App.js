@@ -10,7 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { markErrorAsUiPresented } from "./Redux/MQTT/mqttSlice";
 import { fetchUserSettings } from "./Redux/UserSettings/UserSettingsSlice";
-import {  showErrorToast } from "./Utils/Common";
+import { showErrorToast } from "./Utils/Common";
 
 const App = ({ auth }) => {
   const { subscribe, unsubscribe } = useMqtt();
@@ -43,7 +43,7 @@ const App = ({ auth }) => {
       if (isConnected) {
         Object.keys(mqttTopics).forEach((topic) => {
           unsubscribe(topic);
-          debugLog("App Unsubscribed from topic: ", topic);
+          debugLog("Unsubscribed from topic: ", topic);
         });
       }
     };

@@ -164,34 +164,40 @@ const Subtitles = () => {
     [UserAddedList, updateSelectedSlide]
   );
 
-useEffect(() => {
-  setLoading(isSubtitlesModeLoading);
+  useEffect(() => {
+    setLoading(isSubtitlesModeLoading);
 
-  if (isSubtitlesModeLoading) {
-    if (loadingTimeoutId) {
-      clearTimeout(loadingTimeoutId);
+    if (isSubtitlesModeLoading) {
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+      }
+
+      // Set a timeout to prevent indefinite loading
+      const newTimeout = setTimeout(() => {
+        dispatch(setSubtitlesModeLoading(false));
+        dispatch(
+          addMqttError({
+            message:
+              "⚠️ Subtitle mode change timeout: No MQTT response received.",
+            type: "Timeout",
+          })
+        );
+      }, loadingTimeoutDuration);
+
+      setLoadingTimeoutId(newTimeout);
+    } else {
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+        setLoadingTimeoutId(null);
+      }
     }
 
-    // Set a timeout to prevent indefinite loading
-    const newTimeout = setTimeout(() => {
-      dispatch(setSubtitlesModeLoading(false));
-      dispatch(addMqttError({ message: "⚠️ Subtitle mode change timeout: No MQTT response received.", type: "Timeout" }));
-    }, loadingTimeoutDuration); 
-
-    setLoadingTimeoutId(newTimeout);
-  } else {
-    if (loadingTimeoutId) {
-      clearTimeout(loadingTimeoutId);
-      setLoadingTimeoutId(null);
-    }
-  }
-
-  return () => {
-    if (loadingTimeoutId) {
-      clearTimeout(loadingTimeoutId);
-    }
-  };
-}, [isSubtitlesModeLoading]);
+    return () => {
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+      }
+    };
+  }, [isSubtitlesModeLoading]);
 
   useEffect(() => {
     // Add event listener when the component mounts

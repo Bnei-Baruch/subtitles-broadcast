@@ -59,14 +59,14 @@ export default function useMqtt() {
 
   useEffect(() => {
     if (!clientRef.current) {
-      debugLog("🔵 Connecting to MQTT Broker...");
+      debugLog("Connecting to MQTT Broker...");
       clientRef.current = mqtt.connect(mqttBrokerUrl);
 
       clientRef.current.on("connect", () => {
-        debugLog("🟢 MQTT Connected");
+        debugLog("MQTT Connected");
         dispatch(setConnected(true));
 
-        // ✅ Populate MQTT topics for the questions and display mode
+        // Populate MQTT topics for the questions and subtitles
         let broadcastMqttTopics = broadcastLanguages
           .map((langItem) => {
             return [
@@ -82,7 +82,7 @@ export default function useMqtt() {
       });
 
       clientRef.current.on("message", (topic, message) => {
-        debugLog("📩 MQTT Message Received:", topic, message.toString());
+        debugLog("MQTT Message Received:", topic, message.toString());
 
         dispatch(
           mqttMessageReceived({
@@ -95,7 +95,7 @@ export default function useMqtt() {
       });
 
       clientRef.current.on("error", (err) => {
-        console.error("❌ MQTT Connection Error:", err);
+        console.error("MQTT Connection Error:", err);
         dispatch(addMqttError("MQTT Connection Failed. Please try again."));
         clientRef.current.end();
         dispatch(setSubtitlesModeLoading(false));
@@ -105,7 +105,7 @@ export default function useMqtt() {
 
     return () => {
       if (clientRef.current && clientRef.current.end) {
-        debugLog("🔴 Disconnecting MQTT...");
+        debugLog("Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
         dispatch(setSubtitlesModeLoading(false));
@@ -122,10 +122,8 @@ export default function useMqtt() {
       let { mqttTopic, message } = event.detail;
 
       if (typeof message !== "object") {
-        console.error("❌ MQTT Publish Error: Message must be an object");
-        dispatch(
-          addMqttError("❌ MQTT Publish Error: Message must be an object")
-        );
+        console.error("MQTT Publish Error: Message must be an object");
+        dispatch(addMqttError("MQTT Publish Error: Message must be an object"));
         dispatch(setSubtitlesModeLoading(false));
         return;
       }
@@ -154,43 +152,39 @@ export default function useMqtt() {
 
       if (clientRef.current) {
         const payloadString = JSON.stringify(enhancedMessage);
-        debugLog("🚀 Publishing to MQTT:", mqttTopic, payloadString);
+        debugLog(" Publishing to MQTT:", mqttTopic, payloadString);
         clientRef.current.publish(
           mqttTopic,
           payloadString,
           { retain: true },
           (err) => {
             if (err) {
-              console.error("❌ MQTT Publish Error:", err);
+              console.error("MQTT Publish Error:", err);
               dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
               dispatch(setSubtitlesModeLoading(false));
             } else {
-              debugLog(
-                "✅ MQTT Publish Successful:",
-                mqttTopic,
-                enhancedMessage
-              );
+              debugLog(" MQTT Publish Successful:", mqttTopic, enhancedMessage);
             }
           }
         );
       }
     };
 
-    // ✅ Add listener only once
+    // Add listener only once
     subscribeEvent("mqttPublush", mqttPublishHandler);
 
-    // ✅ Remove listener on component unmount correctly
+    //  Remove listener on component unmount correctly
     return () => {
-      debugLog("🔴 Removing MQTT publish listener");
+      debugLog(" Removing MQTT publish listener");
       if (typeof unSubscribeEvent === "function") {
         unSubscribeEvent("mqttPublush", mqttPublishHandler);
       } else {
         console.warn(
-          "⚠ Unable to remove event listener: unSubscribeEvent is not defined"
+          "Unable to remove event listener: unSubscribeEvent is not defined"
         );
       }
     };
-  }, []); // ✅ Runs only once
+  }, []); // Runs only once
 
   return {
     subscribe: (topic) => {

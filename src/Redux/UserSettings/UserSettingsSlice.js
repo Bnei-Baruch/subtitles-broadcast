@@ -24,10 +24,10 @@ export const fetchUserSettings = createAsyncThunk(
       const response = await axios.get(`${API}user/settings`);
       return response.data.data;
     } catch (error) {
-      debugLog("❌ fetchUserSettings Error:", error);
+      debugLog("fetchUserSettings Error:", error);
 
       if (error.response?.status === 404) {
-        debugLog("⚠️ User settings not found. Creating initial settings...");
+        debugLog("User settings not found. Creating initial settings...");
         thunkAPI.dispatch(createInitialUserSettings());
       }
 
@@ -51,13 +51,13 @@ export const updateMergedUserSettings =
     const currentSettings = getState().userSettings.userSettings || {};
     const updatedSettings = { ...currentSettings, ...newSettings };
 
-    debugLog("🚀 Merging and updating user settings:", updatedSettings);
+    debugLog("Merging and updating user settings:", updatedSettings);
 
     try {
       await axios.post(`${API}user/settings`, updatedSettings);
       dispatch(setSettings(updatedSettings));
     } catch (error) {
-      debugLog("❌ updateMergedUserSettings Error:", error);
+      debugLog("updateMergedUserSettings Error:", error);
     }
   };
 
@@ -66,7 +66,7 @@ export const updateMergedUserSettings =
  */
 export const createInitialUserSettings = () => (dispatch, getState) => {
   const initialSettings = getState().userSettings.userSettings;
-  debugLog("🚀 Creating initial user settings:", initialSettings);
+  debugLog("Creating initial user settings:", initialSettings);
   dispatch(updateMergedUserSettings(initialSettings));
 };
 
@@ -81,7 +81,7 @@ const UserSettingsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchUserSettings.fulfilled, (state, action) => {
-      debugLog("✅ User Settings Loaded", action.payload);
+      debugLog("User Settings Loaded", action.payload);
       state.userSettings = action.payload;
       state.isLoaded = true;
     });

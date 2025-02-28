@@ -78,7 +78,7 @@ const mqttSlice = createSlice({
           }
         }
       } catch (error) {
-        debugLog("❌ MQTT Message Processing Error:", error);
+        debugLog("MQTT Message Processing Error:", error);
         state.isSubtitlesModeLoading = false;
         dispatch(
           addMqttError({
