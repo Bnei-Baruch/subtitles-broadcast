@@ -29,9 +29,7 @@ const MainRoutes = ({ logout, securityRole }) => {
           <Route path="/question" element={<QuestionsModule />} />
         )}
 
-        {securityRole && securityRole === "admin" && (
-          <Route path="/settings" element={<Settings />} />
-        )}
+        {securityRole && <Route path="/settings" element={<Settings />} />}
 
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}

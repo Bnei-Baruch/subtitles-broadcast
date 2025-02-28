@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { setDebugLogMode, setUseTraceMode } from "../Utils/debugLog";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { Container, Card, Form, Row, Col } from "react-bootstrap";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 import { broadcastLanguages, brodcastProgrammArr } from "../Utils/Const";
 
 const Settings = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const userProfile = useSelector(
@@ -19,6 +17,7 @@ const Settings = () => {
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
@@ -28,15 +27,10 @@ const Settings = () => {
   const [debugMode, setDebugMode] = useState(
     localStorage.getItem("debugLog") === "true"
   );
+
   const [useTrace, setUseTrace] = useState(
     localStorage.getItem("useTrace") === "true"
   );
-
-  useEffect(() => {
-    if (securityRole !== "admin") {
-      navigate("/subtitle");
-    }
-  }, [securityRole, navigate]);
 
   const toggleDebugMode = () => {
     const newMode = !debugMode;
