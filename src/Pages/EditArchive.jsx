@@ -552,6 +552,26 @@ const EditArchive = ({ handleClose }) => {
               })
             );
             setIsBookmarked(true);
+          } else {
+            BookmarkSlideFromArchivePage({
+              search_keyword: localStorage.getItem("free-text"),
+              data: {
+                file_uid: file_uid_for_edit_slide,
+                slide_id: defSlideId,
+                update: true,
+              },
+              language: broadcastLangCode,
+              params: page,
+            }).then((response) => {
+              if (response.payload.success) {
+                dispatch(
+                  updateSettingsInternal({
+                    bookmar_id_for_edit: response.payload.data.ID,
+                  })
+                );
+                setIsBookmarked(true);
+              }
+            });
           }
         })
         .finally(() => {
