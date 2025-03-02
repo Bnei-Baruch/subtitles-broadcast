@@ -152,7 +152,7 @@ const SourceSlice = createSlice({
       return { ...state, sourcePathList: action?.payload };
     });
     builder.addCase(DeleteSource.rejected, (state, action) => {
-      showErrorToast("Something went wrong");
+      showErrorToast("Error fetching archive data: " + action.error.message);
       return state;
     });
     builder.addCase(DeleteSource.fulfilled, (state, action) => {

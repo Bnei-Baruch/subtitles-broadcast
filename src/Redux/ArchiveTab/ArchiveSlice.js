@@ -178,7 +178,7 @@ export const addNewSlide = createAsyncThunk(
   "addNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}slide`, data.list);
-    
+
     if (response.data.success) {
       showSuccessToast(response.data.description);
     }
@@ -206,7 +206,7 @@ export const updateNewSlide = createAsyncThunk(
   "updateNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.patch(`${API}slide`, data.updateSlideList);
-    
+
     if (response.data.success) {
       showSuccessToast(response.data.description);
     }
@@ -245,8 +245,8 @@ const ArchiveSlice = createSlice({
     });
 
     builder.addCase(fetchArchiveData.rejected, (state, action) => {
-      debugLog("fetchArchiveData.rejected - Error:", action?.error);
-      showErrorToast("Something went wrong");
+      debugLog("Error fetching archive data:", action?.error);
+      showErrorToast("Error fetching archive data: " + action?.error.message);
       return state;
     });
 
@@ -312,14 +312,16 @@ export const updateSourcePath = createAsyncThunk(
         `${API}source_path_id/${data.sourcePathId}`,
         { source_path: data.sourcePath }
       );
-      
+
       if (response.data.success) {
         showSuccessToast(response.data.message);
       }
 
       return response.data;
     } catch (error) {
-      showErrorToast(`${error.response.data.error} ${error.response.data.description}`);
+      showErrorToast(
+        `${error.response.data.error} ${error.response.data.description}`
+      );
       return thunkAPI.rejectWithValue(error.response.data);
     }
   }
