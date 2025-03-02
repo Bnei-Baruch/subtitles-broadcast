@@ -164,6 +164,7 @@ const Subtitles = () => {
 
   useEffect(() => {
     setLoading(isMqttLoading);
+    sessionStorage.setItem("isMqttLoading", isMqttLoading);
 
     if (isMqttLoading) {
       if (loadingTimeoutId) {
@@ -172,6 +173,10 @@ const Subtitles = () => {
 
       // Set a timeout to prevent indefinite loading
       const newTimeout = setTimeout(() => {
+        if (sessionStorage.getItem("isMqttLoading") === "false") {
+          return;
+        }
+
         dispatch(resetMqttLoading());
         dispatch(
           addMqttError({
