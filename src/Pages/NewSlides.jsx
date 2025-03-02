@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { languageIsLtr } from "../Utils/Common";
 import LoadingOverlay from "../Components/LoadingOverlay";
+import { updateSettingsInternal } from "../Redux/UserSettings/UserSettingsSlice";
 
 const NewSlides = () => {
   const broadcastLangCode = useSelector(
@@ -131,7 +132,12 @@ const NewSlides = () => {
           alert(response.payload.description);
 
           const firstSlideId = response.payload.data?.slides?.[0]?.ID;
-          localStorage.setItem("file_uid_for_edit_slide", fileUid);
+
+          dispatch(
+            updateSettingsInternal({
+              file_uid_for_edit_slide: fileUid,
+            })
+          );
 
           if (firstSlideId) {
             navigate(

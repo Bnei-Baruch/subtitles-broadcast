@@ -14,7 +14,10 @@ import {
 import LoadingOverlay from "../Components/LoadingOverlay";
 import debugLog from "../Utils/debugLog";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
-import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import {
+  updateMergedUserSettings,
+  updateSettingsInternal,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const BookContent = ({
   slideOrderNumber,
@@ -85,7 +88,11 @@ const BookContent = ({
     const slideId = slide.ID;
     const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
 
-    localStorage.setItem("file_uid_for_edit_slide", fileUid);
+    dispatch(
+      updateSettingsInternal({
+        file_uid_for_edit_slide: fileUid,
+      })
+    );
 
     navigate(editUrl, {
       state: { previousLocation: window.location.pathname },

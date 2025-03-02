@@ -15,7 +15,10 @@ import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
 import { Search } from "../Layout/Search";
 import { useNavigate } from "react-router-dom";
-import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import {
+  updateMergedUserSettings,
+  updateSettingsInternal,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const Source = () => {
   const navigate = useNavigate();
@@ -176,7 +179,12 @@ const Source = () => {
     const slideId = slide.slide_id;
     const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
 
-    localStorage.setItem("file_uid_for_edit_slide", fileUid);
+    dispatch(
+      updateSettingsInternal({
+        file_uid_for_edit_slide: fileUid,
+        bookmar_id_for_edit: slide.bookmark_id,
+      })
+    );
 
     navigate(editUrl, {
       state: { previousLocation: window.location.pathname },

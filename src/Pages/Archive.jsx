@@ -13,7 +13,10 @@ import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "../Layout/Search";
-import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import {
+  updateMergedUserSettings,
+  updateSettingsInternal,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const Archive = () => {
   const navigate = useNavigate();
@@ -118,7 +121,12 @@ const Archive = () => {
 
   useEffect(() => {
     if (fileUidForEditSlide !== null) {
-      localStorage.setItem("file_uid_for_edit_slide", fileUidForEditSlide);
+      dispatch(
+        updateSettingsInternal({
+          file_uid_for_edit_slide: fileUidForEditSlide,
+        })
+      );
+
       dispatch(
         SlideListWithFildeUid({
           file_uid: fileUidForEditSlide,
@@ -176,7 +184,11 @@ const Archive = () => {
 
   const handleEditClick = (slide) => {
     if (slide) {
-      localStorage.setItem("file_uid_for_edit_slide", slide.file_uid);
+      dispatch(
+        updateSettingsInternal({
+          file_uid_for_edit_slide: slide.file_uid,
+        })
+      );
 
       navigate(
         `/archive/edit?file_uid=${slide.file_uid}&slide_id=${slide.ID}`,

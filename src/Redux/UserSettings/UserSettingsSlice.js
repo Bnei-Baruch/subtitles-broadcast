@@ -13,6 +13,9 @@ const initialState = {
     broadcast_language_code: "he",
     source_pagination: { page: 1, limit: 10 },
     archive_pagination: { page: 1, limit: 10 },
+    file_uid_for_edit_slide: null,
+    bookmar_id_for_edit: null,
+    slide_id_for_edit: null,
   },
   loading: false,
   isLoaded: false,
@@ -84,6 +87,9 @@ const UserSettingsSlice = createSlice({
       state.userSettings = { ...state.userSettings, ...action.payload };
       state.isLoaded = true;
     },
+    updateSettingsInternal(state, action) {
+      state.userSettings = { ...state.userSettings, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchUserSettings.fulfilled, (state, action) => {
@@ -94,5 +100,6 @@ const UserSettingsSlice = createSlice({
   },
 });
 
-export const { setSettings } = UserSettingsSlice.actions;
+export const { setSettings, updateSettingsInternal } =
+  UserSettingsSlice.actions;
 export default UserSettingsSlice.reducer;
