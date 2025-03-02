@@ -23,12 +23,15 @@ import GreenWindowButton from "../Components/GreenWindowButton";
 import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
 import QuestionMessage from "../Components/QuestionMessage";
 import { useNavigate } from "react-router-dom";
-import GetLangaugeCode, {
-  MAX_SLIDE_LIMIT,
-  DEF_BROADCAST_LANG,
-  broadcastLanguages,
-} from "../Utils/Const";
-import { setSubtitlesDisplayMode } from "../Redux/BroadcastParams/BroadcastParamsSlice";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import { MAX_SLIDE_LIMIT, broadcastLanguages } from "../Utils/Const";
+import {
+  setSubtitlesDisplayMode,
+  setUserSelectedSlide,
+  resetMqttLoading,
+  addMqttError,
+} from "../Redux/MQTT/mqttSlice";
+import LoadingOverlay from "../Components/LoadingOverlay";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -39,14 +42,10 @@ function usePrevious(value) {
 }
 
 const Subtitles = () => {
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
-
+  const loadingTimeoutDuration = 5000;
   const subtitlesDisplayMode = useSelector(
-    (state) => state.BroadcastParams.subtitlesDisplayMode
+    (state) => state.mqtt.subtitlesDisplayMode
   );
-
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
@@ -59,39 +58,56 @@ const Subtitles = () => {
   const previousSearch = usePrevious(searchSlide);
   const [items, setItems] = useState([]);
   const [isLtr, setIsLtr] = useState(true);
-  const [selectedSlide, setSelectedSlide] = useState(
-    +localStorage.getItem("activeSlideFileUid")
-  );
-  const languages = GetLangaugeCode();
   const navigate = useNavigate();
+  const selectedSubtitleSlide = useSelector(
+    (state) => state.mqtt.selectedSubtitleSlide,
+    (prev, next) => prev?.ID === next?.ID
+  );
+  const userSlides = useSelector(
+    (state) => state.SubtitleData?.contentList?.data?.slides
+  );
+  const userSettings = useSelector((state) => state.userSettings.userSettings);
+  const userSelectedFileUID = userSettings?.selected_file_uid || null;
 
-  const updateSelectedSlide = (newSelectedSlide) => {
-    if (newSelectedSlide < 0) {
-      newSelectedSlide = 0;
-    } else if (newSelectedSlide > maxSlideIndex) {
-      newSelectedSlide = maxSlideIndex;
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
+
+  const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
+
+  const [loading, setLoading] = useState(false);
+  const [loadingTimeoutId, setLoadingTimeoutId] = useState(null);
+
+  const updateSelectedSlide = (newSelectedSlideOrderNum, newSlide) => {
+    if (newSelectedSlideOrderNum < 0) {
+      newSelectedSlideOrderNum = 0;
+    } else if (newSelectedSlideOrderNum > maxSlideIndex) {
+      newSelectedSlideOrderNum = maxSlideIndex;
     }
-    const file_uid = UserAddedList?.slides?.[0]?.file_uid;
-    const slideID = UserAddedList?.slides?.find(
-      (key) => key?.order_number == newSelectedSlide
+
+    const targetSlideObj = UserAddedList?.slides?.find(
+      (key) => key?.order_number === newSelectedSlideOrderNum
     );
-    const targetBookmarkSlideID =
-      slideID.ID +
-        slideID?.languages.findIndex(
-          (langCode) => langCode === languages[broadcastLangObj.label]
-        ) || 0;
-    dispatch(
-      BookmarkSlide({
-        data: {
-          file_uid: file_uid,
-          slide_id: targetBookmarkSlideID,
-          update: true,
-        },
-        language: broadcastLangObj.label,
-      })
-    );
-    setSelectedSlide(newSelectedSlide);
-    localStorage.setItem("activeSlideFileUid", newSelectedSlide);
+
+    if (targetSlideObj) {
+      dispatch(setUserSelectedSlide(targetSlideObj));
+      dispatch(
+        updateMergedUserSettings({
+          selected_slide_id: targetSlideObj.ID,
+        })
+      );
+
+      dispatch(
+        BookmarkSlide({
+          data: {
+            file_uid: targetSlideObj.file_uid,
+            slide_id: targetSlideObj.ID,
+            update: true,
+          },
+          language: broadcastLangCode,
+        })
+      );
+    }
   };
 
   const handleChange = (selectedOption) => {
@@ -101,12 +117,16 @@ const Subtitles = () => {
 
   const handleKeyPress = useCallback(
     (event) => {
-      if (!UserAddedList.slides || UserAddedList.slides.length === 0) {
+      if (
+        !UserAddedList ||
+        !UserAddedList.slides ||
+        UserAddedList.slides.length === 0
+      ) {
         return;
       }
 
       let currentIndex = UserAddedList.slides.findIndex(
-        (slide) => slide.order_number === selectedSlide
+        (slide) => slide.order_number === selectedSubtitleSlide?.order_number
       );
 
       if (currentIndex === -1) {
@@ -135,12 +155,52 @@ const Subtitles = () => {
       if (newIndex !== currentIndex) {
         const newSlide = UserAddedList.slides[newIndex];
         if (newSlide) {
-          updateSelectedSlide(newSlide.order_number);
+          updateSelectedSlide(newSlide.order_number, newSlide);
         }
       }
     },
-    [UserAddedList, selectedSlide, updateSelectedSlide]
+    [UserAddedList, updateSelectedSlide]
   );
+
+  useEffect(() => {
+    setLoading(isMqttLoading);
+    sessionStorage.setItem("isMqttLoading", isMqttLoading);
+
+    if (isMqttLoading) {
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+      }
+
+      // Set a timeout to prevent indefinite loading
+      const newTimeout = setTimeout(() => {
+        if (sessionStorage.getItem("isMqttLoading") === "false") {
+          return;
+        }
+
+        dispatch(resetMqttLoading());
+        dispatch(
+          addMqttError({
+            message:
+              "⚠️ Subtitle mode change timeout: No MQTT response received.",
+            type: "Timeout",
+          })
+        );
+      }, loadingTimeoutDuration);
+
+      setLoadingTimeoutId(newTimeout);
+    } else {
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+        setLoadingTimeoutId(null);
+      }
+    }
+
+    return () => {
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+      }
+    };
+  }, [isMqttLoading]);
 
   useEffect(() => {
     // Add event listener when the component mounts
@@ -151,26 +211,28 @@ const Subtitles = () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
   }, [handleKeyPress]);
+
   useEffect(() => {
-    if (broadcastLangObj.label) {
-      dispatch(UserBookmarkList({ language: broadcastLangObj.label }));
+    if (broadcastLangCode) {
+      dispatch(UserBookmarkList({ language: broadcastLangCode }));
       dispatch(clearAllBookmarks());
     }
-  }, [dispatch, broadcastLangObj.label]);
-  // useEffect(() => { }, [+localStorage.getItem("activeSlideFileUid")]);
+  }, [dispatch, broadcastLangCode]);
+
   //This useEffect will get all fileid from local storage and make api call
   useEffect(() => {
     if (!allBookmarkListLoading) {
       setItems(allBookmarkList);
     }
   }, [allBookmarkList, allBookmarkListLoading]);
+
   useEffect(() => {
     if (searchSlide.length > 0 || searchSlide !== previousSearch) {
-      let file_uid = localStorage.getItem("fileUid");
+      let file_uid = userSelectedFileUID;
       if (file_uid) {
         dispatch(
           GetSubtitleData({
-            file_uid,
+            file_uid: file_uid,
             keyword: searchSlide,
             limit: MAX_SLIDE_LIMIT,
           })
@@ -178,7 +240,29 @@ const Subtitles = () => {
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
     }
-  }, [searchSlide, previousSearch]);
+  }, [searchSlide, previousSearch, userSelectedFileUID, dispatch]);
+
+  useEffect(() => {
+    if (
+      !selectedSubtitleSlide &&
+      allBookmarkList?.length > 0 &&
+      userSlides?.length > 0
+    ) {
+      const bookmarkedSlideId = allBookmarkList.find(
+        (b) => b.slide_id === selectedSubtitleSlide?.ID
+      )?.slide_id;
+
+      if (bookmarkedSlideId) {
+        const selectedSlide = userSlides.find(
+          (slide) => slide.ID === bookmarkedSlideId
+        );
+
+        if (selectedSlide) {
+          dispatch(setUserSelectedSlide(selectedSlide));
+        }
+      }
+    }
+  }, [selectedSubtitleSlide, allBookmarkList, userSlides, dispatch]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedItems = [...items];
@@ -216,7 +300,7 @@ const Subtitles = () => {
   const navigatToEditSubtitle = () => {
     const file_uid = UserAddedList?.slides?.[0]?.file_uid;
     const slide = UserAddedList?.slides?.find(
-      (key) => key?.order_number === selectedSlide
+      (key) => key?.order_number === selectedSubtitleSlide?.order_number
     );
     const slideID = slide ? slide.ID : null;
     const editUrl = `/archive/edit?file_uid=${file_uid}&slide_id=${slideID}`;
@@ -228,6 +312,7 @@ const Subtitles = () => {
 
   return (
     <>
+      <LoadingOverlay loading={loading} />
       <div className="body-content d-flex ">
         <div className="left-section row">
           <div className="innerhead d-flex justify-content-between subtitle-header">
@@ -296,7 +381,9 @@ const Subtitles = () => {
                 type="button"
                 onClick={(evt) => navigatToEditSubtitle(evt)}
                 className="btn btn-tr"
-                disabled={!UserAddedList?.slides?.length || !selectedSlide}
+                disabled={
+                  !UserAddedList?.slides?.length || !selectedSubtitleSlide
+                }
               >
                 Edit Subtitle
               </button>
@@ -323,9 +410,7 @@ const Subtitles = () => {
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
-                    setActivatedTab={setSelectedSlide}
-                    activatedTab={selectedSlide}
-                    targetItemId={selectedSlide}
+                    slideOrderNumber={selectedSubtitleSlide?.order_number}
                     contents={UserAddedList}
                     searchKeyword={searchSlide}
                   />
@@ -336,11 +421,13 @@ const Subtitles = () => {
           <div className="d-flex justify-content-center align-items-center mt-2 paginationStyle">
             <i
               className={`bi bi-chevron-left me-1 cursor-pointer ${
-                selectedSlide <= 1 ? "disablecolor" : "custom-pagination"
+                selectedSubtitleSlide?.order_number <= 0
+                  ? "disablecolor"
+                  : "custom-pagination"
               }`}
               onClick={() => {
-                if (selectedSlide > 0) {
-                  updateSelectedSlide(selectedSlide - 1);
+                if (selectedSubtitleSlide?.order_number > 0) {
+                  updateSelectedSlide(selectedSubtitleSlide?.order_number - 1);
                 }
               }}
             >
@@ -375,8 +462,8 @@ const Subtitles = () => {
                   isNaN(+maxSlideIndex)
                     ? { value: "/", label: "- / -" }
                     : {
-                        value: `${selectedSlide}/${+maxSlideIndex + 1}`,
-                        label: `${selectedSlide + 1}/${+maxSlideIndex + 1}`,
+                        value: `${selectedSubtitleSlide?.order_number}/${+maxSlideIndex + 1}`,
+                        label: `${selectedSubtitleSlide?.order_number + 1}/${+maxSlideIndex + 1}`,
                       }
                 }
                 onChange={handleChange}
@@ -391,10 +478,10 @@ const Subtitles = () => {
             </div>
             <span
               onClick={() => {
-                updateSelectedSlide(selectedSlide + 1);
+                updateSelectedSlide(selectedSubtitleSlide?.order_number + 1);
               }}
               className={` cursor-pointer ${
-                maxSlideIndex < selectedSlide
+                maxSlideIndex < selectedSubtitleSlide?.order_number
                   ? "disablecolor"
                   : "custom-pagination"
               }`}
@@ -402,7 +489,7 @@ const Subtitles = () => {
               Next{" "}
               <i
                 className={`bi bi-chevron-right  cursor-pointer  ${
-                  maxSlideIndex < selectedSlide
+                  maxSlideIndex < selectedSubtitleSlide?.order_number
                     ? "disablecolor"
                     : "custom-pagination"
                 }`}
@@ -413,12 +500,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <ActiveSlideMessaging
-              userAddedList={UserAddedList}
-              activatedTab={selectedSlide}
-              setActivatedTab={setSelectedSlide}
-              isLtr={isLtr}
-            />
+            <ActiveSlideMessaging />
           </div>
           <div className="book-mark whit-s overflow-auto">
             <div className="top-head">
@@ -430,14 +512,13 @@ const Subtitles = () => {
                   items?.map((item, index) => (
                     <DraggableItem
                       key={index}
-                      id={item.id}
-                      setActivatedTab={setSelectedSlide}
-                      bookmarkDelete={item.bookmark_id}
+                      parentId={item.id}
+                      parentBookmarkId={item.bookmark_id}
                       text={item?.bookmark_path}
-                      fileUid={item?.file_uid}
-                      index={index}
+                      parentBookmarkFileUid={item?.file_uid}
+                      parentIndex={index}
                       moveCard={moveCard}
-                      setIsLtr={setIsLtr}
+                      parentSlideId={item.slide_id}
                     />
                   ))}
               </div>

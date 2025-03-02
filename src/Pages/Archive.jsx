@@ -13,33 +13,75 @@ import ReactPaginate from "react-paginate";
 import { Slide } from "../Components/Slide";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "../Layout/Search";
+import {
+  updateMergedUserSettings,
+  updateSettingsInternal,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const Archive = () => {
   const navigate = useNavigate();
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
-  const queryParams = new URLSearchParams(useLocation().search);
   const dispatch = useDispatch();
+
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
+
+  const queryParams = new URLSearchParams(useLocation().search);
   const archiveList = useSelector(getAllArchiveList);
   const [unbookmarkAction, setUnbookmarkAction] = useState(false);
-  const localPagination = localStorage?.getItem("pagination")
-    ? JSON?.parse(localStorage?.getItem("pagination"))
-    : { page: 1, limit: 10 };
-  const [page, setPage] = useState(localPagination);
-  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
-  
-  const updatePage = (targetPage, targetLimit) => {
-    if (targetPage === page.page && targetLimit === page.limit) return;
 
-    localStorage.setItem("pagination", JSON.stringify({ page: targetPage, limit: targetLimit }));
+  const userSettingsPagination = useSelector(
+    (state) => state.userSettings.userSettings.archive_pagination
+  );
+  const memoizedPagination = useMemo(
+    () => userSettingsPagination || { page: 1, limit: 10 },
+    [userSettingsPagination]
+  );
+
+  const [page, setPage] = useState(memoizedPagination);
+
+  const [editSlide, setEditSlide] = useState("");
+  const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
+  const [confirmation, setConfirmation] = useState(false);
+  const [bookmarkData, setBookmarkData] = useState({
+    file_uid: "",
+    slide_id: "",
+    update: "",
+    order: "",
+  });
+
+  const [pageIndex, setPageIndex] = useState(() => ({
+    startIndex:
+      ((userSettingsPagination?.page || 1) - 1) *
+        (userSettingsPagination?.limit || 10) +
+      1,
+    endIndex: Math.min(
+      (userSettingsPagination?.page || 1) *
+        (userSettingsPagination?.limit || 10),
+      Number.MAX_VALUE
+    ),
+  }));
+
+  const updatePage = (targetPage, targetLimit) => {
+    if (
+      targetPage === memoizedPagination.page &&
+      targetLimit === memoizedPagination.limit
+    )
+      return;
+
+    dispatch(
+      updateMergedUserSettings({
+        archive_pagination: { page: targetPage, limit: targetLimit },
+      })
+    );
+
     setPage({ page: targetPage, limit: targetLimit });
+
     setPageIndex({
       startIndex: (targetPage - 1) * targetLimit + 1,
       endIndex: Math.min(
         targetPage * targetLimit,
-        archiveList?.pagination?.total_rows,
-        Number.MAX_VALUE
+        archiveList?.pagination?.total_rows || Number.MAX_VALUE
       ),
     });
   };
@@ -55,24 +97,11 @@ const Archive = () => {
     });
   }, [archiveList, page.limit, page.page]);
 
-  const [editSlide, setEditSlide] = useState("");
-  const [fileUidForEditSlide] = useState(queryParams.get("file_uid"));
-
-  const [toggle, setToggle] = useState(false);
-  const [finalConfirm, setFinalConfirm] = useState(false);
-  const [confirmation, setConfirmation] = useState(false);
-  const [bookmarkData, setBookmarkData] = useState({
-    file_uid: "",
-    slide_id: "",
-    update: "",
-    order: "",
-  });
-
   useEffect(() => {
     if (!editSlide) {
       dispatch(
         GetAllArchiveData({
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
           page: page.page,
           limit: page.limit,
           keyword: localStorage?.getItem("free-text"),
@@ -88,11 +117,16 @@ const Archive = () => {
           console.error("Error fetching archive data:", error);
         });
     }
-  }, [editSlide, page.page, page.limit, broadcastLangObj.label, dispatch]);
+  }, [editSlide, page.page, page.limit, broadcastLangCode, dispatch]);
 
   useEffect(() => {
     if (fileUidForEditSlide !== null) {
-      localStorage.setItem("file_uid_for_edit_slide", fileUidForEditSlide);
+      dispatch(
+        updateSettingsInternal({
+          file_uid_for_edit_slide: fileUidForEditSlide,
+        })
+      );
+
       dispatch(
         SlideListWithFildeUid({
           file_uid: fileUidForEditSlide,
@@ -113,13 +147,13 @@ const Archive = () => {
               BookmarkSlideFromArchivePage({
                 search_keyword: localStorage.getItem("free-text"),
                 data: bookmarkData,
-                language: broadcastLangObj.label,
+                language: broadcastLangCode,
                 params: page,
               })
             ).then((response) => {
               dispatch(
                 GetAllArchiveData({
-                  language: broadcastLangObj.label,
+                  language: broadcastLangCode,
                   page: page.page,
                   limit: page.limit,
                   keyword: localStorage.getItem("free-text"),
@@ -140,7 +174,7 @@ const Archive = () => {
       );
     }
   }, [
-    broadcastLangObj.label,
+    broadcastLangCode,
     bookmarkData,
     confirmation,
     dispatch,
@@ -150,7 +184,11 @@ const Archive = () => {
 
   const handleEditClick = (slide) => {
     if (slide) {
-      localStorage.setItem("file_uid_for_edit_slide", slide.file_uid);
+      dispatch(
+        updateSettingsInternal({
+          file_uid_for_edit_slide: slide.file_uid,
+        })
+      );
 
       navigate(
         `/archive/edit?file_uid=${slide.file_uid}&slide_id=${slide.ID}`,
@@ -173,7 +211,7 @@ const Archive = () => {
           order: archiveList?.slides?.find((k) => k.bookmark_id !== null)
             ?.length,
         },
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         params: page,
       })
     ).then((res) => {
@@ -197,7 +235,7 @@ const Archive = () => {
       UnBookmarkSlide({
         search_keyword: localStorage.getItem("free-text"),
         bookmark_id: key.bookmark_id,
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         page: page.page,
         limit: page.limit,
       })
@@ -211,7 +249,7 @@ const Archive = () => {
         });
         dispatch(
           GetAllArchiveData({
-            language: broadcastLangObj.label,
+            language: broadcastLangCode,
             page: page.page,
             limit: page.limit,
             keyword: localStorage.getItem("free-text"),

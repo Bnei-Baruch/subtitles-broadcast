@@ -4,7 +4,7 @@ import Select from "react-select";
 import { SplitToSlides, sourceToMarkdown } from "../Utils/SlideSplit";
 import GenerateUID from "../Utils/Uid";
 import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
-import GetLangaugeCode from "../Utils/Const";
+import { broadcastLangMapObj, broadcastLanguages } from "../Utils/Const";
 import GetFileUid from "../Utils/Source";
 import {
   ArchiveAutoComplete,
@@ -12,16 +12,17 @@ import {
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { getCurrentBroadcastLanguage, languageIsLtr } from "../Utils/Common";
+import { languageIsLtr } from "../Utils/Common";
 import LoadingOverlay from "../Components/LoadingOverlay";
+import { updateSettingsInternal } from "../Redux/UserSettings/UserSettingsSlice";
 
 const NewSlides = () => {
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const languages = GetLangaugeCode();
   const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
   const [, setTagList] = useState([]);
@@ -29,12 +30,6 @@ const NewSlides = () => {
   const [splitActive, setSplitActive] = useState(false);
   const [updateTagList, setUpdateTagList] = useState([]);
   const [contentSource, setContentSource] = useState("");
-  const [slideLanguageOptions] = useState([
-    "Hebrew",
-    "Russian",
-    "English",
-    "Spanish",
-  ]);
   const [fileUid, setFileUid] = useState("");
   const [sourceUid, setSourceUid] = useState("");
   const [insertMethod, setInsertMethod] = useState("custom_file");
@@ -44,14 +39,12 @@ const NewSlides = () => {
   const AutocompleteList = useSelector(getAutocompleteSuggetion);
   const [selectedOptions, setSelectedOptions] = useState([
     {
-      label: broadcastLangObj.label,
-      value: languages[broadcastLangObj.label],
+      label: broadcastLangMapObj[broadcastLangCode].label,
+      value: broadcastLangCode,
     },
   ]);
   const [typingTimeout, setTypingTimeout] = useState(null);
-  const curBroadcastLanguage = getCurrentBroadcastLanguage();
-  const broadcastLangCode = broadcastLangObj.value;
-  const [isLtr, setIsLtr] = useState(() => {
+  const [isLtr] = useState(() => {
     return languageIsLtr(broadcastLangCode);
   });
   const [loading, setLoading] = useState(false);
@@ -61,7 +54,7 @@ const NewSlides = () => {
       dispatch(
         ArchiveAutoComplete({
           query: sourceUrl,
-          language: languages[broadcastLangObj.label],
+          language: broadcastLangCode,
         })
       );
     }
@@ -76,10 +69,10 @@ const NewSlides = () => {
 
   useEffect(() => {
     setSelectedOptions({
-      label: broadcastLangObj.label,
-      value: languages[broadcastLangObj.label],
+      label: broadcastLangMapObj[broadcastLangCode].label,
+      value: broadcastLangCode,
     });
-  }, [broadcastLangObj.label]);
+  }, [broadcastLangCode]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,8 +82,8 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        left_to_right: IsLangLtr(languages[broadcastLangObj.label]),
-        languages: languages[broadcastLangObj.label],
+        left_to_right: IsLangLtr(broadcastLangCode),
+        languages: broadcastLangCode,
         slides: updateTagList,
       };
       if (
@@ -107,7 +100,7 @@ const NewSlides = () => {
       }
       if (
         document.getElementById("languageSelect") &&
-        slideLanguageOptions.length > 0
+        broadcastLanguages.length > 0
       ) {
         let languages = [];
         if (Array.isArray(selectedOptions)) {
@@ -139,7 +132,12 @@ const NewSlides = () => {
           alert(response.payload.description);
 
           const firstSlideId = response.payload.data?.slides?.[0]?.ID;
-          localStorage.setItem("file_uid_for_edit_slide", fileUid);
+
+          dispatch(
+            updateSettingsInternal({
+              file_uid_for_edit_slide: fileUid,
+            })
+          );
 
           if (firstSlideId) {
             navigate(
@@ -251,10 +249,7 @@ const NewSlides = () => {
           }
         }
         setSourceUid("upload_" + sourceUidStr);
-        let fileUid = await GetFileUid(
-          languages[broadcastLangObj.label],
-          sourceUidStr
-        );
+        let fileUid = await GetFileUid(broadcastLangCode, sourceUidStr);
         if (fileUid === undefined) {
           setLoading(false);
           alert("File not found");
@@ -326,15 +321,12 @@ const NewSlides = () => {
                 id="languageSelect"
                 isMulti
                 options={
-                  slideLanguageOptions
-                    .map((slideLanguage) => {
-                      if (
-                        languages[slideLanguage] !==
-                        languages[broadcastLangObj.label]
-                      ) {
+                  broadcastLanguages
+                    .map((langObj) => {
+                      if (langObj.value !== broadcastLangCode) {
                         return {
-                          label: slideLanguage,
-                          value: languages[slideLanguage],
+                          label: langObj.label,
+                          value: langObj.value,
                         };
                       } else {
                         return null; // Skip the undesired option
@@ -396,7 +388,7 @@ const NewSlides = () => {
         <>
           <div className="row m-4">
             <label>Language</label>
-            <p>{broadcastLangObj.label}</p>
+            <p>{broadcastLangMapObj[broadcastLangCode].label}</p>
             <div className="input-box ">
               <label className="w-100">Source Path</label>
               <div className="form-group autoComplete">

@@ -1,34 +1,33 @@
-import { broadcastLangMapObj, broadcastLanguages } from "./Const";
+import { broadcastLangMapObj } from "./Const";
+import { toast } from "react-toastify";
 
-export function getCurrentBroadcastLanguage() {
-  let bcLangObj;
-  const broadcastLangObjStr = localStorage.getItem("broadcastLangObj");
+export const defaultToastOptions = {
+  position: "bottom-right",
+  autoClose: 3000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "colored",
+};
 
-  if (broadcastLangObjStr) {
-    bcLangObj = JSON.parse(broadcastLangObjStr);
-  } else {
-    const bcLanglocalStorageVal = localStorage.getItem("broadcastLanguage");
+/**
+ * Shows a success toast notification with default options.
+ * @param {string} message - The message to display.
+ * @param {object} options - Additional options to override defaults.
+ */
+export const showSuccessToast = (message, options = {}) => {
+  toast.success(message, { ...defaultToastOptions, ...options });
+};
 
-    bcLangObj = broadcastLangMapObj[bcLanglocalStorageVal]
-      ? broadcastLangMapObj[bcLanglocalStorageVal]
-      : broadcastLanguages[0];
-  }
-
-  return bcLangObj;
-}
-
-export function getCurrentBroadcastProgramm() {
-  let bcProgrammObj;
-  const broadcastProgrammObjStr = localStorage.getItem("broadcastProgrammObj");
-
-  if (broadcastProgrammObjStr) {
-    bcProgrammObj = JSON.parse(broadcastProgrammObjStr);
-  } else {
-    bcProgrammObj = { value: "morning_lesson", label: "Morning lesson" };
-  }
-
-  return bcProgrammObj;
-}
+/**
+ * Shows an error toast notification with default options.
+ * @param {string} message - The message to display.
+ * @param {object} options - Additional options to override defaults.
+ */
+export const showErrorToast = (message, options = {}) => {
+  toast.error(message, { ...defaultToastOptions, ...options });
+};
 
 export function parseMqttMessage(mqttMessage) {
   if (mqttMessage) {
@@ -54,21 +53,14 @@ export function getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) {
   return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/question`;
 }
 
+export function getSubtitlesDisplayModeTopic(
+  broadcastProgrammCode,
+  broadcastLangCode
+) {
+  return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/display_mode`;
+}
+
 export const subtitlesDisplayModeTopic = "subtitles/display_mode";
-
-export const getMqttClientId = () => {
-  let clientId;
-  const ssMqttClientId = sessionStorage.getItem("mqttClientId");
-
-  if (ssMqttClientId) {
-    clientId = ssMqttClientId;
-  } else {
-    clientId = `kab_subtitles_${Math.random().toString(16).substr(2, 8)}`;
-    sessionStorage.setItem("mqttClientId", clientId);
-  }
-
-  return clientId;
-};
 
 export function languageIsLtr(langCode) {
   let isLeftToRight = true;
@@ -78,23 +70,6 @@ export function languageIsLtr(langCode) {
 
     if (lnagObj) {
       isLeftToRight = !(lnagObj.isLtr === false);
-    }
-  }
-
-  return isLeftToRight;
-}
-
-export function messageIsLtr(message) {
-  let isLeftToRight = true;
-
-  if (message) {
-    if (typeof message.isLtr !== "undefined") {
-      isLeftToRight = !(message.isLtr === false);
-    } else if (typeof message.lang !== "undefined") {
-      isLeftToRight = languageIsLtr(message.lang);
-    } else {
-      const langObj = getCurrentBroadcastLanguage();
-      isLeftToRight = languageIsLtr(langObj.value);
     }
   }
 

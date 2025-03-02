@@ -6,6 +6,7 @@ import Source from "../Pages/Source";
 import NewSlides from "../Pages/NewSlides";
 import QuestionsModule from "../Pages/QuestionModule";
 import EditArchive from "../Pages/EditArchive";
+import Settings from "../Pages/Settings";
 
 const MainRoutes = ({ logout, securityRole }) => {
   return (
@@ -13,7 +14,6 @@ const MainRoutes = ({ logout, securityRole }) => {
       <Routes>
         {/** Protected Routes */}
         {/** Wrap all Route under ProtectedRoutes element */}
-
         {securityRole && securityRole !== "translator" && (
           <>
             <Route index element={<Navigate to={"/subtitle"} />} />
@@ -28,6 +28,8 @@ const MainRoutes = ({ logout, securityRole }) => {
         {securityRole && securityRole !== "operator" && (
           <Route path="/question" element={<QuestionsModule />} />
         )}
+
+        {securityRole && <Route path="/settings" element={<Settings />} />}
 
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}

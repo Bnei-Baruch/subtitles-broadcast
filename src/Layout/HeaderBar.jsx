@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import BroadcastSettings from "../Components/BroadcastSettings";
 
 const HeaderBar = ({ logout }) => {
@@ -32,11 +32,18 @@ const HeaderBar = ({ logout }) => {
             </button>
             <ul className="dropdown-menu">
               <li>
+                <Link className="dropdown-item" to="/settings">
+                  <i className="bi bi-gear me-2"></i>
+                  <span>Settings</span>
+                </Link>
+              </li>
+              <li>
                 <span
                   className="dropdown-item cursor-pointer"
                   onClick={() => logout?.logout()}
                 >
-                  Logout
+                  <i className="bi bi-box-arrow-right me-2"></i>
+                  <span>Logout</span>
                 </span>
               </li>
             </ul>

@@ -7,19 +7,22 @@ import {
   updateNewSlide,
   updateSourcePath,
   GetAllArchiveData,
+  BookmarkSlideFromArchivePage,
+  UnBookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
 import MessageBox from "../Components/MessageBox";
 import { Slide } from "../Components/Slide";
 import { SplitToSlides } from "../Utils/SlideSplit";
 import Button from "@mui/material/Button";
 import LoadingOverlay from "../Components/LoadingOverlay";
+import { updateSettingsInternal } from "../Redux/UserSettings/UserSettingsSlice";
 
 const EditArchive = ({ handleClose }) => {
   const [loading, setLoading] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const navigate = useNavigate();
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const dispatch = useDispatch();
   const [isLtr, setIsLtr] = useState(true);
@@ -43,14 +46,28 @@ const EditArchive = ({ handleClose }) => {
   const searchParams = new URLSearchParams(location.search);
   const slideID = searchParams.get("slide_id");
 
+  const userSettingsPagination = useSelector(
+    (state) => state.userSettings.userSettings.archive_pagination
+  );
+  const page = useMemo(
+    () => userSettingsPagination || { page: 1, limit: 10 },
+    [userSettingsPagination]
+  );
+
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const userSettings = useSelector((state) => state.userSettings.userSettings);
+  const file_uid_for_edit_slide = userSettings?.file_uid_for_edit_slide || null;
+  const bookmar_id_for_edit = userSettings?.bookmar_id_for_edit || null;
+  const slide_id_for_edit = userSettings?.slide_id_for_edit || null;
+
   const fetchArchiveSlides = async () => {
     // Retrieve the slides data from the server
     setLoading(true);
 
     dispatch(
       GetAllArchiveData({
-        file_uid: localStorage.getItem("file_uid_for_edit_slide"),
-        language: broadcastLangObj.label,
+        file_uid: file_uid_for_edit_slide,
+        language: broadcastLangCode,
         limit: 2000,
       })
     )
@@ -59,11 +76,17 @@ const EditArchive = ({ handleClose }) => {
           response.payload.data?.slides &&
           response.payload.data?.slides.length > 0
         ) {
-          setSlideListData(response.payload.data.slides); // Set current slide data
-          setInitialSlideData(response.payload.data.slides); // Save the original state of slides
-          setIsLtr(response.payload.data.slides[0].left_to_right);
-          setSourcePath(response.payload.data.slides[0].source_path);
-          setSourcePathId(response.payload.data.slides[0].source_path_id);
+          const slides = response.payload.data.slides || [];
+          setSlideListData(slides);
+          setInitialSlideData(slides);
+          setIsLtr(slides[0].left_to_right);
+          setSourcePath(slides[0].source_path);
+          setSourcePathId(slides[0].source_path_id);
+
+          const isBookmarked = slides.some(
+            (slide) => slide.bookmark_id !== null
+          );
+          setIsBookmarked(isBookmarked);
         }
       })
       .finally(() => {
@@ -215,7 +238,7 @@ const EditArchive = ({ handleClose }) => {
       dispatch(
         deleteNewSlide({
           data: deleteParams,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
     }
@@ -249,7 +272,7 @@ const EditArchive = ({ handleClose }) => {
       dispatch(
         addNewSlide({
           list: addNewSlideList,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
     }
@@ -399,18 +422,6 @@ const EditArchive = ({ handleClose }) => {
 
   const effectiveHandleClose = handleClose || fallbackHandleClose;
 
-  const addNewSlides = () => {
-    const retVal = slideListData
-      ?.filter((key) => key?.addedNew === true)
-      ?.map(({ file_uid, slide, order_number }) => ({
-        file_uid,
-        slide,
-        order_number,
-      }));
-
-    return retVal;
-  };
-
   const handleBackBtn = (evt) => {
     if (isSlideDataChanged) {
       setConfirmation(true);
@@ -475,6 +486,100 @@ const EditArchive = ({ handleClose }) => {
     setSlideListData(cloneSlidedataArray);
   }
 
+  const handleSaveAndBack = async () => {
+    await handleSave();
+    handleBack();
+  };
+
+  const handleToggleBookmark = () => {
+    if (!slideListData[0]?.file_uid) return;
+
+    if (isBookmarked) {
+      if (!bookmar_id_for_edit) return;
+
+      setLoading(true);
+
+      dispatch(
+        UnBookmarkSlide({
+          search_keyword: localStorage.getItem("free-text"),
+          bookmark_id: bookmar_id_for_edit,
+          language: broadcastLangCode,
+          page: page.page,
+          limit: page.limit,
+        })
+      )
+        .then((response) => {
+          if (response?.payload?.success) {
+            setIsBookmarked(false);
+          }
+        })
+        .finally(() => {
+          dispatch(
+            updateSettingsInternal({
+              bookmar_id_for_edit: null,
+            })
+          );
+          setLoading(false);
+        });
+    } else {
+      if (!file_uid_for_edit_slide) return;
+
+      const defSlideId = slide_id_for_edit || slideListData[0]?.ID;
+
+      dispatch(
+        updateSettingsInternal({
+          slide_id_for_edit: defSlideId,
+        })
+      );
+
+      dispatch(
+        BookmarkSlideFromArchivePage({
+          search_keyword: localStorage.getItem("free-text"),
+          data: {
+            file_uid: file_uid_for_edit_slide,
+            slide_id: defSlideId,
+            update: false,
+          },
+          language: broadcastLangCode,
+          params: page,
+        })
+      )
+        .then((response) => {
+          if (response.payload.success) {
+            dispatch(
+              updateSettingsInternal({
+                bookmar_id_for_edit: response.payload.data.ID,
+              })
+            );
+            setIsBookmarked(true);
+          } else {
+            BookmarkSlideFromArchivePage({
+              search_keyword: localStorage.getItem("free-text"),
+              data: {
+                file_uid: file_uid_for_edit_slide,
+                slide_id: defSlideId,
+                update: true,
+              },
+              language: broadcastLangCode,
+              params: page,
+            }).then((response) => {
+              if (response.payload.success) {
+                dispatch(
+                  updateSettingsInternal({
+                    bookmar_id_for_edit: response.payload.data.ID,
+                  })
+                );
+                setIsBookmarked(true);
+              }
+            });
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  };
+
   return (
     <>
       <LoadingOverlay loading={loading} />
@@ -508,6 +613,14 @@ const EditArchive = ({ handleClose }) => {
               <div className="button-container">
                 <Button
                   variant="contained"
+                  onClick={handleToggleBookmark}
+                  color="success"
+                  className={`btn  bookmark-btn  ${isBookmarked ? "btn-secondary" : "btn-info"}`}
+                >
+                  {isBookmarked ? "Unbookmark" : "Bookmark"}
+                </Button>
+                <Button
+                  variant="contained"
                   color="success"
                   onClick={() => rerun()}
                   className="btn btn-re-run"
@@ -539,6 +652,14 @@ const EditArchive = ({ handleClose }) => {
                 >
                   Save
                 </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleSaveAndBack}
+                  className={`btn save ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+                >
+                  Save & Back
+                </Button>
               </div>
             </div>
           </div>
@@ -554,6 +675,11 @@ const EditArchive = ({ handleClose }) => {
                 <div
                   className={`col-md-6 mb-2`}
                   onClick={() => {
+                    dispatch(
+                      updateSettingsInternal({
+                        slide_id_for_edit: key.ID,
+                      })
+                    );
                     setSelected(index);
                     localStorage.setItem("myIndex", index);
                   }}

@@ -1,12 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import { toast } from "react-toastify";
 import { GetSubtitleData } from "../Subtitle/SubtitleSlice";
-import GetLangaugeCode, { MAX_SLIDE_LIMIT } from "../../Utils/Const";
+import { MAX_SLIDE_LIMIT } from "../../Utils/Const";
 import debugLog from "../../Utils/debugLog";
+import { showSuccessToast, showErrorToast } from "../../Utils/Common";
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const languages = GetLangaugeCode();
 
 const initialState = {
   archiveList: [],
@@ -26,9 +25,6 @@ const API_URL = {
 export const GetAllArchiveData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
-    if (data.language) {
-      data.language = languages[data.language];
-    }
     const response = await axios.get(`${API}${API_URL.GetALL}`, {
       params: data,
     });
@@ -36,6 +32,7 @@ export const GetAllArchiveData = createAsyncThunk(
     return response.data;
   }
 );
+
 export const GetAllAuthorList = createAsyncThunk(
   `/GetAllAuthorList`,
   async (data, thunkAPI) => {
@@ -46,6 +43,7 @@ export const GetAllAuthorList = createAsyncThunk(
     return response.data;
   }
 );
+
 export const AddToSubtitleList = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
@@ -63,11 +61,12 @@ export const ArchiveAutoComplete = createAsyncThunk(
     return response.data;
   }
 );
+
 export const UserBookmarkList = createAsyncThunk(
   `/UserBookmarkList`,
   async (data, thunkAPI) => {
     const response = await axios.get(`${API}bookmark`, {
-      params: { language: languages[data.language] },
+      params: { language: data.language },
     });
     return response.data;
   }
@@ -80,6 +79,7 @@ export const GetAllAuthor = createAsyncThunk(
     return response.data;
   }
 );
+
 export const GetAllBook = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
@@ -87,6 +87,7 @@ export const GetAllBook = createAsyncThunk(
     return response.data;
   }
 );
+
 export const GetAllTitle = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {
@@ -107,6 +108,7 @@ export const BookmarkSlide = createAsyncThunk(
     }
   }
 );
+
 export const BookmarkSlideFromArchivePage = createAsyncThunk(
   "/BookmarkSlideFromArchivePage",
   async (data, thunkAPI) => {
@@ -126,6 +128,7 @@ export const BookmarkSlideFromArchivePage = createAsyncThunk(
     }
   }
 );
+
 export const BookmarksSlide = createAsyncThunk(
   "/BookmarksSlide",
   async (data, thunkAPI) => {
@@ -144,6 +147,7 @@ export const BookmarksSlide = createAsyncThunk(
     }
   }
 );
+
 export const UnBookmarkSlide = createAsyncThunk(
   "/UnBookmarkSlide",
   async (data, thunkAPI) => {
@@ -174,8 +178,11 @@ export const addNewSlide = createAsyncThunk(
   "addNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.post(`${API}slide`, data.list);
-    response.data.success && toast.success(response.data.description);
-    // thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
+
+    if (response.data.success) {
+      showSuccessToast(response.data.description);
+    }
+
     return response.data;
   }
 );
@@ -186,20 +193,28 @@ export const deleteNewSlide = createAsyncThunk(
     const response = await axios.delete(`${API}slide`, {
       data: data.data,
     });
-    // thunkAPI.dispatch(GetAllArchiveData({ language: data.language }));
-    response.data.success && toast.success(response.data.description);
+
+    if (response.data.success) {
+      showSuccessToast(response.data.description);
+    }
+
     return response.data;
   }
 );
+
 export const updateNewSlide = createAsyncThunk(
   "updateNewSlide",
   async (data, thunkAPI) => {
     const response = await axios.patch(`${API}slide`, data.updateSlideList);
-    response.data.success && toast.success(response.data.description);
-    // thunkAPI.dispatch(GetAllArchiveData({ file_uid: data.file_uid }));
+
+    if (response.data.success) {
+      showSuccessToast(response.data.description);
+    }
+
     return response.data;
   }
 );
+
 // Define async thunk
 export const fetchArchiveData = createAsyncThunk(
   "archive/fetchData",
@@ -225,14 +240,13 @@ const ArchiveSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(fetchArchiveData.fulfilled, (state, action) => {
       debugLog("fetchArchiveData.fulfilled - Payload:", action?.payload);
-      toast.success("Successfully fetched archive data");
+      showSuccessToast("Successfully fetched archive data");
       return { ...state, archiveList: action?.payload };
     });
 
     builder.addCase(fetchArchiveData.rejected, (state, action) => {
-      debugLog("fetchArchiveData.rejected - Error:", action?.error);
-      toast.error("Something went wrong");
-      debugLog("fetchArchiveData.fulfilled - Payload:", action?.payload);
+      debugLog("Error fetching archive data:", action?.error);
+      showErrorToast("Error fetching archive data: " + action?.error.message);
       return state;
     });
 
@@ -298,10 +312,16 @@ export const updateSourcePath = createAsyncThunk(
         `${API}source_path_id/${data.sourcePathId}`,
         { source_path: data.sourcePath }
       );
-      response.data.success && toast.success(response.data.message);
+
+      if (response.data.success) {
+        showSuccessToast(response.data.message);
+      }
+
       return response.data;
     } catch (error) {
-      toast.error(`${error.response.data.error} ${error.response.data.description}`);
+      showErrorToast(
+        `${error.response.data.error} ${error.response.data.description}`
+      );
       return thunkAPI.rejectWithValue(error.response.data);
     }
   }

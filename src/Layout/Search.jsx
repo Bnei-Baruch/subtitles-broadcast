@@ -7,11 +7,12 @@ import { GetAllSourcePathData } from "../Redux/SourceTab/SourceSlice";
 import { useSelector } from "react-redux";
 
 export const Search = () => {
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
   const dispatch = useDispatch();
   const param = useLocation();
+
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
 
   let localPagination;
   if (param.pathname === "/archive") {
@@ -36,15 +37,17 @@ export const Search = () => {
   }, [param.pathname]);
 
   useEffect(() => {
-    if (param.pathname === "/archive" &&
-      DebouncingFreeText.trim() !== localStorage.getItem("free-text")) {
+    if (
+      param.pathname === "/archive" &&
+      (DebouncingFreeText || "").trim() !== localStorage.getItem("free-text")
+    ) {
       localStorage.setItem(
         "pagination",
         JSON.stringify({ page: 1, limit: localPagination?.limit })
       );
       dispatch(
         GetAllArchiveData({
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
@@ -56,15 +59,17 @@ export const Search = () => {
         });
       });
       localStorage.setItem("headerSearchKeyword", "");
-    } else if (param.pathname === "/source" &&
-      DebouncingFreeText.trim() !== localStorage.getItem("free-text")) {
+    } else if (
+      param.pathname === "/source" &&
+      (DebouncingFreeText || "").trim() !== localStorage.getItem("free-text")
+    ) {
       localStorage.setItem(
         "source_pagination",
         JSON.stringify({ page: 1, limit: localPagination?.limit })
       );
       dispatch(
         GetAllSourcePathData({
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
@@ -74,7 +79,7 @@ export const Search = () => {
     }
   }, [
     DebouncingFreeText,
-    broadcastLangObj.label,
+    broadcastLangCode,
     dispatch,
     freeText,
     localPagination.limit,
@@ -93,7 +98,7 @@ export const Search = () => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllArchiveData({
-                    language: broadcastLangObj.label,
+                    language: broadcastLangCode,
                     limit: localPagination.limit,
                     page: localPagination.page,
                     keyword: freeText,
@@ -117,7 +122,7 @@ export const Search = () => {
               e.key === "Enter" &&
                 dispatch(
                   GetAllSourcePathData({
-                    language: broadcastLangObj.label,
+                    language: broadcastLangCode,
                     limit: localPagination.limit,
                     page: localPagination.page,
                     keyword: freeText,

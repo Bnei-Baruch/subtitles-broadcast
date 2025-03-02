@@ -13,39 +13,35 @@ import MessageBox from "../Components/MessageBox";
 import DeleteConfirmation from "../Components/DeleteConfirmation";
 import ReactPaginate from "react-paginate";
 import { useLocation } from "react-router-dom";
-import GetLangaugeCode from "../Utils/Const";
 import { Search } from "../Layout/Search";
 import { useNavigate } from "react-router-dom";
+import {
+  updateMergedUserSettings,
+  updateSettingsInternal,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const Source = () => {
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
-  );
-  const queryParams = new URLSearchParams(useLocation().search);
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
+
+  const queryParams = new URLSearchParams(useLocation().search);
   const sourcePathList = useSelector(getAllSourcePathList);
-
   const [unbookmarkAction, setUnbookmarkAction] = useState(false);
-  const localPagination = localStorage?.getItem("source_pagination")
-    ? JSON?.parse(localStorage?.getItem("source_pagination"))
-    : { page: 1, limit: 10 };
-  const [page, setPage] = useState(localPagination);
-  const [pageIndex, setPageIndex] = useState({ startIndex: 1, endIndex: 10 });
-  
-  const updatePage = (targetPage, targetLimit) => {
-    if (targetPage === page.page && targetLimit === page.limit) return;
 
-    localStorage.setItem("pagination", JSON.stringify({ page: targetPage, limit: targetLimit }));
-    setPage({ page: targetPage, limit: targetLimit });
-    setPageIndex({
-      startIndex: (targetPage - 1) * targetLimit + 1,
-      endIndex: Math.min(
-        targetPage * targetLimit,
-        sourcePathList?.pagination?.total_rows,
-        Number.MAX_VALUE
-      ),
-    });
-  };
+  const userSettingsPagination = useSelector(
+    (state) => state.userSettings.userSettings.source_pagination
+  );
+
+  const memoizedPagination = useMemo(
+    () => userSettingsPagination || { page: 1, limit: 10 },
+    [userSettingsPagination]
+  );
+
+  const [page, setPage] = useState(memoizedPagination);
 
   const message = "";
   const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
@@ -62,7 +58,41 @@ const Source = () => {
     update: "",
   });
 
-  const navigate = useNavigate();
+  const [pageIndex, setPageIndex] = useState(() => ({
+    startIndex:
+      ((userSettingsPagination?.page || 1) - 1) *
+        (userSettingsPagination?.limit || 10) +
+      1,
+    endIndex: Math.min(
+      (userSettingsPagination?.page || 1) *
+        (userSettingsPagination?.limit || 10),
+      Number.MAX_VALUE
+    ),
+  }));
+
+  const updatePage = (targetPage, targetLimit) => {
+    if (
+      targetPage === memoizedPagination.page &&
+      targetLimit === memoizedPagination.limit
+    )
+      return;
+
+    dispatch(
+      updateMergedUserSettings({
+        source_pagination: { page: targetPage, limit: targetLimit },
+      })
+    );
+
+    setPage({ page: targetPage, limit: targetLimit });
+
+    setPageIndex({
+      startIndex: (targetPage - 1) * targetLimit + 1,
+      endIndex: Math.min(
+        targetPage * targetLimit,
+        sourcePathList?.pagination?.total_rows || Number.MAX_VALUE
+      ),
+    });
+  };
 
   useEffect(() => {
     setPageIndex({
@@ -78,13 +108,13 @@ const Source = () => {
   useEffect(() => {
     dispatch(
       GetAllSourcePathData({
-        language: broadcastLangObj.label,
+        language: broadcastLangCode,
         page: page.page,
         limit: page.limit,
         keyword: sessionStorage.getItem("headerSearchKeywordSource"),
       })
     );
-  }, [page.page, page.limit, broadcastLangObj.label]);
+  }, [page.page, page.limit, broadcastLangCode]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -92,7 +122,7 @@ const Source = () => {
         DeleteSource({
           search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           source_uid: SourceUidForDeleteSlide,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
       setFinalConfirm(false);
@@ -102,7 +132,7 @@ const Source = () => {
         BookmarkSlideFromArchivePage({
           search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           data: deleteId,
-          language: broadcastLangObj.label,
+          language: broadcastLangCode,
         })
       );
       setToggle(false);
@@ -131,7 +161,7 @@ const Source = () => {
                   "headerSearchKeywordSource"
                 ),
                 data: bookmarkData,
-                language: broadcastLangObj.label,
+                language: broadcastLangCode,
                 params: page,
               })
             );
@@ -149,7 +179,12 @@ const Source = () => {
     const slideId = slide.slide_id;
     const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
 
-    localStorage.setItem("file_uid_for_edit_slide", fileUid);
+    dispatch(
+      updateSettingsInternal({
+        file_uid_for_edit_slide: fileUid,
+        bookmar_id_for_edit: slide.bookmark_id,
+      })
+    );
 
     navigate(editUrl, {
       state: { previousLocation: window.location.pathname },
@@ -172,7 +207,9 @@ const Source = () => {
             {/* Content for the second flex box centered */}
             <Search className="top-autocomplete" />
             <ReactPaginate
-              pageCount={sourcePathList?.pagination?.total_pages}
+              pageCount={Math.ceil(
+                sourcePathList?.pagination?.total_pages || 1
+              )}
               onPageChange={(e) => {
                 const selectedPage = e.selected + 1;
                 if (selectedPage <= sourcePathList?.pagination?.total_pages) {
@@ -223,8 +260,11 @@ const Source = () => {
           >
             <span>Row per page:</span>
             <select
-              value={/*localPagination?.limit ||*/ page.limit}
+              value={page.limit}
               className="ms-2"
+              onChange={(e) => {
+                updatePage(1, +e.target.value);
+              }}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -240,11 +280,11 @@ const Source = () => {
           {sourcePathList ? (
             <div style={{ overflowX: "auto" }}>
               <table className="" style={{ padding: "20px", minWidth: "100%" }}>
+                <colgroup>
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "15%" }} />
+                </colgroup>
                 <thead>
-                  <colgroup>
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "15%" }} />
-                  </colgroup>
                   <tr>
                     <th style={{ width: "20%", padding: "10px" }}>Path</th>
                     <th style={{ width: "15%", padding: "10px" }}>Action</th>
@@ -253,7 +293,7 @@ const Source = () => {
                 <tbody>
                   {sourcePathList?.paths?.map((key, index) => (
                     <tr
-                      key={key.ID}
+                      key={key.file_uid}
                       className={
                         key.bookmark_id !== null ? "bookmarkedrow" : ""
                       }
@@ -272,7 +312,7 @@ const Source = () => {
                                     "headerSearchKeywordSource"
                                   ),
                                   bookmark_id: key.bookmark_id,
-                                  language: broadcastLangObj.label,
+                                  language: broadcastLangCode,
                                   page: page.page,
                                   limit: page.limit,
                                 })
@@ -290,7 +330,7 @@ const Source = () => {
                               setUnbookmarkAction(false);
                               dispatch(
                                 UserBookmarkList({
-                                  language: broadcastLangObj.label,
+                                  language: broadcastLangCode,
                                 })
                               ).then((res) => {
                                 let update = false;
@@ -320,7 +360,7 @@ const Source = () => {
                                         (k) => k.bookmark_id !== null
                                       )?.length,
                                     },
-                                    language: broadcastLangObj.label,
+                                    language: broadcastLangCode,
                                     params: page,
                                   })
                                 ).then((res) => {

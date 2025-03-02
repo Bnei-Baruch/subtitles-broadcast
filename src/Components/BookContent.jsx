@@ -1,16 +1,26 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { BookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { Slide } from "./Slide";
 import { useSelector } from "react-redux";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
+import {
+  setUserSelectedSlide,
+  setUserInitiatedChange,
+} from "../Redux/MQTT/mqttSlice";
+import LoadingOverlay from "../Components/LoadingOverlay";
+import debugLog from "../Utils/debugLog";
+import { MAX_SLIDE_LIMIT } from "../Utils/Const";
+import {
+  updateMergedUserSettings,
+  updateSettingsInternal,
+} from "../Redux/UserSettings/UserSettingsSlice";
 
 const BookContent = ({
-  setActivatedTab,
-  activatedTab,
-  contents,
+  slideOrderNumber,
   isLtr,
   setSearchSlide,
   searchKeyword,
@@ -18,89 +28,164 @@ const BookContent = ({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const focusSlides = useRef();
-  const broadcastLangObj = useSelector(
-    (state) => state.BroadcastParams.broadcastLang
+  const [loading, setLoading] = useState(false);
+  const contents = useSelector((state) => state.SubtitleData.contentList.data);
+  const userSettings = useSelector((state) => state.userSettings.userSettings);
+  const userSelectedSlideId = userSettings?.selected_slide_id || null;
+  const userSelectedFileUID = userSettings?.selected_file_uid || null;
+  const [activeSlideId, setActiveSlideID] = useState(null);
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
 
   useEffect(() => {
-    focusSlides?.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, [contents, activatedTab]);
+    setActiveSlideID(userSelectedSlideId);
+  }, [userSelectedSlideId]);
+
+  useEffect(() => {
+    const targetSlide = document.getElementById(`slide_${activeSlideId}`);
+    if (targetSlide) {
+      targetSlide.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [contents, activeSlideId]);
+
+  useEffect(() => {
+    if (
+      userSelectedFileUID &&
+      userSettings.selected_bookmark_language === broadcastLangCode
+    ) {
+      dispatch(
+        GetSubtitleData({
+          file_uid: userSelectedFileUID,
+          keyword: "",
+          limit: MAX_SLIDE_LIMIT,
+        })
+      ).then((response) => {
+        if (response.payload?.data?.slides?.length > 0) {
+          const selectedSlide = response.payload.data.slides.find(
+            (slide) => slide.ID === userSelectedSlideId
+          );
+
+          if (selectedSlide) {
+            dispatch(setUserSelectedSlide(selectedSlide));
+          }
+        }
+      });
+    }
+  }, [
+    userSelectedFileUID,
+    dispatch,
+    userSelectedSlideId,
+    broadcastLangCode,
+    userSettings.selected_bookmark_language,
+  ]);
 
   const handleEditSlide = (slide) => {
     const fileUid = slide.file_uid;
     const slideId = slide.ID;
     const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
 
-    localStorage.setItem("file_uid_for_edit_slide", fileUid);
+    dispatch(
+      updateSettingsInternal({
+        file_uid_for_edit_slide: fileUid,
+      })
+    );
 
     navigate(editUrl, {
       state: { previousLocation: window.location.pathname },
     });
   };
 
+  const handleSlideClick = async (
+    setLoading,
+    setSearchSlide,
+    item,
+    dispatch
+  ) => {
+    setLoading(true);
+    setSearchSlide("");
+
+    dispatch(setUserInitiatedChange(true));
+    dispatch(setUserSelectedSlide(item));
+    setActiveSlideID(item.ID);
+
+    try {
+      dispatch(
+        updateMergedUserSettings({
+          selected_slide_id: item.ID,
+          selected_file_uid: item.file_uid,
+        })
+      );
+
+      dispatch(
+        BookmarkSlide({
+          data: {
+            file_uid: item.file_uid,
+            slide_id: item.ID,
+            update: true,
+          },
+          language: broadcastLangCode,
+        })
+      ).finally(() => {
+        setLoading(false);
+        dispatch(setUserInitiatedChange(false));
+      });
+    } catch (error) {
+      debugLog(" updateMergedUserSettings Error:", error);
+      setLoading(false);
+      dispatch(setUserInitiatedChange(false));
+    }
+  };
+
   return (
     <>
-      {contents?.slides?.length > 0 &&
-        +activatedTab >= 0 &&
-        contents?.slides?.map((item, index) => (
-          <div
-            key={`slide_${item.ID}`}
-            id={`slide_${item.ID}`}
-            source-uid={item.source_uid}
-            onClick={() => {
-              setSearchSlide("");
-              setActivatedTab(+item?.order_number);
-              localStorage.setItem("activatedTabData", +item?.order_number);
-
-              dispatch(
-                BookmarkSlide({
-                  data: {
-                    file_uid: item.file_uid,
-                    slide_id: item.ID,
-                    update: true,
-                  },
-                  language: broadcastLangObj.label,
-                })
-              );
-            }}
-            ref={
-              +activatedTab + 1 === item.order_number + 1 ? focusSlides : null
-            }
-            className={`box-content d-flex  cursor-pointer  ${
-              +activatedTab + 1 === +item.order_number + 1 && "activeSlide"
-            }`}
-          >
-            {/* <bdo
-                className={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
-                dir={isLtr ? "ChangeToLtr" : "ChangeToRtl"}
-              > */}
-            <Slide
-              content={item?.slide}
-              isLtr={
-                item && typeof item.left_to_right === "boolean"
-                  ? item.left_to_right
-                  : isLtr
+      <LoadingOverlay loading={loading} />
+      {contents?.slides?.length > 0 && (
+        <div className="grid-container">
+          {contents?.slides?.map((item, index) => (
+            <div
+              key={`slide_${item.ID}`}
+              id={`slide_${item.ID}`}
+              source-uid={item.source_uid}
+              onClick={() => {
+                handleSlideClick(setLoading, setSearchSlide, item, dispatch);
+              }}
+              ref={
+                +slideOrderNumber + 1 === item.order_number + 1
+                  ? focusSlides
+                  : null
               }
-              searchKeyword={searchKeyword}
-              isQuestion={item?.slide_type === "question"}
-            ></Slide>
-            {/* </bdo> */}
-            <span className="order-number">{`${
-              item?.languages.length > 1
-                ? item?.languages[+index % item?.languages.length]
-                : item?.languages[0]
-            } ${+item.order_number + 1}`}</span>
-            <IconButton
-              className="edit-slide-button"
-              onClick={() => handleEditSlide(item)}
+              className={`box-content d-flex cursor-pointer ${activeSlideId === item.ID ? "activeSlide" : ""}`}
             >
-              <EditIcon />
-            </IconButton>
-          </div>
-        ))}
+              <Slide
+                content={item?.slide}
+                isLtr={
+                  item && typeof item.left_to_right === "boolean"
+                    ? item.left_to_right
+                    : isLtr
+                }
+                searchKeyword={searchKeyword}
+                isQuestion={item?.slide_type === "question"}
+              ></Slide>
+              {/* </bdo> */}
+              <span className="order-number">{`${
+                item?.languages.length > 1
+                  ? item?.languages[+index % item?.languages.length]
+                  : item?.languages[0]
+              } ${+item.order_number + 1}`}</span>
+              <IconButton
+                className="edit-slide-button"
+                onClick={() => handleEditSlide(item)}
+              >
+                <EditIcon />
+              </IconButton>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 };
