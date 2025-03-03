@@ -30,6 +30,8 @@ import {
   setUserSelectedSlide,
   resetMqttLoading,
   addMqttError,
+  setUserInitiatedChange,
+  setMqttLoading,
 } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 
@@ -90,6 +92,8 @@ const Subtitles = () => {
     );
 
     if (targetSlideObj) {
+      dispatch(setUserInitiatedChange(true));
+      dispatch(setMqttLoading());
       dispatch(setUserSelectedSlide(targetSlideObj));
       dispatch(
         updateMergedUserSettings({
