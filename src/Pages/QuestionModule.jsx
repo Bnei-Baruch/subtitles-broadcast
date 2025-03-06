@@ -5,20 +5,25 @@ import { broadcastLanguages } from "../Utils/Const";
 import { getQuestionMqttTopic, languageIsLtr } from "../Utils/Common";
 import { publishEvent } from "../Utils/Events";
 import { useSelector } from "react-redux";
+import { getSubtitleMqttTopic } from "../Utils/Common";
 
-const QuestionModule = () => {
+
+const QuestionModule = () => {  
   const [questionText, setQuestionText] = useState("");
   const [handleSuccess, setHandleSuccess] = useState(false);
   const textAreaRef = useRef(null);
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
-  );
+  );  
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
       "morning_lesson"
   );
-  const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.mqtt.subtitlesDisplayMode
+  );
+  const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));  
 
   useEffect(() => {
     setIsLtr(languageIsLtr(broadcastLangCode));
@@ -59,6 +64,15 @@ const QuestionModule = () => {
       mqttTopic,
       message: jsonMsg,
     });
+
+    if (subtitlesDisplayMode === "questions") {      
+        const subtitleMqttTopic = getSubtitleMqttTopic(
+          broadcastProgrammCode,
+          broadcastLangCode
+        );
+        
+       publishEvent("mqttPublush", { mqttTopic: subtitleMqttTopic, message: jsonMsg });  // Publish it
+    }
 
     setHandleSuccess(true);
     setQuestionText("");
