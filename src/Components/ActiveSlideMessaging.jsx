@@ -237,7 +237,7 @@ export function ActiveSlideMessaging() {
 
     if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
       const questionSlides = userSlides.filter(
-        (slide) => slide.slide_type === "question"
+        (slide) => slide.order_number === selectedSubtitleSlide.order_number
       );
 
       if (questionSlides.length > 1) {
