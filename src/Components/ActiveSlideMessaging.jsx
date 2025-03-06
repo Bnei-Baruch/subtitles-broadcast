@@ -278,7 +278,7 @@ export function ActiveSlideMessaging() {
                 ? activeBroadcastMessage.isLtr
                 : true
             }
-            isQuestion={activeBroadcastMessage.type === "question"}
+            isQuestion={activeBroadcastMessage.slide_type === "question"}
           />
         )}
       </div>
