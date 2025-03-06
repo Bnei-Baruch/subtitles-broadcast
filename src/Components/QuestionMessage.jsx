@@ -82,7 +82,7 @@ const QuestionMessage = (props) => {
           allQuestions.map((obj) => (
             <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
               <div className="d-flex h-auto p-2">
-                {(broadcastLangCode === "he" || (obj.lang ?? "") === broadcastLangCode) && (
+                {(broadcastLangCode === "he" || obj.lang === broadcastLangCode) && (
                   <div>
                     <i
                       className={
