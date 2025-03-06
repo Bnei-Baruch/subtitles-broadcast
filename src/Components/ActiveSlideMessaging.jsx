@@ -237,7 +237,7 @@ export function ActiveSlideMessaging() {
 
     if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
       const questionSlides = userSlides.filter(
-        (slide) => slide.slide_type === "question"
+        (slide) => slide.order_number === selectedSubtitleSlide.order_number
       );
 
       if (questionSlides.length > 1) {
@@ -249,7 +249,7 @@ export function ActiveSlideMessaging() {
           if (nextSlide.ID !== activeBroadcastMessage?.ID) {
             isRoundRobinActiveRef.current = true;
             dispatch(setRounRobinIndex(nextIndex));
-            publishMqttMessage(subtitleMqttTopic, nextSlide);
+            publishSlide(nextSlide);
           }
         }, qstSwapTime);
       }
@@ -278,7 +278,7 @@ export function ActiveSlideMessaging() {
                 ? activeBroadcastMessage.isLtr
                 : true
             }
-            isQuestion={activeBroadcastMessage.type === "question"}
+            isQuestion={activeBroadcastMessage.slide_type === "question"}
           />
         )}
       </div>
