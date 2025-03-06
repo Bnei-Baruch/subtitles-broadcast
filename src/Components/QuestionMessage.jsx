@@ -82,15 +82,19 @@ const QuestionMessage = (props) => {
           allQuestions.map((obj) => (
             <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
               <div className="d-flex h-auto p-2">
-                <i
-                  className={
-                    obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
-                  }
-                  onClick={() => sendQuestionButtonClickHandler(obj)}
-                />
-                <span>
-                  {getLanguageName(obj.lang ? obj.lang : obj.language)}
-                </span>
+                {(broadcastLangCode === "he" || (obj.lang ?? "") === broadcastLangCode) && (
+                  <div>
+                    <i
+                      className={
+                        obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
+                      }
+                      onClick={() => sendQuestionButtonClickHandler(obj)}
+                    />
+                    <span>
+                      {getLanguageName(obj.lang ? obj.lang : obj.language)}
+                    </span>
+                  </div>
+                  )}
               </div>
               <Slide
                 content={obj.orgSlide ? obj.orgSlide : obj.slide}
