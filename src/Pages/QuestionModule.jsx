@@ -70,8 +70,8 @@ const QuestionModule = () => {
           broadcastProgrammCode,
           broadcastLangCode
         );
-        
-       publishEvent("mqttPublush", { mqttTopic: subtitleMqttTopic, message: jsonMsg });  // Publish it
+
+       publishEvent("mqttPublush", { mqttTopic: subtitleMqttTopic, message: jsonMsg }); 
     }
 
     setHandleSuccess(true);
