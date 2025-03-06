@@ -249,7 +249,7 @@ export function ActiveSlideMessaging() {
           if (nextSlide.ID !== activeBroadcastMessage?.ID) {
             isRoundRobinActiveRef.current = true;
             dispatch(setRounRobinIndex(nextIndex));
-            publishMqttMessage(subtitleMqttTopic, nextSlide);
+            publishSlide(nextSlide);
           }
         }, qstSwapTime);
       }
