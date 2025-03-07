@@ -17,7 +17,7 @@ import { broadcastLanguages } from "../Utils/Const";
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
-  const qstSwapTime = 2000;
+  const qstSwapTime = 10000;
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
