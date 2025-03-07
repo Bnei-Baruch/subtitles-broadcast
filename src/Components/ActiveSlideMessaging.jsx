@@ -233,6 +233,8 @@ export function ActiveSlideMessaging() {
   /** Implements round-robin for questions */
   useEffect(() => {
     let timeoutId;
+    if (broadcastLangCode !== "he") return;
+
     rounRobinIndexRef.current = rounRobinIndex;
 
     if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
