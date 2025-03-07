@@ -19,38 +19,38 @@ export function ActiveSlideMessaging() {
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
-    (prev, next) => prev?.ID === next?.ID
+    (prev, next) => prev?.ID === next?.ID,
   );
 
   const selectedQuestionMessage = useSelector(
-    (state) => state.mqtt.selectedQuestionMessage
+    (state) => state.mqtt.selectedQuestionMessage,
   );
 
   const activeBroadcastMessage = useSelector(
-    (state) => state.mqtt.activeBroadcastMessage
+    (state) => state.mqtt.activeBroadcastMessage,
   );
 
   const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode
+    (state) => state.mqtt.subtitlesDisplayMode,
   );
 
   const isUserInitiatedChange = useSelector(
-    (state) => state.mqtt.isUserInitiatedChange
+    (state) => state.mqtt.isUserInitiatedChange,
   );
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
 
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
+      "morning_lesson",
   );
 
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode
+    broadcastLangCode,
   );
 
   const rounRobinIndex = useSelector((state) => state.mqtt.rounRobinIndex);
@@ -58,11 +58,11 @@ export function ActiveSlideMessaging() {
   const isRoundRobinActiveRef = useRef(false);
 
   const userSlides = useSelector(
-    (state) => state.SubtitleData?.contentList?.data?.slides
+    (state) => state.SubtitleData?.contentList?.data?.slides,
   );
 
   const questionMessagesList = useSelector(
-    (state) => state.mqtt.questionMessagesList
+    (state) => state.mqtt.questionMessagesList,
   );
 
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
@@ -115,7 +115,7 @@ export function ActiveSlideMessaging() {
 
     const subtitleMqttTopic = getSubtitleMqttTopic(
       broadcastProgrammCode,
-      broadcastLangCode
+      broadcastLangCode,
     );
 
     let newActiveMessage = mqttMessages[subtitleMqttTopic];
@@ -201,7 +201,7 @@ export function ActiveSlideMessaging() {
     if (broadcastLangCode && questionMessagesList[broadcastLangCode]) {
       debugLog("Updating selectedQuestionMessage for", broadcastLangCode);
       dispatch(
-        setSelectedQuestionMessage(questionMessagesList[broadcastLangCode])
+        setSelectedQuestionMessage(questionMessagesList[broadcastLangCode]),
       );
     }
   }, [broadcastLangCode, questionMessagesList, dispatch]);
@@ -237,7 +237,7 @@ export function ActiveSlideMessaging() {
 
     if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
       const questionSlides = userSlides.filter(
-        (slide) => slide.order_number === selectedSubtitleSlide.order_number
+        (slide) => slide.order_number === selectedSubtitleSlide.order_number,
       );
 
       if (questionSlides.length > 1) {
@@ -278,7 +278,10 @@ export function ActiveSlideMessaging() {
                 ? activeBroadcastMessage.isLtr
                 : true
             }
-            isQuestion={activeBroadcastMessage.slide_type === "question"}
+            isQuestion={
+              activeBroadcastMessage.slide_type === "question" ||
+              activeBroadcastMessage.type === "question"
+            }
           />
         )}
       </div>
