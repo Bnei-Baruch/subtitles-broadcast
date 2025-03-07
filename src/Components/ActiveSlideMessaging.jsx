@@ -283,7 +283,13 @@ export function ActiveSlideMessaging() {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]);
+  }, [
+    subtitlesDisplayMode,
+    userSlides,
+    activeBroadcastMessage,
+    questionMessagesList,
+    dispatch,
+  ]);
 
   return (
     <div className="active-slide-msg-main-cont">
