@@ -8,10 +8,12 @@ import {
   setRounRobinIndex,
   setActiveBroadcastMessage,
   resetMqttLoading,
-  updateSubtitlesDisplayMode,
+  setRoundRobinOff,
+  setRoundRobinOn,
 } from "../Redux/MQTT/mqttSlice";
 import { getSubtitleMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
+import { broadcastLanguages } from "../Utils/Const";
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
@@ -19,50 +21,50 @@ export function ActiveSlideMessaging() {
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
-    (prev, next) => prev?.ID === next?.ID
+    (prev, next) => prev?.ID === next?.ID,
   );
 
   const selectedQuestionMessage = useSelector(
-    (state) => state.mqtt.selectedQuestionMessage
+    (state) => state.mqtt.selectedQuestionMessage,
   );
 
   const activeBroadcastMessage = useSelector(
-    (state) => state.mqtt.activeBroadcastMessage
+    (state) => state.mqtt.activeBroadcastMessage,
   );
 
   const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode
+    (state) => state.mqtt.subtitlesDisplayMode,
   );
 
   const isUserInitiatedChange = useSelector(
-    (state) => state.mqtt.isUserInitiatedChange
+    (state) => state.mqtt.isUserInitiatedChange,
   );
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
 
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
+      "morning_lesson",
   );
 
   const subtitleMqttTopic = getSubtitleMqttTopic(
     broadcastProgrammCode,
-    broadcastLangCode
+    broadcastLangCode,
   );
 
   const rounRobinIndex = useSelector((state) => state.mqtt.rounRobinIndex);
   const rounRobinIndexRef = useRef(rounRobinIndex);
-  const isRoundRobinActiveRef = useRef(false);
+  const isRoundRobinOn = useSelector((state) => state.mqtt.isRoundRobinOn);
 
   const userSlides = useSelector(
-    (state) => state.SubtitleData?.contentList?.data?.slides
+    (state) => state.SubtitleData?.contentList?.data?.slides,
   );
 
   const questionMessagesList = useSelector(
-    (state) => state.mqtt.questionMessagesList
+    (state) => state.mqtt.questionMessagesList,
   );
 
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
@@ -89,14 +91,6 @@ export function ActiveSlideMessaging() {
     publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
   };
 
-  const getDisplayModeByMsgType = (message) => {
-    return message?.type === "subtitle"
-      ? "sources"
-      : message?.type === "question"
-        ? "questions"
-        : "none";
-  };
-
   const getMsgTypeByDisplayMode = (displayMode) => {
     return displayMode === "sources"
       ? "subtitle"
@@ -115,7 +109,7 @@ export function ActiveSlideMessaging() {
 
     const subtitleMqttTopic = getSubtitleMqttTopic(
       broadcastProgrammCode,
-      broadcastLangCode
+      broadcastLangCode,
     );
 
     let newActiveMessage = mqttMessages[subtitleMqttTopic];
@@ -129,12 +123,6 @@ export function ActiveSlideMessaging() {
       } else {
         return;
       }
-    }
-
-    const msgSubtitlesDisplayMode = getDisplayModeByMsgType(newActiveMessage);
-
-    if (subtitlesDisplayMode !== msgSubtitlesDisplayMode) {
-      dispatch(updateSubtitlesDisplayMode(msgSubtitlesDisplayMode));
     }
 
     if (activeBroadcastMessage?.slide !== newActiveMessage.slide) {
@@ -155,11 +143,7 @@ export function ActiveSlideMessaging() {
   useEffect(() => {
     if (!isUserInitiatedChange || subtitlesDisplayMode !== "none") return;
 
-    if (
-      !activeBroadcastMessage ||
-      activeBroadcastMessage.type !== "none" ||
-      activeBroadcastMessage.slide !== ""
-    ) {
+    if (!activeBroadcastMessage || activeBroadcastMessage.slide !== "") {
       publishMqttMessage(subtitleMqttTopic, { type: "none", slide: "" });
     }
 
@@ -173,15 +157,11 @@ export function ActiveSlideMessaging() {
 
   /** Publishes selected slide when display mode is "sources" */
   useEffect(() => {
-    if (isRoundRobinActiveRef.current) {
-      isRoundRobinActiveRef.current = false;
-      return;
-    }
-
     if (!isUserInitiatedChange) return;
+    if (subtitlesDisplayMode !== "sources") return;
+    if (isRoundRobinOn) return;
 
     if (
-      subtitlesDisplayMode === "sources" &&
       selectedSubtitleSlide &&
       broadcastLangCode &&
       (!activeBroadcastMessage ||
@@ -199,9 +179,8 @@ export function ActiveSlideMessaging() {
   /** Updates selected question message */
   useEffect(() => {
     if (broadcastLangCode && questionMessagesList[broadcastLangCode]) {
-      debugLog("Updating selectedQuestionMessage for", broadcastLangCode);
       dispatch(
-        setSelectedQuestionMessage(questionMessagesList[broadcastLangCode])
+        setSelectedQuestionMessage(questionMessagesList[broadcastLangCode]),
       );
     }
   }, [broadcastLangCode, questionMessagesList, dispatch]);
@@ -209,6 +188,7 @@ export function ActiveSlideMessaging() {
   /** Publishes selected question message when display mode is "questions" */
   useEffect(() => {
     if (!isUserInitiatedChange || subtitlesDisplayMode !== "questions") return;
+    if (isRoundRobinOn) return;
 
     const newActiveMessage = selectedQuestionMessage?.visible
       ? { ...selectedQuestionMessage }
@@ -230,14 +210,16 @@ export function ActiveSlideMessaging() {
     dispatch,
   ]);
 
-  /** Implements round-robin for questions */
+  /** Implements round-robin*/
   useEffect(() => {
     let timeoutId;
+    if (broadcastLangCode !== "he" || subtitlesDisplayMode === "none") return;
+
     rounRobinIndexRef.current = rounRobinIndex;
 
     if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
       const questionSlides = userSlides.filter(
-        (slide) => slide.order_number === selectedSubtitleSlide.order_number
+        (slide) => slide.order_number === selectedSubtitleSlide.order_number,
       );
 
       if (questionSlides.length > 1) {
@@ -247,9 +229,52 @@ export function ActiveSlideMessaging() {
           let nextSlide = questionSlides[nextIndex];
 
           if (nextSlide.ID !== activeBroadcastMessage?.ID) {
-            isRoundRobinActiveRef.current = true;
+            dispatch(setRoundRobinOn());
             dispatch(setRounRobinIndex(nextIndex));
             publishSlide(nextSlide);
+          }
+        }, qstSwapTime);
+      }
+    }
+
+    if (subtitlesDisplayMode === "questions" && questionMessagesList) {
+      const languages = Object.keys(questionMessagesList);
+      const availableLanguages = broadcastLanguages
+        .filter((lang) => questionMessagesList[lang.value])
+        .sort((a, b) => a.order_num - b.order_num);
+
+      const visibleQuestions = availableLanguages.filter(
+        (lang) => questionMessagesList[lang.value]?.visible !== false,
+      );
+
+      if (visibleQuestions.length === 0) {
+        dispatch(setRoundRobinOff());
+        return;
+      }
+
+      if (availableLanguages.length > 1) {
+        dispatch(setRoundRobinOn());
+
+        timeoutId = setTimeout(() => {
+          let nextIndex = rounRobinIndexRef.current;
+
+          do {
+            nextIndex = (nextIndex + 1) % languages.length;
+          } while (
+            questionMessagesList[availableLanguages[nextIndex]?.value]
+              ?.visible === false
+          );
+
+          let nextLang = availableLanguages[nextIndex].value;
+          let nextQuestion = questionMessagesList[nextLang];
+
+          if (
+            nextQuestion &&
+            nextQuestion.slide !== activeBroadcastMessage?.slide
+          ) {
+            dispatch(setRoundRobinOn());
+            dispatch(setRounRobinIndex(nextIndex));
+            publishMqttMessage(subtitleMqttTopic, nextQuestion);
           }
         }, qstSwapTime);
       }
@@ -258,7 +283,13 @@ export function ActiveSlideMessaging() {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [subtitlesDisplayMode, userSlides, activeBroadcastMessage, dispatch]);
+  }, [
+    subtitlesDisplayMode,
+    userSlides,
+    activeBroadcastMessage,
+    questionMessagesList,
+    dispatch,
+  ]);
 
   return (
     <div className="active-slide-msg-main-cont">
@@ -278,7 +309,10 @@ export function ActiveSlideMessaging() {
                 ? activeBroadcastMessage.isLtr
                 : true
             }
-            isQuestion={activeBroadcastMessage.slide_type === "question"}
+            isQuestion={
+              activeBroadcastMessage.slide_type === "question" ||
+              activeBroadcastMessage.type === "question"
+            }
           />
         )}
       </div>

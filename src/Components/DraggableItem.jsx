@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import {
   setUserSelectedSlide,
   setUserInitiatedChange,
+  setRoundRobinOff,
 } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
@@ -40,7 +41,7 @@ const DraggableItem = ({
   const selected = userSelectedFileUID === parentBookmarkFileUid;
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
 
   const [, drop] = useDrop({
@@ -60,27 +61,28 @@ const DraggableItem = ({
       updateMergedUserSettings({
         selected_slide_id: targetSlideId,
         selected_file_uid: targetBookmarkFileUid,
-      })
+      }),
     );
 
     dispatch(
       GetSubtitleData({
         file_uid: targetBookmarkFileUid,
         limit: MAX_SLIDE_LIMIT,
-      })
+      }),
     )
       .then((response) => {
         if (!bookmarkList?.data) return;
         const bookmark = bookmarkList?.data?.find(
-          (b) => b.file_uid === targetBookmarkFileUid
+          (b) => b.file_uid === targetBookmarkFileUid,
         );
 
         if (bookmark) {
           const selectedSlide = response.payload.data.slides.find(
-            (slide) => slide.ID === bookmark.slide_id
+            (slide) => slide.ID === bookmark.slide_id,
           );
 
           if (selectedSlide) {
+            dispatch(setRoundRobinOff());
             dispatch(setUserSelectedSlide(selectedSlide));
             dispatch(setUserInitiatedChange(true));
           }
@@ -115,7 +117,7 @@ const DraggableItem = ({
               UnBookmarkSlide({
                 bookmark_id: parentBookmarkId,
                 language: broadcastLangCode,
-              })
+              }),
             )
           }
           className="bi bi-trash"

@@ -32,6 +32,7 @@ import {
   addMqttError,
   setUserInitiatedChange,
   setMqttLoading,
+  setRoundRobinOff,
 } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 
@@ -46,7 +47,7 @@ function usePrevious(value) {
 const Subtitles = () => {
   const loadingTimeoutDuration = 5000;
   const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode
+    (state) => state.mqtt.subtitlesDisplayMode,
   );
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
@@ -63,16 +64,16 @@ const Subtitles = () => {
   const navigate = useNavigate();
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
-    (prev, next) => prev?.ID === next?.ID
+    (prev, next) => prev?.ID === next?.ID,
   );
   const userSlides = useSelector(
-    (state) => state.SubtitleData?.contentList?.data?.slides
+    (state) => state.SubtitleData?.contentList?.data?.slides,
   );
   const userSettings = useSelector((state) => state.userSettings.userSettings);
   const userSelectedFileUID = userSettings?.selected_file_uid || null;
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
 
   const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
@@ -88,7 +89,7 @@ const Subtitles = () => {
     }
 
     const targetSlideObj = UserAddedList?.slides?.find(
-      (key) => key?.order_number === newSelectedSlideOrderNum
+      (key) => key?.order_number === newSelectedSlideOrderNum,
     );
 
     if (targetSlideObj) {
@@ -98,7 +99,7 @@ const Subtitles = () => {
       dispatch(
         updateMergedUserSettings({
           selected_slide_id: targetSlideObj.ID,
-        })
+        }),
       );
 
       dispatch(
@@ -109,7 +110,7 @@ const Subtitles = () => {
             update: true,
           },
           language: broadcastLangCode,
-        })
+        }),
       );
     }
   };
@@ -130,12 +131,12 @@ const Subtitles = () => {
       }
 
       let currentIndex = UserAddedList.slides.findIndex(
-        (slide) => slide.order_number === selectedSubtitleSlide?.order_number
+        (slide) => slide.order_number === selectedSubtitleSlide?.order_number,
       );
 
       if (currentIndex === -1) {
         console.warn(
-          "handleKeyPress: Current slide not found in UserAddedList"
+          "handleKeyPress: Current slide not found in UserAddedList",
         );
         return;
       }
@@ -163,7 +164,7 @@ const Subtitles = () => {
         }
       }
     },
-    [UserAddedList, updateSelectedSlide]
+    [UserAddedList, updateSelectedSlide],
   );
 
   useEffect(() => {
@@ -187,7 +188,7 @@ const Subtitles = () => {
             message:
               "⚠️ Subtitle mode change timeout: No MQTT response received.",
             type: "Timeout",
-          })
+          }),
         );
       }, loadingTimeoutDuration);
 
@@ -239,7 +240,7 @@ const Subtitles = () => {
             file_uid: file_uid,
             keyword: searchSlide,
             limit: MAX_SLIDE_LIMIT,
-          })
+          }),
         );
         setIsLtr(UserAddedList?.slides[0]?.left_to_right);
       }
@@ -253,12 +254,12 @@ const Subtitles = () => {
       userSlides?.length > 0
     ) {
       const bookmarkedSlideId = allBookmarkList.find(
-        (b) => b.slide_id === selectedSubtitleSlide?.ID
+        (b) => b.slide_id === selectedSubtitleSlide?.ID,
       )?.slide_id;
 
       if (bookmarkedSlideId) {
         const selectedSlide = userSlides.find(
-          (slide) => slide.ID === bookmarkedSlideId
+          (slide) => slide.ID === bookmarkedSlideId,
         );
 
         if (selectedSlide) {
@@ -282,6 +283,7 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
+    dispatch(setRoundRobinOff());
     dispatch(setSubtitlesDisplayMode("questions"));
   }
 
@@ -290,6 +292,7 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
+    dispatch(setRoundRobinOff());
     dispatch(setSubtitlesDisplayMode("sources"));
   }
 
@@ -298,13 +301,14 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
 
+    dispatch(setRoundRobinOff());
     dispatch(setSubtitlesDisplayMode("none"));
   }
 
   const navigatToEditSubtitle = () => {
     const file_uid = UserAddedList?.slides?.[0]?.file_uid;
     const slide = UserAddedList?.slides?.find(
-      (key) => key?.order_number === selectedSubtitleSlide?.order_number
+      (key) => key?.order_number === selectedSubtitleSlide?.order_number,
     );
     const slideID = slide ? slide.ID : null;
     const editUrl = `/archive/edit?file_uid=${file_uid}&slide_id=${slideID}`;
@@ -475,7 +479,7 @@ const Subtitles = () => {
                   (index) => ({
                     label: index + 1,
                     value: `${index + 1}/${+maxSlideIndex + 1}`,
-                  })
+                  }),
                 )}
               />
               <div className="underline"></div>
