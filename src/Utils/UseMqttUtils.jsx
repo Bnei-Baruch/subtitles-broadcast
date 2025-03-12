@@ -28,25 +28,25 @@ export default function useMqtt() {
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
 
   const username = useSelector(
-    (state) => state.UserProfile.userProfile.profile.username
+    (state) => state.UserProfile.userProfile.profile.username,
   );
 
   const firstName = useSelector(
-    (state) => state.UserProfile.userProfile.profile.firstName
+    (state) => state.UserProfile.userProfile.profile.firstName,
   );
 
   const lastName = useSelector(
-    (state) => state.UserProfile.userProfile.profile.lastName
+    (state) => state.UserProfile.userProfile.profile.lastName,
   );
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
 
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
+      "morning_lesson",
   );
 
   let clientId = useSelector((state) => state.mqtt.clientId);
@@ -90,7 +90,7 @@ export default function useMqtt() {
             message: message.toString(),
             broadcastLangCode,
             broadcastProgrammCode,
-          })
+          }),
         );
       });
 
@@ -134,7 +134,8 @@ export default function useMqtt() {
         mqttMessageForTopic &&
         mqttMessageForTopic.slide === message.slide &&
         mqttMessageForTopic.type === message.type &&
-        mqttMessageForTopic.visible === message.visible;
+        mqttMessageForTopic.visible === message.visible &&
+        mqttMessageForTopic.display_status === message.display_status;
 
       if (isDuplicate) {
         debugLog("Skipping duplicate MQTT publish:", mqttTopic, message);
@@ -165,7 +166,7 @@ export default function useMqtt() {
             } else {
               debugLog(" MQTT Publish Successful:", mqttTopic, enhancedMessage);
             }
-          }
+          },
         );
       }
     };
@@ -180,7 +181,7 @@ export default function useMqtt() {
         unSubscribeEvent("mqttPublush", mqttPublishHandler);
       } else {
         console.warn(
-          "Unable to remove event listener: unSubscribeEvent is not defined"
+          "Unable to remove event listener: unSubscribeEvent is not defined",
         );
       }
     };

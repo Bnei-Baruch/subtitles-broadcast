@@ -11,8 +11,7 @@ import {
   setRoundRobinOff,
   setRoundRobinOn,
 } from "../Redux/MQTT/mqttSlice";
-import { getSubtitleMqttTopic } from "../Utils/Common";
-import debugLog from "../Utils/debugLog";
+import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
 import { broadcastLanguages } from "../Utils/Const";
 
 export function ActiveSlideMessaging() {
@@ -33,7 +32,7 @@ export function ActiveSlideMessaging() {
   );
 
   const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode,
+    (state) => state.mqtt.subtitlesDisplayMode || "none",
   );
 
   const isUserInitiatedChange = useSelector(
@@ -69,13 +68,37 @@ export function ActiveSlideMessaging() {
 
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
-  /** Publishes MQTT message */
-  const publishMqttMessage = (topic, message) => {
-    publishEvent("mqttPublush", { mqttTopic: topic, message });
+  const publishMqttMessage = (topic, message, displayMode) => {
+    message.display_status = displayMode;
+    publishEvent("mqttPublush", { mqttTopic: topic, message: message });
   };
 
-  /** Publishes slide to MQTT */
-  const publishSlide = (slide) => {
+  const publishDisplyNoneMqttMessage = (topic) => {
+    const newMessage = { type: "none", slide: "" };
+    publishMqttMessage(topic, newMessage, "none");
+  };
+
+  const publishQuestionMqttMessage = (topic, message, displayMode) => {
+    if (message) {
+      const newMessage = { ...message };
+      publishMqttMessage(topic, newMessage, displayMode);
+    }
+  };
+
+  function RepublishQuestion(programmCode, langCode, displayMode) {
+    const questionMqttTopic = getQuestionMqttTopic(programmCode, langCode);
+    const curMqttMessages = mqttMessages[questionMqttTopic];
+
+    if (!curMqttMessages || curMqttMessages.display_status !== displayMode) {
+      publishQuestionMqttMessage(
+        questionMqttTopic,
+        curMqttMessages,
+        displayMode,
+      );
+    }
+  }
+
+  const publishSlide = (slide, topic, displayMode) => {
     const slideJsonMsg = {
       type: "subtitle",
       ID: slide.ID,
@@ -88,15 +111,7 @@ export function ActiveSlideMessaging() {
       slide_type: slide.slide_type,
     };
 
-    publishMqttMessage(subtitleMqttTopic, slideJsonMsg);
-  };
-
-  const getMsgTypeByDisplayMode = (displayMode) => {
-    return displayMode === "sources"
-      ? "subtitle"
-      : displayMode === "questions"
-        ? "question"
-        : "none";
+    publishMqttMessage(topic, slideJsonMsg, displayMode);
   };
 
   /**
@@ -115,9 +130,8 @@ export function ActiveSlideMessaging() {
     let newActiveMessage = mqttMessages[subtitleMqttTopic];
     if (!newActiveMessage) {
       if (!activeBroadcastMessage || activeBroadcastMessage.type !== "none") {
-        debugLog("No active message found. Setting to default...");
         newActiveMessage = {
-          type: getMsgTypeByDisplayMode(subtitlesDisplayMode),
+          type: subtitlesDisplayMode,
           slide: "",
         };
       } else {
@@ -144,7 +158,8 @@ export function ActiveSlideMessaging() {
     if (!isUserInitiatedChange || subtitlesDisplayMode !== "none") return;
 
     if (!activeBroadcastMessage || activeBroadcastMessage.slide !== "") {
-      publishMqttMessage(subtitleMqttTopic, { type: "none", slide: "" });
+      publishDisplyNoneMqttMessage(subtitleMqttTopic);
+      RepublishQuestion(broadcastProgrammCode, broadcastLangCode, "none");
     }
 
     dispatch(resetUserInitiatedChange());
@@ -155,10 +170,10 @@ export function ActiveSlideMessaging() {
     dispatch,
   ]);
 
-  /** Publishes selected slide when display mode is "sources" */
+  /** Publishes selected slide when display mode is "subtitles" */
   useEffect(() => {
     if (!isUserInitiatedChange) return;
-    if (subtitlesDisplayMode !== "sources") return;
+    if (subtitlesDisplayMode !== "subtitles") return;
     if (isRoundRobinOn) return;
 
     if (
@@ -167,7 +182,17 @@ export function ActiveSlideMessaging() {
       (!activeBroadcastMessage ||
         activeBroadcastMessage.slide !== selectedSubtitleSlide.slide)
     ) {
-      publishSlide(selectedSubtitleSlide);
+      publishSlide(
+        selectedSubtitleSlide,
+        subtitleMqttTopic,
+        subtitlesDisplayMode,
+      );
+
+      RepublishQuestion(
+        broadcastProgrammCode,
+        broadcastLangCode,
+        subtitlesDisplayMode,
+      );
     }
   }, [
     selectedSubtitleSlide,
@@ -198,7 +223,17 @@ export function ActiveSlideMessaging() {
       activeBroadcastMessage?.slide !== selectedQuestionMessage?.slide ||
       activeBroadcastMessage?.visible !== selectedQuestionMessage?.visible
     ) {
-      publishMqttMessage(subtitleMqttTopic, newActiveMessage);
+      RepublishQuestion(
+        broadcastProgrammCode,
+        broadcastLangCode,
+        subtitlesDisplayMode,
+      );
+
+      publishMqttMessage(
+        subtitleMqttTopic,
+        newActiveMessage,
+        subtitlesDisplayMode,
+      );
     }
 
     dispatch(resetUserInitiatedChange());
@@ -217,7 +252,7 @@ export function ActiveSlideMessaging() {
 
     rounRobinIndexRef.current = rounRobinIndex;
 
-    if (subtitlesDisplayMode === "sources" && userSlides?.length > 0) {
+    if (subtitlesDisplayMode === "subtitles" && userSlides?.length > 0) {
       const questionSlides = userSlides.filter(
         (slide) => slide.order_number === selectedSubtitleSlide.order_number,
       );
@@ -231,7 +266,7 @@ export function ActiveSlideMessaging() {
           if (nextSlide.ID !== activeBroadcastMessage?.ID) {
             dispatch(setRoundRobinOn());
             dispatch(setRounRobinIndex(nextIndex));
-            publishSlide(nextSlide);
+            publishSlide(nextSlide, subtitleMqttTopic, subtitlesDisplayMode);
           }
         }, qstSwapTime);
       }
@@ -274,7 +309,11 @@ export function ActiveSlideMessaging() {
           ) {
             dispatch(setRoundRobinOn());
             dispatch(setRounRobinIndex(nextIndex));
-            publishMqttMessage(subtitleMqttTopic, nextQuestion);
+            publishMqttMessage(
+              subtitleMqttTopic,
+              nextQuestion,
+              subtitlesDisplayMode,
+            );
           }
         }, qstSwapTime);
       }

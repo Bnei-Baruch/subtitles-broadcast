@@ -66,11 +66,7 @@ const mqttSlice = createSlice({
               state.activeBroadcastMessage = parsedMessage;
 
               const msgSubtitlesDisplayMode =
-                parsedMessage?.type === "subtitle"
-                  ? "sources"
-                  : parsedMessage?.type === "question"
-                    ? "questions"
-                    : "none";
+                parsedMessage?.display_status || "none";
 
               if (state.subtitlesDisplayMode !== msgSubtitlesDisplayMode) {
                 state.subtitlesDisplayMode = msgSubtitlesDisplayMode;
