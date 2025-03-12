@@ -92,7 +92,7 @@ export function ActiveSlideMessaging() {
     if (!curMqttMessages || curMqttMessages.display_status !== displayMode) {
       publishQuestionMqttMessage(
         questionMqttTopic,
-        mqttMessages[questionMqttTopic],
+        curMqttMessages,
         displayMode,
       );
     }
