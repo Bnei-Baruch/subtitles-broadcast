@@ -7,23 +7,22 @@ import { publishEvent } from "../Utils/Events";
 import { useSelector } from "react-redux";
 import { getSubtitleMqttTopic } from "../Utils/Common";
 
-
-const QuestionModule = () => {  
+const QuestionModule = () => {
   const [questionText, setQuestionText] = useState("");
   const [handleSuccess, setHandleSuccess] = useState(false);
   const textAreaRef = useRef(null);
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
-  );  
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
+  );
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
+      "morning_lesson",
   );
   const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode
+    (state) => state.mqtt.subtitlesDisplayMode,
   );
-  const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));  
+  const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
 
   useEffect(() => {
     setIsLtr(languageIsLtr(broadcastLangCode));
@@ -54,24 +53,28 @@ const QuestionModule = () => {
       slide: questionText,
       visible: true,
       isLtr: isLtr,
+      display_status: subtitlesDisplayMode,
     };
 
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      broadcastLangCode
+      broadcastLangCode,
     );
     publishEvent("mqttPublush", {
       mqttTopic,
       message: jsonMsg,
     });
 
-    if (subtitlesDisplayMode === "questions") {      
-        const subtitleMqttTopic = getSubtitleMqttTopic(
-          broadcastProgrammCode,
-          broadcastLangCode
-        );
+    if (subtitlesDisplayMode === "questions") {
+      const subtitleMqttTopic = getSubtitleMqttTopic(
+        broadcastProgrammCode,
+        broadcastLangCode,
+      );
 
-       publishEvent("mqttPublush", { mqttTopic: subtitleMqttTopic, message: jsonMsg }); 
+      publishEvent("mqttPublush", {
+        mqttTopic: subtitleMqttTopic,
+        message: jsonMsg,
+      });
     }
 
     setHandleSuccess(true);

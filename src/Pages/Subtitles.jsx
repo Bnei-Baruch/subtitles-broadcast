@@ -293,7 +293,7 @@ const Subtitles = () => {
     btnNoneRef.current.classList.remove("btn-success");
 
     dispatch(setRoundRobinOff());
-    dispatch(setSubtitlesDisplayMode("sources"));
+    dispatch(setSubtitlesDisplayMode("subtitles"));
   }
 
   function noneBtnOnClick(evt) {
@@ -340,7 +340,7 @@ const Subtitles = () => {
                 id="btnSubtitles"
                 type="button"
                 className={`btn sources-mod${
-                  subtitlesDisplayMode === "sources"
+                  subtitlesDisplayMode === "subtitles"
                     ? " btn-success display-mod-selected"
                     : ""
                 }`}
