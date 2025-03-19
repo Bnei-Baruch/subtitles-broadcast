@@ -13,17 +13,18 @@ const QuestionMessage = (props) => {
   const dispatch = useDispatch();
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
+      "morning_lesson",
   );
 
   const questionMessagesList = useSelector(
-    (state) => state.mqtt.questionMessagesList
+    (state) => state.mqtt.questionMessagesList,
   );
+  const allQuestions = Object.values(questionMessagesList).flat();
 
   const parseUtcStrToLocal = (utcDateStr) => {
     let retVal = utcDateStr;
@@ -62,7 +63,7 @@ const QuestionMessage = (props) => {
 
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      questionMsg.lang ? questionMsg.lang : broadcastLangCode
+      questionMsg.lang ? questionMsg.lang : broadcastLangCode,
     );
 
     dispatch(setUserInitiatedChange(true));
@@ -73,7 +74,47 @@ const QuestionMessage = (props) => {
     });
   };
 
-  const allQuestions = Object.values(questionMessagesList).flat();
+  const clearQuestionHandler = (questionMsg) => {
+    const updatedMessage = {
+      ...questionMsg,
+      previous_question: questionMsg.slide,
+      slide: "",
+    };
+
+    const mqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      questionMsg.lang || broadcastLangCode,
+    );
+
+    dispatch(setUserInitiatedChange(true));
+    dispatch(setSelectedQuestionMessage(updatedMessage));
+    publishEvent("mqttPublish", {
+      mqttTopic: mqttTopic,
+      message: updatedMessage,
+    });
+  };
+
+  const restoreQuestionHandler = (questionMsg) => {
+    if (!questionMsg.previous_question) return;
+
+    const updatedMessage = {
+      ...questionMsg,
+      slide: questionMsg.previous_question,
+      previous_question: questionMsg.slide,
+    };
+
+    const mqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      questionMsg.lang || broadcastLangCode,
+    );
+
+    dispatch(setUserInitiatedChange(true));
+    dispatch(setSelectedQuestionMessage(updatedMessage));
+    publishEvent("mqttPublish", {
+      mqttTopic: mqttTopic,
+      message: updatedMessage,
+    });
+  };
 
   if (props.mode === "subtitle") {
     return (
@@ -81,20 +122,34 @@ const QuestionMessage = (props) => {
         {allQuestions.length > 0 ? (
           allQuestions.map((obj) => (
             <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
-              <div className="d-flex h-auto p-2">
-                {(broadcastLangCode === "he" || obj.lang === broadcastLangCode) && (
-                  <div>
+              <div className="d-flex align-items-center p-2">
+                {(broadcastLangCode === "he" ||
+                  obj.lang === broadcastLangCode) && (
+                  <div className="me-2">
                     <i
                       className={
                         obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
                       }
                       onClick={() => sendQuestionButtonClickHandler(obj)}
                     />
+                    <i
+                      className="bi bi-trash3-fill"
+                      onClick={() => clearQuestionHandler(obj)}
+                      title="Clear Question"
+                    />
+                    <i
+                      className={`bi bi-arrow-counterclockwise ${!obj.previous_question ? "text-muted" : ""}`}
+                      onClick={() => restoreQuestionHandler(obj)}
+                      title="Restore Question"
+                      style={{
+                        cursor: obj.previous_question ? "pointer" : "default",
+                      }}
+                    />
                     <span>
                       {getLanguageName(obj.lang ? obj.lang : obj.language)}
                     </span>
                   </div>
-                  )}
+                )}
               </div>
               <Slide
                 content={obj.orgSlide ? obj.orgSlide : obj.slide}
