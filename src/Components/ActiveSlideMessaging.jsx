@@ -307,6 +307,7 @@ export function ActiveSlideMessaging() {
             nextQuestion &&
             nextQuestion.slide !== activeBroadcastMessage?.slide
           ) {
+            nextQuestion = { ...nextQuestion };
             dispatch(setRoundRobinOn());
             dispatch(setRounRobinIndex(nextIndex));
             publishMqttMessage(
