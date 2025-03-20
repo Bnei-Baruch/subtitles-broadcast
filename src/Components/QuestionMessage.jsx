@@ -11,7 +11,6 @@ import {
 
 const QuestionMessage = (props) => {
   const dispatch = useDispatch();
-
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
@@ -20,7 +19,6 @@ const QuestionMessage = (props) => {
       state.userSettings.userSettings.broadcast_programm_code ||
       "morning_lesson",
   );
-
   const questionMessagesList = useSelector(
     (state) => state.mqtt.questionMessagesList,
   );
@@ -41,6 +39,7 @@ const QuestionMessage = (props) => {
     const langName = broadcastLangMapObj[langCode].label;
     return langName;
   };
+
   const languageIsLtr = (langCode) => {
     let isLeftToRight = true;
 
@@ -55,65 +54,64 @@ const QuestionMessage = (props) => {
     return isLeftToRight;
   };
 
-  const sendQuestionButtonClickHandler = (questionMsg) => {
+  const isClearDisabled = (questionMsg) => {
+    return (
+      !questionMsg.slide || questionMsg.slide === questionMsg.previous_slide
+    );
+  };
+
+  const isRestoreDisabled = (questionMsg) => {
+    return (
+      !questionMsg.previous_slide ||
+      questionMsg.slide === questionMsg.previous_slide
+    );
+  };
+
+  const publishQuestionUpdate = (updatedMessage) => {
+    const mqttTopic = getQuestionMqttTopic(
+      broadcastProgrammCode,
+      updatedMessage.lang ? updatedMessage.lang : broadcastLangCode,
+    );
+
+    dispatch(setUserInitiatedChange(true));
+    dispatch(setSelectedQuestionMessage(updatedMessage));
+    publishEvent("mqttPublish", {
+      mqttTopic: mqttTopic,
+      message: updatedMessage,
+    });
+  };
+
+  const toggleQuestionVisibility = (questionMsg) => {
     const updatedMessage = {
       ...questionMsg,
       visible: !questionMsg.visible,
     };
 
-    const mqttTopic = getQuestionMqttTopic(
-      broadcastProgrammCode,
-      questionMsg.lang ? questionMsg.lang : broadcastLangCode,
-    );
-
-    dispatch(setUserInitiatedChange(true));
-    dispatch(setSelectedQuestionMessage(updatedMessage));
-    publishEvent("mqttPublush", {
-      mqttTopic: mqttTopic,
-      message: updatedMessage,
-    });
+    publishQuestionUpdate(updatedMessage);
   };
 
   const clearQuestionHandler = (questionMsg) => {
+    if (isClearDisabled(questionMsg)) return;
+
     const updatedMessage = {
       ...questionMsg,
-      previous_question: questionMsg.slide,
+      previous_slide: questionMsg.slide,
       slide: "",
     };
 
-    const mqttTopic = getQuestionMqttTopic(
-      broadcastProgrammCode,
-      questionMsg.lang || broadcastLangCode,
-    );
-
-    dispatch(setUserInitiatedChange(true));
-    dispatch(setSelectedQuestionMessage(updatedMessage));
-    publishEvent("mqttPublish", {
-      mqttTopic: mqttTopic,
-      message: updatedMessage,
-    });
+    publishQuestionUpdate(updatedMessage);
   };
 
   const restoreQuestionHandler = (questionMsg) => {
-    if (!questionMsg.previous_question) return;
+    if (isRestoreDisabled(questionMsg)) return;
 
     const updatedMessage = {
       ...questionMsg,
-      slide: questionMsg.previous_question,
-      previous_question: questionMsg.slide,
+      previous_slide: questionMsg.slide,
+      slide: questionMsg.previous_slide,
     };
 
-    const mqttTopic = getQuestionMqttTopic(
-      broadcastProgrammCode,
-      questionMsg.lang || broadcastLangCode,
-    );
-
-    dispatch(setUserInitiatedChange(true));
-    dispatch(setSelectedQuestionMessage(updatedMessage));
-    publishEvent("mqttPublish", {
-      mqttTopic: mqttTopic,
-      message: updatedMessage,
-    });
+    publishQuestionUpdate(updatedMessage);
   };
 
   if (props.mode === "subtitle") {
@@ -130,20 +128,18 @@ const QuestionMessage = (props) => {
                       className={
                         obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
                       }
-                      onClick={() => sendQuestionButtonClickHandler(obj)}
+                      title={obj.visible ? "Hide Question" : "Show Question"}
+                      onClick={() => toggleQuestionVisibility(obj)}
                     />
                     <i
-                      className="bi bi-trash3-fill"
+                      className={`bi bi-trash3-fill ${isClearDisabled(obj) ? "text-muted disabled" : ""}`}
                       onClick={() => clearQuestionHandler(obj)}
                       title="Clear Question"
                     />
                     <i
-                      className={`bi bi-arrow-counterclockwise ${!obj.previous_question ? "text-muted" : ""}`}
+                      className={`bi bi-arrow-counterclockwise ${isRestoreDisabled(obj) ? "text-muted disabled" : ""}`}
                       onClick={() => restoreQuestionHandler(obj)}
                       title="Restore Question"
-                      style={{
-                        cursor: obj.previous_question ? "pointer" : "default",
-                      }}
                     />
                     <span>
                       {getLanguageName(obj.lang ? obj.lang : obj.language)}

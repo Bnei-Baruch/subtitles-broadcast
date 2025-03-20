@@ -70,7 +70,7 @@ export function ActiveSlideMessaging() {
 
   const publishMqttMessage = (topic, message, displayMode) => {
     message.display_status = displayMode;
-    publishEvent("mqttPublush", { mqttTopic: topic, message: message });
+    publishEvent("mqttPublish", { mqttTopic: topic, message: message });
   };
 
   const publishDisplyNoneMqttMessage = (topic) => {
