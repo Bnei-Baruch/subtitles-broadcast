@@ -273,48 +273,45 @@ export function ActiveSlideMessaging() {
     }
 
     if (subtitlesDisplayMode === "questions" && questionMessagesList) {
-      const languages = Object.keys(questionMessagesList);
       const availableLanguages = broadcastLanguages
         .filter((lang) => questionMessagesList[lang.value])
         .sort((a, b) => a.order_num - b.order_num);
 
-      const visibleQuestions = availableLanguages.filter(
-        (lang) => questionMessagesList[lang.value]?.visible !== false,
-      );
+      const visibleQuestions = availableLanguages.filter((lang) => {
+        const q = questionMessagesList[lang.value];
+        return q && q.visible !== false && q.slide && q.slide.trim() !== "";
+      });
 
       if (visibleQuestions.length === 0) {
         dispatch(setRoundRobinOff());
         return;
       }
 
-      if (availableLanguages.length > 1) {
+      if (visibleQuestions.length > 1) {
         dispatch(setRoundRobinOn());
 
         timeoutId = setTimeout(() => {
           let nextIndex = rounRobinIndexRef.current;
+          let nextQuestion = null;
 
-          do {
-            nextIndex = (nextIndex + 1) % languages.length;
-          } while (
-            questionMessagesList[availableLanguages[nextIndex]?.value]
-              ?.visible === false
-          );
+          for (let i = 0; i < visibleQuestions.length; i++) {
+            nextIndex = (nextIndex + 1) % visibleQuestions.length;
+            const nextLang = visibleQuestions[nextIndex].value;
+            nextQuestion = questionMessagesList[nextLang];
 
-          let nextLang = availableLanguages[nextIndex].value;
-          let nextQuestion = questionMessagesList[nextLang];
-
-          if (
-            nextQuestion &&
-            nextQuestion.slide !== activeBroadcastMessage?.slide
-          ) {
-            nextQuestion = { ...nextQuestion };
-            dispatch(setRoundRobinOn());
-            dispatch(setRounRobinIndex(nextIndex));
-            publishMqttMessage(
-              subtitleMqttTopic,
-              nextQuestion,
-              subtitlesDisplayMode,
-            );
+            if (
+              nextQuestion &&
+              nextQuestion.slide !== activeBroadcastMessage?.slide
+            ) {
+              dispatch(setRoundRobinOn());
+              dispatch(setRounRobinIndex(nextIndex));
+              publishMqttMessage(
+                subtitleMqttTopic,
+                { ...nextQuestion },
+                subtitlesDisplayMode,
+              );
+              break;
+            }
           }
         }, qstSwapTime);
       }
