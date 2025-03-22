@@ -123,30 +123,48 @@ const QuestionMessage = (props) => {
               <div className="d-flex align-items-center p-2">
                 {(broadcastLangCode === "he" ||
                   obj.lang === broadcastLangCode) && (
-                  <div className="me-2">
+                  <div className="d-flex align-items-center">
+                    <span className="language-label">
+                      {getLanguageName(obj.lang ? obj.lang : obj.language)}
+                    </span>
                     <i
                       className={
-                        obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
+                        obj.visible
+                          ? "bi bi-eye-fill mx-2"
+                          : "bi bi-eye-slash-fill mx-2"
                       }
                       title={obj.visible ? "Hide Question" : "Show Question"}
                       onClick={() => toggleQuestionVisibility(obj)}
+                      style={{ cursor: "pointer" }}
                     />
                     <i
-                      className={`bi bi-trash3-fill ${isClearDisabled(obj) ? "text-muted disabled" : ""}`}
-                      onClick={() => clearQuestionHandler(obj)}
-                      title="Clear Question"
-                    />
-                    <i
-                      className={`bi bi-arrow-counterclockwise ${isRestoreDisabled(obj) ? "text-muted disabled" : ""}`}
-                      onClick={() => restoreQuestionHandler(obj)}
+                      className={`bi bi-arrow-counterclockwise mx-2 ${isRestoreDisabled(obj) ? "text-muted disabled" : ""}`}
+                      onClick={() =>
+                        !isRestoreDisabled(obj) && restoreQuestionHandler(obj)
+                      }
                       title="Restore Question"
+                      style={{
+                        cursor: isRestoreDisabled(obj)
+                          ? "not-allowed"
+                          : "pointer",
+                      }}
                     />
-                    <span>
-                      {getLanguageName(obj.lang ? obj.lang : obj.language)}
-                    </span>
+                    <i
+                      className={`bi bi-trash3-fill mx-2 ${isClearDisabled(obj) ? "text-muted disabled" : ""}`}
+                      onClick={() =>
+                        !isClearDisabled(obj) && clearQuestionHandler(obj)
+                      }
+                      title="Clear Question"
+                      style={{
+                        cursor: isClearDisabled(obj)
+                          ? "not-allowed"
+                          : "pointer",
+                      }}
+                    />
                   </div>
                 )}
               </div>
+
               <Slide
                 content={obj.orgSlide ? obj.orgSlide : obj.slide}
                 isLtr={languageIsLtr(obj.lang ? obj.lang : obj.language)}

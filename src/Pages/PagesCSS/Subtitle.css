@@ -633,3 +633,8 @@ dropdown-toggle {
 .QuestionSection .bi:hover {
   color: #0d6efd;
 }
+
+.language-label {
+  width: 100px;
+  display: inline-block;
+}
