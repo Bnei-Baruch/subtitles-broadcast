@@ -502,7 +502,9 @@ dropdown-toggle {
 }
 
 .bi-eye-fill,
-.bi-eye-slash-fill {
+.bi-eye-slash-fill,
+.bi-trash3-fill,
+.bi-arrow-counterclockwise {
   margin-right: 20px;
   cursor: pointer;
 }
@@ -616,4 +618,23 @@ dropdown-toggle {
 .edit-slide-button {
   margin-left: 8px;
   cursor: pointer;
+}
+
+.QuestionSection .bi {
+  font-size: 1rem;
+}
+
+.QuestionSection .bi.disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.QuestionSection .bi:hover {
+  color: #0d6efd;
+}
+
+.language-label {
+  width: 100px;
+  display: inline-block;
 }

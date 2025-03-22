@@ -172,13 +172,13 @@ export default function useMqtt() {
     };
 
     // Add listener only once
-    subscribeEvent("mqttPublush", mqttPublishHandler);
+    subscribeEvent("mqttPublish", mqttPublishHandler);
 
     //  Remove listener on component unmount correctly
     return () => {
       debugLog(" Removing MQTT publish listener");
       if (typeof unSubscribeEvent === "function") {
-        unSubscribeEvent("mqttPublush", mqttPublishHandler);
+        unSubscribeEvent("mqttPublish", mqttPublishHandler);
       } else {
         console.warn(
           "Unable to remove event listener: unSubscribeEvent is not defined",
@@ -196,6 +196,10 @@ export default function useMqtt() {
       }
     },
     unsubscribe: (topic) => {
+      if (!clientRef || !clientRef.current) {
+        return;
+      }
+
       clientRef.current.unsubscribe(topic);
       dispatch(updateMqttTopic({ topic: topic, isSubscribed: false }));
       debugLog("MQTT UnSubscribed to topic: ", topic);
