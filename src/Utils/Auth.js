@@ -6,6 +6,10 @@ import { StoreProfile } from "../Redux/UserProfile/UserProfileSlice";
 import PropTypes from "prop-types";
 import debugLog from "../Utils/debugLog";
 
+
+const TOKEN_REFRESH_INTERVAL_SECONDS = 10;
+const TOKEN_TTL_TIMEOUT_SECONDS = 33;
+
 const Auth = ({ children }) => {
   const [auth, setAuth] = useState({
     keycloak: null,
@@ -46,6 +50,17 @@ const Auth = ({ children }) => {
       })
       .then((authenticated) => {
         const securityRole = determineAccess(keycloak, setAccess);
+
+        if (authenticated) {
+          setInterval(() => {
+            keycloak.updateToken(TOKEN_TTL_TIMEOUT_SECONDS).then((refreshed, something) => {
+              if (refreshed) {
+                console.log('Token refreshed successfully.');
+                localStorage.setItem("token", keycloak.token);
+              }
+            });
+          }, TOKEN_REFRESH_INTERVAL_SECONDS*1000);
+        }
 
         keycloak.loadUserProfile().then(function () {
           const profile = {
