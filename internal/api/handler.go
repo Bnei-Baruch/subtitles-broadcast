@@ -476,6 +476,7 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	queryParams := struct {
 		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
+		Undelete             bool `form:"undelete"`
 	}{}
 	if err := ctx.BindQuery(&queryParams); err != nil {
 		log.Error(err)
@@ -524,7 +525,7 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	// result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
 	userId, _ := ctx.Get("user_id")
 	updates := map[string]interface{}{
-		"hidden":     true,
+		"hidden":     !queryParams.Undelete,
 		"updated_by": userId,
 		"updated_at": time.Now(),
 	}
@@ -832,6 +833,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		FileUID    string         `json:"file_uid"`
 		Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
 		Path       string         `json:"path"`
+		Hidden     bool           `json:"hidden"`
 	}
 	paths := []*SourcePathData{}
 	limitSql := fmt.Sprintf(" LIMIT %d", listLimit)
@@ -843,6 +845,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
     files.file_uid AS file_uid,
     source_paths.languages AS languages,
     source_paths.path AS path,
+    slides.hidden AS hidden,
     RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number
   `
 	orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
