@@ -6,7 +6,7 @@ import useDebounce from "../Services/useDebounce";
 import { GetAllSourcePathData } from "../Redux/SourceTab/SourceSlice";
 import { useSelector } from "react-redux";
 
-export const Search = () => {
+export const Search = ({showDeleted}) => {
   const dispatch = useDispatch();
   const param = useLocation();
 
@@ -51,6 +51,7 @@ export const Search = () => {
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
+          hidden: showDeleted ? 'true' : undefined,
         })
       ).then((response) => {
         dispatch({

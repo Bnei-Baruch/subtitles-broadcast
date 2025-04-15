@@ -52,7 +52,9 @@ const Source = () => {
   const [finalConfirm, setFinalConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
   const [deleteId, setDeleteId] = useState();
+  const [deleteIdHidden, setDeleteIdHidden] = useState(false);
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
     update: "",
@@ -112,9 +114,10 @@ const Source = () => {
         page: page.page,
         limit: page.limit,
         keyword: sessionStorage.getItem("headerSearchKeywordSource"),
+        hidden: showDeleted ? 'true' : undefined,
       })
     );
-  }, [page.page, page.limit, broadcastLangCode]);
+  }, [page.page, page.limit, broadcastLangCode, showDeleted]);
 
   useEffect(() => {
     if (finalConfirm === true) {
@@ -123,6 +126,10 @@ const Source = () => {
           search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
           source_uid: SourceUidForDeleteSlide,
           language: broadcastLangCode,
+          page: page.page,
+          limit: page.limit,
+          hidden: deleteIdHidden ? 'true' : undefined,
+          showDeleted: showDeleted ? 'true' : undefined,
         })
       );
       setFinalConfirm(false);
@@ -137,7 +144,7 @@ const Source = () => {
       );
       setToggle(false);
     }
-  }, [finalConfirm, toggle, deleteId, dispatch]);
+  }, [finalConfirm, toggle, deleteId, deleteIdHidden, dispatch]);
 
   const DelectConfirmationModal = useMemo(
     () => (
@@ -205,7 +212,7 @@ const Source = () => {
             style={{ marginLeft: "10px", marginRight: "10px" }}
           >
             {/* Content for the second flex box centered */}
-            <Search className="top-autocomplete" />
+            <Search className="top-autocomplete" showDeleted={showDeleted} />
             <ReactPaginate
               pageCount={Math.ceil(
                 sourcePathList?.pagination?.total_pages || 1
@@ -274,6 +281,10 @@ const Source = () => {
             <span
               style={{ width: "200px" }}
             >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${sourcePathList?.pagination?.total_rows} `}</span>
+          </div>
+          <div style={{ position: "absolute", right: "10px" }}
+               className="form-check" data-bs-toggle="tooltip" data-bs-placement="right" title="Show deleted">
+            <input className="form-check-input" type="checkbox" value={showDeleted} onChange={(e) => { setShowDeleted(!showDeleted); }} />
           </div>
         </div>
         <div className="card" style={{ border: "none" }}>
@@ -385,15 +396,19 @@ const Source = () => {
                           className="bi bi-pencil m-2 cursor-pointer "
                           onClick={() => handleEditSlide(key)}
                         />
-                        <i
-                          onClick={() => {
-                            setUnbookmarkAction(false);
-                            setDeleteConfirmationPopup(true);
-                            setDeleteId(key.ID);
-                            setSourceUidForDeleteSlide(key.source_uid);
-                          }}
-                          className="bi bi-trash3 m-2 cursor-pointer "
-                        />
+                        <span className="position-relative cursor-pointer"
+                              data-bs-toggle="tooltip" data-bs-placement="right" title={key.hidden ? "Undelete" : "Delete"}
+                            onClick={() => {
+                              setUnbookmarkAction(false);
+                              setDeleteConfirmationPopup(true);
+                              setDeleteId(key.ID);
+                              setDeleteIdHidden(key.hidden);
+                              setSourceUidForDeleteSlide(key.source_uid);
+                            }}
+                        >
+                          <i className="bi bi-trash3"></i>
+                          {key.hidden && <i className="bi bi-x-circle-fill text-danger position-absolute top-0 start-100 translate-middle fs-6"></i>}
+                        </span>
                       </td>
                     </tr>
                   ))}

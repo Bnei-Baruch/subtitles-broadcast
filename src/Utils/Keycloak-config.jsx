@@ -6,8 +6,8 @@ const keycloakConfigProd = {
 
 const keycloakConfigDev = {
   realm: "master",
-  url: "https://auth.2serv.eu/auth/",
-  clientId: "membership_pay_dev",
+  url: "https://auth.bbdev1.kbb1.com",
+  clientId: "kolman-dev",
 };
 
 // there is a problem with PM2 env variable.
