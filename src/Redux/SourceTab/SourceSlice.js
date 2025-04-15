@@ -30,8 +30,9 @@ export const GetAllSourcePathData = createAsyncThunk(
 export const DeleteSource = createAsyncThunk(
   `DeleteSource`,
   async (data, thunkAPI) => {
+    const undelete = data.hidden ? "&undelete=true" : "";
     const response = await axios.delete(
-      `${API}${API_URL.Delete + "/" + data.source_uid + "?force_delete_bookmarks=true"}`,
+      `${API}${API_URL.Delete + "/" + data.source_uid + "?force_delete_bookmarks=true" + undelete}`,
       {}
     );
 
@@ -39,6 +40,9 @@ export const DeleteSource = createAsyncThunk(
       GetAllSourcePathData({
         language: data.language,
         keyword: data.search_keyword,
+        page: data.page,
+        limit: data.limit,
+        hidden: data.showDeleted ? data.showDeleted : undefined,
       })
     );
 
