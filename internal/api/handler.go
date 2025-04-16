@@ -477,6 +477,7 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	queryParams := struct {
 		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
 		Undelete             bool `form:"undelete"`
+		Forever              bool `form:"forever"`
 	}{}
 	if err := ctx.BindQuery(&queryParams); err != nil {
 		log.Error(err)
@@ -521,17 +522,19 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 		return
 	}
 
-	// We don't delete, we hide the slides.
-	// result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
 	userId, _ := ctx.Get("user_id")
 	updates := map[string]interface{}{
 		"hidden":     !queryParams.Undelete,
 		"updated_by": userId,
 		"updated_at": time.Now(),
 	}
-	result = tx.Model(&Slide{}).
-		Where("file_uid in ?", fileUids).
-		Updates(updates)
+	if queryParams.Forever {
+		result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+	} else {
+		result = tx.Model(&Slide{}).
+			Where("file_uid in ?", fileUids).
+			Updates(updates)
+	}
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -543,11 +546,14 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, fmt.Sprintf("No file slides in source %s", sourceUid), fmt.Sprintf("No file slides in source %s", sourceUid)))
 		return
 	}
-	// We don't delete, we hide the file.
-	// result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
-	result = tx.Model(&File{}).
-		Where("source_uid = ?", sourceUid).
-		Updates(updates)
+
+	if queryParams.Forever {
+		result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
+	} else {
+		result = tx.Model(&File{}).
+			Where("source_uid = ?", sourceUid).
+			Updates(updates)
+	}
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -559,19 +565,22 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, fmt.Sprintf("No file with %s", sourceUid), fmt.Sprintf("No file with %s", sourceUid)))
 		return
 	}
-	// When hiding slides and files, we don't need to delete or hide source paths.
-	// result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
-	// if result.Error != nil {
-	// 	log.Error(result.Error)
-	// 	ctx.JSON(http.StatusInternalServerError,
-	// 		getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
-	// 	return
-	// }
-	// if result.RowsAffected == 0 {
-	// 	ctx.JSON(http.StatusBadRequest,
-	// 		getResponse(false, nil, fmt.Sprintf("No source path with souruce uid %s", sourceUid), fmt.Sprintf("No source path with source uid %s", sourceUid)))
-	// 	return
-	// }
+
+	if queryParams.Forever {
+		result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
+		if result.Error != nil {
+			log.Error(result.Error)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, result.Error.Error(), "Deleting file slide data has failed"))
+			return
+		}
+		if result.RowsAffected == 0 {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, fmt.Sprintf("No source path with souruce uid %s", sourceUid), fmt.Sprintf("No source path with source uid %s", sourceUid)))
+			return
+		}
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
