@@ -51,7 +51,6 @@ export const Search = ({showDeleted}) => {
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
-          hidden: showDeleted ? 'true' : undefined,
         })
       ).then((response) => {
         dispatch({
@@ -74,6 +73,7 @@ export const Search = ({showDeleted}) => {
           limit: localPagination.limit,
           page: localPagination.page,
           keyword: freeText,
+          hidden: showDeleted ? 'true' : undefined,
         })
       );
       //sessionStorage.setItem("headerSearchKeywordSource", "");
@@ -127,6 +127,7 @@ export const Search = ({showDeleted}) => {
                     limit: localPagination.limit,
                     page: localPagination.page,
                     keyword: freeText,
+                    hidden: showDeleted ? 'true' : undefined,
                   })
                 );
               //sessionStorage.setItem("headerSearchKeywordSource", "");

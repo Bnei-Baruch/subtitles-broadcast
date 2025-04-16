@@ -53,6 +53,7 @@ const Source = () => {
   const [confirmation, setConfirmation] = useState(false);
   const [deleteId, setDeleteId] = useState();
   const [deleteIdHidden, setDeleteIdHidden] = useState(false);
+  const [deleteIdForever, setDeleteIdForever] = useState(false);
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [bookmarkData, setBookmarkData] = useState({
@@ -129,10 +130,13 @@ const Source = () => {
           page: page.page,
           limit: page.limit,
           hidden: deleteIdHidden ? 'true' : undefined,
+          forever: deleteIdForever ? 'true' : undefined,
           showDeleted: showDeleted ? 'true' : undefined,
         })
       );
       setFinalConfirm(false);
+      setDeleteIdHidden(false);
+      setDeleteIdForever(false);
     }
     if (toggle) {
       dispatch(
@@ -144,17 +148,26 @@ const Source = () => {
       );
       setToggle(false);
     }
-  }, [finalConfirm, toggle, deleteId, deleteIdHidden, dispatch]);
+  }, [finalConfirm, toggle, deleteId, deleteIdHidden, dispatch, deleteIdForever]);
 
   const DelectConfirmationModal = useMemo(
     () => (
       <DeleteConfirmation
-        confirm={() => setFinalConfirm(true)}
+        undelete={deleteIdHidden}
+        forever={deleteIdForever}
+        confirm={() => {
+          setFinalConfirm(true);
+          setDeleteConfirmationPopup(false);
+        }}
         show={deleteConfirmationPopup}
-        handleClose={() => setDeleteConfirmationPopup(false)}
+        handleClose={() => {
+          setDeleteConfirmationPopup(false);
+          setDeleteIdHidden(false);
+          setDeleteIdForever(false);
+        }}
       />
     ),
-    [deleteConfirmationPopup]
+    [deleteConfirmationPopup, deleteIdHidden, deleteIdForever]
   );
 
   const ConfirmationMessage = useMemo(() => {
@@ -409,6 +422,16 @@ const Source = () => {
                           <i className="bi bi-trash3"></i>
                           {key.hidden && <i className="bi bi-x-circle-fill text-danger position-absolute top-0 start-100 translate-middle fs-6"></i>}
                         </span>
+                        {key.hidden && <i className="bi bi-trash3-fill text-danger" style={{ marginLeft: "30px" }}
+                            data-bs-toggle="tooltip" data-bs-placement="right" title="Delete forever"
+                            onClick={() => {
+                              setUnbookmarkAction(false);
+                              setDeleteConfirmationPopup(true);
+                              setDeleteId(key.ID);
+                              setDeleteIdForever(key.hidden);
+                              setSourceUidForDeleteSlide(key.source_uid);
+                            }}
+                          ></i>}
                       </td>
                     </tr>
                   ))}
