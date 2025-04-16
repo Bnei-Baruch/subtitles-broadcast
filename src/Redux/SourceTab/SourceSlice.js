@@ -31,8 +31,9 @@ export const DeleteSource = createAsyncThunk(
   `DeleteSource`,
   async (data, thunkAPI) => {
     const undelete = data.hidden ? "&undelete=true" : "";
+    const forever = data.forever ? "&forever=true" : "";
     const response = await axios.delete(
-      `${API}${API_URL.Delete + "/" + data.source_uid + "?force_delete_bookmarks=true" + undelete}`,
+      `${API}${API_URL.Delete + "/" + data.source_uid + "?force_delete_bookmarks=true" + undelete + forever}`,
       {}
     );
 
@@ -46,7 +47,7 @@ export const DeleteSource = createAsyncThunk(
       })
     );
 
-    return response.data;
+    return {undelete: data.hidden, forever: data.forever};
   }
 );
 
@@ -156,11 +157,17 @@ const SourceSlice = createSlice({
       return { ...state, sourcePathList: action?.payload };
     });
     builder.addCase(DeleteSource.rejected, (state, action) => {
-      showErrorToast("Error fetching archive data: " + action.error.message);
+      showErrorToast("Error deleting or fetching: " + action.error.message);
       return state;
     });
     builder.addCase(DeleteSource.fulfilled, (state, action) => {
-      showSuccessToast("Successfully deleted");
+      let msg = "deleted";
+      if (action.payload.undelete) {
+        msg = "undeleted";
+      } else if (action.payload.forever) {
+        msg = "deleted forever"
+      }
+      showSuccessToast("Successfully " + msg);
       return state;
     });
     builder.addCase(UserBookmarkList.pending, (state) => {
