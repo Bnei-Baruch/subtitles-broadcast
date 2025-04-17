@@ -61,7 +61,11 @@ export const sourceToMarkdown = (simpleHtml) => {
   turndownService.addRule('paragraph', {
     filter: 'p',
     replacement: function (content) {
-      return content.trim() + "\n\n";
+      const trim = content.trim();
+      if (trim.match(/^\(([^()]+)\)$/)) {
+        return `---\n*${trim}*\n\n`;
+      }
+      return trim + "\n\n";
     }
   });
 

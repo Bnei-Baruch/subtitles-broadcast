@@ -10,6 +10,7 @@ import {
   Tokenize,
   createMarkdownit,
   IsTextTokenEnumeration,
+  sourceToMarkdown,
 } from "./SlideSplit";
 
 test('Markdown only two endlines to <p>', () => {
@@ -87,4 +88,29 @@ test('Enumaration', () => {
   expect(IsTextTokenEnumeration({text: '1\\.', type: TOKEN_TEXT})).toBe(true);
   expect(IsTextTokenEnumeration({text: '1\\\.', type: TOKEN_TEXT})).toBe(true);
   expect(IsTextTokenEnumeration({text: '1\\\\.', type: TOKEN_TEXT})).toBe(false);
+});
+
+test('sourceToMarkdown', () => {
+  expect(sourceToMarkdown('<h1>Header</h1>')).toBe('### Header');
+  expect(sourceToMarkdown('<p>Content</p>')).toBe('Content');
+  let lines = [
+    '<h1>Header</h1>',
+    '<p>Content</p>',
+  ];
+  let expected = [
+    '### Header',
+    'Content'
+  ];
+  expect(sourceToMarkdown(lines.join('\n'))).toBe(expected.join('\n'));
+  lines = [
+    '<p>content</p>',
+    '<p>(source)</p>',
+  ];
+  expected = [
+    'content',
+    '',
+    '---',
+    '*(source)*',
+  ]
+  expect(sourceToMarkdown(lines.join('\n'))).toBe(expected.join('\n'));
 });
