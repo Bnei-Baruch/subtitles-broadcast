@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -17,6 +17,106 @@ import Button from "@mui/material/Button";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { updateSettingsInternal } from "../Redux/UserSettings/UserSettingsSlice";
 
+const findRow = (textArea) => {
+  while (!!textArea && !textArea.className.includes("row")) {
+    textArea = textArea.parentElement;
+  }
+  return textArea;
+};
+
+const handleDeleteSlide = (
+  key,
+  index,
+  slideListData,
+  setSlideListData,
+  deleted,
+  setDeleted,
+  setForceDeleteConfirm
+) => {
+  if (key.bookmark_id !== null && key?.ID) {
+    setForceDeleteConfirm(index);
+  } else {
+    const cloneSlidedataArray = [...slideListData];
+    cloneSlidedataArray.splice(index, 1);
+    const updatedSlides = cloneSlidedataArray.map((slide, idx) => ({
+      ...slide,
+      order_number: idx,
+    }));
+    setSlideListData(updatedSlides);
+    if (key?.ID) {
+      setDeleted([...deleted, key?.ID]);
+    }
+  }
+};
+
+const performSplit = async (slideListData, setSlideListData, updatedSlideTextList, deleted, setDeleted) => {
+  // Create a mutable copy of the array and its objects
+  const newSlideListData = [...slideListData];
+  const offsetSlide = Math.max(
+    0,
+    Math.min(
+      parseInt(localStorage.getItem("myIndex"), 10),
+      newSlideListData.length - 1
+    )
+  );
+  let i = 0;
+
+  // Keep existing slides that did not change intact.
+  for (; i < updatedSlideTextList.length; i++) {
+    if (
+      newSlideListData[i + offsetSlide].slide !== updatedSlideTextList[i]
+    ) {
+      break;
+    }
+  }
+
+  // Update existing slides with new content, from i to the last.
+  for (
+    let j = i;
+    j + offsetSlide < newSlideListData.length &&
+    j < updatedSlideTextList.length;
+    j++
+  ) {
+    newSlideListData[j + offsetSlide] = {
+      ...newSlideListData[j + offsetSlide],
+      slide: updatedSlideTextList[j],
+    };
+  }
+
+  // Add new slided at the end.
+  for (
+    let j = newSlideListData.length - offsetSlide;
+    j < updatedSlideTextList.length;
+    j++
+  ) {
+    const slideData = {
+      file_uid: newSlideListData[0].file_uid,
+      slide: updatedSlideTextList[j],
+      order_number: newSlideListData.length,
+      left_to_right: newSlideListData[0].left_to_right,
+    };
+    newSlideListData.push(slideData);
+  }
+  if (newSlideListData.length - offsetSlide > updatedSlideTextList.length) {
+    // Delete
+    let deleteSlideIds = [];
+    for (
+      let j = offsetSlide + updatedSlideTextList.length;
+      j < newSlideListData.length;
+      j++
+    ) {
+      deleteSlideIds.push(newSlideListData[j].ID);
+    }
+    setDeleted([...deleted, ...deleteSlideIds]);
+    newSlideListData.splice(
+      offsetSlide + updatedSlideTextList.length,
+      newSlideListData.length - offsetSlide - updatedSlideTextList.length
+    );
+  }
+  setSlideListData(newSlideListData);
+};
+
+
 const EditArchive = ({ handleClose }) => {
   const [loading, setLoading] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
@@ -28,6 +128,7 @@ const EditArchive = ({ handleClose }) => {
   const [isLtr, setIsLtr] = useState(true);
   const [slideListData, setSlideListData] = useState([]);
   const [selected, setSelected] = useState(0);
+  const [selectedStart, setSelectedStart] = useState(-1);
   const [confirmation, setConfirmation] = useState(false);
   const [forceDeleteConfirm, setForceDeleteConfirm] = useState(null);
   const [force_delete_bookmarks, setForce_delete_bookmarks] = useState(false);
@@ -60,7 +161,12 @@ const EditArchive = ({ handleClose }) => {
   const bookmar_id_for_edit = userSettings?.bookmar_id_for_edit || null;
   const slide_id_for_edit = userSettings?.slide_id_for_edit || null;
 
-  const fetchArchiveSlides = async () => {
+  const fetchArchiveSlides = useCallback(async () => {
+    if (!file_uid_for_edit_slide) {
+      // Don't fetch any slides if file uid not selected.
+      return;
+    }
+
     // Retrieve the slides data from the server
     setLoading(true);
 
@@ -92,12 +198,31 @@ const EditArchive = ({ handleClose }) => {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, [dispatch, file_uid_for_edit_slide, broadcastLangCode]);
 
   // Load data when the component mounts
   useEffect(() => {
     fetchArchiveSlides();
-  }, []);
+  }, [fetchArchiveSlides]);
+
+  // Focus and set cursor for textarea.
+  useEffect(() => {
+    if (selectedStart >= 0) {
+      const textAreas = document.querySelectorAll('textarea');
+      if (textAreas && textAreas.length > selected) {
+        const textArea = textAreas[selected];
+        textArea.focus();
+        textArea.selectionStart = selectedStart;
+        textArea.selectionEnd = selectedStart;
+        if (textArea.selectionStart === 0) {
+          textArea.scrollTop = 0;
+        } else if (textArea.value.length === textArea.selectionStart) {
+          textArea.scrollTop = textArea.scrollHeight;
+        }
+      }
+      setSelectedStart(-1);
+    }
+  }, [selected, selectedStart]);
 
   // Monitor changes to slideListData and compare with initialSlideData
   useEffect(() => {
@@ -136,75 +261,13 @@ const EditArchive = ({ handleClose }) => {
   };
 
   useEffect(() => {
-    const performUpdates = async () => {
-      // Create a mutable copy of the array and its objects
-      const newSlideListData = [...slideListData];
-      const offsetSlide = Math.max(
-        0,
-        Math.min(
-          parseInt(localStorage.getItem("myIndex"), 10),
-          newSlideListData.length - 1
-        )
-      );
-      let i = 0;
-
-      // Keep existing slides that did not change intact.
-      for (; i < updatedSlideTextList.length; i++) {
-        if (
-          newSlideListData[i + offsetSlide].slide !== updatedSlideTextList[i]
-        ) {
-          break;
-        }
-      }
-
-      // Update existing slides with new content, from i to the last.
-      for (
-        let j = i;
-        j + offsetSlide < newSlideListData.length &&
-        j < updatedSlideTextList.length;
-        j++
-      ) {
-        newSlideListData[j + offsetSlide] = {
-          ...newSlideListData[j + offsetSlide],
-          slide: updatedSlideTextList[j],
-        };
-      }
-
-      // Add new slided at the end.
-      for (
-        let j = newSlideListData.length - offsetSlide;
-        j < updatedSlideTextList.length;
-        j++
-      ) {
-        const slideData = {
-          file_uid: newSlideListData[0].file_uid,
-          slide: updatedSlideTextList[j],
-          order_number: newSlideListData.length,
-          left_to_right: newSlideListData[0].left_to_right,
-        };
-        newSlideListData.push(slideData);
-      }
-      if (newSlideListData.length - offsetSlide > updatedSlideTextList.length) {
-        // Delete
-        let deleteSlideIds = [];
-        for (
-          let j = offsetSlide + updatedSlideTextList.length;
-          j < newSlideListData.length;
-          j++
-        ) {
-          deleteSlideIds.push(newSlideListData[j].ID);
-        }
-        setDeleted([...deleted, ...deleteSlideIds]);
-        newSlideListData.splice(
-          offsetSlide + updatedSlideTextList.length,
-          newSlideListData.length - offsetSlide - updatedSlideTextList.length
-        );
-      }
-      setSlideListData(newSlideListData);
-    };
-
-    performUpdates();
-  }, [updatedSlideTextList]);
+    // Performs split only when re-run clicked.
+    if (split && !!updatedSlideTextList.length) {
+      performSplit(slideListData, setSlideListData, updatedSlideTextList, deleted, setDeleted);
+      setSplit(false);
+      setUpdatedSlideTextList([]);
+    }
+  }, [split, slideListData, setSlideListData, updatedSlideTextList, setUpdatedSlideTextList, deleted, setDeleted]);
 
   useEffect(() => {
     if (!hasSelected.current && slideID && slideListData.length > 0) {
@@ -220,7 +283,37 @@ const EditArchive = ({ handleClose }) => {
     }
   }, [slideListData, slideID, setSelected]);
 
-  const handleSave = async (evt) => {
+  const isSourceParthChanged = useCallback(() => {
+    let isChanged = false;
+
+    if (!isNaN(sourcePathId) && sourcePathId > 0) {
+      if (
+        sourcePath &&
+        sourcePath.trim() !== slideListData[0]?.source_path?.trim()
+      ) {
+        isChanged = true;
+      }
+    }
+
+    return isChanged;
+  }, [slideListData, sourcePath, sourcePathId]);
+
+  const handleUpdateSourcePath = useCallback((flow) => {
+    if (isSourceParthChanged()) {
+      dispatch(
+        updateSourcePath({
+          sourcePathId: sourcePathId,
+          sourcePath: sourcePath,
+        })
+      ).then((response) => {
+        if (flow !== "save" && response.payload && response.payload.success) {
+          fetchArchiveSlides();
+        }
+      });
+    }
+  }, [dispatch, fetchArchiveSlides, isSourceParthChanged, sourcePath, sourcePathId]);
+
+  const handleSave = useCallback(async () => {
     if (!isSlideDataChanged) {
       return;
     }
@@ -290,8 +383,19 @@ const EditArchive = ({ handleClose }) => {
     setIsLtr(isLtr);
     setDeleted([]);
     setIsSlideDataChanged(false);
-    fetchArchiveSlides();
+    setInitialSlideData(slideListData);
+  }, [broadcastLangCode, deleted, dispatch, force_delete_bookmarks, handleUpdateSourcePath, isLtr, isSlideDataChanged, slideListData]);
+
+  const handleBack = () => {
+    const previousLocation = location.state?.previousLocation || "/archive";
+    navigate(previousLocation);
   };
+
+  const fallbackHandleClose = () => {
+    handleBack();
+  };
+
+  const effectiveHandleClose = handleClose || fallbackHandleClose;
 
   const ConfirmationMessage = useMemo(
     () => (
@@ -308,7 +412,7 @@ const EditArchive = ({ handleClose }) => {
         }}
       />
     ),
-    [confirmation]
+    [confirmation, effectiveHandleClose, handleSave]
   );
 
   const ForceDeleteBookmark = useMemo(
@@ -330,7 +434,7 @@ const EditArchive = ({ handleClose }) => {
         }}
       />
     ),
-    [forceDeleteConfirm]
+    [deleted, slideListData, forceDeleteConfirm]
   );
 
   const rerun = () => {
@@ -356,72 +460,6 @@ const EditArchive = ({ handleClose }) => {
     }
   };
 
-  function isSourceParthChanged() {
-    let isChanged = false;
-
-    if (!isNaN(sourcePathId) && sourcePathId > 0) {
-      if (
-        sourcePath &&
-        sourcePath.trim() !== slideListData[0]?.source_path?.trim()
-      ) {
-        isChanged = true;
-      }
-    }
-
-    return isChanged;
-  }
-
-  const handleUpdateSourcePath = (flow) => {
-    if (isSourceParthChanged()) {
-      dispatch(
-        updateSourcePath({
-          sourcePathId: sourcePathId,
-          sourcePath: sourcePath,
-        })
-      ).then((response) => {
-        if (flow !== "save" && response.payload && response.payload.success) {
-          fetchArchiveSlides();
-        }
-      });
-    }
-  };
-
-  const handleDeleteSlide = (
-    key,
-    index,
-    slideListData,
-    setSlideListData,
-    deleted,
-    setDeleted,
-    setForceDeleteConfirm
-  ) => {
-    if (key.bookmark_id !== null && key?.ID) {
-      setForceDeleteConfirm(index);
-    } else {
-      const cloneSlidedataArray = [...slideListData];
-      cloneSlidedataArray.splice(index, 1);
-      const updatedSlides = cloneSlidedataArray.map((slide, idx) => ({
-        ...slide,
-        order_number: idx,
-      }));
-      setSlideListData(updatedSlides);
-      if (key?.ID) {
-        setDeleted([...deleted, key?.ID]);
-      }
-    }
-  };
-
-  const handleBack = () => {
-    const previousLocation = location.state?.previousLocation || "/archive";
-    navigate(previousLocation);
-  };
-
-  const fallbackHandleClose = () => {
-    handleBack();
-  };
-
-  const effectiveHandleClose = handleClose || fallbackHandleClose;
-
   const handleBackBtn = (evt) => {
     if (isSlideDataChanged) {
       setConfirmation(true);
@@ -430,22 +468,56 @@ const EditArchive = ({ handleClose }) => {
     }
   };
 
-  const handleAddNewSlide = (evt, key, index) => {
+  // Will replace the first updatedSlide at index and will add/update more
+  // slides depending on updateSlide or addedNew field.
+  const spliceSlideList = (index, updatedSlides) => {
+    if (updatedSlides.length === 0) {
+      return;
+    }
+    const languages = updatedSlides[0].languages;
     const cloneSlidedataArray = [...slideListData];
-
-    cloneSlidedataArray.splice(index + 1, 0, {
-      file_uid: key?.file_uid,
-      slide: "",
-      addedNew: true,
-      slide_type: "subtitle",
+    let deleteItems = 1;
+    let consecutiveUpdates = true;
+    const cloneUpdatedSlides = updatedSlides.map((slide, i) => {
+      if (i === 0) {
+        return {
+          ...slide,
+          updateSlide: true,
+        };
+      } else {
+        if (consecutiveUpdates && slide.updateSlide) {
+          deleteItems++;
+          return {
+            ...slide,
+            updateSlide: true,
+          };
+        } else {
+          consecutiveUpdates = false;
+          return {
+            ...slide,
+            addedNew: true,
+          };
+        }
+      }
     });
+
+    cloneSlidedataArray.splice(index, deleteItems, ...cloneUpdatedSlides);
+    // cloneSlidedataArray.splice(index, 1, {
+    //   ...slide,
+    //   updateSlide: true,
+    // }, {
+    //   file_uid: slide?.file_uid,
+    //   slide: newSlide,
+    //   addedNew: true,
+    //   slide_type: "subtitle",
+    //   left_to_right: slide.left_to_right,
+    // });
     const updatedSlideListData = cloneSlidedataArray.map((slide, i) => {
-      const updatedOrderNumber = Math.floor(i / key.languages.length);
+      const updatedOrderNumber = Math.floor(i / languages.length);
       return {
         ...slide, // Spread the original slide object to create a new one
         order_number: updatedOrderNumber, // Update the order_number property
-        languages: key.languages,
-        left_to_right: key.left_to_right,
+        languages,
       };
     });
     setSlideListData(updatedSlideListData);
@@ -694,55 +766,112 @@ const EditArchive = ({ handleClose }) => {
                       value={key?.slide || ""} // Provide a fallback value
                       onKeyDown={(e) => {
                         const textArea = e.target;
-                        let textAreaParent = textArea.parentElement;
+                        let textAreaParent = findRow(textArea);
                         if (
+                          e.key === "ArrowUp" &&
+                          textArea.selectionStart === textArea.selectionEnd &&
+                          textArea.selectionStart === 0 &&
+                          !!textAreaParent.previousElementSibling
+                        ) {
+                          const prevTextArea =
+                            textAreaParent.previousElementSibling.querySelector(
+                              "textarea"
+                            );
+                          if (prevTextArea) {
+                            setSelected(index - 1);
+                            setSelectedStart(prevTextArea.value.length);
+                            e.preventDefault();
+                          }
+                        } else if (
+                          e.key === "ArrowDown" &&
+                          textArea.selectionStart === textArea.selectionEnd &&
+                          textArea.selectionStart === textArea.value.length &&
+                          !!textAreaParent.nextElementSibling 
+                        ) {
+                          const nextTextArea = (textAreaParent.nextElementSibling &&
+                            textAreaParent.nextElementSibling.querySelector(
+                              "textarea"
+                            )) || null;
+                          if (nextTextArea) {
+                            setSelected(index + 1);
+                            setSelectedStart(0);
+                            e.preventDefault();
+                          }
+                        } else if (
+                          e.key === "Enter" && e.ctrlKey &&
+                          textArea.selectionStart === textArea.selectionEnd
+                        ) {
+                          // Ctrl+Enter - Move the rest of the text to next text-area.
+                          const nextTextArea = (textAreaParent.nextElementSibling &&
+                            textAreaParent.nextElementSibling.querySelector(
+                              "textarea"
+                            )) || null;
+                          let updatedSlideText = key.slide.slice(0, textArea.selectionStart);
+                          if (updatedSlideText.endsWith('\n') || updatedSlideText.endsWith('\r')) {
+                            updatedSlideText = updatedSlideText.slice(0, -1);
+                          }
+                          const nextSlideText = key.slide.slice(textArea.selectionStart);
+                          const updatedSlides = [{
+                            ...key,
+                            slide: updatedSlideText,
+                            updateSlide: true,
+                          }];
+                          if (!nextTextArea) {
+                            updatedSlides.push({
+                              file_uid: key.file_uid,
+                              slide: nextSlideText,
+                              addedNew: true,
+                              slide_type: key.slide_type,
+                              left_to_right: key.left_to_right,
+                            });
+                          } else {
+                            const newLine = slideListData[index+1].slide && nextSlideText ? '\n' : '';
+                            updatedSlides.push({
+                              ...slideListData[index+1],
+                              slide: nextSlideText + newLine + slideListData[index+1].slide,
+                              updateSlide: true,
+                            });
+                          }
+                          spliceSlideList(index, updatedSlides);
+                          setSelected(index + 1);
+                          setSelectedStart(0);
+                          e.preventDefault();
+                        } else if (
                           e.keyCode === 8 &&
                           textArea.selectionStart === 0 &&
                           textArea.selectionEnd === 0 &&
-                          index > 0
+                          index > 0 &&
+                          !!textAreaParent && !!textAreaParent.previousElementSibling
                         ) {
-                          // Move first line to previous text-area
-                          while (
-                            !!textAreaParent &&
-                            !textAreaParent.className.includes("row")
-                          ) {
-                            textAreaParent = textAreaParent.parentElement;
-                          }
-                          if (
-                            textAreaParent &&
-                            textAreaParent.previousElementSibling
-                          ) {
-                            const prevTextArea =
-                              textAreaParent.previousElementSibling.querySelector(
-                                "textarea"
-                              );
-                            if (prevTextArea) {
-                              const cloneSlideDataArray = [...slideListData];
-                              const prevKey = slideListData[index - 1];
-                              let lines = key.slide.split(/[\r\n]/);
-                              let offset = 0;
-                              if (lines.length > 0) {
-                                offset = lines[0].length;
-                                cloneSlideDataArray[index - 1] = {
-                                  ...prevKey,
-                                  slide:
-                                    cloneSlideDataArray[index - 1].slide +
-                                    "\n" +
-                                    lines[0] +
-                                    " ",
-                                };
-                                cloneSlideDataArray[index] = {
-                                  ...key,
-                                  slide: key.slide.slice(offset + 1),
-                                };
+                          // Backspace - Move first line to previous text-area.
+                          const prevTextArea =
+                            textAreaParent.previousElementSibling.querySelector(
+                              "textarea"
+                            );
+                          if (prevTextArea) {
+                            const cloneSlideDataArray = [...slideListData];
+                            const prevKey = slideListData[index - 1];
+                            let lines = key.slide.split(/[\r\n]/);
+                            let offset = 0;
+                            if (lines.length > 0) {
+                              offset = lines[0].length;
+                              cloneSlideDataArray[index - 1] = {
+                                ...prevKey,
+                                slide:
+                                  cloneSlideDataArray[index - 1].slide +
+                                  "\n" +
+                                  lines[0]
+                              };
+                              cloneSlideDataArray[index] = {
+                                ...key,
+                                slide: key.slide.slice(offset + 1),
+                              };
 
-                                setSlideListData(cloneSlideDataArray);
-                              }
-                              setSelected(index - 1);
-                              prevTextArea.focus();
-                              prevTextArea.selectionStart =
-                                prevTextArea.value.length;
+                              setSlideListData(cloneSlideDataArray);
                             }
+                            setSelected(index - 1);
+                            setSelectedStart(prevTextArea.value.length + 1);
+                            e.preventDefault();
                           }
                         }
                       }}
@@ -755,23 +884,13 @@ const EditArchive = ({ handleClose }) => {
                         }
 
                         const cloneSlideDataArray = [...slideListData];
-
-                        if (key.addedNew) {
-                          cloneSlideDataArray.splice(index, 1);
-                          cloneSlideDataArray.splice(index, 0, {
-                            ...key,
-                            slide: newValue,
-                          });
-                          setSlideListData(cloneSlideDataArray);
-                        } else {
-                          cloneSlideDataArray.splice(index, 1);
-                          cloneSlideDataArray.splice(index, 0, {
-                            ...key,
-                            slide: newValue,
-                            updateSlide: true,
-                          });
-                          setSlideListData(cloneSlideDataArray);
-                        }
+                        cloneSlideDataArray.splice(index, 1);
+                        cloneSlideDataArray.splice(index, 0, {
+                          ...key,
+                          slide: newValue,
+                          updateSlide: !key.addedNew ? true : undefined,
+                        });
+                        setSlideListData(cloneSlideDataArray);
                       }}
                       key={index}
                       className=""
@@ -859,8 +978,15 @@ const EditArchive = ({ handleClose }) => {
                     )}
                     {index === selected && (
                       <i
-                        onClick={(evt) => {
-                          return handleAddNewSlide(evt, key, index);
+                        onClick={() => {
+                          const newEmptySlide = {
+                            file_uid: key.file_uid,
+                            slide: "",
+                            addedNew: true,
+                            slide_type: "subtitle",
+                            left_to_right: key.left_to_right,
+                          };
+                          return spliceSlideList(index, [key, newEmptySlide]);
                         }}
                         className="bi bi-plus-circle add-icon "
                       />
@@ -889,7 +1015,6 @@ const EditArchive = ({ handleClose }) => {
             visible={false}
             active={split}
             updateSlides={(slides) => {
-              setSplit(false);
               setUpdatedSlideTextList(slides);
             }}
           />
