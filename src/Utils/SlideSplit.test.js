@@ -11,6 +11,8 @@ import {
   createMarkdownit,
   IsTextTokenEnumeration,
   sourceToMarkdown,
+  split,
+  createNewDiv,
 } from "./SlideSplit";
 
 test('Markdown only two endlines to <p>', () => {
@@ -113,4 +115,43 @@ test('sourceToMarkdown', () => {
     '*(source)*',
   ]
   expect(sourceToMarkdown(lines.join('\n'))).toBe(expected.join('\n'));
+});
+
+test('split basic', () => {
+  const md = createMarkdownit();
+  const divRef = document.createElement("div");
+
+  // We need to simulate rendering for the split to actually work as intended,
+  // so we will count characters for a line and return new line every LINE_SIZE
+  // characters. This should be enough to emulate rendering to allow testing
+  // split algorithm.
+  const LINE_SIZE = 40;
+  const LINE_HEIGHT = 70;
+
+  const createNextDiv = (visible, index) => {
+    const div = createNewDiv(visible, index);
+    Object.defineProperty(div, "clientHeight", {
+      get() {
+        let height = this._clientHeight || 0;
+        if (this.innerHTML) {
+          height = LINE_HEIGHT * Math.floor(this.innerHTML.length/LINE_SIZE);
+        }
+        return height;
+      },
+    });
+
+    return div;
+  };
+
+  let markdown = [
+    'one two',
+    'three four',
+  ].join('\n');
+  const result = split(md, divRef, markdown, /*visible=*/ false, createNextDiv);
+  expect(result).toEqual(['one two\rthree four']);
+
+  const veryLongSimpleString = 'repeat '.repeat(30);
+  const firstSlide = 'repeat '.repeat(27).trim();
+  const secondSlide = 'repeat '.repeat(3).trim();
+  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv)).toEqual([firstSlide, secondSlide]);
 });

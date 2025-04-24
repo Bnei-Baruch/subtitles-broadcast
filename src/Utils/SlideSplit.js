@@ -82,7 +82,7 @@ export const sourceToMarkdown = (simpleHtml) => {
   return convertedMarkdown;
 };
 
-const createNewDiv = (visible, index) => {
+export const createNewDiv = (visible, index) => {
   const newDiv = document.createElement("div");
   const divIdPrefix = "slide";
   newDiv.className = divIdPrefix + " slide-content";
@@ -286,6 +286,134 @@ const CutNonVisibleEndings = (slideText) => {
   return '';
 }
 
+export const split = (md, divRef, markdown, visible, createNextDiv) => {
+  divRef.innerHTML = '';
+  let {token, restIndex} = Tokenize([], 0, markdown);
+  let {type, text, stack} = token;
+  let prevToken = null;
+  let prevRestIndex = null;
+  let nextDivMarkdown = '';
+  let divIndex = 0;
+  let nextDiv = createNextDiv(visible, divIndex);
+  divRef?.current?.appendChild(nextDiv);
+  const slides = [];
+  let firstTokenInSlide = true;
+  let lines = 0;
+  let wordsInLine = 0;
+  let prevHeight = 0;
+
+  // Store backtrack point for proper last line cutoff.
+  let lastLineCutoffs = [];
+
+  const newSlide = (lastToken, token, restIndex) => {
+    if (token !== null && lastLineCutoffs.length > 0) {
+      lastLineCutoffs.sort((a, b) => b.score - a.score);  // Higher score first.
+
+      const cutoff = lastLineCutoffs[0];
+      token = cutoff.token;
+      lastToken = cutoff.lastToken;
+      restIndex = cutoff.restIndex;
+      nextDivMarkdown = cutoff.nextDivMarkdown;
+      prevRestIndex = cutoff.lastRestIndex;
+    }
+
+    if (visible) {
+      divIndex += 1;
+      nextDiv.innerHTML = md.render(nextDivMarkdown); // Just for visualization...
+      nextDiv = createNextDiv(visible, divIndex);
+      divRef.current.appendChild(nextDiv);
+    } else {
+      // Reuse one div.
+      nextDiv.innerHTML = '';
+    }
+    slides.push(CutNonVisibleEndings(nextDivMarkdown) +
+      // Add ending token for Italic/Bold.
+      lastToken.stack.slice().filter(t => !HEADER_TOKENS.includes(t) && t !== lastToken.type)
+          .reverse().map(t =>TokenTypeToText(t)).join(''));
+    nextDivMarkdown = '';
+    firstTokenInSlide = true;
+    lines = 0;
+    wordsInLine = 0;
+    prevHeight = 0;
+    lastLineCutoffs = [];
+
+    return {prevToken: lastToken, token, restIndex, prevRestIndex};
+  };
+  while (!prevRestIndex || prevRestIndex <= markdown.length &&
+         (!prevToken || (prevToken.text || prevToken.type === TOKEN_NEWSLIDE))) {
+    /*console.log('while', JSON.stringify(nextDivMarkdown));
+    console.log('lines', lines);
+    console.log(restIndex, markdown.length);
+    console.log(nextDiv.clientHeight, firstTokenInSlide);
+    console.log(prevToken, token);
+    console.log(JSON.stringify(markdown.slice(restIndex, restIndex+30)));*/
+    if ((prevToken && prevToken.type === TOKEN_NEWLINE && IsTextTokenEnumeration(token)) ||
+        type === TOKEN_NEWSLIDE ||
+        (HEADER_TOKENS.includes(type) && CutNonVisibleEndings(nextDivMarkdown) !== '')) {
+      // New slide due to /*enumeration*/, header or new slide token.
+      newSlide(token, null, null);
+      prevToken = token;
+      prevRestIndex = restIndex;
+      ({token, restIndex} = Tokenize(stack, restIndex, markdown));
+      ({type, text, stack} = token);
+      wordsInLine++;
+    } else if (nextDiv.clientHeight < 310) {
+      if (firstTokenInSlide) {
+        if (prevToken) {
+          prevToken.stack
+            .filter(tokenType => tokenType !== prevToken.type)
+            .forEach(tokenType => nextDivMarkdown += TokenTypeToText(tokenType));
+        }
+        firstTokenInSlide = false;
+      }
+      // Count lines.
+      if (prevHeight !== nextDiv.clientHeight && nextDiv.clientHeight - prevHeight > 30) {
+        lines += 1;
+        wordsInLine = 0;
+        prevHeight = nextDiv.clientHeight;
+      }
+      nextDivMarkdown += prevToken ? prevToken.text : '';
+      // Cut on . and , if last line.
+      const lastChar = prevToken && prevToken.text[prevToken.text.length - 1];
+      if ([3,4].includes(lines) && [',', '.'].includes(lastChar)) {
+        const nextToken = Tokenize(stack, restIndex, markdown);
+        lastLineCutoffs.push({
+          // Sort the cutoffs, dots more important then commas,
+          // last more important then first.
+          score: lastChar === ',' ? (lines * 100 + wordsInLine) : (lines * 1000 + wordsInLine),
+          lastToken: token,
+          lastRestIndex: restIndex,
+          token: nextToken.token,
+          restIndex: nextToken.restIndex,
+          nextDivMarkdown
+        });
+      } else if (prevToken && prevToken.type === TOKEN_NEWLINE) {
+        lastLineCutoffs = [];
+      }
+      nextDiv.innerHTML = md.render(nextDivMarkdown + text + 
+        // We want to add potential closing markdown tokens.
+        (!OPEN_CLOSE_TOKENS.includes(type) ?
+          stack.slice().filter(t => !HEADER_TOKENS.includes(t)).reverse().map(t =>TokenTypeToText(t)).join('')
+          : ''));
+
+      prevToken = token;
+      prevRestIndex = restIndex;
+      ({token, restIndex} = Tokenize(stack, restIndex, markdown));
+      ({type, text, stack} = token);
+      wordsInLine++;
+    } else {
+      ({token, prevToken, restIndex, prevRestIndex} = newSlide(prevToken, token, restIndex));
+    }
+  }
+  // Add last token
+  if (prevToken) {
+    nextDivMarkdown += prevToken.text;
+  }
+  slides.push(CutNonVisibleEndings(nextDivMarkdown));
+  // console.log(slides);
+  return slides;
+};
+
 export const SplitToSlides = ({markdown, updateSlides, active = false, visible = false}) => {
   const divRef = useRef(null);
   const md = createMarkdownit();
@@ -293,131 +421,7 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
 
   useEffect(() => {
     if (divRef && markdown && active) {
-      divRef.innerHTML = '';
-      let {token, restIndex} = Tokenize([], 0, markdown);
-      let {type, text, stack} = token;
-      let prevToken = null;
-      let prevRestIndex = null;
-      let nextDivMarkdown = '';
-      let divIndex = 0;
-      let nextDiv = createNewDiv(visible, divIndex);
-      divRef.current.appendChild(nextDiv);
-      const slides = [];
-      let firstTokenInSlide = true;
-      let lines = 0;
-      let wordsInLine = 0;
-      let prevHeight = 0;
-
-      // Store backtrack point for proper last line cutoff.
-      let lastLineCutoffs = [];
-
-      const newSlide = (lastToken, token, restIndex) => {
-        if (token !== null && lastLineCutoffs.length > 0) {
-          lastLineCutoffs.sort((a, b) => b.score - a.score);  // Higher score first.
-
-          const cutoff = lastLineCutoffs[0];
-          token = cutoff.token;
-          lastToken = cutoff.lastToken;
-          restIndex = cutoff.restIndex;
-          nextDivMarkdown = cutoff.nextDivMarkdown;
-          prevRestIndex = cutoff.lastRestIndex;
-        }
-
-        if (visible) {
-          divIndex += 1;
-          nextDiv.innerHTML = md.render(nextDivMarkdown); // Just for visualization...
-          nextDiv = createNewDiv(visible, divIndex);
-          divRef.current.appendChild(nextDiv);
-        } else {
-          // Reuse one div.
-          nextDiv.innerHTML = '';
-        }
-        slides.push(CutNonVisibleEndings(nextDivMarkdown) +
-          // Add ending token for Italic/Bold.
-          lastToken.stack.slice().filter(t => !HEADER_TOKENS.includes(t) && t !== lastToken.type)
-              .reverse().map(t =>TokenTypeToText(t)).join(''));
-        nextDivMarkdown = '';
-        firstTokenInSlide = true;
-        lines = 0;
-        wordsInLine = 0;
-        prevHeight = 0;
-        lastLineCutoffs = [];
-
-        return {prevToken: lastToken, token, restIndex, prevRestIndex};
-      };
-      while (!prevRestIndex || prevRestIndex <= markdown.length &&
-             (!prevToken || (prevToken.text || prevToken.type === TOKEN_NEWSLIDE))) {
-        /*console.log('while', JSON.stringify(nextDivMarkdown));
-        console.log('lines', lines);
-        console.log(restIndex, markdown.length);
-        console.log(nextDiv.clientHeight, firstTokenInSlide);
-        console.log(prevToken, token);
-        console.log(JSON.stringify(markdown.slice(restIndex, restIndex+30)));*/
-        if ((prevToken && prevToken.type === TOKEN_NEWLINE && IsTextTokenEnumeration(token)) ||
-            type === TOKEN_NEWSLIDE ||
-            (HEADER_TOKENS.includes(type) && CutNonVisibleEndings(nextDivMarkdown) !== '')) {
-          // New slide due to /*enumeration*/, header or new slide token.
-          newSlide(token, null, null);
-          prevToken = token;
-          prevRestIndex = restIndex;
-          ({token, restIndex} = Tokenize(stack, restIndex, markdown));
-          ({type, text, stack} = token);
-          wordsInLine++;
-        } else if (nextDiv.clientHeight < 310) {
-          if (firstTokenInSlide) {
-            if (prevToken) {
-              prevToken.stack
-                .filter(tokenType => tokenType !== prevToken.type)
-                .forEach(tokenType => nextDivMarkdown += TokenTypeToText(tokenType));
-            }
-            firstTokenInSlide = false;
-          }
-          // Count lines.
-          if (prevHeight !== nextDiv.clientHeight && nextDiv.clientHeight - prevHeight > 30) {
-            lines += 1;
-            wordsInLine = 0;
-            prevHeight = nextDiv.clientHeight;
-          }
-          nextDivMarkdown += prevToken ? prevToken.text : '';
-          // Cut on . and , if last line.
-          const lastChar = prevToken && prevToken.text[prevToken.text.length - 1];
-          if ([3,4].includes(lines) && [',', '.'].includes(lastChar)) {
-            const nextToken = Tokenize(stack, restIndex, markdown);
-            lastLineCutoffs.push({
-              // Sort the cutoffs, dots more important then commas,
-              // last more important then first.
-              score: lastChar === ',' ? (lines * 100 + wordsInLine) : (lines * 1000 + wordsInLine),
-              lastToken: token,
-              lastRestIndex: restIndex,
-              token: nextToken.token,
-              restIndex: nextToken.restIndex,
-              nextDivMarkdown
-            });
-          } else if (prevToken && prevToken.type === TOKEN_NEWLINE) {
-            lastLineCutoffs = [];
-          }
-          nextDiv.innerHTML = md.render(nextDivMarkdown + text + 
-            // We want to add potential closing markdown tokens.
-            (!OPEN_CLOSE_TOKENS.includes(type) ?
-              stack.slice().filter(t => !HEADER_TOKENS.includes(t)).reverse().map(t =>TokenTypeToText(t)).join('')
-              : ''));
-
-          prevToken = token;
-          prevRestIndex = restIndex;
-          ({token, restIndex} = Tokenize(stack, restIndex, markdown));
-          ({type, text, stack} = token);
-          wordsInLine++;
-        } else {
-          ({token, prevToken, restIndex, prevRestIndex} = newSlide(prevToken, token, restIndex));
-        }
-      }
-      // Add last token
-      if (prevToken) {
-        nextDivMarkdown += prevToken.text;
-      }
-      slides.push(CutNonVisibleEndings(nextDivMarkdown));
-      // console.log(slides);
-      updateSlides(slides);
+      updateSlides(split(md, divRef, markdown, visible, createNewDiv));
     }
   }, [divRef, active, markdown, visible, updateSlides]);
 

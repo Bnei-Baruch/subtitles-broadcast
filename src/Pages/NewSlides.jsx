@@ -114,15 +114,23 @@ const NewSlides = () => {
       }
       try {
         const response = await dispatch(SetCustomSlideBySource(request));
-        if (response.payload.error !== "") {
-          if (response.payload.error.includes("SQLSTATE 22021")) {
+        const error = response.payload.error;
+        if (error !== "") {
+          if (error.includes("SQLSTATE 22021")) {
             alert(
               "Wrong request. File is not a txt file. Please check your upload file"
             );
-          } else if (response.payload.error.includes("SQLSTATE 23505")) {
+          } else if (error.includes("SQLSTATE 23505")) {
             alert(
               "Wrong request. The file uid is duplicated. Please check your input"
             );
+          } else if (error.includes("SQLSTATE 22001")) {
+            let suffix = '';
+            const match = error.match(/\bvarying\((\d+)\)/);
+            if (match && match[1]) {
+              suffix = ` Should be no more then ${match[1]} characters.`;
+            }
+            alert("Wrong request. The file name too long." + suffix);
           }
           return;
         }
