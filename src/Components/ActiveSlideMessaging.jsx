@@ -215,20 +215,38 @@ export function ActiveSlideMessaging() {
     if (!isUserInitiatedChange || subtitlesDisplayMode !== "questions") return;
     if (isRoundRobinOn) return;
 
-    const newActiveMessage = selectedQuestionMessage?.visible
-      ? { ...selectedQuestionMessage }
-      : { type: "question", slide: "" };
+    // Check if selectedQuestionMessage is visible and non-empty, otherwise find the first valid one
+    let newActiveMessage =
+      selectedQuestionMessage &&
+      selectedQuestionMessage.visible &&
+      selectedQuestionMessage.slide.trim() !== ""
+        ? { ...selectedQuestionMessage }
+        : { type: "question", slide: "" };
 
+    if (!newActiveMessage.slide) {
+      // If no valid selected question, find the first visible and non-empty question
+      const visibleQuestions = Object.values(questionMessagesList).filter(
+        (q) => q.visible !== false && q.slide && q.slide.trim() !== "",
+      );
+
+      if (visibleQuestions.length > 0) {
+        newActiveMessage = { ...visibleQuestions[0] }; // Set first valid question as active message
+      } else {
+        // If no visible valid question exists, return early without publishing
+        return;
+      }
+    }
+
+    // If the active broadcast message is different from the selected question, update
     if (
-      activeBroadcastMessage?.slide !== selectedQuestionMessage?.slide ||
-      activeBroadcastMessage?.visible !== selectedQuestionMessage?.visible
+      activeBroadcastMessage?.slide !== newActiveMessage.slide ||
+      activeBroadcastMessage?.visible !== newActiveMessage.visible
     ) {
       RepublishQuestion(
         broadcastProgrammCode,
         broadcastLangCode,
         subtitlesDisplayMode,
       );
-
       publishMqttMessage(
         subtitleMqttTopic,
         newActiveMessage,
@@ -243,6 +261,7 @@ export function ActiveSlideMessaging() {
     isUserInitiatedChange,
     activeBroadcastMessage,
     dispatch,
+    questionMessagesList,
   ]);
 
   /** Implements round-robin*/
