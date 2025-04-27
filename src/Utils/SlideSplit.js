@@ -1,5 +1,4 @@
-import { jsx as _jsx } from "react/jsx-runtime";
-import { useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import markdownit from "markdown-it";
 import TurndownService from 'turndown';
 
@@ -77,8 +76,6 @@ export const sourceToMarkdown = (simpleHtml) => {
   });
 
   const convertedMarkdown = turndownService.turndown(simpleHtml);
-  // console.log('sourceToMarkdown in', simpleHtml);
-  // console.log('sourceToMarkdown out', convertedMarkdown);
   return convertedMarkdown;
 };
 
@@ -108,6 +105,7 @@ export const TOKEN_SEPARATOR = 'separator';
 export const TOKEN_NEWLINE = 'newline';
 export const TOKEN_NEWSLIDE = 'newslide';
 export const TOKEN_TEXT = 'text';
+export const TOKEN_SKIP = 'skip';
 
 // Markdown token types.
 export const TOKEN_H1 = 'H1';
@@ -117,7 +115,6 @@ export const TOKEN_ITALIC = 'italic';
 export const TOKEN_BOLD = 'bold';
 
 const HEADER_TOKENS = [TOKEN_H1, TOKEN_H2, TOKEN_H3]
-const MARKDOWN_TOKENS = [...HEADER_TOKENS, TOKEN_ITALIC, TOKEN_BOLD];
 const OPEN_CLOSE_TOKENS = [TOKEN_ITALIC, TOKEN_BOLD];
 
 const TokenTypeToText = (type) => {
@@ -141,6 +138,7 @@ const TokenTypeToText = (type) => {
 }
 
 // Identify special markdowns to add "word" to them.
+const WHITE_SPACES_REGEXP = /^\s+$/;
 const TokenTextToType = (text) => {
   if (text === '###') {
     return TOKEN_H1;
@@ -156,6 +154,12 @@ const TokenTextToType = (text) => {
   }
   if (text === '**') {
     return TOKEN_BOLD;
+  }
+  if (NEW_LINE.includes(text))  {
+    return TOKEN_NEWLINE;
+  }
+  if (WHITE_SPACES_REGEXP.test(text)) {
+    return TOKEN_SEPARATOR;
   }
   return TOKEN_TEXT;
 }
@@ -173,14 +177,16 @@ const fixLegacyTokens = (text, index, i) => {
     }
     return {tokenText: ' ', restIndex};
   }
+  if (tokenText.startsWith('%S')) {
+    return {tokenText: ' ', restIndex};
+  }
   if (tokenText.startsWith('%')) {
     return {tokenText: '##', restIndex};
   }
   return {tokenText, restIndex};
-}
+};
 
 const TextOrMarkdownToken = (stack, index, i, text) => {
-  // console.log('TextOrMarkdownToken', stack, index, i);
   let {tokenText, restIndex} = fixLegacyTokens(text, index, i);
   let tokenType = TokenTextToType(tokenText);
   // Lookahead for headers to make sure we have separator.
@@ -203,7 +209,7 @@ const TextOrMarkdownToken = (stack, index, i, text) => {
     if (!stack.includes(tokenType)) {
       newStack = [...stack, tokenType];
     }
-  } else if (tokenType !== TOKEN_TEXT) {
+  } else if (![TOKEN_TEXT, TOKEN_SEPARATOR].includes(tokenType)) {
     newStack = [...stack, tokenType];
   }
 
@@ -217,7 +223,7 @@ const TextOrMarkdownToken = (stack, index, i, text) => {
   };
 };
 
-const ENUM_RE = /^[\dאבגדהוזחטיכלמנסעפצקרשתםןץףך]+\\?[\.\)]$/;
+const ENUM_RE = /^[\dאבגדהוזחטיכלמנסעפצקרשתםןץףך]+\\?[.)]$/;
 export const IsTextTokenEnumeration = ({type, text}) => {
   if (type !== TOKEN_TEXT) {
     return false;
@@ -230,7 +236,6 @@ export const IsTextTokenEnumeration = ({type, text}) => {
 // will be [TOKEN_H1, TOKEN_ITALIC]
 export const Tokenize = (stack, index, text) => {
   for (let i = index; i < text.length; i++) {
-    // console.log('loop', i, text[i]);
     // breakLength of -1 for no break, otherwise the length of the break token.
     const breakLength = (text.slice(i, i+3) === '===' && 3) || (text.slice(i, i+6) === '%break' && 6) || -1;
     if (NEW_LINE.includes(text[i]) || text[i] === SEPARATOR || text[i] === ITALIC || breakLength !== -1) {
@@ -258,7 +263,7 @@ export const Tokenize = (stack, index, text) => {
     }
   }
   return TextOrMarkdownToken(stack, index, text.length, text);
-}
+};
 
 const CutNonVisibleEndings = (slideText) => {
   let from = 0;
@@ -284,9 +289,52 @@ const CutNonVisibleEndings = (slideText) => {
       (newLinesEnd >= 2 ? '\r\r' : '');
   }
   return '';
-}
+};
+
+class TokensManipulator {
+  onToken(prevToken, token, restIndex, prevRestIndex, markdown) {
+    throw new Error('Unimplemented');
+  }
+};
+
+export const MARE_MAKOM_PATTERN = /^(?: |%S)*\([^\n\r]*\)(?: |%S)*($|\n|\r|%break)/;
+
+class MareMakomManipulator extends TokensManipulator {
+  constructor() {
+    super();
+    this.matched = false;
+    this.skipSeparators = false;
+  }
+
+  onToken(prevToken, token, restIndex, prevRestIndex, markdown) {
+    const rest = ((token && token.text) ? token.text + ' ' : '') + markdown.slice(restIndex);
+    if (!this.matched) {
+      if (prevToken && prevToken.type === TOKEN_NEWLINE && MARE_MAKOM_PATTERN.test(rest)) {
+        this.matched = true;
+        this.skipSeparators = !token.text.startsWith('(');
+        const mareMakomToken = {type: TOKEN_TEXT, text: '---\r*', stack: token.stack};
+        return {token: mareMakomToken, restIndex: prevRestIndex};
+      }
+    } else {
+      if (token && token.type === TOKEN_TEXT && token.text.startsWith('(')) {
+        this.skipSeparators = false;
+      } else if ((token && (token.type === TOKEN_NEWLINE)) || (prevToken.text === '' && restIndex === markdown.length)) {
+        this.matched = false;
+        const stopMatchToken = {type: TOKEN_TEXT, text: '*', stack: token.stack};
+        return {token: stopMatchToken, restIndex: prevRestIndex};
+      }
+      if (this.skipSeparators && token.type === TOKEN_SEPARATOR) {
+        token.type = TOKEN_SKIP;
+      }
+    }
+    return {token, restIndex};
+  }
+};
 
 export const split = (md, divRef, markdown, visible, createNextDiv) => {
+  const MANIPULATORS = [
+    new MareMakomManipulator(),
+  ];
   divRef.innerHTML = '';
   let {token, restIndex} = Tokenize([], 0, markdown);
   let {type, text, stack} = token;
@@ -329,7 +377,7 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
     slides.push(CutNonVisibleEndings(nextDivMarkdown) +
       // Add ending token for Italic/Bold.
       lastToken.stack.slice().filter(t => !HEADER_TOKENS.includes(t) && t !== lastToken.type)
-          .reverse().map(t =>TokenTypeToText(t)).join(''));
+          .reverse().map(t => TokenTypeToText(t)).join(''));
     nextDivMarkdown = '';
     firstTokenInSlide = true;
     lines = 0;
@@ -339,14 +387,8 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
 
     return {prevToken: lastToken, token, restIndex, prevRestIndex};
   };
-  while (!prevRestIndex || prevRestIndex <= markdown.length &&
-         (!prevToken || (prevToken.text || prevToken.type === TOKEN_NEWSLIDE))) {
-    /*console.log('while', JSON.stringify(nextDivMarkdown));
-    console.log('lines', lines);
-    console.log(restIndex, markdown.length);
-    console.log(nextDiv.clientHeight, firstTokenInSlide);
-    console.log(prevToken, token);
-    console.log(JSON.stringify(markdown.slice(restIndex, restIndex+30)));*/
+
+  while (((token && token.text) || (prevToken && prevToken.text))) {
     if ((prevToken && prevToken.type === TOKEN_NEWLINE && IsTextTokenEnumeration(token)) ||
         type === TOKEN_NEWSLIDE ||
         (HEADER_TOKENS.includes(type) && CutNonVisibleEndings(nextDivMarkdown) !== '')) {
@@ -355,14 +397,19 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
       prevToken = token;
       prevRestIndex = restIndex;
       ({token, restIndex} = Tokenize(stack, restIndex, markdown));
+      for (const m of MANIPULATORS) {
+        ({token, restIndex} = m.onToken(prevToken, token, restIndex, prevRestIndex, markdown));
+      }
       ({type, text, stack} = token);
       wordsInLine++;
     } else if (nextDiv.clientHeight < 310) {
       if (firstTokenInSlide) {
         if (prevToken) {
-          prevToken.stack
-            .filter(tokenType => tokenType !== prevToken.type)
-            .forEach(tokenType => nextDivMarkdown += TokenTypeToText(tokenType));
+          for (const tokenType of prevToken.stack) {
+            if (tokenType !== prevToken.type) {
+              nextDivMarkdown += TokenTypeToText(tokenType);
+            }
+          }
         }
         firstTokenInSlide = false;
       }
@@ -372,9 +419,9 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
         wordsInLine = 0;
         prevHeight = nextDiv.clientHeight;
       }
-      nextDivMarkdown += prevToken ? prevToken.text : '';
+      nextDivMarkdown += (prevToken && prevToken.type !== TOKEN_SKIP) ? prevToken.text : '';
       // Cut on . and , if last line.
-      const lastChar = prevToken && prevToken.text[prevToken.text.length - 1];
+      const lastChar = (prevToken && prevToken.type !== TOKEN_SKIP && prevToken.text[prevToken.text.length - 1]) || '';
       if ([3,4].includes(lines) && [',', '.'].includes(lastChar)) {
         const nextToken = Tokenize(stack, restIndex, markdown);
         lastLineCutoffs.push({
@@ -390,7 +437,7 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
       } else if (prevToken && prevToken.type === TOKEN_NEWLINE) {
         lastLineCutoffs = [];
       }
-      nextDiv.innerHTML = md.render(nextDivMarkdown + text + 
+      nextDiv.innerHTML = md.render(nextDivMarkdown + (type === TOKEN_SKIP ? '' : text) + 
         // We want to add potential closing markdown tokens.
         (!OPEN_CLOSE_TOKENS.includes(type) ?
           stack.slice().filter(t => !HEADER_TOKENS.includes(t)).reverse().map(t =>TokenTypeToText(t)).join('')
@@ -399,6 +446,9 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
       prevToken = token;
       prevRestIndex = restIndex;
       ({token, restIndex} = Tokenize(stack, restIndex, markdown));
+      for (const m of MANIPULATORS) {
+        ({token, restIndex} = m.onToken(prevToken, token, restIndex, prevRestIndex, markdown));
+      }
       ({type, text, stack} = token);
       wordsInLine++;
     } else {
@@ -406,24 +456,22 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
     }
   }
   // Add last token
-  if (prevToken) {
+  if (prevToken && prevToken.type !== TOKEN_SKIP) {
     nextDivMarkdown += prevToken.text;
   }
   slides.push(CutNonVisibleEndings(nextDivMarkdown));
-  // console.log(slides);
   return slides;
 };
 
 export const SplitToSlides = ({markdown, updateSlides, active = false, visible = false}) => {
   const divRef = useRef(null);
-  const md = createMarkdownit();
-  // console.log('markdown', markdown);
+  const md = useMemo(() => createMarkdownit(), []);
 
   useEffect(() => {
     if (divRef && markdown && active) {
       updateSlides(split(md, divRef, markdown, visible, createNewDiv));
     }
-  }, [divRef, active, markdown, visible, updateSlides]);
+  }, [divRef, md, active, markdown, visible, updateSlides]);
 
   return (
     <>
