@@ -60,7 +60,13 @@ export default function useMqtt() {
   useEffect(() => {
     if (!clientRef.current) {
       debugLog("Connecting to MQTT Broker...");
-      clientRef.current = mqtt.connect(mqttBrokerUrl);
+      clientRef.current = mqtt.connect(mqttBrokerUrl, {
+        keepalive: 60,  // seconds
+        reconnectPeriod: 2000,  // ms
+
+        // In disconnected state, don't queue messages, drop them.
+        queueQoSZero: false,
+      });
 
       clientRef.current.on("connect", () => {
         debugLog("MQTT Connected");
@@ -97,9 +103,23 @@ export default function useMqtt() {
       clientRef.current.on("error", (err) => {
         console.error("MQTT Connection Error:", err);
         dispatch(addMqttError("MQTT Connection Failed. Please try again."));
-        clientRef.current.end();
+        // We don't activelly end client session to allow reconnection.
+        // Uncommenting following line will result in session not being able
+        // to reconnect when netwrok is back on.
+        // clientRef.current.end();
         dispatch(resetMqttLoading());
         dispatch(setConnected(false));
+      });
+
+      clientRef.current.on("reconnect", () => {
+        debugLog("MQTT Reconnect");
+      });
+      clientRef.current.on("offline", () => {
+        debugLog("MQTT offline");
+        dispatch(addMqttError("MQTT Connection offline. Will try to reconnect."));
+      });
+      clientRef.current.on("close", () => {
+        debugLog("MQTT close");
       });
     }
 
