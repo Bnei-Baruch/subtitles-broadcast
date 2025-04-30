@@ -252,9 +252,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	}
 	if len(keyword) > 0 {
 		if ctx.FullPath() == "/api/v1/file_slide" {
-			query.Where("slides.slide LIKE ?", "%"+keyword+"%")
+			query.Where("slides.slide ILIKE ?", "%"+keyword+"%")
 		} else {
-			query.Where("(slides.slide LIKE ? OR source_paths.path LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
+			query.Where("(slides.slide ILIKE ? OR source_paths.path ILIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 		}
 	}
 	if hidden != "true" {
