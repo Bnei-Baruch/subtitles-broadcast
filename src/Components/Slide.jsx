@@ -29,10 +29,10 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
   useEffect(() => {
     if (searchKeyword !== undefined && searchKeyword !== "") {
       const escapeRegex = (str) => {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return str.replace(/[.*+?^${}()|[\]\\]/ig, "\\$&");
       };
       const escapedKeyword = escapeRegex(searchKeyword);
-      const regex = new RegExp(escapedKeyword, "g");
+      const regex = new RegExp(escapedKeyword, "ig");
       content = content.replace(
         regex,
         `<span style="background-color: ${backgroundColor};">$&</span>`,
