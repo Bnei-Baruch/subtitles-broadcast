@@ -206,7 +206,7 @@ const QuestionMessage = (props) => {
               <div>
                 <li className="item">
                   <span className="datetime">
-                    Date: {parseUtcStrToLocal(obj.date)}
+                    {parseUtcStrToLocal(obj.date)}
                   </span>
                   <br />
                   <div
