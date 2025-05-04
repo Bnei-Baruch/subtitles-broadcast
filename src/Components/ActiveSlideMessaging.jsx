@@ -317,6 +317,15 @@ export function ActiveSlideMessaging() {
       });
 
       if (visibleQuestions.length === 0) {
+        if (activeBroadcastMessage?.slide) {
+          let newActiveMessage = { type: "question", slide: "" };
+          publishMqttMessage(
+            subtitleMqttTopic,
+            newActiveMessage,
+            subtitlesDisplayMode,
+          );
+        }
+
         dispatch(setRoundRobinOff());
         return;
       }
