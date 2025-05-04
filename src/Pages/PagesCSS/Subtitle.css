@@ -513,8 +513,9 @@ dropdown-toggle {
   color: #33cc33;
 }
 
-.bi-eye-slash-fill {
-  color: red;
+.bi-eye-slash-fill,
+.bi-eye-slash-fill:hover {
+  color: red !important;
 }
 
 .green-part-cont {

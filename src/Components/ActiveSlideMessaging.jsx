@@ -213,7 +213,22 @@ export function ActiveSlideMessaging() {
   /** Publishes selected question message when display mode is "questions" */
   useEffect(() => {
     if (!isUserInitiatedChange || subtitlesDisplayMode !== "questions") return;
-    if (isRoundRobinOn) return;
+
+    if (isRoundRobinOn) {
+      const activeQuestionLang = activeBroadcastMessage?.lang;
+      if (!activeQuestionLang) return;
+
+      const targetQuestion = questionMessagesList[activeQuestionLang];
+
+      if (targetQuestion) {
+        if (
+          activeBroadcastMessage?.slide === targetQuestion?.slide &&
+          activeBroadcastMessage?.visible === targetQuestion?.visible
+        ) {
+          return;
+        }
+      }
+    }
 
     // Check if selectedQuestionMessage is visible and non-empty, otherwise find the first valid one
     let newActiveMessage =
@@ -302,6 +317,15 @@ export function ActiveSlideMessaging() {
       });
 
       if (visibleQuestions.length === 0) {
+        if (activeBroadcastMessage?.slide) {
+          let newActiveMessage = { type: "question", slide: "" };
+          publishMqttMessage(
+            subtitleMqttTopic,
+            newActiveMessage,
+            subtitlesDisplayMode,
+          );
+        }
+
         dispatch(setRoundRobinOff());
         return;
       }
