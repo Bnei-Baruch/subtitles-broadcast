@@ -26,7 +26,6 @@ const styles = {
 };
 
 export const GreenWindowButton = (props) => {
-  const elementRef = useRef(null);
   const [showGreenWindow, setShowGreenWindow] = useState(false);
 
   // ✅ Use Redux state instead of local state
@@ -34,9 +33,15 @@ export const GreenWindowButton = (props) => {
     (state) => state.mqtt.activeBroadcastMessage
   );
 
+  const isQuestion = activeBroadcastMessage?.slide && (
+    activeBroadcastMessage.type === "question" ||
+    activeBroadcastMessage.slide_type === "question"
+  );
+
   return (
     <>
       <button
+        disabled={props.isLoading}
         onClick={() => setShowGreenWindow(!showGreenWindow)}
         className={getButtonClassName(showGreenWindow)}
       >
@@ -68,7 +73,7 @@ export const GreenWindowButton = (props) => {
                       ? activeBroadcastMessage.slide
                       : activeBroadcastMessage.context
                   }
-                  parentElement={elementRef}
+                  inGreenWindow={true}
                   isLtr={
                     typeof activeBroadcastMessage.isLtr === "boolean"
                       ? activeBroadcastMessage.isLtr
@@ -77,10 +82,7 @@ export const GreenWindowButton = (props) => {
                         ? activeBroadcastMessage.left_to_right
                         : props.isLtr
                   }
-                  isQuestion={
-                    activeBroadcastMessage.type === "question" ||
-                    activeBroadcastMessage.slide_type === "question"
-                  }
+                  isQuestion={isQuestion}
                 ></Slide>
               )}
             </div>
