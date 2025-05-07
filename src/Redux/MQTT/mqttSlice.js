@@ -18,6 +18,7 @@ const initialState = {
   errorLogs: [],
   isMqttLoading: false,
   isRoundRobinOn: false,
+  isLiveModeEnabled: false,
 };
 
 const mqttSlice = createSlice({
@@ -58,7 +59,7 @@ const mqttSlice = createSlice({
           if (broadcastProgrammCode && broadcastLangCode) {
             const subtitleMqttTopic = getSubtitleMqttTopic(
               broadcastProgrammCode,
-              broadcastLangCode,
+              broadcastLangCode
             );
 
             if (topic === subtitleMqttTopic) {
@@ -81,7 +82,7 @@ const mqttSlice = createSlice({
           addMqttError({
             message: "MQTT Message Processing Error",
             type: "Processing",
-          }),
+          })
         );
       }
     },
@@ -146,7 +147,7 @@ const mqttSlice = createSlice({
     },
     markErrorAsUiPresented: (state, action) => {
       const index = state.errorLogs.findIndex(
-        (error) => error.id === action.payload,
+        (error) => error.id === action.payload
       );
       if (index !== -1) {
         state.errorLogs[index].uiPresented = true;
@@ -164,6 +165,9 @@ const mqttSlice = createSlice({
     setRoundRobinOff: (state) => {
       state.rounRobinIndex = 0;
       state.isRoundRobinOn = false;
+    },
+    setLiveModeEnabled(state, action) {
+      state.isLiveModeEnabled = action.payload;
     },
   },
 });
@@ -191,6 +195,7 @@ export const {
   turnOnUserInitiatedChange,
   setRoundRobinOn,
   setRoundRobinOff,
+  setLiveModeEnabled,
 } = mqttSlice.actions;
 
 export default mqttSlice.reducer;
