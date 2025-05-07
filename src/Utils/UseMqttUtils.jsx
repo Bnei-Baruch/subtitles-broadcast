@@ -28,25 +28,25 @@ export default function useMqtt() {
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
 
   const username = useSelector(
-    (state) => state.UserProfile.userProfile.profile.username,
+    (state) => state.UserProfile.userProfile.profile.username
   );
 
   const firstName = useSelector(
-    (state) => state.UserProfile.userProfile.profile.firstName,
+    (state) => state.UserProfile.userProfile.profile.firstName
   );
 
   const lastName = useSelector(
-    (state) => state.UserProfile.userProfile.profile.lastName,
+    (state) => state.UserProfile.userProfile.profile.lastName
   );
 
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
 
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson",
+      "morning_lesson"
   );
 
   let clientId = useSelector((state) => state.mqtt.clientId);
@@ -61,8 +61,8 @@ export default function useMqtt() {
     if (!clientRef.current) {
       debugLog("Connecting to MQTT Broker...");
       clientRef.current = mqtt.connect(mqttBrokerUrl, {
-        keepalive: 60,  // seconds
-        reconnectPeriod: 2000,  // ms
+        keepalive: 60, // seconds
+        reconnectPeriod: 2000, // ms
 
         // In disconnected state, don't queue messages, drop them.
         queueQoSZero: false,
@@ -96,7 +96,7 @@ export default function useMqtt() {
             message: message.toString(),
             broadcastLangCode,
             broadcastProgrammCode,
-          }),
+          })
         );
       });
 
@@ -116,7 +116,9 @@ export default function useMqtt() {
       });
       clientRef.current.on("offline", () => {
         debugLog("MQTT offline");
-        dispatch(addMqttError("MQTT Connection offline. Will try to reconnect."));
+        dispatch(
+          addMqttError("MQTT Connection offline. Will try to reconnect.")
+        );
       });
       clientRef.current.on("close", () => {
         debugLog("MQTT close");
@@ -140,6 +142,13 @@ export default function useMqtt() {
   useEffect(() => {
     const mqttPublishHandler = (event) => {
       let { mqttTopic, message } = event.detail;
+      const state = store.getState();
+      const isLiveModeEnabled = state.mqtt.isLiveModeEnabled;
+
+      if (!isLiveModeEnabled) {
+        debugLog("Live mode is OFF. MQTT message not published.");
+        return;
+      }
 
       if (typeof message !== "object") {
         console.error("MQTT Publish Error: Message must be an object");
@@ -186,7 +195,7 @@ export default function useMqtt() {
             } else {
               debugLog(" MQTT Publish Successful:", mqttTopic, enhancedMessage);
             }
-          },
+          }
         );
       }
     };
@@ -201,7 +210,7 @@ export default function useMqtt() {
         unSubscribeEvent("mqttPublish", mqttPublishHandler);
       } else {
         console.warn(
-          "Unable to remove event listener: unSubscribeEvent is not defined",
+          "Unable to remove event listener: unSubscribeEvent is not defined"
         );
       }
     };
