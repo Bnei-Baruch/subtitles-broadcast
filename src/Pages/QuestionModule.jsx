@@ -12,15 +12,15 @@ const QuestionModule = () => {
   const [handleSuccess, setHandleSuccess] = useState(false);
   const textAreaRef = useRef(null);
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson",
+      "morning_lesson"
   );
   const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode,
+    (state) => state.mqtt.subtitlesDisplayMode
   );
   const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
 
@@ -58,22 +58,24 @@ const QuestionModule = () => {
 
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      broadcastLangCode,
+      broadcastLangCode
     );
     publishEvent("mqttPublish", {
       mqttTopic,
       message: jsonMsg,
+      ignoreLiveMode: true,
     });
 
     if (subtitlesDisplayMode === "questions") {
       const subtitleMqttTopic = getSubtitleMqttTopic(
         broadcastProgrammCode,
-        broadcastLangCode,
+        broadcastLangCode
       );
 
       publishEvent("mqttPublish", {
         mqttTopic: subtitleMqttTopic,
         message: jsonMsg,
+        ignoreLiveMode: true,
       });
     }
 

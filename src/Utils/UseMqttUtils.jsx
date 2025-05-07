@@ -141,11 +141,11 @@ export default function useMqtt() {
 
   useEffect(() => {
     const mqttPublishHandler = (event) => {
-      let { mqttTopic, message } = event.detail;
+      const { mqttTopic, message, ignoreLiveMode = false } = event.detail;
       const state = store.getState();
       const isLiveModeEnabled = state.mqtt.isLiveModeEnabled;
 
-      if (!isLiveModeEnabled) {
+      if (!ignoreLiveMode && !isLiveModeEnabled) {
         debugLog("Live mode is OFF. MQTT message not published.");
         return;
       }
