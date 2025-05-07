@@ -61,20 +61,16 @@ const App = ({ auth }) => {
       >
         <div className="app">
           <SideNavBar
-            securityRole={auth ? auth.securityRole : null}
+            securityRoles={auth ? auth.securityRoles : null}
             authKeycloak={auth?.keycloak}
           />
           <div style={{ backgroundColor: "#eeee" }} className="main-content">
             <MainRoutes
               logout={auth?.keycloak}
-              securityRole={auth ? auth.securityRole : null}
+              securityRoles={auth ? auth.securityRoles : null}
             />
           </div>
         </div>
-
-        {auth && auth.securityRole && auth.securityRole === "translator" && (
-          <Navigate to="/question" />
-        )}
       </BrowserRouter>
     </div>
   );
