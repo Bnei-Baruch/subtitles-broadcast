@@ -337,6 +337,7 @@ const Subtitles = () => {
             >
               <button
                 ref={btnSubtitlesRef}
+                disabled={subtitlesDisplayMode === null}
                 id="btnSubtitles"
                 type="button"
                 className={`btn sources-mod${
@@ -350,6 +351,7 @@ const Subtitles = () => {
               </button>
               <button
                 ref={btnQuestionsRef}
+                disabled={subtitlesDisplayMode === null}
                 id="btnQuestions"
                 type="button"
                 className={`btn questions-mod${
@@ -363,6 +365,7 @@ const Subtitles = () => {
               </button>
               <button
                 ref={btnNoneRef}
+                disabled={subtitlesDisplayMode === null}
                 id="btnNone"
                 type="button"
                 className={`btn none-mod${
@@ -384,6 +387,7 @@ const Subtitles = () => {
               <GreenWindowButton
                 subtitlesDisplayMode={subtitlesDisplayMode}
                 isLtr={isLtr}
+                isLoading={subtitlesDisplayMode === null}
               />
               <button
                 type="button"

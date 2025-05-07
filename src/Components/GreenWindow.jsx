@@ -30,7 +30,6 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       overflow: hidden;
       box-sizing: border-box;
       margin: 0;
-      aspect-ratio : 16/9;
     }
     .full-screen-btn{
       position: absolute;
@@ -115,33 +114,102 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       } 
     } 
 
-    window.onload = function(){ 
+   function resize(event){
+      if (!isLoaded){  
+        isLoaded = true;
+      }
+
+      if (isLoaded) {
+        const width = document.body.clientWidth; 
+        const scaleVal = width / 1920;
+        console.log("scale: " + scaleVal);
+        
+        const slideContentCol = document.getElementsByClassName("slide-content");
+        const slideContentElm = slideContentCol[0];
+        if (slideContentElm) {
+          slideContentElm.style.transform = "scale(" + scaleVal + ")";
+        }
+
+        const slideContainer = document.getElementsByClassName("slide-container");
+        if (slideContainer[0]) {
+          slideContainer[0].style.position = "absolute";
+          if (slideContainer[0].classList.contains("slide-question")) {
+            slideContainer[0].style.top = "" + (scaleVal * 796) + "px";
+          } else {
+            slideContainer[0].style.top = "" + (scaleVal * 770) + "px";
+          }
+        }
+
+        const stripeBlue = document.getElementsByClassName("blue-stripe");
+        if (stripeBlue[0]) {
+          stripeBlue[0].style.height = "" + (scaleVal * 15) + "px";
+        }
+        const stripeGrey = document.getElementsByClassName("grey-stripe");
+        if (stripeGrey[0]) {
+          stripeGrey[0].style.height = "" + (scaleVal * 15) + "px";
+        }
+      }
+
+      const fullScreenElm = document.getElementById("full_screen");
+
+      if((window.fullScreen) ||
+        (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
+          localStorage.setItem("greenWindowFullScreenMode", "true");
+          fullScreenElm.classList.remove("visible");
+          fullScreenElm.classList.add("hidden");
+      } else {
+        localStorage.setItem("greenWindowFullScreenMode", "false");
+        fullScreenElm.classList.remove("hidden");
+        fullScreenElm.classList.add("visible");
+      }      
+
+    }
+    window.addEventListener("resize", resize);
+
+    window.onload = function() { 
       const slideContentCol = document.getElementsByClassName("slide-content");
       const slideContentElm = slideContentCol[0];      
       slideContentElm.style.letterSpacing = "2.6px";
-   }
+    }
 
-   let fullScreenBtnElm = document.getElementById("full_screen");
+		function observe() {
+			const greenPartCont = document.querySelector('.green-part-cont');
+			if (greenPartCont) {
+				const observer = new MutationObserver((mutations) => {
+					mutations.forEach((mutation) => {
+						if (mutation.type === "attributes" && mutation.attributeName === "class") {
+							resize();
+						}
+					});
+				});
+				observer.observe(greenPartCont, { attributes: true });
+			} else {
+				setTimeout(observe, 100);
+			}
+		}
+		observe();
 
-   fullScreenBtnElm.addEventListener("click", function() {    
-    fullScreenMode();
-  });
-  fullScreenBtnElm.addEventListener("mouseover",function(event) {
-    return fullScreenMouseover(event);
-  });
-  fullScreenBtnElm.addEventListener("mouseleave", (event) => {
-    return fullScreenMouseleave(event);
-  });
+    let fullScreenBtnElm = document.getElementById("full_screen");
+
+    fullScreenBtnElm.addEventListener("click", function() {    
+      fullScreenMode();
+    });
+    fullScreenBtnElm.addEventListener("mouseover",function(event) {
+      return fullScreenMouseover(event);
+    });
+    fullScreenBtnElm.addEventListener("mouseleave", (event) => {
+      return fullScreenMouseleave(event);
+    });
   
-   function requestFullscreen(fullScreenFuncRef){
-    fullScreenFuncRef();
-    localStorage.setItem("greenWindowFullScreenMode", "true");
-   }
+    function requestFullscreen(fullScreenFuncRef) {
+      fullScreenFuncRef();
+      localStorage.setItem("greenWindowFullScreenMode", "true");
+    }
 
-   function requestCancelFullScreen(cancelFullScreenFuncRef){
-    localStorage.setItem("greenWindowFullScreenMode", "false");
-    cancelFullScreenFuncRef();
-   }
+    function requestCancelFullScreen(cancelFullScreenFuncRef) {
+      localStorage.setItem("greenWindowFullScreenMode", "false");
+      cancelFullScreenFuncRef();
+    }
 
    function fullScreenMode(){
     const elem = document.getElementsByTagName("html")[0];
@@ -171,36 +239,6 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
         }
     }
    }
-
-    window.addEventListener("resize", function(event){  
-      if (!isLoaded){  
-        isLoaded = true;
-      }
-
-      if (isLoaded){
-        const width = document.body.clientWidth; 
-        const scaleVal = width / 1920;
-        console.log("scale: " + scaleVal);
-        
-        const slideContentCol = document.getElementsByClassName("slide-content");
-        const slideContentElm = slideContentCol[0];
-        slideContentElm.style.transform = transform = "scale(" + scaleVal +")";
-      }
-
-      const fullScreenElm = document.getElementById("full_screen");
-
-      if((window.fullScreen) ||
-        (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
-          localStorage.setItem("greenWindowFullScreenMode", "true");
-          fullScreenElm.classList.remove("visible");
-          fullScreenElm.classList.add("hidden");
-      } else {
-        localStorage.setItem("greenWindowFullScreenMode", "false");
-        fullScreenElm.classList.remove("hidden");
-        fullScreenElm.classList.add("visible");
-      }      
-
-    });
     `;
     try {
       scriptObj.appendChild(document.createTextNode(code));

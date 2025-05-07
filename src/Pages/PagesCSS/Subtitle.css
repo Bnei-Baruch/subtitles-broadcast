@@ -194,6 +194,10 @@ bdo {
   height: 0;
 }
 
+.stripes {
+  z-index: 1;
+}
+
 .slide-container.slide-question .stripes {
   position: absolute;
   top: 0;
@@ -202,12 +206,12 @@ bdo {
 }
 
 .slide-container.slide-question .blue-stripe {
-  height: 3px;
+  height: 15px;
   background-color: rgb(73, 152, 248);
 }
 
 .slide-container.slide-question .grey-stripe {
-  height: 3px;
+  height: 15px;
   background-color: rgb(200, 204, 205);
 }
 
@@ -219,8 +223,13 @@ bdo {
   text-align: left;
 }
 
+.slide-question .slide-content {
+  height: 246px;
+}
+
 .slide-content {
   position: absolute;
+  top: 0;
 
   overflow: hidden;
   font-family: Arial, sans-serif;
@@ -228,8 +237,9 @@ bdo {
   font-weight: bold;
   line-height: 62px;
   width: 1920px;
-  height: 310px;
+  height: 315px;
   padding: 0.2em 1.5em 0 1.1em;
+  background-color: white;
 
   h1 {
     font-size: 82px;
@@ -520,7 +530,7 @@ dropdown-toggle {
 
 .green-part-cont {
   background-color: green;
-  height: 71.29%;
+  height: 100%;
 }
 
 .active-slide-messaging.green-part-cont {
@@ -616,7 +626,10 @@ dropdown-toggle {
   cursor: not-allowed;
 }
 
-.edit-slide-button {
+.MuiButtonBase-root.edit-slide-button {
+  position: absolute;
+  top: 0;
+  right: 0;
   margin-left: 8px;
   cursor: pointer;
 }

@@ -10,12 +10,18 @@ import debugLog from "../Utils/debugLog";
 const TOKEN_REFRESH_INTERVAL_SECONDS = 10;
 const TOKEN_TTL_TIMEOUT_SECONDS = 33;
 
+export const isOperator = (securityRoles) =>
+  securityRoles && (securityRoles.includes("operator") || securityRoles.includes("admin"));
+
+export const isTranslator = (securityRoles) =>
+  securityRoles && (securityRoles.includes("translator") || securityRoles.includes("admin"));
+
 const Auth = ({ children }) => {
   const [auth, setAuth] = useState({
     keycloak: null,
     authenticated: false,
     securityProfile: null,
-    securityRole: null,
+    securityRoles: [],
   });
   const [access, setAccess] = useState(false);
   const dispatch = useDispatch();
@@ -49,7 +55,7 @@ const Auth = ({ children }) => {
         // redirectUri: window.location.origin,
       })
       .then((authenticated) => {
-        const securityRole = determineAccess(keycloak, setAccess);
+        const securityRoles = determineAccess(keycloak, setAccess);
 
         if (authenticated) {
           setInterval(() => {
@@ -72,7 +78,7 @@ const Auth = ({ children }) => {
 
             // TODO: Add gender to the response
             gender: "male",
-            securityRole: securityRole,
+            securityRoles: securityRoles,
           };
           // profile.logout = keycloak.logout;
           dispatch(StoreProfile({ profile }));
@@ -81,7 +87,7 @@ const Auth = ({ children }) => {
             keycloak,
             authenticated,
             profile,
-            securityRole,
+            securityRoles,
           });
         });
       });
@@ -109,7 +115,7 @@ Auth.propTypes = {
 };
 
 function determineAccess(keycloak, setAccess) {
-  let securityRole = null;
+  const securityRoles = [];
 
   if (keycloak && keycloak.realmAccess) {
     const subtitlesRoleRex = new RegExp(
@@ -121,16 +127,18 @@ function determineAccess(keycloak, setAccess) {
       const subtitlesRoleMatchRes = role.match(subtitlesRoleRex);
 
       if (subtitlesRoleMatchRes && subtitlesRoleMatchRes.groups) {
-        securityRole = subtitlesRoleMatchRes.groups.role
+        const securityRole = subtitlesRoleMatchRes.groups.role
           ? subtitlesRoleMatchRes.groups.role
           : subtitlesRoleMatchRes.groups.admin_role;
+        if (!securityRoles.includes(securityRole)) {
+          securityRoles.push(securityRole);
+        }
         setAccess(true);
-        break;
       }
     }
   }
 
-  return securityRole;
+  return securityRoles;
 }
 
 export default Auth;

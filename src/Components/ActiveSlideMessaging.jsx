@@ -371,6 +371,11 @@ export function ActiveSlideMessaging() {
     dispatch,
   ]);
 
+  const isQuestion = activeBroadcastMessage?.slide && (
+    activeBroadcastMessage.type === "question" ||
+    activeBroadcastMessage.slide_type === "question"
+  );
+
   return (
     <div className="active-slide-msg-main-cont">
       <div
@@ -389,13 +394,11 @@ export function ActiveSlideMessaging() {
                 ? activeBroadcastMessage.isLtr
                 : true
             }
-            isQuestion={
-              activeBroadcastMessage.slide_type === "question" ||
-              activeBroadcastMessage.type === "question"
-            }
+            isQuestion={isQuestion}
           />
         )}
       </div>
+      {isQuestion && <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
     </div>
   );
 }

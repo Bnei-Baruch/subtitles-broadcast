@@ -2,8 +2,9 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import "./Layout.css";
 import HeaderBar from "../Layout/HeaderBar";
+import {isOperator, isTranslator} from "../Utils/Auth";
 
-const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
+const SideNavBar = ({ logout, securityRoles, authKeycloak }) => (
   <>
     <div className="side-menu">
       <div
@@ -20,7 +21,7 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
         </a>
 
         <ul className="nav nav-pills flex-column mb-auto">
-          {securityRole && securityRole !== "translator" && (
+          {isOperator(securityRoles) && (
             <li className="nav-item">
               <NavLink
                 to={"/subtitle"}
@@ -32,7 +33,7 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
             </li>
           )}
 
-          {securityRole && securityRole !== "translator" && (
+          {isOperator(securityRoles) && (
             <li>
               <NavLink to={"/archive"} className="nav-link text-white">
                 <img alt="folder" src="image/folder-special.svg" /> Archive
@@ -40,7 +41,7 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
             </li>
           )}
 
-          {securityRole && securityRole !== "translator" && (
+          {isOperator(securityRoles) && (
             <li>
               <NavLink to={"/source"} className="nav-link text-white">
                 <img alt="folder" src="image/folder-special.svg" /> Source
@@ -48,7 +49,7 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
             </li>
           )}
 
-          {securityRole && securityRole !== "translator" && (
+          {isOperator(securityRoles) && (
             <li>
               <NavLink to={"/new"} className="nav-link text-white">
                 <img alt="queue" src="image/queue.svg" /> New
@@ -56,7 +57,7 @@ const SideNavBar = ({ logout, securityRole, authKeycloak }) => (
             </li>
           )}
 
-          {securityRole && securityRole !== "operator" && (
+          {isTranslator(securityRoles) && (
             <li>
               <NavLink to={"/question"} className="nav-link text-white">
                 <img alt="slider" src="image/sliders.svg" />

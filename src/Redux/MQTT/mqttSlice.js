@@ -12,7 +12,7 @@ const initialState = {
   subtitleRelatedQuestionMessagesList: [],
   selectedSubtitleSlide: null,
   selectedQuestionMessage: null,
-  subtitlesDisplayMode: "none",
+  subtitlesDisplayMode: null,
   rounRobinIndex: 0,
   isUserInitiatedChange: false,
   errorLogs: [],
