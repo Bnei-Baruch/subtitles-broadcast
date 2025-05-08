@@ -4,10 +4,22 @@ import { Typography, Paper, Box, Grid, IconButton, Stack } from "@mui/material";
 import { useSelector } from "react-redux";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import GridViewIcon from "@mui/icons-material/GridView";
+import { uniqBy } from "lodash";
 
 const MqttLogsViewer = () => {
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const [viewMode, setViewMode] = useState("list");
+  const users = uniqBy(
+    Object.values(mqttMessages)
+      .map(({ username, firstName, lastName, clientId }) => ({
+        username,
+        firstName,
+        lastName,
+        clientId,
+      }))
+      .filter((u) => u.username && u.clientId),
+    "clientId"
+  );
 
   const toggleView = () => {
     setViewMode((prev) => (prev === "list" ? "grid" : "list"));
@@ -24,7 +36,14 @@ const MqttLogsViewer = () => {
           {viewMode === "list" ? <GridViewIcon /> : <ViewListIcon />}
         </IconButton>
       </Stack>
-
+      <Box mb={3}>
+        <Typography variant="h6">Connected Users ({users.length})</Typography>
+        {users.map((user) => (
+          <Typography key={user.clientId} sx={{ pl: 1 }}>
+            🧑 {user.firstName} {user.lastName} ({user.username})
+          </Typography>
+        ))}
+      </Box>
       {viewMode === "list" ? (
         <Box>
           {Object.entries(mqttMessages).map(([topic, message]) => (
