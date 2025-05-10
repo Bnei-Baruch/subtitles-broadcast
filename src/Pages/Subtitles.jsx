@@ -36,6 +36,7 @@ import {
 } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { setLiveModeEnabled } from "../Redux/MQTT/mqttSlice";
+import { getSubtitleMqttTopic } from "../Utils/Common";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -76,6 +77,15 @@ const Subtitles = () => {
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
+  );
+
+  const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
+  const subtitleTopic = getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode);
+  const subscribed = mqttTopics[subtitleTopic];
 
   const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
 
@@ -347,7 +357,7 @@ const Subtitles = () => {
               </button>
               <button
                 ref={btnSubtitlesRef}
-                disabled={!isLiveModeEnabled || subtitlesDisplayMode === null}
+                disabled={!isLiveModeEnabled || !subscribed}
                 id="btnSubtitles"
                 type="button"
                 className={`btn sources-mod${
@@ -361,7 +371,7 @@ const Subtitles = () => {
               </button>
               <button
                 ref={btnQuestionsRef}
-                disabled={!isLiveModeEnabled || subtitlesDisplayMode === null}
+                disabled={!isLiveModeEnabled || !subscribed}
                 id="btnQuestions"
                 type="button"
                 className={`btn questions-mod${
@@ -375,7 +385,7 @@ const Subtitles = () => {
               </button>
               <button
                 ref={btnNoneRef}
-                disabled={!isLiveModeEnabled || subtitlesDisplayMode === null}
+                disabled={!isLiveModeEnabled || !subscribed}
                 id="btnNone"
                 type="button"
                 className={`btn none-mod${
@@ -397,7 +407,7 @@ const Subtitles = () => {
               <GreenWindowButton
                 subtitlesDisplayMode={subtitlesDisplayMode}
                 isLtr={isLtr}
-                isLoading={!isLiveModeEnabled || subtitlesDisplayMode === null}
+                isLoading={!isLiveModeEnabled || !subscribed}
                 disabled={!isLiveModeEnabled}
               />
               <button
