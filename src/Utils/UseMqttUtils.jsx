@@ -26,28 +26,13 @@ export default function useMqtt() {
   const clientIdRef = useRef(null);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
-
-  const username = useSelector(
-    (state) => state.UserProfile.userProfile.profile.username
-  );
-
-  const firstName = useSelector(
-    (state) => state.UserProfile.userProfile.profile.firstName
-  );
-
-  const lastName = useSelector(
-    (state) => state.UserProfile.userProfile.profile.lastName
-  );
-
-  const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
-  );
-
-  const broadcastProgrammCode = useSelector(
-    (state) =>
-      state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
-  );
+  const username = useSelector((state) => state.UserProfile.userProfile.profile.username);
+  const firstName = useSelector((state) => state.UserProfile.userProfile.profile.firstName);
+  const lastName = useSelector((state) => state.UserProfile.userProfile.profile.lastName);
+  const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
+  const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_programm_code || "morning_lesson"); 
+  const isConnected = useSelector((state) => state.mqtt.isConnected);
+  const userSettingsLoaded = useSelector((state) => state.userSettings.isLoaded);
 
   let clientId = useSelector((state) => state.mqtt.clientId);
   if (!clientId) {
@@ -56,6 +41,19 @@ export default function useMqtt() {
   } else {
     clientIdRef.current = clientId;
   }
+
+  useEffect(() => {
+    if (isConnected && userSettingsLoaded) {
+      // Subscribe to all topics.
+      Object.keys(mqttTopics).forEach((topic) => {
+        if (!mqttTopics[topic]?.isSubscribed) {
+          clientRef.current.subscribe(topic);
+          dispatch(updateMqttTopic({ topic: topic, isSubscribed: true }));
+          debugLog("MQTT Subscribed to topic: ", topic);
+        }
+      });
+    }
+  }, [dispatch, mqttTopics, isConnected, userSettingsLoaded]);
 
   useEffect(() => {
     if (!clientRef.current) {
@@ -137,7 +135,7 @@ export default function useMqtt() {
         clientIdRef.current = null;
       }
     };
-  }, [dispatch, broadcastLangCode]);
+  }, [dispatch, broadcastLangCode, broadcastProgrammCode]);
 
   useEffect(() => {
     const mqttPublishHandler = (event) => {
@@ -216,22 +214,20 @@ export default function useMqtt() {
     };
   }, []); // Runs only once
 
+  // Allow unsubscribing when application closes.
   return {
-    subscribe: (topic) => {
-      if (!mqttTopics[topic]?.isSubscribed) {
-        clientRef.current.subscribe(topic);
-        dispatch(updateMqttTopic({ topic: topic, isSubscribed: true }));
-        debugLog("MQTT Subscribed to topic: ", topic);
-      }
-    },
-    unsubscribe: (topic) => {
-      if (!clientRef || !clientRef.current) {
-        return;
-      }
+    unsubscribe: () => {
+      if (isConnected) {
+        Object.keys(mqttTopics).forEach((topic) => {
+          if (!clientRef || !clientRef.current) {
+            return;
+          }
 
-      clientRef.current.unsubscribe(topic);
-      dispatch(updateMqttTopic({ topic: topic, isSubscribed: false }));
-      debugLog("MQTT UnSubscribed to topic: ", topic);
+          clientRef.current.unsubscribe(topic);
+          dispatch(updateMqttTopic({ topic: topic, isSubscribed: false }));
+          debugLog("MQTT UnSubscribed to topic: ", topic);
+        });
+      }
     },
   };
 }
