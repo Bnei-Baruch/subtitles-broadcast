@@ -13,14 +13,9 @@ import { fetchUserSettings } from "./Redux/UserSettings/UserSettingsSlice";
 import { showErrorToast } from "./Utils/Common";
 
 const App = ({ auth }) => {
-  const { subscribe, unsubscribe } = useMqtt();
+  const { unsubscribe } = useMqtt();
   const dispatch = useDispatch();
-  const isConnected = useSelector((state) => state.mqtt.isConnected);
-  const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
   const mqttErrors = useSelector((state) => state.mqtt.errorLogs);
-  const userSettingsLoaded = useSelector(
-    (state) => state.userSettings.isLoaded
-  );
 
   useEffect(() => {
     // Log the error if there is one
@@ -33,25 +28,14 @@ const App = ({ auth }) => {
   }, [mqttErrors, dispatch]);
 
   useEffect(() => {
-    if (isConnected && userSettingsLoaded) {
-      Object.keys(mqttTopics).forEach((topic) => {
-        subscribe(topic);
-      });
-    }
-
-    return () => {
-      if (isConnected) {
-        Object.keys(mqttTopics).forEach((topic) => {
-          unsubscribe(topic);
-          debugLog("Unsubscribed from topic: ", topic);
-        });
-      }
-    };
-  }, [isConnected, userSettingsLoaded]);
-
-  useEffect(() => {
     dispatch(fetchUserSettings());
   }, [dispatch]);
+
+  useEffect(() => {
+    return () => {
+      unsubscribe();
+    }
+  }, []);
 
   return (
     <div>
