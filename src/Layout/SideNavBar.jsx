@@ -68,21 +68,16 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
                 </NavLink>
               </li>
             )}
-
-            {isOperator(securityRoles) && (
-              <li>
-                <span
-                  className="nav-link text-white"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setMqttDialogOpen(true)}
-                >
-                  <img alt="logs" src="image/list.svg" /> MQTT Logs
-                </span>
-              </li>
-            )}
           </ul>
 
           <HeaderBar logout={authKeycloak} />
+          <span
+            className="nav-link text-white show-mqtt-logs"
+            title="Show MQTT Logs"
+            onClick={() => setMqttDialogOpen(true)}
+          >
+            <img alt="logs" src="image/list.svg" />
+          </span>
         </div>
       </div>
 

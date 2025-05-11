@@ -652,3 +652,10 @@ dropdown-toggle {
   width: 100px;
   display: inline-block;
 }
+
+.show-mqtt-logs {
+  position: absolute !important;
+  bottom: 10px !important;
+  left: 200px !important;
+  cursor: pointer;
+}
