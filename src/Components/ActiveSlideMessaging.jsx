@@ -12,11 +12,15 @@ import {
   setRoundRobinOn,
 } from "../Redux/MQTT/mqttSlice";
 import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
-import { broadcastLanguages } from "../Utils/Const";
+import { broadcastLanguages, roundRobinQuestionsLanguages } from "../Utils/Const";
 
 export function ActiveSlideMessaging() {
   const dispatch = useDispatch();
-  const qstSwapTime = 10000;
+<<<<<<< Updated upstream
+  const qstSwapTime = 10000;  // 10s
+=======
+  const qstSwapTime = 1000;  // 10s
+>>>>>>> Stashed changes
 
   const selectedSubtitleSlide = useSelector(
     (state) => state.mqtt.selectedSubtitleSlide,
@@ -279,7 +283,7 @@ export function ActiveSlideMessaging() {
     questionMessagesList,
   ]);
 
-  /** Implements round-robin*/
+  /** Implements round-robin */
   useEffect(() => {
     let timeoutId;
     if (broadcastLangCode !== "he" || subtitlesDisplayMode === "none") return;
@@ -308,6 +312,7 @@ export function ActiveSlideMessaging() {
 
     if (subtitlesDisplayMode === "questions" && questionMessagesList) {
       const availableLanguages = broadcastLanguages
+        .filter((lang) => roundRobinQuestionsLanguages.includes(lang))
         .filter((lang) => questionMessagesList[lang.value])
         .sort((a, b) => a.order_num - b.order_num);
 
@@ -333,6 +338,7 @@ export function ActiveSlideMessaging() {
       if (visibleQuestions.length > 1) {
         dispatch(setRoundRobinOn());
 
+        console.log('Set timeout!');
         timeoutId = setTimeout(() => {
           let nextIndex = rounRobinIndexRef.current;
           let nextQuestion = null;
@@ -361,7 +367,10 @@ export function ActiveSlideMessaging() {
     }
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutId) {
+        console.log('Clearing RR timeout.');
+        clearTimeout(timeoutId);
+      }
     };
   }, [
     subtitlesDisplayMode,

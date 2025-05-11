@@ -31,6 +31,8 @@ export const broadcastLanguages = [
   { value: "tr", label: "Turkish", isLtr: true, order_num: 6 },
 ];
 
+export const roundRobinQuestionsLanguages = ["he", "en", "ru", "es"];
+
 export let broadcastLangMapObj = {};
 broadcastLanguages.forEach((langObj, index) => {
   broadcastLangMapObj[langObj.value] = langObj;

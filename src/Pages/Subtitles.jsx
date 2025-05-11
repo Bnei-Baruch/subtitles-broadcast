@@ -332,6 +332,8 @@ const Subtitles = () => {
     });
   };
 
+  console.log(isLiveModeEnabled, subscribed);
+
   return (
     <>
       <LoadingOverlay loading={loading} />
