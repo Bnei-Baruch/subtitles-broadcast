@@ -396,3 +396,9 @@ button {
   align-items: center;
   gap: 10px;
 }
+
+.nowrap-cell {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
