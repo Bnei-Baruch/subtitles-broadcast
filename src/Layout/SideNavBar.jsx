@@ -4,6 +4,7 @@ import "./Layout.css";
 import HeaderBar from "../Layout/HeaderBar";
 import { isOperator, isTranslator } from "../Utils/Auth";
 import MqttLogsDialog from "../Components/MqttLogsDialog";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 
 const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
   const [mqttDialogOpen, setMqttDialogOpen] = useState(false);
@@ -76,7 +77,7 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
             title="Show MQTT Logs"
             onClick={() => setMqttDialogOpen(true)}
           >
-            <img alt="logs" src="image/list.svg" />
+            <ArticleOutlinedIcon sx={{ mr: 1 }} />
           </span>
         </div>
       </div>
