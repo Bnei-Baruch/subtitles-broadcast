@@ -115,7 +115,7 @@ const Source = () => {
         page: page.page,
         limit: page.limit,
         keyword: sessionStorage.getItem("headerSearchKeywordSource"),
-        hidden: showDeleted ? 'true' : undefined,
+        hidden: showDeleted ? "true" : undefined,
       })
     );
   }, [page.page, page.limit, broadcastLangCode, showDeleted]);
@@ -129,9 +129,9 @@ const Source = () => {
           language: broadcastLangCode,
           page: page.page,
           limit: page.limit,
-          hidden: deleteIdHidden ? 'true' : undefined,
-          forever: deleteIdForever ? 'true' : undefined,
-          showDeleted: showDeleted ? 'true' : undefined,
+          hidden: deleteIdHidden ? "true" : undefined,
+          forever: deleteIdForever ? "true" : undefined,
+          showDeleted: showDeleted ? "true" : undefined,
         })
       );
       setFinalConfirm(false);
@@ -148,7 +148,14 @@ const Source = () => {
       );
       setToggle(false);
     }
-  }, [finalConfirm, toggle, deleteId, deleteIdHidden, dispatch, deleteIdForever]);
+  }, [
+    finalConfirm,
+    toggle,
+    deleteId,
+    deleteIdHidden,
+    dispatch,
+    deleteIdForever,
+  ]);
 
   const DelectConfirmationModal = useMemo(
     () => (
@@ -295,9 +302,21 @@ const Source = () => {
               style={{ width: "200px" }}
             >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${sourcePathList?.pagination?.total_rows} `}</span>
           </div>
-          <div style={{ position: "absolute", right: "10px" }}
-               className="form-check" data-bs-toggle="tooltip" data-bs-placement="right" title="Show deleted">
-            <input className="form-check-input" type="checkbox" value={showDeleted} onChange={(e) => { setShowDeleted(!showDeleted); }} />
+          <div
+            style={{ position: "absolute", right: "10px" }}
+            className="form-check"
+            data-bs-toggle="tooltip"
+            data-bs-placement="right"
+            title="Show deleted"
+          >
+            <input
+              className="form-check-input"
+              type="checkbox"
+              value={showDeleted}
+              onChange={(e) => {
+                setShowDeleted(!showDeleted);
+              }}
+            />
           </div>
         </div>
         <div className="card" style={{ border: "none" }}>
@@ -310,8 +329,22 @@ const Source = () => {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th style={{ width: "20%", padding: "10px" }}>Path</th>
-                    <th style={{ width: "15%", padding: "10px" }}>Action</th>
+                    <th
+                      className="text-truncate"
+                      style={{ width: "20%", padding: "10px" }}
+                    >
+                      Path
+                    </th>
+                    <th className="text-truncate">Created By</th>
+                    <th className="text-truncate">Created At</th>
+                    <th className="text-truncate">Updated By</th>
+                    <th className="text-truncate">Updated At</th>
+                    <th
+                      className="text-truncate"
+                      style={{ width: "15%", padding: "10px" }}
+                    >
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -322,10 +355,18 @@ const Source = () => {
                         key.bookmark_id !== null ? "bookmarkedrow" : ""
                       }
                     >
-                      <td style={{ padding: "10px" }} className="text-truncate">
+                      <td className="text-truncate" style={{ padding: "10px" }}>
                         {key.path}
                       </td>
-                      <td style={{ padding: "10px" }}>
+                      <td className="text-truncate">{key.created_by}</td>
+                      <td className="text-truncate">
+                        {new Date(key.created_at).toLocaleString()}
+                      </td>
+                      <td className="text-truncate">{key.updated_by}</td>
+                      <td className="text-truncate">
+                        {new Date(key.updated_at).toLocaleString()}
+                      </td>
+                      <td className="text-truncate" style={{ padding: "10px" }}>
                         {key.bookmark_id !== null ? (
                           <i
                             onClick={() => {
@@ -409,21 +450,31 @@ const Source = () => {
                           className="bi bi-pencil m-2 cursor-pointer "
                           onClick={() => handleEditSlide(key)}
                         />
-                        <span className="position-relative cursor-pointer"
-                              data-bs-toggle="tooltip" data-bs-placement="right" title={key.hidden ? "Undelete" : "Delete"}
-                            onClick={() => {
-                              setUnbookmarkAction(false);
-                              setDeleteConfirmationPopup(true);
-                              setDeleteId(key.ID);
-                              setDeleteIdHidden(key.hidden);
-                              setSourceUidForDeleteSlide(key.source_uid);
-                            }}
+                        <span
+                          className="position-relative cursor-pointer"
+                          data-bs-toggle="tooltip"
+                          data-bs-placement="right"
+                          title={key.hidden ? "Undelete" : "Delete"}
+                          onClick={() => {
+                            setUnbookmarkAction(false);
+                            setDeleteConfirmationPopup(true);
+                            setDeleteId(key.ID);
+                            setDeleteIdHidden(key.hidden);
+                            setSourceUidForDeleteSlide(key.source_uid);
+                          }}
                         >
                           <i className="bi bi-trash3"></i>
-                          {key.hidden && <i className="bi bi-x-circle-fill text-danger position-absolute top-0 start-100 translate-middle fs-6"></i>}
+                          {key.hidden && (
+                            <i className="bi bi-x-circle-fill text-danger position-absolute top-0 start-100 translate-middle fs-6"></i>
+                          )}
                         </span>
-                        {key.hidden && <i className="bi bi-trash3-fill text-danger" style={{ marginLeft: "30px" }}
-                            data-bs-toggle="tooltip" data-bs-placement="right" title="Delete forever"
+                        {key.hidden && (
+                          <i
+                            className="bi bi-trash3-fill text-danger"
+                            style={{ marginLeft: "30px" }}
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="right"
+                            title="Delete forever"
                             onClick={() => {
                               setUnbookmarkAction(false);
                               setDeleteConfirmationPopup(true);
@@ -431,7 +482,8 @@ const Source = () => {
                               setDeleteIdForever(key.hidden);
                               setSourceUidForDeleteSlide(key.source_uid);
                             }}
-                          ></i>}
+                          ></i>
+                        )}
                       </td>
                     </tr>
                   ))}
