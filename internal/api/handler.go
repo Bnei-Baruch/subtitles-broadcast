@@ -843,6 +843,10 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
 		Path       string         `json:"path"`
 		Hidden     bool           `json:"hidden"`
+		CreatedBy  string         `json:"created_by"`
+		CreatedAt  time.Time      `json:"created_at"`
+		UpdatedBy  string         `json:"updated_by"`
+		UpdatedAt  time.Time      `json:"updated_at"`
 	}
 	paths := []*SourcePathData{}
 	limitSql := fmt.Sprintf(" LIMIT %d", listLimit)
@@ -854,7 +858,10 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
     files.file_uid AS file_uid,
     source_paths.languages AS languages,
     source_paths.path AS path,
-    slides.hidden AS hidden,
+    slides.hidden AS hidden,source_paths.created_by AS created_by,
+	source_paths.created_at AS created_at,
+	source_paths.updated_by AS updated_by,
+	source_paths.updated_at AS updated_at,
     RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number
   `
 	orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
