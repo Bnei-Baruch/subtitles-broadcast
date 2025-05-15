@@ -12,17 +12,20 @@ import {
 const QuestionMessage = (props) => {
   const dispatch = useDispatch();
   const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
   const broadcastProgrammCode = useSelector(
     (state) =>
       state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson",
+      "morning_lesson"
   );
   const questionMessagesList = useSelector(
-    (state) => state.mqtt.questionMessagesList,
+    (state) => state.mqtt.questionMessagesList
   );
   const allQuestions = Object.values(questionMessagesList).flat();
+  const isLiveModeEnabled = useSelector(
+    (state) => state.mqtt.isLiveModeEnabled
+  );
 
   const parseUtcStrToLocal = (utcDateStr) => {
     let retVal = utcDateStr;
@@ -53,15 +56,21 @@ const QuestionMessage = (props) => {
 
     return isLeftToRight;
   };
-
   const isClearDisabled = (questionMsg) => {
     return (
-      !questionMsg.slide || questionMsg.slide === questionMsg.previous_slide
+      !isLiveModeEnabled ||
+      !questionMsg.slide ||
+      questionMsg.slide === questionMsg.previous_slide
     );
+  };
+
+  const isVisibilityDisabled = () => {
+    return !isLiveModeEnabled;
   };
 
   const isRestoreDisabled = (questionMsg) => {
     return (
+      !isLiveModeEnabled ||
       !questionMsg.previous_slide ||
       questionMsg.slide === questionMsg.previous_slide
     );
@@ -70,7 +79,7 @@ const QuestionMessage = (props) => {
   const publishQuestionUpdate = (updatedMessage) => {
     const mqttTopic = getQuestionMqttTopic(
       broadcastProgrammCode,
-      updatedMessage.lang ? updatedMessage.lang : broadcastLangCode,
+      updatedMessage.lang ? updatedMessage.lang : broadcastLangCode
     );
 
     dispatch(setUserInitiatedChange(true));
@@ -82,6 +91,8 @@ const QuestionMessage = (props) => {
   };
 
   const toggleQuestionVisibility = (questionMsg) => {
+    if (isVisibilityDisabled()) return;
+
     const updatedMessage = {
       ...questionMsg,
       visible: !questionMsg.visible,
@@ -128,11 +139,9 @@ const QuestionMessage = (props) => {
                       {getLanguageName(obj.lang ? obj.lang : obj.language)}
                     </span>
                     <i
-                      className={
-                        obj.visible
-                          ? "bi bi-eye-fill mx-2"
-                          : "bi bi-eye-slash-fill mx-2"
-                      }
+                      className={`mx-2 ${
+                        obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
+                      } ${isVisibilityDisabled() ? "text-muted disabled" : ""}`}
                       title={obj.visible ? "Hide Question" : "Show Question"}
                       onClick={() => toggleQuestionVisibility(obj)}
                       style={{ cursor: "pointer" }}
