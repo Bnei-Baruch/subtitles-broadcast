@@ -1,5 +1,7 @@
 import { broadcastLangMapObj } from "./Const";
 import { toast } from "react-toastify";
+import { useRef } from 'react';
+import isEqual from 'lodash/isEqual'; 
 
 export const defaultToastOptions = {
   position: "bottom-right",
@@ -60,8 +62,6 @@ export function getSubtitlesDisplayModeTopic(
   return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/display_mode`;
 }
 
-export const subtitlesDisplayModeTopic = "subtitles/display_mode";
-
 export function languageIsLtr(langCode) {
   let isLeftToRight = true;
 
@@ -74,4 +74,18 @@ export function languageIsLtr(langCode) {
   }
 
   return isLeftToRight;
+}
+
+export const visibleSlideOrNull = (s) => (s && s.visible !== false && s.slide && s.slide.trim() && s) || null;
+
+export function useDeepMemo(value) {
+    const ref = useRef();
+    const cache = useRef();
+
+    if (!isEqual(ref.current, value)) {
+      ref.current = value;
+      cache.current = value;
+    }
+
+    return cache.current;
 }

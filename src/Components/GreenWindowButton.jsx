@@ -1,7 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { GreenWindow } from "../Components/GreenWindow";
-import { Slide } from "./Slide";
+import { ActiveSlide } from "./ActiveSlide";
+import { DM_NONE } from "../Utils/Const"
+import { visibleSlideOrNull, useDeepMemo } from "../Utils/Common"
+import { lastMessage } from "../Redux/MQTT/mqttSlice"
 
 function getButtonClassName(showGreenWindow) {
   return showGreenWindow
@@ -28,15 +31,19 @@ const styles = {
 export const GreenWindowButton = (props) => {
   const [showGreenWindow, setShowGreenWindow] = useState(false);
 
-  // ✅ Use Redux state instead of local state
-  const activeBroadcastMessage = useSelector(
-    (state) => state.mqtt.activeBroadcastMessage
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.mqtt.subtitlesDisplayMode || DM_NONE,
   );
-
-  const isQuestion = activeBroadcastMessage?.slide && (
-    activeBroadcastMessage.type === "question" ||
-    activeBroadcastMessage.slide_type === "question"
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
+  );
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+  const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, subtitlesDisplayMode, broadcastLangCode, broadcastProgrammCode)));
 
   return (
     <>
@@ -52,39 +59,13 @@ export const GreenWindowButton = (props) => {
         <GreenWindow closeWinUnloadingRef={() => setShowGreenWindow(false)}>
           <div style={styles.mainContainer}>
             <div
-              className={`green-part-cont${
-                !activeBroadcastMessage || !activeBroadcastMessage.slide
-                  ? " display-mode-none"
-                  : ""
-              }`}
+              className={`green-part-cont${slide && slide.slide ? "" : " display-mode-none"}`}
             ></div>
             <div
-              className={`slide-part-cont${
-                !activeBroadcastMessage || !activeBroadcastMessage.slide
-                  ? " display-mode-none"
-                  : ""
-              }`}
+              className={`slide-part-cont${slide && slide.slide ? "" : " display-mode-none"}`}
               style={styles.slidePartContainer}
             >
-              {activeBroadcastMessage?.slide && (
-                <Slide
-                  content={
-                    activeBroadcastMessage.slide
-                      ? activeBroadcastMessage.slide
-                      : activeBroadcastMessage.context
-                  }
-                  inGreenWindow={true}
-                  isLtr={
-                    typeof activeBroadcastMessage.isLtr === "boolean"
-                      ? activeBroadcastMessage.isLtr
-                      : typeof activeBroadcastMessage.left_to_right ===
-                          "boolean"
-                        ? activeBroadcastMessage.left_to_right
-                        : props.isLtr
-                  }
-                  isQuestion={isQuestion}
-                ></Slide>
-              )}
+              <ActiveSlide isGreenWindow={true} />
             </div>
           </div>
         </GreenWindow>

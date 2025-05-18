@@ -1,3 +1,10 @@
+export const DM_SUBTITLES = "subtitles";
+export const DM_QUESTIONS = "questions";
+export const DM_NONE = "none";
+
+export const ST_SUBTITLE = "subtitle";
+export const ST_QUESTION = "question";
+
 function GetLangaugeCode() {
   return {
     English: "en",
@@ -30,6 +37,8 @@ export const broadcastLanguages = [
   { value: "it", label: "Italian", isLtr: true, order_num: 6 },
   { value: "tr", label: "Turkish", isLtr: true, order_num: 6 },
 ];
+
+export const roundRobinQuestionsLanguages = ["he", "en", "ru", "es"];
 
 export let broadcastLangMapObj = {};
 broadcastLanguages.forEach((langObj, index) => {

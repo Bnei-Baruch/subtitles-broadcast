@@ -23,6 +23,7 @@
   align-items: center;
   border-radius: 5px 0px 0px 0px;
   border: 1px solid gray;
+  margin-bottom: 1em;
 }
 
 .SendQutionHistory {

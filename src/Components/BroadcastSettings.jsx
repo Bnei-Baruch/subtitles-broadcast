@@ -14,7 +14,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 import "../Pages/PagesCSS/BroadcastSettings.css";
-import { turnOnUserInitiatedChange } from "../Redux/MQTT/mqttSlice";
 
 const leftColSize = 4;
 const rightColSize = 8;
@@ -42,7 +41,6 @@ export function BroadcastSettings({ props }) {
   const currentProgrammLabel = currentProgrammItem?.label || "Unknown";
 
   const updateBroadcastProgramm = (newProgrammItem) => {
-    dispatch(turnOnUserInitiatedChange());
     dispatch(
       updateMergedUserSettings({
         broadcast_programm_code: newProgrammItem.value,
@@ -51,7 +49,6 @@ export function BroadcastSettings({ props }) {
   };
 
   const updateBroadcastLang = (newLangItem) => {
-    dispatch(turnOnUserInitiatedChange());
     dispatch(
       updateMergedUserSettings({ broadcast_language_code: newLangItem.value }),
     );

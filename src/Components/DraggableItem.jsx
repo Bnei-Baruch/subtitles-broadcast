@@ -1,4 +1,3 @@
-// List.js
 import React, { useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
@@ -6,13 +5,10 @@ import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
-import {
-  setUserSelectedSlide,
-  setUserInitiatedChange,
-  setRoundRobinOff,
-} from "../Redux/MQTT/mqttSlice";
+import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import { publishSubtitle } from "../Utils/UseMqttUtils";
 
 const ItemTypes = {
   CARD: "card",
@@ -40,6 +36,14 @@ const DraggableItem = ({
   const userSelectedFileUID = userSettings?.selected_file_uid || null;
   const selected = userSelectedFileUID === parentBookmarkFileUid;
 
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.mqtt.subtitlesDisplayMode
+  );
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
+  );
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
@@ -82,9 +86,8 @@ const DraggableItem = ({
           );
 
           if (selectedSlide) {
-            dispatch(setRoundRobinOff());
             dispatch(setUserSelectedSlide(selectedSlide));
-            dispatch(setUserInitiatedChange(true));
+            publishSubtitle(selectedSlide, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
           }
         }
       })

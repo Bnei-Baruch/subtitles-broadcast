@@ -8,7 +8,6 @@ import Auth from "./Utils/Auth";
 import { store } from "./Redux/Store";
 import { Provider } from "react-redux";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
