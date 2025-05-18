@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./PagesCSS/Questions.css";
 import QuestionMessage from "../Components/QuestionMessage";
+import { Slide } from "../Components/Slide";
 import { broadcastLanguages } from "../Utils/Const";
 import { getQuestionMqttTopic, languageIsLtr } from "../Utils/Common";
 import { publishEvent } from "../Utils/Events";
@@ -134,6 +135,7 @@ const QuestionModule = () => {
           />
         </div>
       </div>
+      <Slide content={questionText} isLtr={isLtr} isQuestion={true} />
       <div className="my-5">
         <p>History</p>
         <div className="SendQutionHistory">

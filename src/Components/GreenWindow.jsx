@@ -172,20 +172,16 @@ export const GreenWindow = ({ children, closeWinUnloadingRef }) => {
       slideContentElm.style.letterSpacing = "2.6px";
     }
 
+    let content = '';
 		function observe() {
-			const greenPartCont = document.querySelector('.green-part-cont');
-			if (greenPartCont) {
-				const observer = new MutationObserver((mutations) => {
-					mutations.forEach((mutation) => {
-						if (mutation.type === "attributes" && mutation.attributeName === "class") {
-							resize();
-						}
-					});
-				});
-				observer.observe(greenPartCont, { attributes: true });
-			} else {
-				setTimeout(observe, 100);
+			const el = document.querySelector('.slide-part-cont');
+			if (el) {
+        if (content !== el.innerHTML) {
+          content = el.innerHTML;
+          resize();
+        }
 			}
+      setTimeout(observe, 100);
 		}
 		observe();
 

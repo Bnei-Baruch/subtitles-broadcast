@@ -1,24 +1,41 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getSubtitleMqttTopic } from "../../Utils/Common";
+import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../../Utils/Common";
+import { DM_SUBTITLES, DM_QUESTIONS, broadcastLanguages } from "../../Utils/Const";
 import debugLog from "../../Utils/debugLog";
 
+export const lastMessage = (mqttMessages, subtitlesDisplayMode, lang, channel) => {
+  if (subtitlesDisplayMode === DM_SUBTITLES) {
+    const subtitleTopic = getSubtitleMqttTopic(channel, lang);
+    return mqttMessages[subtitleTopic] || null;
+  } else if (subtitlesDisplayMode === DM_QUESTIONS) {
+    const questionTopic = getQuestionMqttTopic(channel, lang);
+    return mqttMessages[questionTopic] || null;
+  }
+  return null;
+}
+
+export const getAllQuestions = (mqttMessages, channel) => {
+  return broadcastLanguages.reduce((questions, {value: lang}) => {
+    const slide = mqttMessages[getQuestionMqttTopic(channel, lang)];
+    if (slide) {
+      questions[lang] = slide;
+    }
+    return questions;
+  }, {});
+}
+
 const initialState = {
-  isConnected: false,
   clientId: null,
-  mqttTopics: {},
-  mqttMessages: {},
-  questionMessagesList: {},
-  activeBroadcastMessage: null,
-  subtitleRelatedQuestionMessagesList: [],
+
+  isConnected: false,
+
+  mqttTopics: {},  // Keys are topics, value isSubscribed.
+  mqttMessages: {},  // Keys are topics, value last message.
+
   selectedSubtitleSlide: null,
-  selectedQuestionMessage: null,
   subtitlesDisplayMode: null,
-  rounRobinIndex: 0,
-  isUserInitiatedChange: false,
-  errorLogs: [],
-  isMqttLoading: false,
-  isRoundRobinOn: false,
   isLiveModeEnabled: false,
+  errorLogs: [],
 };
 
 const mqttSlice = createSlice({
@@ -46,38 +63,15 @@ const mqttSlice = createSlice({
       state.selectedSubtitleSlide = action.payload;
     },
     mqttMessageReceived(state, action, dispatch) {
-      const { topic, message, broadcastLangCode, broadcastProgrammCode } =
-        action.payload;
+      const { topic, message, broadcastLangCode } = action.payload;
       try {
         const parsedMessage = JSON.parse(message);
         state.mqttMessages[topic] = parsedMessage;
-
-        if (topic.includes("/question")) {
-          const lang = parsedMessage.lang;
-          state.questionMessagesList[lang] = parsedMessage;
-        } else {
-          if (broadcastProgrammCode && broadcastLangCode) {
-            const subtitleMqttTopic = getSubtitleMqttTopic(
-              broadcastProgrammCode,
-              broadcastLangCode
-            );
-
-            if (topic === subtitleMqttTopic) {
-              state.isSubtitlesModeLoading = false;
-              state.activeBroadcastMessage = parsedMessage;
-
-              const msgSubtitlesDisplayMode =
-                parsedMessage?.display_status || "none";
-
-              if (state.subtitlesDisplayMode !== msgSubtitlesDisplayMode) {
-                state.subtitlesDisplayMode = msgSubtitlesDisplayMode;
-              }
-            }
-          }
+        if (broadcastLangCode === parsedMessage.lang) {
+          state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
         }
       } catch (error) {
         debugLog("MQTT Message Processing Error:", error);
-        state.isSubtitlesModeLoading = false;
         dispatch(
           addMqttError({
             message: "MQTT Message Processing Error",
@@ -86,39 +80,14 @@ const mqttSlice = createSlice({
         );
       }
     },
-    setActiveBroadcastMessage(state, action) {
-      state.activeBroadcastMessage = action.payload;
-    },
     setSubtitlesDisplayMode: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
-      state.isUserInitiatedChange = true;
-      state.isMqttLoading = true;
     },
     updateSubtitlesDisplayMode: (state, action) => {
       state.subtitlesDisplayMode = action.payload;
     },
-    setSubtitlesDisplayModeFromMQTT: (state, action) => {
-      state.subtitlesDisplayMode = action.payload;
-      state.isUserInitiatedChange = false;
-      state.isMqttLoading = false;
-    },
-    resetUserInitiatedChange: (state) => {
-      state.isUserInitiatedChange = false;
-    },
-    turnOnUserInitiatedChange: (state) => {
-      state.isUserInitiatedChange = true;
-    },
-    setUserInitiatedChange: (state, action) => {
-      state.isUserInitiatedChange = action.payload;
-    },
     setClientId: (state, action) => {
       state.clientId = action.payload;
-    },
-    setSelectedQuestionMessage: (state, action) => {
-      state.selectedQuestionMessage = action.payload;
-    },
-    setRounRobinIndex: (state, action) => {
-      state.rounRobinIndex = action.payload;
     },
     addMqttError: (state, action) => {
       const generateErrorId = () => Math.random().toString(36).substr(2, 9);
@@ -153,19 +122,6 @@ const mqttSlice = createSlice({
         state.errorLogs[index].uiPresented = true;
       }
     },
-    setMqttLoading: (state) => {
-      state.isMqttLoading = true;
-    },
-    resetMqttLoading: (state) => {
-      state.isMqttLoading = false;
-    },
-    setRoundRobinOn: (state) => {
-      state.isRoundRobinOn = true;
-    },
-    setRoundRobinOff: (state) => {
-      state.rounRobinIndex = 0;
-      state.isRoundRobinOn = false;
-    },
     setLiveModeEnabled(state, action) {
       state.isLiveModeEnabled = action.payload;
     },
@@ -179,22 +135,13 @@ export const {
   mqttMessageReceived,
   setActiveBroadcastMessage,
   setSubtitlesDisplayMode,
-  setSubtitlesDisplayModeFromMQTT,
-  resetUserInitiatedChange,
   setClientId,
   setUserSelectedSlide,
-  setSelectedQuestionMessage,
   setRounRobinIndex,
   addMqttError,
   clearMqttErrors,
   markErrorAsUiPresented,
-  setUserInitiatedChange,
-  setMqttLoading,
-  resetMqttLoading,
   updateSubtitlesDisplayMode,
-  turnOnUserInitiatedChange,
-  setRoundRobinOn,
-  setRoundRobinOff,
   setLiveModeEnabled,
 } = mqttSlice.actions;
 

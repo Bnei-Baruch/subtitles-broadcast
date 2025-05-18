@@ -1,17 +1,10 @@
 import { useEffect, useRef } from "react";
 import mqtt from "mqtt";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setConnected,
-  updateMqttTopic,
-  mqttMessageReceived,
-  setClientId,
-  addMqttError,
-  resetMqttLoading,
-} from "../Redux/MQTT/mqttSlice";
-import { broadcastLanguages } from "../Utils/Const";
+import { setConnected, updateMqttTopic, mqttMessageReceived, setClientId, addMqttError } from "../Redux/MQTT/mqttSlice";
+import { DM_NONE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
 import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
-import { subscribeEvent, unSubscribeEvent } from "../Utils/Events"; // Ensure `unsubscribeEvent` exists
+import { publishEvent, subscribeEvent, unSubscribeEvent } from "../Utils/Events";  // Ensure `unsubscribeEvent` exists
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
 
@@ -45,13 +38,21 @@ export default function useMqtt() {
   useEffect(() => {
     if (isConnected && userSettingsLoaded) {
       // Subscribe to all topics.
-      Object.keys(mqttTopics).forEach((topic) => {
-        if (!mqttTopics[topic]?.isSubscribed) {
-          clientRef.current.subscribe(topic);
-          dispatch(updateMqttTopic({ topic: topic, isSubscribed: true }));
-          debugLog("MQTT Subscribed to topic: ", topic);
-        }
-      });
+      const topics = Object.keys(mqttTopics).filter((topic) => !mqttTopics[topic]?.isSubscribed);
+      if (topics.length) {
+        clientRef.current.subscribe(topics, (err, granted) => {
+          if (err) {
+            const errMsg = `MQTT failed to subsribe to ${topics.join(',')}: ${err}`;
+            console.err(errMsg);
+            debugLog(errMsg);
+          } else {
+            for (const grant of granted) {
+              dispatch(updateMqttTopic({ topic: grant.topic, isSubscribed: true }));
+              debugLog("MQTT Subscribed to topic: ", grant.topic, grant.qos);
+            }
+          }
+        });
+      }
     }
   }, [dispatch, mqttTopics, isConnected, userSettingsLoaded]);
 
@@ -92,8 +93,7 @@ export default function useMqtt() {
           mqttMessageReceived({
             topic,
             message: message.toString(),
-            broadcastLangCode,
-            broadcastProgrammCode,
+            broadcastLangCode, 
           })
         );
       });
@@ -105,7 +105,6 @@ export default function useMqtt() {
         // Uncommenting following line will result in session not being able
         // to reconnect when netwrok is back on.
         // clientRef.current.end();
-        dispatch(resetMqttLoading());
         dispatch(setConnected(false));
       });
 
@@ -128,7 +127,6 @@ export default function useMqtt() {
         debugLog("Disconnecting MQTT...");
         clientRef.current.end();
         clientRef.current = null;
-        dispatch(resetMqttLoading());
       }
 
       if (clientIdRef && clientIdRef.current) {
@@ -151,21 +149,6 @@ export default function useMqtt() {
       if (typeof message !== "object") {
         console.error("MQTT Publish Error: Message must be an object");
         dispatch(addMqttError("MQTT Publish Error: Message must be an object"));
-        dispatch(resetMqttLoading());
-        return;
-      }
-
-      // Prevent duplicate publishing if the last message was the same
-      const mqttMessageForTopic = store.getState().mqtt.mqttMessages[mqttTopic];
-      const isDuplicate =
-        mqttMessageForTopic &&
-        mqttMessageForTopic.slide === message.slide &&
-        mqttMessageForTopic.type === message.type &&
-        mqttMessageForTopic.visible === message.visible &&
-        mqttMessageForTopic.display_status === message.display_status;
-
-      if (isDuplicate) {
-        debugLog("Skipping duplicate MQTT publish:", mqttTopic, message);
         return;
       }
 
@@ -189,7 +172,6 @@ export default function useMqtt() {
             if (err) {
               console.error("MQTT Publish Error:", err);
               dispatch(addMqttError(`MQTT Publish Failed: ${err.message}`));
-              dispatch(resetMqttLoading());
             } else {
               debugLog(" MQTT Publish Successful:", mqttTopic, enhancedMessage);
             }
@@ -231,3 +213,41 @@ export default function useMqtt() {
     },
   };
 }
+
+export const publishDisplyNoneMqttMessage = (programmCode, langCode) => {
+  const subtitleMqttTopic = getSubtitleMqttTopic(programmCode, langCode);
+  publishMessage({}, ST_SUBTITLE, subtitleMqttTopic, langCode, DM_NONE);
+};
+
+export function republishQuestion(mqttMessages, programmCode, langCode, displayMode) {
+  const questionMqttTopic = getQuestionMqttTopic(programmCode, langCode);
+  publishMessage(mqttMessages[questionMqttTopic] || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode);
+}
+
+export function publishSubtitle(subtitle, programmCode, langCode, displayMode) {
+  const subtitleMqttTopic = getSubtitleMqttTopic(programmCode, langCode);
+  publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode);
+}
+
+export const publishMessage = (slide, type, topic, lang, displayMode) => {
+  const message = {
+    slide_type: slide.slide_type || type,
+    // Deprecated field. Keep for external systems.
+    type: slide.slide_type || type,
+
+    ID: slide.ID,
+    bookmark_id: slide.bookmark_id,
+    file_uid: slide.file_uid,
+    order_number: slide.order_number,
+    slide: slide.slide,
+    source_uid: slide.source_uid,
+    isLtr: slide.left_to_right !== false,
+    lang: lang,
+    visible: slide.visible === undefined ? true : slide.visible,
+
+    // Important to override display mode.
+    display_status: displayMode,
+  };
+
+  publishEvent("mqttPublish", { mqttTopic: topic, message: message });
+};

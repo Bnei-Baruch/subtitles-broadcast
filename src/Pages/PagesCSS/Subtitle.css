@@ -67,14 +67,15 @@
 }
 .body-content {
   background: #eeeeee;
-  padding: 20px 0 0 20px;
+  padding-left: 0.8em;
 }
 
 .body-content .left-section {
   flex-direction: column;
 }
 .body-content .right-section {
-  margin-left: 15px;
+  margin-top: 1em;
+  margin-left: 1em;
   /* height: calc(100vh + 180px); */
 }
 .body-content .first-section {
@@ -88,24 +89,6 @@
   background-color: #10151c !important;
   border-radius: 0 !important;
 }
-
-/* body {
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-  font-family: "Nunito", sans-serif;
-}
-
-html {
-  height: -webkit-fill-available;
-}
-
-main {
-  height: 100vh;
-  height: -webkit-fill-available;
-  max-height: 100vh;
-  overflow-x: auto;
-  overflow-y: hidden;
-} */
 
 .dropdown-toggle {
   outline: 0;
@@ -279,7 +262,12 @@ bdo {
 }
 
 .subtitle-header {
-  margin-bottom: 0.5em;
+  position: sticky;
+  top: 0;
+  z-index: 8888;
+  background-color: #eeeeee;
+  padding-top: 1em;
+  padding-bottom: 0.5em;
 }
 
 .top-tab .nav-tabs .nav-link {
@@ -401,7 +389,8 @@ bdo {
 }
 
 .activeSlide {
-  outline: solid green 5px;
+  outline: solid red 7px;
+  z-index: 10;
 }
 
 .slides-set {
@@ -531,11 +520,6 @@ dropdown-toggle {
 .green-part-cont {
   background-color: green;
   height: 100%;
-}
-
-.active-slide-messaging.green-part-cont {
-  outline: 1px solid rgb(204, 204, 204);
-  margin: 0 0 1px 0;
 }
 
 .active-slide-msg-main-cont {

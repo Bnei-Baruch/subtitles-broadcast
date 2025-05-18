@@ -1,11 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import Select from "react-select";
+
 import "./PagesCSS/Subtitle.css";
-import { useDispatch } from "react-redux";
-import {
-  getAllBookAddedByUser,
-  clearAllBookmarks,
-} from "../Redux/Subtitle/SubtitleSlice";
+
+import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, MAX_SLIDE_LIMIT, broadcastLanguages } from "../Utils/Const";
+import { getAllBookAddedByUser, clearAllBookmarks } from "../Redux/Subtitle/SubtitleSlice";
 import BookContent from "../Components/BookContent";
+import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
+import DraggableItem from "../Components/DraggableItem";
+import GreenWindowButton from "../Components/GreenWindowButton";
+import Preview from "../Components/Preview";
+import QuestionMessage from "../Components/QuestionMessage";
+import { useNavigate } from "react-router-dom";
+import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import LoadingOverlay from "../Components/LoadingOverlay";
+import { getSubtitleMqttTopic } from "../Utils/Common";
+import { publishDisplyNoneMqttMessage, republishQuestion, publishSubtitle } from "../Utils/UseMqttUtils";
 import {
   BookmarksSlide,
   UserBookmarkList,
@@ -13,30 +26,11 @@ import {
   getAllBookmarkListLoading,
   BookmarkSlide,
 } from "../Redux/ArchiveTab/ArchiveSlice";
-import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
-import { useSelector } from "react-redux";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import DraggableItem from "../Components/DraggableItem";
-import Select from "react-select";
-import GreenWindowButton from "../Components/GreenWindowButton";
-import ActiveSlideMessaging from "../Components/ActiveSlideMessaging";
-import QuestionMessage from "../Components/QuestionMessage";
-import { useNavigate } from "react-router-dom";
-import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
-import { MAX_SLIDE_LIMIT, broadcastLanguages } from "../Utils/Const";
 import {
+  setLiveModeEnabled,
   setSubtitlesDisplayMode,
   setUserSelectedSlide,
-  resetMqttLoading,
-  addMqttError,
-  setUserInitiatedChange,
-  setMqttLoading,
-  setRoundRobinOff,
 } from "../Redux/MQTT/mqttSlice";
-import LoadingOverlay from "../Components/LoadingOverlay";
-import { setLiveModeEnabled } from "../Redux/MQTT/mqttSlice";
-import { getSubtitleMqttTopic } from "../Utils/Common";
 
 function usePrevious(value) {
   const ref = useRef();
@@ -47,7 +41,6 @@ function usePrevious(value) {
 }
 
 const Subtitles = () => {
-  const loadingTimeoutDuration = 5000;
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
@@ -84,13 +77,13 @@ const Subtitles = () => {
   );
 
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const subtitleTopic = getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode);
   const subscribed = mqttTopics[subtitleTopic];
 
-  const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
+  // const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
 
   const [loading, setLoading] = useState(false);
-  const [loadingTimeoutId, setLoadingTimeoutId] = useState(null);
   const isLiveModeEnabled = useSelector(
     (state) => state.mqtt.isLiveModeEnabled
   );
@@ -107,25 +100,23 @@ const Subtitles = () => {
     );
 
     if (targetSlideObj) {
-      dispatch(setUserInitiatedChange(true));
-      dispatch(setMqttLoading());
-      dispatch(setUserSelectedSlide(targetSlideObj));
-      dispatch(
-        updateMergedUserSettings({
-          selected_slide_id: targetSlideObj.ID,
-        })
-      );
-
-      dispatch(
-        BookmarkSlide({
-          data: {
-            file_uid: targetSlideObj.file_uid,
-            slide_id: targetSlideObj.ID,
-            update: true,
-          },
-          language: broadcastLangCode,
-        })
-      );
+      publishSubtitle(targetSlideObj, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
+      Promise.all([
+        dispatch(setUserSelectedSlide(targetSlideObj)),
+        dispatch(updateMergedUserSettings({ selected_slide_id: targetSlideObj.ID })),
+        dispatch(
+          BookmarkSlide({
+            data: {
+              file_uid: targetSlideObj.file_uid,
+              slide_id: targetSlideObj.ID,
+              update: true,
+            },
+            language: broadcastLangCode,
+          })
+        ),
+      ]).finally(() => {
+        setLoading(false);
+      });
     }
   };
 
@@ -180,46 +171,6 @@ const Subtitles = () => {
     },
     [UserAddedList, updateSelectedSlide]
   );
-
-  useEffect(() => {
-    setLoading(isMqttLoading);
-    sessionStorage.setItem("isMqttLoading", isMqttLoading);
-
-    if (isMqttLoading) {
-      if (loadingTimeoutId) {
-        clearTimeout(loadingTimeoutId);
-      }
-
-      // Set a timeout to prevent indefinite loading
-      const newTimeout = setTimeout(() => {
-        if (sessionStorage.getItem("isMqttLoading") === "false") {
-          return;
-        }
-
-        dispatch(resetMqttLoading());
-        dispatch(
-          addMqttError({
-            message:
-              "⚠️ Subtitle mode change timeout: No MQTT response received.",
-            type: "Timeout",
-          })
-        );
-      }, loadingTimeoutDuration);
-
-      setLoadingTimeoutId(newTimeout);
-    } else {
-      if (loadingTimeoutId) {
-        clearTimeout(loadingTimeoutId);
-        setLoadingTimeoutId(null);
-      }
-    }
-
-    return () => {
-      if (loadingTimeoutId) {
-        clearTimeout(loadingTimeoutId);
-      }
-    };
-  }, [isMqttLoading]);
 
   useEffect(() => {
     // Add event listener when the component mounts
@@ -297,8 +248,8 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
-    dispatch(setRoundRobinOff());
-    dispatch(setSubtitlesDisplayMode("questions"));
+    dispatch(setSubtitlesDisplayMode(DM_QUESTIONS));
+    republishQuestion(mqttMessages, broadcastProgrammCode, broadcastLangCode, DM_QUESTIONS);
   }
 
   function subtitlesBtnOnClick(evt) {
@@ -306,8 +257,8 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
 
-    dispatch(setRoundRobinOff());
-    dispatch(setSubtitlesDisplayMode("subtitles"));
+    dispatch(setSubtitlesDisplayMode(DM_SUBTITLES));
+    publishSubtitle(selectedSubtitleSlide, broadcastProgrammCode, broadcastLangCode, DM_SUBTITLES);
   }
 
   function noneBtnOnClick(evt) {
@@ -315,8 +266,8 @@ const Subtitles = () => {
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
 
-    dispatch(setRoundRobinOff());
-    dispatch(setSubtitlesDisplayMode("none"));
+    dispatch(setSubtitlesDisplayMode(DM_NONE));
+    publishDisplyNoneMqttMessage(broadcastProgrammCode, broadcastLangCode);
   }
 
   const navigatToEditSubtitle = () => {
@@ -331,8 +282,6 @@ const Subtitles = () => {
       state: { previousLocation: window.location.pathname },
     });
   };
-
-  console.log(isLiveModeEnabled, subscribed);
 
   return (
     <>
@@ -535,7 +484,7 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
-            <ActiveSlideMessaging />
+            <Preview />
           </div>
           <div className="book-mark whit-s overflow-auto">
             <div className="top-head">

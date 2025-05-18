@@ -9,7 +9,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
 import {
   setUserSelectedSlide,
-  setUserInitiatedChange,
 } from "../Redux/MQTT/mqttSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import debugLog from "../Utils/debugLog";
@@ -18,6 +17,7 @@ import {
   updateMergedUserSettings,
   updateSettingsInternal,
 } from "../Redux/UserSettings/UserSettingsSlice";
+import { publishSubtitle } from "../Utils/UseMqttUtils";
 
 const BookContent = ({
   slideOrderNumber,
@@ -34,6 +34,14 @@ const BookContent = ({
   const userSelectedSlideId = userSettings?.selected_slide_id || null;
   const userSelectedFileUID = userSettings?.selected_file_uid || null;
   const [activeSlideId, setActiveSlideID] = useState(null);
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.mqtt.subtitlesDisplayMode
+  );
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_programm_code ||
+      "morning_lesson"
+  );
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
@@ -108,8 +116,8 @@ const BookContent = ({
     setLoading(true);
     setSearchSlide("");
 
-    dispatch(setUserInitiatedChange(true));
     dispatch(setUserSelectedSlide(item));
+    publishSubtitle(item, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
     setActiveSlideID(item.ID);
 
     try {
@@ -131,12 +139,10 @@ const BookContent = ({
         })
       ).finally(() => {
         setLoading(false);
-        dispatch(setUserInitiatedChange(false));
       });
     } catch (error) {
       debugLog(" updateMergedUserSettings Error:", error);
       setLoading(false);
-      dispatch(setUserInitiatedChange(false));
     }
   };
 

@@ -1,13 +1,10 @@
 import React from "react";
 import { broadcastLangMapObj } from "../Utils/Const";
-import { getQuestionMqttTopic } from "../Utils/Common";
+import { getQuestionMqttTopic, useDeepMemo } from "../Utils/Common";
 import { publishEvent } from "../Utils/Events";
 import { Slide } from "./Slide";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  setUserInitiatedChange,
-  setSelectedQuestionMessage,
-} from "../Redux/MQTT/mqttSlice";
+import { getAllQuestions } from "../Redux/MQTT/mqttSlice";
 
 const QuestionMessage = (props) => {
   const dispatch = useDispatch();
@@ -19,9 +16,12 @@ const QuestionMessage = (props) => {
       state.userSettings.userSettings.broadcast_programm_code ||
       "morning_lesson"
   );
-  const questionMessagesList = useSelector(
-    (state) => state.mqtt.questionMessagesList
+  const subtitlesDisplayMode = useSelector(
+    (state) => state.mqtt.subtitlesDisplayMode
   );
+
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+  const questionMessagesList = useDeepMemo(getAllQuestions(mqttMessages, broadcastProgrammCode));
   const allQuestions = Object.values(questionMessagesList).flat();
   const isLiveModeEnabled = useSelector(
     (state) => state.mqtt.isLiveModeEnabled
@@ -39,6 +39,9 @@ const QuestionMessage = (props) => {
   };
 
   const getLanguageName = (langCode) => {
+    if (!langCode) {
+      return "Unknown";
+    }
     const langName = broadcastLangMapObj[langCode].label;
     return langName;
   };
@@ -82,11 +85,12 @@ const QuestionMessage = (props) => {
       updatedMessage.lang ? updatedMessage.lang : broadcastLangCode
     );
 
-    dispatch(setUserInitiatedChange(true));
-    dispatch(setSelectedQuestionMessage(updatedMessage));
     publishEvent("mqttPublish", {
       mqttTopic: mqttTopic,
-      message: updatedMessage,
+      message: {
+        ...updatedMessage,
+        display_status: subtitlesDisplayMode,
+      }
     });
   };
 
