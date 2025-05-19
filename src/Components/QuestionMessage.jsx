@@ -3,11 +3,10 @@ import { broadcastLangMapObj } from "../Utils/Const";
 import { getQuestionMqttTopic, useDeepMemo } from "../Utils/Common";
 import { publishEvent } from "../Utils/Events";
 import { Slide } from "./Slide";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { getAllQuestions } from "../Redux/MQTT/mqttSlice";
 
 const QuestionMessage = (props) => {
-  const dispatch = useDispatch();
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );

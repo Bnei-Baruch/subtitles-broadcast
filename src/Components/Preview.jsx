@@ -22,7 +22,7 @@ export function Preview() {
 
   return (
     <div className="active-slide-msg-main-cont">
-      <div className={`green-part-cont active-slide-messaging${slide?.slide ? "" : " display-mode-none"}`}>
+      <div className={`green-part-cont active-slide-messaging`}>
         &nbsp;
       </div>
       <div className="slide-part-cont">
