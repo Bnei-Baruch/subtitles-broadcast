@@ -45,19 +45,6 @@ const QuestionMessage = (props) => {
     return langName;
   };
 
-  const languageIsLtr = (langCode) => {
-    let isLeftToRight = true;
-
-    if (langCode) {
-      const lnagObj = broadcastLangMapObj[langCode];
-
-      if (lnagObj) {
-        isLeftToRight = !(lnagObj.isLtr === false);
-      }
-    }
-
-    return isLeftToRight;
-  };
   const isClearDisabled = (questionMsg) => {
     return (
       !isLiveModeEnabled ||
@@ -179,7 +166,7 @@ const QuestionMessage = (props) => {
 
               <Slide
                 content={obj.orgSlide ? obj.orgSlide : obj.slide}
-                isLtr={languageIsLtr(obj.lang ? obj.lang : obj.language)}
+                isLtr={obj.isLtr}
                 isQuestion={obj.type === "question"}
               ></Slide>
             </div>
@@ -197,7 +184,7 @@ const QuestionMessage = (props) => {
             <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
               <Slide
                 content={obj.slide}
-                isLtr={languageIsLtr(obj.lang ? obj.lang : obj.language)}
+                isLtr={obj.isLtr}
                 isQuestion={
                   obj.type === "question" || obj.slide_type === "question"
                 }
@@ -221,13 +208,7 @@ const QuestionMessage = (props) => {
                     {parseUtcStrToLocal(obj.date)}
                   </span>
                   <br />
-                  <div
-                    className={`message ${
-                      languageIsLtr(obj.lang ? obj.lang : obj.language)
-                        ? "ChangeToLtr"
-                        : "ChangeToRtl"
-                    }`}
-                  >
+                  <div className={`message ${obj.isLtr ? "ltr" : "rtl"}`}>
                     {obj.orgSlide ? obj.orgSlide : obj.slide}
                   </div>
                 </li>

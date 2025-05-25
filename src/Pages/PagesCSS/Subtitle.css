@@ -255,7 +255,7 @@ bdo {
     color: black;
   }
 
-  &.ChangeToLtr {
+  &.ltr {
     padding-left: 1.5em;
     padding-right: 1.1em;
   }
@@ -369,18 +369,18 @@ bdo {
   margin-bottom: 10px;
 }
 
-.ChangeToLtr {
+.ltr {
   text-align: left;
   direction: ltr;
 }
 
-.ChangeToRtl {
+.rtl {
   direction: rtl;
   text-align: right;
 }
 
-.slide-question .ChangeToLtr,
-.slide-question .ChangeToRtl {
+.slide-question .ltr,
+.slide-question .rtl {
   text-align: center;
 }
 
@@ -556,7 +556,7 @@ dropdown-toggle {
   padding-right: 1.1em;
 }
 
-.slide-question .slide-content.ChangeToLtr * {
+.slide-question .slide-content.ltr * {
   padding-left: 1.5em;
   padding-right: 1.1em;
 }

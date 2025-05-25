@@ -675,7 +675,7 @@ const EditArchive = ({ handleClose }) => {
                 <input
                   type="text"
                   className={`update-source-path-inp form-control input  ${
-                    isLtr ? "ChangeToLtr" : "ChangeToRtl"
+                    isLtr ? "ltr" : "rtl"
                   }`}
                   value={sourcePath || ""} // Provide a fallback value
                   onChange={handleSourcePathChange}
