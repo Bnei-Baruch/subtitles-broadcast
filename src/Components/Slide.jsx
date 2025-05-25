@@ -56,7 +56,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
       </div>
       <div
         ref={slideRef}
-        className={`slide-content  ${isLtr ? "ChangeToLtr" : "ChangeToRtl"}`}
+        className={`slide-content  ${isLtr ? "ltr" : "rtl"}`}
       ></div>
     </div>
   );
