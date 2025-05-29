@@ -241,7 +241,7 @@ export const publishMessage = (slide, type, topic, lang, displayMode) => {
     order_number: slide.order_number,
     slide: slide.slide,
     source_uid: slide.source_uid,
-    isLtr: slide.left_to_right !== false,
+    isLtr: slide.isLtr,
     lang: lang,
     visible: slide.visible === undefined ? true : slide.visible,
 
