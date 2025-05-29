@@ -351,9 +351,7 @@ const Source = () => {
                   {sourcePathList?.paths?.map((key, index) => (
                     <tr
                       key={key.file_uid}
-                      className={
-                        key.bookmark_id !== null ? "bookmarkedrow" : ""
-                      }
+                      className={key.bookmark_id !== null ? "bookmarkedrow" : ""}
                     >
                       <td className="text-truncate" style={{ padding: "10px" }}>
                         {key.path}
