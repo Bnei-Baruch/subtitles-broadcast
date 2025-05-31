@@ -4,7 +4,7 @@ import QuestionMessage from "../Components/QuestionMessage";
 import { Slide } from "../Components/Slide";
 import { broadcastLanguages } from "../Utils/Const";
 import { getQuestionMqttTopic, languageIsLtr } from "../Utils/Common";
-import { publishEvent } from "../Utils/Events";
+import { publishQuestion } from "../Utils/UseMqttUtils";
 import { useSelector } from "react-redux";
 import { getSubtitleMqttTopic } from "../Utils/Common";
 
@@ -23,6 +23,7 @@ const QuestionModule = () => {
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
 
   useEffect(() => {
@@ -57,28 +58,14 @@ const QuestionModule = () => {
       display_status: subtitlesDisplayMode,
     };
 
-    const mqttTopic = getQuestionMqttTopic(
+    publishQuestion(
+      jsonMsg,
+      mqttMessages,
       broadcastProgrammCode,
-      broadcastLangCode
+      broadcastLangCode,
+      subtitlesDisplayMode,
+      /* ignoreLiveMode */ true,
     );
-    publishEvent("mqttPublish", {
-      mqttTopic,
-      message: jsonMsg,
-      ignoreLiveMode: true,
-    });
-
-    if (subtitlesDisplayMode === "questions") {
-      const subtitleMqttTopic = getSubtitleMqttTopic(
-        broadcastProgrammCode,
-        broadcastLangCode
-      );
-
-      publishEvent("mqttPublish", {
-        mqttTopic: subtitleMqttTopic,
-        message: jsonMsg,
-        ignoreLiveMode: true,
-      });
-    }
 
     setHandleSuccess(true);
     setQuestionText("");

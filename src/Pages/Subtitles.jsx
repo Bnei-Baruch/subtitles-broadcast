@@ -17,8 +17,8 @@ import QuestionMessage from "../Components/QuestionMessage";
 import { useNavigate } from "react-router-dom";
 import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
 import LoadingOverlay from "../Components/LoadingOverlay";
-import { getSubtitleMqttTopic } from "../Utils/Common";
-import { publishDisplyNoneMqttMessage, republishQuestion, publishSubtitle } from "../Utils/UseMqttUtils";
+import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
+import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle } from "../Utils/UseMqttUtils";
 import {
   BookmarksSlide,
   UserBookmarkList,
@@ -81,8 +81,6 @@ const Subtitles = () => {
   const subtitleTopic = getSubtitleMqttTopic(broadcastProgrammCode, broadcastLangCode);
   const subscribed = mqttTopics[subtitleTopic];
 
-  // const isMqttLoading = useSelector((state) => state.mqtt.isMqttLoading);
-
   const [loading, setLoading] = useState(false);
   const isLiveModeEnabled = useSelector(
     (state) => state.mqtt.isLiveModeEnabled
@@ -100,7 +98,7 @@ const Subtitles = () => {
     );
 
     if (targetSlideObj) {
-      publishSubtitle(targetSlideObj, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
+      publishSubtitle(targetSlideObj, mqttMessages, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
       Promise.all([
         dispatch(setUserSelectedSlide(targetSlideObj)),
         dispatch(updateMergedUserSettings({ selected_slide_id: targetSlideObj.ID })),
@@ -249,7 +247,10 @@ const Subtitles = () => {
     btnNoneRef.current.classList.remove("btn-success");
 
     dispatch(setSubtitlesDisplayMode(DM_QUESTIONS));
-    republishQuestion(mqttMessages, broadcastProgrammCode, broadcastLangCode, DM_QUESTIONS);
+
+    // Republish existing question.
+    const questionMqttTopic = getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode);
+    publishQuestion(mqttMessages[questionMqttTopic] || {}, mqttMessages, broadcastProgrammCode, broadcastLangCode, DM_QUESTIONS);
   }
 
   function subtitlesBtnOnClick(evt) {
@@ -258,7 +259,7 @@ const Subtitles = () => {
     btnNoneRef.current.classList.remove("btn-success");
 
     dispatch(setSubtitlesDisplayMode(DM_SUBTITLES));
-    publishSubtitle(selectedSubtitleSlide, broadcastProgrammCode, broadcastLangCode, DM_SUBTITLES);
+    publishSubtitle(selectedSubtitleSlide, mqttMessages, broadcastProgrammCode, broadcastLangCode, DM_SUBTITLES);
   }
 
   function noneBtnOnClick(evt) {
@@ -267,7 +268,7 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
 
     dispatch(setSubtitlesDisplayMode(DM_NONE));
-    publishDisplyNoneMqttMessage(broadcastProgrammCode, broadcastLangCode);
+    publishDisplyNoneMqttMessage(mqttMessages, broadcastProgrammCode, broadcastLangCode);
   }
 
   const navigatToEditSubtitle = () => {

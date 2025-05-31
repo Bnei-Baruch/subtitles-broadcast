@@ -47,6 +47,7 @@ const DraggableItem = ({
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he",
   );
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
@@ -87,7 +88,8 @@ const DraggableItem = ({
 
           if (selectedSlide) {
             dispatch(setUserSelectedSlide(selectedSlide));
-            publishSubtitle(selectedSlide, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
+
+            publishSubtitle(selectedSlide, mqttMessages, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
           }
         }
       })

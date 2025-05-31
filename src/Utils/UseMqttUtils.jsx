@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { setConnected, updateMqttTopic, mqttMessageReceived, setClientId, addMqttError } from "../Redux/MQTT/mqttSlice";
 import { DM_NONE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
 import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
-import { publishEvent, subscribeEvent, unSubscribeEvent } from "../Utils/Events";  // Ensure `unsubscribeEvent` exists
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
 
@@ -181,18 +180,12 @@ export default function useMqtt() {
     };
 
     // Add listener only once
-    subscribeEvent("mqttPublish", mqttPublishHandler);
+    document.addEventListener("mqttPublish", mqttPublishHandler);
 
-    //  Remove listener on component unmount correctly
+    // Remove listener on component unmount correctly.
     return () => {
       debugLog(" Removing MQTT publish listener");
-      if (typeof unSubscribeEvent === "function") {
-        unSubscribeEvent("mqttPublish", mqttPublishHandler);
-      } else {
-        console.warn(
-          "Unable to remove event listener: unSubscribeEvent is not defined"
-        );
-      }
+      document.removeEventListener("mqttPublish", mqttPublishHandler);
     };
   }, []); // Runs only once
 
@@ -214,22 +207,49 @@ export default function useMqtt() {
   };
 }
 
-export const publishDisplyNoneMqttMessage = (programmCode, langCode) => {
-  const subtitleMqttTopic = getSubtitleMqttTopic(programmCode, langCode);
-  publishMessage({}, ST_SUBTITLE, subtitleMqttTopic, langCode, DM_NONE);
+export function publishEvent(eventName, data) {
+  const event = new CustomEvent(eventName, { detail: data });
+  document.dispatchEvent(event);
+}
+
+export const publishDisplyNoneMqttMessage = (mqttMessages, channel, langCode) => {
+  republishSubtitle(mqttMessages, channel, langCode, DM_NONE);
+  republishQuestion(mqttMessages, channel, langCode, DM_NONE);
 };
 
-export function republishQuestion(mqttMessages, programmCode, langCode, displayMode) {
-  const questionMqttTopic = getQuestionMqttTopic(programmCode, langCode);
-  publishMessage(mqttMessages[questionMqttTopic] || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode);
+// Used only locally in this file, will only update question displayMode if needed.
+function republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+  const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
+  const lastQuestion = mqttMessages[questionMqttTopic] || {};
+  if (lastQuestion.display_status !== displayMode) {
+    publishMessage(lastQuestion, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode);
+  }
 }
 
-export function publishSubtitle(subtitle, programmCode, langCode, displayMode) {
-  const subtitleMqttTopic = getSubtitleMqttTopic(programmCode, langCode);
-  publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode);
+// Used only locally in this file, will only update subtitle displayMode if needed.
+function republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+  const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
+  const lastSubtitle = mqttMessages[subtitleMqttTopic] || {};
+  if (lastSubtitle.display_status !== displayMode) {
+    publishMessage(lastSubtitle, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode);
+  }
 }
 
-export const publishMessage = (slide, type, topic, lang, displayMode) => {
+// Updates question and if needed also updated subtitle displayMode.
+export function publishQuestion(question, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+  const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
+  publishMessage(question || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode);
+  republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode);
+}
+
+// Updates subtitle and if needed also updated question displayMode.
+export function publishSubtitle(subtitle, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+  const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
+  publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode);
+  republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode);
+}
+
+export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode) => {
   const message = {
     slide_type: slide.slide_type || type,
     // Deprecated field. Keep for external systems.
@@ -249,5 +269,5 @@ export const publishMessage = (slide, type, topic, lang, displayMode) => {
     display_status: displayMode,
   };
 
-  publishEvent("mqttPublish", { mqttTopic: topic, message: message });
+  publishEvent("mqttPublish", { mqttTopic: topic, message: message, ignoreLiveMode });
 };
