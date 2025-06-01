@@ -264,6 +264,7 @@ export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLive
     isLtr: slide.isLtr !== undefined ? slide.isLtr : slide.left_to_right !== false,
     lang: lang,
     visible: slide.visible === undefined ? true : slide.visible,
+    previous_slide: slide.previous_slide,
 
     // Important to override display mode.
     display_status: displayMode,
