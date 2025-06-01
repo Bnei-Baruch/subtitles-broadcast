@@ -1,7 +1,7 @@
 import React from "react";
 import { broadcastLangMapObj } from "../Utils/Const";
-import { getQuestionMqttTopic, useDeepMemo } from "../Utils/Common";
-import { publishEvent } from "../Utils/Events";
+import { useDeepMemo } from "../Utils/Common";
+import { publishQuestion } from "../Utils/UseMqttUtils";
 import { Slide } from "./Slide";
 import { useSelector } from "react-redux";
 import { getAllQuestions } from "../Redux/MQTT/mqttSlice";
@@ -58,6 +58,7 @@ const QuestionMessage = (props) => {
   };
 
   const isRestoreDisabled = (questionMsg) => {
+    console.log(isLiveModeEnabled, questionMsg.previous_slide, questionMsg.slide, questionMsg.previous_slide);
     return (
       !isLiveModeEnabled ||
       !questionMsg.previous_slide ||
@@ -66,18 +67,13 @@ const QuestionMessage = (props) => {
   };
 
   const publishQuestionUpdate = (updatedMessage) => {
-    const mqttTopic = getQuestionMqttTopic(
+    publishQuestion(
+      updatedMessage,
+      mqttMessages,
       broadcastProgrammCode,
-      updatedMessage.lang ? updatedMessage.lang : broadcastLangCode
+      updatedMessage.lang ? updatedMessage.lang : broadcastLangCode,
+      subtitlesDisplayMode
     );
-
-    publishEvent("mqttPublish", {
-      mqttTopic: mqttTopic,
-      message: {
-        ...updatedMessage,
-        display_status: subtitlesDisplayMode,
-      }
-    });
   };
 
   const toggleQuestionVisibility = (questionMsg) => {

@@ -45,6 +45,7 @@ const BookContent = ({
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
+  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
   useEffect(() => {
     setActiveSlideID(userSelectedSlideId);
@@ -117,7 +118,7 @@ const BookContent = ({
     setSearchSlide("");
 
     dispatch(setUserSelectedSlide(item));
-    publishSubtitle(item, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
+    publishSubtitle(item, mqttMessages, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
     setActiveSlideID(item.ID);
 
     try {
