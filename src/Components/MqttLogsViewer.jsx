@@ -7,15 +7,20 @@ import SortIcon from "@mui/icons-material/Sort";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
+const messageTime = (message) => message.date ? new Date(message.date).getTime() : 0;
+
 const MqttLogsViewer = () => {
-  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+  const mqttLogs = useSelector((state) => state.mqtt.mqttLogs);
 
   const [userSortOrder, setUserSortOrder] = useState("desc");
   const [messageSortOrder, setMessageSortOrder] = useState("desc");
 
+  if (mqttLogs.length === 0) {
+    return <Typography>No MQTT messages received yet.</Typography>;
+  }
+
   const users = uniqBy(
-    Object.values(mqttMessages)
-      .map(({ username, firstName, lastName, clientId, date }) => ({
+    mqttLogs.map(({ username, firstName, lastName, clientId, date }) => ({
         username,
         firstName,
         lastName,
@@ -29,24 +34,13 @@ const MqttLogsViewer = () => {
           ? b.timestamp - a.timestamp
           : a.timestamp - b.timestamp
       ),
-    "clientId"
+    "username"
   );
 
-  const sortedMessages = Object.entries(mqttMessages)
-    .map(([topic, message]) => ({
-      topic,
-      message,
-      timestamp: message.date ? new Date(message.date).getTime() : 0,
-    }))
-    .sort((a, b) =>
-      messageSortOrder === "desc"
-        ? b.timestamp - a.timestamp
-        : a.timestamp - b.timestamp
-    );
-
-  if (sortedMessages.length === 0) {
-    return <Typography>No MQTT messages received yet.</Typography>;
-  }
+  const sorted = mqttLogs.slice().sort((a, b) =>
+    messageSortOrder === "desc"
+      ? messageTime(b) - messageTime(a)
+      : messageTime(a) - messageTime(b));
 
   return (
     <Box>
@@ -88,7 +82,7 @@ const MqttLogsViewer = () => {
           alignItems="center"
         >
           <Typography variant="h6">
-            MQTT Messages ({sortedMessages.length})
+            MQTT Messages ({sorted.length})
           </Typography>
           <IconButton
             onClick={() =>
@@ -107,10 +101,13 @@ const MqttLogsViewer = () => {
       </Box>
 
       <Box>
-        {sortedMessages.map(({ topic, message }) => (
-          <Paper key={topic} sx={{ p: 2, mb: 2 }}>
-            <Typography variant="subtitle2" fontWeight="bold">
-              {topic}
+        {sorted.map((message, index) => (
+          <Paper key={index} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="subtitle2" fontWeight="bold" style={{ display: "inline-block" }}>
+              {message.topic}
+            </Typography>
+            <Typography variant="subtitle2" fontWeight="bold" style={{ display: "inline-block", float: "right" }}>
+              {message.date}
             </Typography>
             <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>
               {JSON.stringify(message, null, 2)}

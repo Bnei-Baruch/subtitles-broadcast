@@ -514,11 +514,7 @@ const Subtitles = () => {
             <div className="top-head d-flex justify-content-between">
               <h3>Questions</h3>
             </div>
-            <QuestionMessage
-              mode="subtitle"
-              languagesList={broadcastLanguages}
-              isLtr={isLtr}
-            ></QuestionMessage>
+            <QuestionMessage></QuestionMessage>
           </div>
         </div>
       </div>

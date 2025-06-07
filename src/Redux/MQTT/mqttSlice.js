@@ -24,13 +24,17 @@ export const getAllQuestions = (mqttMessages, channel) => {
   }, {});
 }
 
+const MQTT_LOGS_MAX_LENGTH = 1000;
+
 const initialState = {
   clientId: null,
 
   isConnected: false,
 
-  mqttTopics: {},  // Keys are topics, value isSubscribed.
+  mqttTopics: {},    // Keys are topics, value isSubscribed.
   mqttMessages: {},  // Keys are topics, value last message.
+  // Last MQTT_LOGS_MAX_LENGTH messages on any topic.
+  mqttLogs: [],      
 
   selectedSubtitleSlide: null,
   subtitlesDisplayMode: null,
@@ -67,6 +71,10 @@ const mqttSlice = createSlice({
       try {
         const parsedMessage = JSON.parse(message);
         state.mqttMessages[topic] = parsedMessage;
+        state.mqttLogs.push({...parsedMessage, topic});
+        if (state.mqttLogs.length > MQTT_LOGS_MAX_LENGTH) {
+          state.mqttLogs.shift();
+        }
         if (broadcastLangCode === parsedMessage.lang) {
           state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
         }
