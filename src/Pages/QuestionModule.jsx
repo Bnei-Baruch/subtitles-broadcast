@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./PagesCSS/Questions.css";
-import QuestionMessage from "../Components/QuestionMessage";
 import { Slide } from "../Components/Slide";
-import { broadcastLanguages } from "../Utils/Const";
-import { getQuestionMqttTopic, languageIsLtr } from "../Utils/Common";
+import { broadcastLangMapObj, ST_QUESTION } from "../Utils/Const";
+import { languageIsLtr } from "../Utils/Common";
 import { publishQuestion } from "../Utils/UseMqttUtils";
 import { useSelector } from "react-redux";
-import { getSubtitleMqttTopic } from "../Utils/Common";
+
+const messageTime = (message) => message.date ? new Date(message.date).getTime() : 0;
+
+const parseUtcStrToLocal = (utcDateStr) => {
+  let retVal = utcDateStr;
+  if (utcDateStr) {
+    const locDate = new Date(utcDateStr);
+    retVal = `Date: ${locDate.toLocaleDateString()}  Time: ${locDate.toLocaleTimeString()}`;
+  }
+  return retVal;
+};
 
 const QuestionModule = () => {
   const [questionText, setQuestionText] = useState("");
@@ -25,6 +34,9 @@ const QuestionModule = () => {
   );
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
+
+  const mqttLogs = useSelector((state) => state.mqtt.mqttLogs);
+  const allQuestions = mqttLogs.filter((message) => message.type === ST_QUESTION).sort((a, b) => messageTime(b) - messageTime(a));
 
   useEffect(() => {
     setIsLtr(languageIsLtr(broadcastLangCode));
@@ -127,7 +139,30 @@ const QuestionModule = () => {
         <p>History</p>
         <div className="SendQutionHistory">
           <ul>
-            <QuestionMessage languagesList={broadcastLanguages} />
+            {allQuestions.length > 0 ? (
+              allQuestions.map((question, index) => (
+                <div key={index}>
+                  <div>
+                    <li className="item">
+                      <span className="datetime">
+                        {parseUtcStrToLocal(question.date)}
+                        &nbsp;&nbsp;
+                        {broadcastLangMapObj[question.lang].label}
+                        &nbsp;&nbsp;
+                        {question.username}
+                      </span>
+                      <br />
+                      <div className={`message ${question.isLtr ? "ltr" : "rtl"}`}>
+                        {question.orgSlide ? question.orgSlide : question.slide}
+                      </div>
+                    </li>
+                    <hr />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No questions available</p>
+            )}
           </ul>
         </div>
       </div>

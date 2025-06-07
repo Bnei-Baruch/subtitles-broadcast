@@ -1,12 +1,12 @@
 import React from "react";
 import { broadcastLangMapObj } from "../Utils/Const";
-import { useDeepMemo } from "../Utils/Common";
 import { publishQuestion } from "../Utils/UseMqttUtils";
 import { Slide } from "./Slide";
 import { useSelector } from "react-redux";
+import { useDeepMemo } from "../Utils/Common";
 import { getAllQuestions } from "../Redux/MQTT/mqttSlice";
 
-const QuestionMessage = (props) => {
+const QuestionMessage = () => {
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
@@ -22,20 +22,10 @@ const QuestionMessage = (props) => {
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const questionMessagesList = useDeepMemo(getAllQuestions(mqttMessages, broadcastProgrammCode));
   const allQuestions = Object.values(questionMessagesList).flat();
+
   const isLiveModeEnabled = useSelector(
     (state) => state.mqtt.isLiveModeEnabled
   );
-
-  const parseUtcStrToLocal = (utcDateStr) => {
-    let retVal = utcDateStr;
-
-    if (utcDateStr) {
-      const locDate = new Date(utcDateStr);
-      retVal = `Date: ${locDate.toLocaleDateString()}  Time: ${locDate.toLocaleTimeString()}`;
-    }
-
-    return retVal;
-  };
 
   const getLanguageName = (langCode) => {
     if (!langCode) {
@@ -111,113 +101,66 @@ const QuestionMessage = (props) => {
     publishQuestionUpdate(updatedMessage);
   };
 
-  if (props.mode === "subtitle") {
-    return (
-      <>
-        {allQuestions.length > 0 ? (
-          allQuestions.map((obj) => (
-            <div className="QuestionSection" data-key={obj.ID} key={obj.ID}>
-              <div className="d-flex align-items-center p-2">
-                {(broadcastLangCode === "he" ||
-                  obj.lang === broadcastLangCode) && (
-                  <div className="d-flex align-items-center">
-                    <span className="language-label">
-                      {getLanguageName(obj.lang ? obj.lang : obj.language)}
-                    </span>
-                    <i
-                      className={`mx-2 ${
-                        obj.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
-                      } ${isVisibilityDisabled() ? "text-muted disabled" : ""}`}
-                      title={obj.visible ? "Hide Question" : "Show Question"}
-                      onClick={() => toggleQuestionVisibility(obj)}
-                      style={{ cursor: "pointer" }}
-                    />
-                    <i
-                      className={`bi bi-arrow-counterclockwise mx-2 ${isRestoreDisabled(obj) ? "text-muted disabled" : ""}`}
-                      onClick={() =>
-                        !isRestoreDisabled(obj) && restoreQuestionHandler(obj)
-                      }
-                      title="Restore Question"
-                      style={{
-                        cursor: isRestoreDisabled(obj)
-                          ? "not-allowed"
-                          : "pointer",
-                      }}
-                    />
-                    <i
-                      className={`bi bi-trash3-fill mx-2 ${isClearDisabled(obj) ? "text-muted disabled" : ""}`}
-                      onClick={() =>
-                        !isClearDisabled(obj) && clearQuestionHandler(obj)
-                      }
-                      title="Clear Question"
-                      style={{
-                        cursor: isClearDisabled(obj)
-                          ? "not-allowed"
-                          : "pointer",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <Slide
-                content={obj.orgSlide ? obj.orgSlide : obj.slide}
-                isLtr={obj.isLtr}
-                isQuestion={obj.type === "question"}
-              ></Slide>
-            </div>
-          ))
-        ) : (
-          <p>No questions available</p>
-        )}
-      </>
-    );
-  } else if (props.mode === "slide") {
-    return (
-      <>
-        {allQuestions.length > 0 ? (
-          allQuestions.map((obj) => (
-            <div data-key={obj.ID} key={obj.ID} style={{ height: "200px" }}>
-              <Slide
-                content={obj.slide}
-                isLtr={obj.isLtr}
-                isQuestion={
-                  obj.type === "question" || obj.slide_type === "question"
-                }
-              ></Slide>
-            </div>
-          ))
-        ) : (
-          <p>No questions available</p>
-        )}
-      </>
-    );
-  } else {
-    return (
-      <>
-        {allQuestions.length > 0 ? (
-          allQuestions.map((obj) => (
-            <div data-key={obj.ID} key={obj.ID}>
-              <div>
-                <li className="item">
-                  <span className="datetime">
-                    {parseUtcStrToLocal(obj.date)}
+  return (
+    <>
+      {allQuestions.length > 0 ? (
+        allQuestions.map((question) => (
+          <div className="QuestionSection" data-key={question.ID} key={question.ID}>
+            <div className="d-flex align-items-center p-2">
+              {(broadcastLangCode === "he" ||
+                question.lang === broadcastLangCode) && (
+                <div className="d-flex align-items-center">
+                  <span className="language-label">
+                    {getLanguageName(question.lang ? question.lang : question.language)}
                   </span>
-                  <br />
-                  <div className={`message ${obj.isLtr ? "ltr" : "rtl"}`}>
-                    {obj.orgSlide ? obj.orgSlide : obj.slide}
-                  </div>
-                </li>
-                <hr />
-              </div>
+                  <i
+                    className={`mx-2 ${
+                      question.visible ? "bi bi-eye-fill" : "bi bi-eye-slash-fill"
+                    } ${isVisibilityDisabled() ? "text-muted disabled" : ""}`}
+                    title={question.visible ? "Hide Question" : "Show Question"}
+                    onClick={() => toggleQuestionVisibility(question)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  <i
+                    className={`bi bi-arrow-counterclockwise mx-2 ${isRestoreDisabled(question) ? "text-muted disabled" : ""}`}
+                    onClick={() =>
+                      !isRestoreDisabled(question) && restoreQuestionHandler(question)
+                    }
+                    title="Restore Question"
+                    style={{
+                      cursor: isRestoreDisabled(question)
+                        ? "not-allowed"
+                        : "pointer",
+                    }}
+                  />
+                  <i
+                    className={`bi bi-trash3-fill mx-2 ${isClearDisabled(question) ? "text-muted disabled" : ""}`}
+                    onClick={() =>
+                      !isClearDisabled(question) && clearQuestionHandler(question)
+                    }
+                    title="Clear Question"
+                    style={{
+                      cursor: isClearDisabled(question)
+                        ? "not-allowed"
+                        : "pointer",
+                    }}
+                  />
+                </div>
+              )}
             </div>
-          ))
-        ) : (
-          <p>No questions available</p>
-        )}
-      </>
-    );
-  }
+
+            <Slide
+              content={question.orgSlide ? question.orgSlide : question.slide}
+              isLtr={question.isLtr}
+              isQuestion={question.type === "question"}
+            ></Slide>
+          </div>
+        ))
+      ) : (
+        <p>No questions available</p>
+      )}
+    </>
+  );
 };
 
 export default QuestionMessage;
