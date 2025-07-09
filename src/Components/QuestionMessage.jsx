@@ -48,7 +48,6 @@ const QuestionMessage = () => {
   };
 
   const isRestoreDisabled = (questionMsg) => {
-    console.log(isLiveModeEnabled, questionMsg.previous_slide, questionMsg.slide, questionMsg.previous_slide);
     return (
       !isLiveModeEnabled ||
       !questionMsg.previous_slide ||
