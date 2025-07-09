@@ -18,6 +18,7 @@ import {
   updateSettingsInternal,
 } from "../Redux/UserSettings/UserSettingsSlice";
 import { publishSubtitle } from "../Utils/UseMqttUtils";
+import { Virtuoso } from 'react-virtuoso';
 
 const BookContent = ({
   slideOrderNumber,
@@ -147,12 +148,9 @@ const BookContent = ({
     }
   };
 
-  return (
-    <>
-      <LoadingOverlay loading={loading} />
-      {contents?.slides?.length > 0 && (
-        <div className="grid-container">
-          {contents?.slides?.map((item, index) => (
+  const Row = (index) => {
+    const item = contents?.slides?.[index];
+    return (
             <div
               key={`slide_${item.ID}`}
               id={`slide_${item.ID}`}
@@ -167,6 +165,7 @@ const BookContent = ({
               }
               className={`box-content d-flex cursor-pointer ${activeSlideId === item.ID ? "activeSlide" : ""}`}
             >
+              <div className={"outline" + (activeSlideId === item.ID ? " active" : "")}></div>
               <Slide
                 content={item?.slide}
                 isLtr={
@@ -177,7 +176,6 @@ const BookContent = ({
                 searchKeyword={searchKeyword}
                 isQuestion={item?.slide_type === "question"}
               ></Slide>
-              {/* </bdo> */}
               <span className="order-number">{`${
                 item?.languages.length > 1
                   ? item?.languages[+index % item?.languages.length]
@@ -190,7 +188,18 @@ const BookContent = ({
                 <EditIcon />
               </IconButton>
             </div>
-          ))}
+    );
+  };
+
+  return (
+    <>
+      <LoadingOverlay loading={loading} />
+      {contents?.slides?.length > 0 && (
+        <div className="subtitles-virtual-slide">
+          <Virtuoso
+            totalCount={contents?.slides?.length}
+            itemContent={Row}
+          />
         </div>
       )}
     </>
