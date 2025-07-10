@@ -395,7 +395,6 @@ const Subtitles = () => {
                   <BookContent
                     isLtr={isLtr}
                     setSearchSlide={setSearchSlide}
-                    slideOrderNumber={selectedSubtitleSlide?.order_number}
                     searchKeyword={searchSlide}
                   />
                 </div>
