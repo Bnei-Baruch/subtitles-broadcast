@@ -21,14 +21,13 @@ import { publishSubtitle } from "../Utils/UseMqttUtils";
 import { Virtuoso } from 'react-virtuoso';
 
 const BookContent = ({
-  slideOrderNumber,
   isLtr,
   setSearchSlide,
   searchKeyword,
 }) => {
+  const virtualRef = useRef();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const focusSlides = useRef();
   const [loading, setLoading] = useState(false);
   const contents = useSelector((state) => state.SubtitleData.contentList.data);
   const userSettings = useSelector((state) => state.userSettings.userSettings);
@@ -53,12 +52,17 @@ const BookContent = ({
   }, [userSelectedSlideId]);
 
   useEffect(() => {
-    const targetSlide = document.getElementById(`slide_${activeSlideId}`);
-    if (targetSlide) {
-      targetSlide.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+    if (contents && contents.slides) {
+      const index = contents.slides.findIndex((item) => item.ID === activeSlideId);
+      if (index > -1) {
+        setTimeout(() => {
+          virtualRef.current.scrollToIndex({
+            index: Math.max(0, index-1),
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 300);
+      }
     }
   }, [contents, activeSlideId]);
 
@@ -158,11 +162,6 @@ const BookContent = ({
               onClick={() => {
                 handleSlideClick(setLoading, setSearchSlide, item, dispatch);
               }}
-              ref={
-                +slideOrderNumber + 1 === item.order_number + 1
-                  ? focusSlides
-                  : null
-              }
               className={`box-content d-flex cursor-pointer ${activeSlideId === item.ID ? "activeSlide" : ""}`}
             >
               <div className={"outline" + (activeSlideId === item.ID ? " active" : "")}></div>
@@ -197,6 +196,7 @@ const BookContent = ({
       {contents?.slides?.length > 0 && (
         <div className="subtitles-virtual-slide">
           <Virtuoso
+            ref={virtualRef}
             totalCount={contents?.slides?.length}
             itemContent={Row}
           />
