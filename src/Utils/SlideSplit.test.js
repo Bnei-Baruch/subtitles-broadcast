@@ -95,14 +95,14 @@ test('Enumaration', () => {
 
 test('sourceToMarkdown', () => {
   expect(sourceToMarkdown('<h1>Header</h1>')).toBe('### Header');
-  expect(sourceToMarkdown('<p>Content</p>')).toBe('Content');
+  expect(sourceToMarkdown('<p>Content</p>')).toBe('=== Content');
   let lines = [
     '<h1>Header</h1>',
     '<p>Content</p>',
   ];
   let expected = [
     '### Header',
-    'Content'
+    '=== Content'
   ];
   expect(sourceToMarkdown(lines.join('\n'))).toBe(expected.join('\n'));
   lines = [
@@ -110,8 +110,7 @@ test('sourceToMarkdown', () => {
     '<p>(source)</p>',
   ];
   expected = [
-    'content',
-    '',
+    '=== content',
     '---',
     '*(source)*',
   ]
