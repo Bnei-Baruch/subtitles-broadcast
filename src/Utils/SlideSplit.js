@@ -64,7 +64,7 @@ export const sourceToMarkdown = (simpleHtml) => {
       if (trim.match(/^\(([^()]+)\)$/)) {
         return `---\n*${trim}*\n\n`;
       }
-      return trim + "\n\n";
+      return '=== ' + trim + "\n";
     }
   });
 
@@ -388,7 +388,7 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
     return {prevToken: lastToken, token, restIndex, prevRestIndex};
   };
 
-  while (((token && token.text) || (prevToken && prevToken.text))) {
+  while (((token && (token.text || type === TOKEN_NEWSLIDE)) || (prevToken && prevToken.text))) {
     if ((prevToken && prevToken.type === TOKEN_NEWLINE && IsTextTokenEnumeration(token)) ||
         type === TOKEN_NEWSLIDE ||
         (HEADER_TOKENS.includes(type) && CutNonVisibleEndings(nextDivMarkdown) !== '')) {

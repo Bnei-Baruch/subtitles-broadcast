@@ -388,13 +388,21 @@ button {
   justify-content: flex-start;
   gap: 10px; /* Space between elements */
   flex-wrap: wrap; /* Allow wrapping to next line */
-  margin-bottom: 20px;
 }
 
 .button-container {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  position: sticky;
+  top: 10px;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  padding-left: 10px;
+  z-index: 100;
+  background-color: white;
+  margin-bottom: 2px;
 }
 
 .nowrap-cell {

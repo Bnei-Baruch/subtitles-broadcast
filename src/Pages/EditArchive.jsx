@@ -682,59 +682,59 @@ const EditArchive = ({ handleClose }) => {
                   placeholder="Update Source Path"
                 />
               </div>
-              <div className="button-container">
-                <Button
-                  variant="contained"
-                  onClick={handleToggleBookmark}
-                  color="success"
-                  className={`btn  bookmark-btn  ${isBookmarked ? "btn-secondary" : "btn-info"}`}
-                >
-                  {isBookmarked ? "Unbookmark" : "Bookmark"}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => rerun()}
-                  className="btn btn-re-run"
-                >
-                  Re-run
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleBackBtn}
-                  className=".btn btn-back"
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleCancelBtn}
-                  className={`btn btn-cancel  ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  variant="contained"
-                  color="success"
-                  className={`"btn save  ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
-                  onClick={handleSave}
-                >
-                  Save
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleSaveAndBack}
-                  className={`btn save ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
-                >
-                  Save & Back
-                </Button>
-              </div>
             </div>
           </div>
+        </div>
+        <div className="button-container">
+          <Button
+            variant="contained"
+            onClick={handleToggleBookmark}
+            color="success"
+            className={`btn  bookmark-btn  ${isBookmarked ? "btn-secondary" : "btn-info"}`}
+          >
+            {isBookmarked ? "Unbookmark" : "Bookmark"}
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => rerun()}
+            className="btn btn-re-run"
+          >
+            Re-run
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleBackBtn}
+            className=".btn btn-back"
+          >
+            Back
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleCancelBtn}
+            className={`btn btn-cancel  ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            color="success"
+            className={`"btn save  ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+            onClick={handleSave}
+          >
+            Save
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleSaveAndBack}
+            className={`btn save ${isSlideDataChanged ? "subtitle-changed" : "cancel action-notallowed"}`}
+          >
+            Save & Back
+          </Button>
         </div>
         <div className="container">
           {slideListData?.length > 0 &&
