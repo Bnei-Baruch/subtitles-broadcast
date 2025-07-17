@@ -8,7 +8,7 @@ import isEqual from 'lodash/isEqual';
 
 const QST_SWAP_TIME = 10 * 1000;  // 10s
 
-export function ActiveSlide({isGreenWindow}) {
+export function ActiveSlide() {
   const [timeoutId, setTimeoutId] = useState(null);
   const [{nextIndex, activeQuestion}, setState] = useState({nextIndex: 0, activeQuestion: null});
   const [visibleQuestions, setVisibleQuestions] = useState([]);
@@ -23,7 +23,7 @@ export function ActiveSlide({isGreenWindow}) {
 
   const broadcastProgrammCode = useSelector(
     (state) =>
-      state.userSettings.userSettings.broadcast_programm_code ||
+      state.userSettings.userSettings.broadcast_program_code ||
       "morning_lesson"
   );
 
@@ -110,7 +110,6 @@ export function ActiveSlide({isGreenWindow}) {
           ? activeSlide.isLtr
           : true
       }
-      isGreenWindow={isGreenWindow}
       isQuestion={activeSlide?.slide && (
         activeSlide.type === ST_QUESTION || activeSlide.slide_type === ST_QUESTION)}
     />

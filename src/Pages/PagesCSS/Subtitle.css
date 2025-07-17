@@ -1,6 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 
+.row .tab-sec {
+  padding: 0;
+}
+
 .tab-content::-webkit-scrollbar {
   width: 10px;
 }
@@ -259,7 +263,7 @@ bdo {
 .subtitle-header {
   position: sticky;
   top: 0;
-  z-index: 8888;
+  z-index: 1040;
   background-color: #eeeeee;
   padding-top: 1em;
   padding-bottom: 0.5em;
@@ -306,9 +310,14 @@ bdo {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
+.innerhead .right-sec {
+  display: flex;
+  align-items: center;
+}
 .innerhead .right-sec .btn {
   border-radius: 4px !important;
   margin-left: 10px !important ;
+  white-space: nowrap;
 }
 .innerhead .input-box {
   max-width: 104px;
@@ -573,6 +582,10 @@ dropdown-toggle {
   padding-right: 1.1em;
 }
 
+.btn-group {
+  align-items: center;
+}
+
 .top-header {
   &.top-header {
     background-color: #232f3e !important;
@@ -655,4 +668,16 @@ dropdown-toggle {
 
 .subtitles-virtual-slide > div {
   height: calc(100vh - 140px) !important;
+}
+
+.live-button {
+  white-space: nowrap;
+}
+
+.button-container .autoComplete {
+  flex-grow: 1;
+}
+
+.edit-source-path {
+  padding: 10px;
 }

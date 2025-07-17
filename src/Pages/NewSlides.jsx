@@ -6,23 +6,17 @@ import GenerateUID from "../Utils/Uid";
 import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
 import { broadcastLangMapObj, broadcastLanguages } from "../Utils/Const";
 import GetFileUid from "../Utils/Source";
-import {
-  ArchiveAutoComplete,
-  getAutocompleteSuggetion,
-} from "../Redux/ArchiveTab/ArchiveSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { languageIsLtr } from "../Utils/Common";
 import LoadingOverlay from "../Components/LoadingOverlay";
-import { updateSettingsInternal } from "../Redux/UserSettings/UserSettingsSlice";
+import { updateSettingsInternal } from "../Redux/UserSettingsSlice";
+import { AutocompleteSources } from "../Redux/SourceSlice";
+import { Edit } from "../Components/Edit";
 
 const NewSlides = () => {
-  const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
-  );
+  const { broadcast_language_code: language } = useSelector((state) => state.userSettings.userSettings);
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const uidRegex = /^[a-zA-Z0-9]{8}$/;
 
   const [, setTagList] = useState([]);
@@ -36,27 +30,22 @@ const NewSlides = () => {
   const [customText, setCustomText] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
-  const AutocompleteList = useSelector(getAutocompleteSuggetion);
-  const [selectedOptions, setSelectedOptions] = useState([
-    {
-      label: broadcastLangMapObj[broadcastLangCode].label,
-      value: broadcastLangCode,
-    },
-  ]);
+  const { autocomplete } = useSelector((state) => state.sources);
+  const [selectedOptions, setSelectedOptions] = useState([{
+		label: broadcastLangMapObj[language].label,
+		value: language,
+	}]);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [isLtr] = useState(() => {
-    return languageIsLtr(broadcastLangCode);
+    return languageIsLtr(language);
   });
   const [loading, setLoading] = useState(false);
 
+  const [editFileUid, setEditFileUid] = useState(null);
+
   useEffect(() => {
     if (sourceUrl.length > 0) {
-      dispatch(
-        ArchiveAutoComplete({
-          query: sourceUrl,
-          language: broadcastLangCode,
-        })
-      );
+      dispatch(AutocompleteSources({ query: sourceUrl, language }));
     }
   }, [sourceUrl]);
 
@@ -65,14 +54,14 @@ const NewSlides = () => {
     if (ulElement !== null) {
       ulElement.style.display = "block";
     }
-  }, [AutocompleteList]);
+  }, [autocomplete]);
 
   useEffect(() => {
     setSelectedOptions({
-      label: broadcastLangMapObj[broadcastLangCode].label,
-      value: broadcastLangCode,
+      label: broadcastLangMapObj[language].label,
+      value: language,
     });
-  }, [broadcastLangCode]);
+  }, [language]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,8 +71,8 @@ const NewSlides = () => {
         source_path: contentSource,
         source_uid: sourceUid,
         file_uid: fileUid,
-        left_to_right: IsLangLtr(broadcastLangCode),
-        languages: broadcastLangCode,
+        left_to_right: IsLangLtr(language),
+        languages: language,
         slides: updateTagList,
       };
       if (
@@ -138,22 +127,9 @@ const NewSlides = () => {
           setUpdateTagList([]);
           setSourceUid("");
           alert(response.payload.description);
-
           const firstSlideId = response.payload.data?.slides?.[0]?.ID;
-
-          dispatch(
-            updateSettingsInternal({
-              file_uid_for_edit_slide: fileUid,
-            })
-          );
-
-          if (firstSlideId) {
-            navigate(
-              `/archive/edit?file_uid=${fileUid}&slide_id=${firstSlideId}`
-            );
-          } else {
-            navigate(`/archive/edit?file_uid=${fileUid}`);
-          }
+					console.log(response, firstSlideId, fileUid);
+					setEditFileUid(fileUid);
         }
       } catch (error) {
         console.error("Error occurred:", error); // Handle any errors
@@ -257,7 +233,7 @@ const NewSlides = () => {
           }
         }
         setSourceUid("upload_" + sourceUidStr);
-        let fileUid = await GetFileUid(broadcastLangCode, sourceUidStr);
+        let fileUid = await GetFileUid(language, sourceUidStr);
         if (fileUid === undefined) {
           setLoading(false);
           alert("File not found");
@@ -289,177 +265,182 @@ const NewSlides = () => {
   };
 
   return (
-    <div className="form-newsubtitle body-content Edit New-Subtitle">
-      <LoadingOverlay loading={loading} />
-      <h3 className="mb-4">New slide set</h3>
-      <div className="row">
-        <button
-          className={
-            insertMethod === "custom_file"
-              ? "active-button col-6"
-              : "inactive-button col-6"
-          }
-          onClick={() => setInsertMethod("custom_file")}
-        >
-          Custom
-        </button>
-        <button
-          className={
-            insertMethod === "source_url"
-              ? "active-button col-6"
-              : "inactive-button col-6"
-          }
-          onClick={() => setInsertMethod("source_url")}
-        >
-          From KabbalahMedia
-        </button>
-      </div>
-      {insertMethod === "custom_file" ? (
-        <>
-          <div className="row m-4">
-            <div className="input-box ">
-              <label className="w-100">Name</label>
-              <input className="form-control" type="type" id="upload_name" />
-            </div>
-          </div>
-          <div className="row m-4">
-            <div className="input-box col-7">
-              <label>Languages</label>
-              <Select
-                id="languageSelect"
-                isMulti
-                options={
-                  broadcastLanguages
-                    .map((langObj) => {
-                      if (langObj.value !== broadcastLangCode) {
-                        return {
-                          label: langObj.label,
-                          value: langObj.value,
-                        };
-                      } else {
-                        return null; // Skip the undesired option
-                      }
-                    })
-                    .filter((option) => option !== null) // Filter out null options
-                }
-                value={selectedOptions}
-                onChange={(selectedOptions) => {
-                  setSelectedOptions(selectedOptions);
-                }}
-              />
-            </div>
-          </div>
-          <div className="row m-4">
-            <div className="input-box col-7">
-              <input
-                type="file"
-                onChange={(event) => {
-                  uploadFile(event.target.files[0]);
-                }}
-              />
-              <textarea
-                id="custom-textarea"
-                style={{
-                  marginTop: "1em",
-                  marginBottom: "1em",
-                  height: "500px",
-                  width: "500px",
-                }}
-                onChange={(event) => {
-                  setCustomText(event.target.value);
-                }}
-                dir={isLtr ? "ltr" : "rtl"}
-                placeholder="Enter text here"
-              />
-              <button
-                className="btn btn-light rounded-pill col-4"
-                onClick={addSlidesFromCustomText}
-                disabled={!customText}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-          <div>
-            <SplitToSlides
-              markdown={wholeText}
-              active={splitActive}
-              visible={false}
-              updateSlides={(slides) => {
-                setSplitActive(false);
-                setUpdateTagList(slides);
-              }}
-            />
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="row m-4">
-            <label>Language</label>
-            <p>{broadcastLangMapObj[broadcastLangCode].label}</p>
-            <div className="input-box ">
-              <label className="w-100">Source Path</label>
-              <div className="form-group autoComplete">
-                <input
-                  className="form-control"
-                  type="type"
-                  value={contentSource}
-                  onChange={(e) => {
-                    setContentSource(e.target.value);
-                    setShowAutocompleteBox(false);
-                    clearTimeout(typingTimeout);
-                    const timeoutId = setTimeout(() => {
-                      // Perform action after typing has stopped
-                      setShowAutocompleteBox(true);
-                      setSourceUrl(e.target.value);
-                    }, 500); // Adjust the timeout duration as needed
-                    // Store the timeout ID for future reference
-                    setTypingTimeout(timeoutId);
-                  }}
-                />
-                {showAutocompleteBox && sourceUrl.length > 0 && (
-                  <ul
-                    className="suggestions"
-                    id="suggestions"
-                    style={{ display: "none" }}
-                  >
-                    {AutocompleteList?.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        onClick={(event) => {
-                          event.target.parentNode.style.display = "none";
-                          setContentSource(suggestion.source_path);
-                          setSourceUid(suggestion.source_uid);
-                        }}
-                      >
-                        {suggestion.source_path}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-            <button
-              className="btn btn-primary btn-sm col-3 m-4"
-              onClick={loadSource}
-            >
-              Add Source
-            </button>
-            <div>
-              <SplitToSlides
-                markdown={wholeText}
-                active={splitActive}
-                visible={false}
-                updateSlides={(slides) => {
-                  setSplitActive(false);
-                  setUpdateTagList(slides);
-                }}
-              />
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+		<>
+			{editFileUid && <Edit fileUid={editFileUid} handleClose={() => setEditFileUid(null)} />}
+			{!editFileUid && 
+				<div className="form-newsubtitle body-content Edit New-Subtitle">
+					<LoadingOverlay loading={loading} />
+					<h3 className="mb-4">New slide set</h3>
+					<div className="row">
+						<button
+							className={
+								insertMethod === "custom_file"
+									? "active-button col-6"
+									: "inactive-button col-6"
+							}
+							onClick={() => setInsertMethod("custom_file")}
+						>
+							Custom
+						</button>
+						<button
+							className={
+								insertMethod === "source_url"
+									? "active-button col-6"
+									: "inactive-button col-6"
+							}
+							onClick={() => setInsertMethod("source_url")}
+						>
+							From KabbalahMedia
+						</button>
+					</div>
+					{insertMethod === "custom_file" ? (
+						<>
+							<div className="row m-4">
+								<div className="input-box ">
+									<label className="w-100">Name</label>
+									<input className="form-control" type="type" id="upload_name" />
+								</div>
+							</div>
+							<div className="row m-4">
+								<div className="input-box col-7">
+									<label>Languages</label>
+									<Select
+										id="languageSelect"
+										isMulti
+										options={
+											broadcastLanguages
+												.map((langObj) => {
+													if (langObj.value !== language) {
+														return {
+															label: langObj.label,
+															value: langObj.value,
+														};
+													} else {
+														return null; // Skip the undesired option
+													}
+												})
+												.filter((option) => option !== null) // Filter out null options
+										}
+										value={selectedOptions}
+										onChange={(selectedOptions) => {
+											setSelectedOptions(selectedOptions);
+										}}
+									/>
+								</div>
+							</div>
+							<div className="row m-4">
+								<div className="input-box col-7">
+									<input
+										type="file"
+										onChange={(event) => {
+											uploadFile(event.target.files[0]);
+										}}
+									/>
+									<textarea
+										id="custom-textarea"
+										style={{
+											marginTop: "1em",
+											marginBottom: "1em",
+											height: "500px",
+											width: "500px",
+										}}
+										onChange={(event) => {
+											setCustomText(event.target.value);
+										}}
+										dir={isLtr ? "ltr" : "rtl"}
+										placeholder="Enter text here"
+									/>
+									<button
+										className="btn btn-light rounded-pill col-4"
+										onClick={addSlidesFromCustomText}
+										disabled={!customText}
+									>
+										Add
+									</button>
+								</div>
+							</div>
+							<div>
+								<SplitToSlides
+									markdown={wholeText}
+									active={splitActive}
+									visible={false}
+									updateSlides={(slides) => {
+										setSplitActive(false);
+										setUpdateTagList(slides);
+									}}
+								/>
+							</div>
+						</>
+					) : (
+						<>
+							<div className="row m-4">
+								<label>Language</label>
+								<p>{broadcastLangMapObj[language].label}</p>
+								<div className="input-box ">
+									<label className="w-100">Source Path</label>
+									<div className="form-group autoComplete">
+										<input
+											className="form-control"
+											type="type"
+											value={contentSource}
+											onChange={(e) => {
+												setContentSource(e.target.value);
+												setShowAutocompleteBox(false);
+												clearTimeout(typingTimeout);
+												const timeoutId = setTimeout(() => {
+													// Perform action after typing has stopped
+													setShowAutocompleteBox(true);
+													setSourceUrl(e.target.value);
+												}, 500); // Adjust the timeout duration as needed
+												// Store the timeout ID for future reference
+												setTypingTimeout(timeoutId);
+											}}
+										/>
+										{showAutocompleteBox && sourceUrl.length > 0 && (
+											<ul
+												className="suggestions"
+												id="suggestions"
+												style={{ display: "none" }}
+											>
+												{autocomplete.map((suggestion, index) => (
+													<li
+														key={index}
+														onClick={(event) => {
+															event.target.parentNode.style.display = "none";
+															setContentSource(suggestion.source_path);
+															setSourceUid(suggestion.source_uid);
+														}}
+													>
+														{suggestion.source_path}
+													</li>
+												))}
+											</ul>
+										)}
+									</div>
+								</div>
+								<button
+									className="btn btn-primary btn-sm col-3 m-4"
+									onClick={loadSource}
+								>
+									Add Source
+								</button>
+								<div>
+									<SplitToSlides
+										markdown={wholeText}
+										active={splitActive}
+										visible={false}
+										updateSlides={(slides) => {
+											setSplitActive(false);
+											setUpdateTagList(slides);
+										}}
+									/>
+								</div>
+							</div>
+						</>
+					)}
+				</div>
+			}
+		</>
   );
 };
 

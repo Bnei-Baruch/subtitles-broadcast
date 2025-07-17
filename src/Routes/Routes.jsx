@@ -5,8 +5,9 @@ import Archive from "../Pages/Archive";
 import Source from "../Pages/Source";
 import NewSlides from "../Pages/NewSlides";
 import QuestionsModule from "../Pages/QuestionModule";
-import EditArchive from "../Pages/EditArchive";
+// import EditArchive from "../Pages/EditArchive";
 import Settings from "../Pages/Settings";
+import GreenScreen from "../Pages/GreenScreen";
 import {isOperator, isTranslator} from "../Utils/Auth";
 
 const MainRoutes = ({ logout, securityRoles }) => {
@@ -20,9 +21,10 @@ const MainRoutes = ({ logout, securityRoles }) => {
             <Route index element={<Navigate to={"/subtitle"} />} />
             <Route path="/subtitle" element={<Subtitles />} />
             <Route path="/archive" element={<Archive />} />
-            <Route path="/archive/edit" element={<EditArchive />} />
+            {/*<Route path="/archive/edit" element={<EditArchive />} />*/}
             <Route path="/source" element={<Source />} />
             <Route path="/new" element={<NewSlides />} />
+            <Route path="/green-window" element={<GreenScreen />} />
           </>
         )}
 

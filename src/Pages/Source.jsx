@@ -1,139 +1,81 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "./PagesCSS/Archive.css";
-import {
-  GetAllSourcePathData,
-  BookmarkSlideFromArchivePage,
-  DeleteSource,
-  UserBookmarkList,
-  UnBookmarkSlide,
-  getAllSourcePathList,
-} from "../Redux/SourceTab/SourceSlice";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import MessageBox from "../Components/MessageBox";
-import DeleteConfirmation from "../Components/DeleteConfirmation";
-import ReactPaginate from "react-paginate";
-import { useLocation } from "react-router-dom";
+import "./PagesCSS/Archive.css";
+import { GetSources, DeleteSource } from "../Redux/SourceSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/BookmarksSlice";
+// import MessageBox from "../Components/MessageBox";
+// import { useLocation } from "react-router-dom";
 import { Search } from "../Layout/Search";
-import { useNavigate } from "react-router-dom";
-import {
-  updateMergedUserSettings,
-  updateSettingsInternal,
-} from "../Redux/UserSettings/UserSettingsSlice";
+import { TableVirtuoso } from 'react-virtuoso';
+import { Edit } from "../Components/Edit";
+
+const formatDateTimeLocal = (date) => {
+  const pad = (n) => n.toString().padStart(2, '0');
+  return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ` +
+         `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 const Source = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
-  );
+  const [search, setSearch] = useState("");
 
-  const queryParams = new URLSearchParams(useLocation().search);
-  const sourcePathList = useSelector(getAllSourcePathList);
-  const [unbookmarkAction, setUnbookmarkAction] = useState(false);
+  const {
+    broadcast_language_code: language,
+    broadcast_program_code: channel,
+  } = useSelector((state) => state.userSettings.userSettings);
 
-  const userSettingsPagination = useSelector(
-    (state) => state.userSettings.userSettings.source_pagination
-  );
+  // const queryParams = new URLSearchParams(useLocation().search);
+  const { sources } = useSelector((state) => state.sources);
+	const { bookmarks } = useSelector((state) => state.bookmarks);
 
-  const memoizedPagination = useMemo(
-    () => userSettingsPagination || { page: 1, limit: 10 },
-    [userSettingsPagination]
-  );
+  const [{editSlideId, editFileUid}, setEdit] = useState({ editSlideId: null, editFileUid: null });
+  const [showDeleted, setShowDeleted] = useState(false);
 
-  const [page, setPage] = useState(memoizedPagination);
+  // const [unbookmarkAction, setUnbookmarkAction] = useState(false);
 
-  const message = "";
-  const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
+  // const message = "";
+  /*const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
     queryParams.get("source_uid")
-  );
+  );*/
+  // const [pathForDelete, setPathForDelete] = useState("default");
 
-  const [toggle, setToggle] = useState(false);
-  const [finalConfirm, setFinalConfirm] = useState(false);
-  const [confirmation, setConfirmation] = useState(false);
-  const [deleteId, setDeleteId] = useState();
+  // const [toggle, setToggle] = useState(false);
+  // const [finalConfirm, setFinalConfirm] = useState(false);
+  // const [confirmation, setConfirmation] = useState(false);
+  /*const [deleteId, setDeleteId] = useState();
   const [deleteIdHidden, setDeleteIdHidden] = useState(false);
   const [deleteIdForever, setDeleteIdForever] = useState(false);
   const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
-  const [showDeleted, setShowDeleted] = useState(false);
   const [bookmarkData, setBookmarkData] = useState({
     file_uid: "",
     update: "",
-  });
+  });*/
 
-  const [pageIndex, setPageIndex] = useState(() => ({
-    startIndex:
-      ((userSettingsPagination?.page || 1) - 1) *
-        (userSettingsPagination?.limit || 10) +
-      1,
-    endIndex: Math.min(
-      (userSettingsPagination?.page || 1) *
-        (userSettingsPagination?.limit || 10),
-      Number.MAX_VALUE
-    ),
-  }));
-
-  const updatePage = (targetPage, targetLimit) => {
-    if (
-      targetPage === memoizedPagination.page &&
-      targetLimit === memoizedPagination.limit
-    )
-      return;
-
-    dispatch(
-      updateMergedUserSettings({
-        source_pagination: { page: targetPage, limit: targetLimit },
-      })
-    );
-
-    setPage({ page: targetPage, limit: targetLimit });
-
-    setPageIndex({
-      startIndex: (targetPage - 1) * targetLimit + 1,
-      endIndex: Math.min(
-        targetPage * targetLimit,
-        sourcePathList?.pagination?.total_rows || Number.MAX_VALUE
-      ),
-    });
-  };
+  const refetchSources = useCallback(() => {
+    // Update number of bookmarks.
+    dispatch(GetBookmarks({ language, channel }));
+    // Update sources.
+    return dispatch(GetSources({
+      language,
+      keyword: search,
+      hidden: showDeleted ? "true" : undefined,
+    }));
+  }, [search, language, showDeleted]);
 
   useEffect(() => {
-    setPageIndex({
-      startIndex: (page.page - 1) * page.limit + 1,
-      endIndex: Math.min(
-        page.page * page.limit,
-        sourcePathList?.pagination?.total_rows,
-        Number.MAX_VALUE
-      ),
-    });
-  }, [sourcePathList]);
+    refetchSources();
+  }, [refetchSources]);
 
-  useEffect(() => {
-    dispatch(
-      GetAllSourcePathData({
-        language: broadcastLangCode,
-        page: page.page,
-        limit: page.limit,
-        keyword: sessionStorage.getItem("headerSearchKeywordSource"),
-        hidden: showDeleted ? "true" : undefined,
-      })
-    );
-  }, [page.page, page.limit, broadcastLangCode, showDeleted]);
-
+  /*
   useEffect(() => {
     if (finalConfirm === true) {
-      dispatch(
-        DeleteSource({
-          search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
-          source_uid: SourceUidForDeleteSlide,
-          language: broadcastLangCode,
-          page: page.page,
-          limit: page.limit,
-          hidden: deleteIdHidden ? "true" : undefined,
-          forever: deleteIdForever ? "true" : undefined,
-          showDeleted: showDeleted ? "true" : undefined,
-        })
-      );
+      dispatch(DeleteSource({
+        source_uid: SourceUidForDeleteSlide,
+        debug_path: pathForDelete,
+        hidden: deleteIdHidden ? "true" : undefined,
+        forever: deleteIdForever ? "true" : undefined,
+      }));
       setFinalConfirm(false);
       setDeleteIdHidden(false);
       setDeleteIdForever(false);
@@ -141,9 +83,9 @@ const Source = () => {
     if (toggle) {
       dispatch(
         BookmarkSlideFromArchivePage({
-          search_keyword: sessionStorage.getItem("headerSearchKeywordSource"),
+          search_keyword: search,
           data: deleteId,
-          language: broadcastLangCode,
+          language,
         })
       );
       setToggle(false);
@@ -156,8 +98,9 @@ const Source = () => {
     dispatch,
     deleteIdForever,
   ]);
+  */
 
-  const DelectConfirmationModal = useMemo(
+  /*const DelectConfirmationModal = useMemo(
     () => (
       <DeleteConfirmation
         undelete={deleteIdHidden}
@@ -175,9 +118,9 @@ const Source = () => {
       />
     ),
     [deleteConfirmationPopup, deleteIdHidden, deleteIdForever]
-  );
+  );*/
 
-  const ConfirmationMessage = useMemo(() => {
+  /*const ConfirmationMessage = useMemo(() => {
     if (!unbookmarkAction) {
       return (
         <MessageBox
@@ -200,301 +143,186 @@ const Source = () => {
       );
     }
   }, [confirmation, message, unbookmarkAction]);
+  */
 
   const handleEditSlide = (slide) => {
-    const fileUid = slide.file_uid;
-    const slideId = slide.slide_id;
-    const editUrl = `/archive/edit?file_uid=${fileUid}&slide_id=${slideId}`;
-
-    dispatch(
-      updateSettingsInternal({
-        file_uid_for_edit_slide: fileUid,
-        bookmar_id_for_edit: slide.bookmark_id,
-      })
-    );
-
-    navigate(editUrl, {
-      state: { previousLocation: window.location.pathname },
-    });
+    setEdit({ editSlideId: slide.slide_id, editFileUid: slide.file_uid });
   };
 
   return (
     <>
-      {DelectConfirmationModal}
-      {ConfirmationMessage}
+      {editSlideId &&
+        <Edit fileUid={editFileUid}
+              slideId={editSlideId}
+              handleClose={() => {
+                refetchSources().finally(() => {
+                  setEdit({editSlideId: null, editFileUid: null});
+                });
+              }} />}
+      {!editSlideId && 
       <div
         className="archiveBackground bg-light Edit"
         style={{ position: "relative" }}
       >
         <div className="flex-container">
-          <div
-            className="flex-box-center top-autocomplete"
-            style={{ marginLeft: "10px", marginRight: "10px" }}
-          >
-            {/* Content for the second flex box centered */}
-            <Search className="top-autocomplete" showDeleted={showDeleted} />
-            <ReactPaginate
-              pageCount={Math.ceil(
-                sourcePathList?.pagination?.total_pages || 1
-              )}
-              onPageChange={(e) => {
-                const selectedPage = e.selected + 1;
-                if (selectedPage <= sourcePathList?.pagination?.total_pages) {
-                  updatePage(selectedPage, page.limit);
-                }
-              }}
-              forcePage={page.page - 1}
-              containerClassName="pagination"
-              pageClassName="pagination-item"
-              previousLabel={
-                <i
-                  className="bi bi-chevron-left"
-                  style={{
-                    fontSize: "30px",
-                    cursor: page.page === 1 ? "not-allowed" : "pointer",
-                    color: page.page === 1 ? "#6c757d" : "black",
-                  }}
-                />
-              }
-              nextLabel={
-                <i
-                  className="bi bi-chevron-right"
-                  style={{
-                    fontSize: "30px",
-                    cursor:
-                      page.page === sourcePathList?.pagination?.total_pages
-                        ? "not-allowed"
-                        : "pointer",
-                    color:
-                      page.page === sourcePathList?.pagination?.total_pages
-                        ? "#6c757d"
-                        : "black",
-                  }}
-                />
-              }
-              activeClassName="active"
-              disabledClassName="disabled"
-              breakLabel={null}
-              pageRangeDisplayed={0}
-              marginPagesDisplayed={0}
-            />
-          </div>
-          <div
-            className="flex-box-center"
-            onChange={(e) => {
-              updatePage(1, +e.target.value);
-            }}
-          >
-            <span>Row per page:</span>
-            <select
-              value={page.limit}
-              className="ms-2"
-              onChange={(e) => {
-                updatePage(1, +e.target.value);
-              }}
+          <div className="top-autocomplete">
+            <Search search={search} searchChanged={setSearch} />
+            <div
+              className="form-check"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+              title="Show deleted"
             >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={30}>30</option>
-            </select>{" "}
-            &nbsp; &nbsp; &nbsp;
-            <span
-              style={{ width: "200px" }}
-            >{`${pageIndex.startIndex}-${pageIndex.endIndex} of ${sourcePathList?.pagination?.total_rows} `}</span>
-          </div>
-          <div
-            style={{ position: "absolute", right: "10px" }}
-            className="form-check"
-            data-bs-toggle="tooltip"
-            data-bs-placement="right"
-            title="Show deleted"
-          >
-            <input
-              className="form-check-input"
-              type="checkbox"
-              value={showDeleted}
-              onChange={(e) => {
-                setShowDeleted(!showDeleted);
-              }}
-            />
+              <input
+                className="form-check-input"
+                type="checkbox"
+                value={showDeleted}
+                onChange={(e) => setShowDeleted(!showDeleted)}
+              />
+              <span>{sources.length}</span>
+            </div>
           </div>
         </div>
-        <div className="card" style={{ border: "none" }}>
-          {sourcePathList ? (
-            <div style={{ overflowX: "auto" }}>
-              <table className="" style={{ padding: "20px", minWidth: "100%" }}>
-                <colgroup>
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "15%" }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th
-                      className="text-truncate"
-                      style={{ width: "20%", padding: "10px" }}
-                    >
-                      Path
-                    </th>
-                    <th className="text-truncate">Created By</th>
-                    <th className="text-truncate">Created At</th>
-                    <th className="text-truncate">Updated By</th>
-                    <th className="text-truncate">Updated At</th>
-                    <th
-                      className="text-truncate"
-                      style={{ width: "15%", padding: "10px" }}
-                    >
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sourcePathList?.paths?.map((key, index) => (
-                    <tr
-                      key={key.file_uid}
-                      className={key.bookmark_id !== null ? "bookmarkedrow" : ""}
-                    >
-                      <td className="text-truncate" style={{ padding: "10px" }}>
-                        {key.path}
-                      </td>
-                      <td className="text-truncate">{key.created_by}</td>
-                      <td className="text-truncate">
-                        {new Date(key.created_at).toLocaleString()}
-                      </td>
-                      <td className="text-truncate">{key.updated_by}</td>
-                      <td className="text-truncate">
-                        {new Date(key.updated_at).toLocaleString()}
-                      </td>
-                      <td className="text-truncate" style={{ padding: "10px" }}>
-                        {key.bookmark_id !== null ? (
-                          <i
-                            onClick={() => {
-                              setUnbookmarkAction(true);
-                              dispatch(
-                                UnBookmarkSlide({
-                                  search_keyword: sessionStorage.getItem(
-                                    "headerSearchKeywordSource"
-                                  ),
-                                  bookmark_id: key.bookmark_id,
-                                  language: broadcastLangCode,
-                                  page: page.page,
-                                  limit: page.limit,
-                                })
-                              );
-                              setBookmarkData({
-                                file_uid: "",
-                                update: "",
+        <div className="card sources-container" style={{ border: "none" }}>
+          <TableVirtuoso
+            data={sources}
+            fixedHeaderContent={() => (
+              <tr>
+                <th className="text-truncate" style={{ width: "20%", padding: "10px" }}>
+                  Path
+                </th>
+                <th className="text-truncate">#</th>
+                <th className="text-truncate">Created By</th>
+                <th className="text-truncate">Created At</th>
+                <th className="text-truncate">Updated By</th>
+                <th className="text-truncate">Updated At</th>
+                <th className="text-truncate" style={{ width: "15%", padding: "10px" }}>
+                  Action
+                </th>
+              </tr>
+            )}
+            itemContent={(index, source) => (
+              <>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`} style={{ padding: "10px" }}>
+                  {source.path}
+                </td>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`} style={{ padding: "10px" }}>
+                  {source.slides_count}
+                </td>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`}>{source.created_by}</td>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`}>
+                  {formatDateTimeLocal(new Date(source.created_at))}
+                </td>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`}>{source.updated_by}</td>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`}>
+                  {formatDateTimeLocal(new Date(source.updated_at))}
+                </td>
+                <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`} style={{ padding: "10px" }}>
+                  {source.bookmark_id !== null ? (
+                    <i
+                      onClick={() => {
+                        dispatch(UnBookmarkSlide({ 
+                          bookmark_id: source.bookmark_id,
+                        })).finally(() => {
+                          refetchSources();
+                        });
+                      }}
+                      className="bi bi-bookmark-check-fill m-2 cursor-pointer "
+                    />
+                  ) : (
+                    <i
+                      onClick={() => {
+                        dispatch(UpdateBookmarks({
+                          bookmarks: [{
+                            file_uid: source.file_uid,
+                            slide_id: source.slide_id,
+                            order_number: bookmarks.length,
+                          }],
+                          update: false,
+                        })).finally(() => {
+                          refetchSources();
+                        });
+                      }}
+                      className="bi bi-bookmark m-2 cursor-pointer "
+                    />
+                  )}
+                  <i
+                    className="bi bi-pencil m-2 cursor-pointer "
+                    onClick={() => handleEditSlide(source)}
+                  />
+                  <span
+                    className="position-relative cursor-pointer"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="right"
+                    title={source.hidden ? "Undelete" : "Delete"}
+                    onClick={() => {
+                      console.log('Undelete/Delete not implemented', source.hidden);
+                      if (source.hidden) {
+                        dispatch(DeleteSource({
+                          hidden: true,  // Undelete
+                          source_uid: source.source_uid,
+                          path: source.path,
+                        })).finally(() => {
+                          refetchSources();
+                        });
+                      } else {
+                        if (source.bookmark_id) {
+                          if (window.confirm(`This source has bookmark, are you sure you want to delete the bookmark and the source: ${source.path}`)) {
+                            dispatch(UnBookmarkSlide({ 
+                              bookmark_id: source.bookmark_id,
+                            })).then(() => {
+                              dispatch(DeleteSource({
+                                source_uid: source.source_uid,
+                                path: source.path,
+                              })).finally(() => {
+                                refetchSources();
                               });
-                            }}
-                            className="bi bi-bookmark-check-fill m-2 cursor-pointer "
-                          />
-                        ) : (
-                          <i
-                            onClick={() => {
-                              setUnbookmarkAction(false);
-                              dispatch(
-                                UserBookmarkList({
-                                  language: broadcastLangCode,
-                                })
-                              ).then((res) => {
-                                let update = false;
-                                for (
-                                  let i = 0;
-                                  i < res.payload.data.length;
-                                  i++
-                                ) {
-                                  if (
-                                    res.payload.data[i].slide_id ===
-                                    key?.slide_id
-                                  ) {
-                                    update = true;
-                                    break;
-                                  }
-                                }
-                                dispatch(
-                                  BookmarkSlideFromArchivePage({
-                                    search_keyword: sessionStorage.getItem(
-                                      "headerSearchKeywordSource"
-                                    ),
-                                    data: {
-                                      file_uid: key?.file_uid,
-                                      slide_id: key?.slide_id,
-                                      update: update,
-                                      order: sourcePathList?.paths?.find(
-                                        (k) => k.bookmark_id !== null
-                                      )?.length,
-                                    },
-                                    language: broadcastLangCode,
-                                    params: page,
-                                  })
-                                ).then((res) => {
-                                  if (
-                                    res.payload ===
-                                    "The bookmark with the same file exists"
-                                  ) {
-                                    setBookmarkData({
-                                      file_uid: key?.file_uid,
-                                      slide_id: key?.slide_id,
-                                      update: true,
-                                    });
-                                    setConfirmation(true);
-                                  }
-                                });
-                              });
-                            }}
-                            className="bi bi-bookmark m-2 cursor-pointer "
-                          />
-                        )}
-                        <i
-                          className="bi bi-pencil m-2 cursor-pointer "
-                          onClick={() => handleEditSlide(key)}
-                        />
-                        <span
-                          className="position-relative cursor-pointer"
-                          data-bs-toggle="tooltip"
-                          data-bs-placement="right"
-                          title={key.hidden ? "Undelete" : "Delete"}
-                          onClick={() => {
-                            setUnbookmarkAction(false);
-                            setDeleteConfirmationPopup(true);
-                            setDeleteId(key.ID);
-                            setDeleteIdHidden(key.hidden);
-                            setSourceUidForDeleteSlide(key.source_uid);
-                          }}
-                        >
-                          <i className="bi bi-trash3"></i>
-                          {key.hidden && (
-                            <i className="bi bi-x-circle-fill text-danger position-absolute top-0 start-100 translate-middle fs-6"></i>
-                          )}
-                        </span>
-                        {key.hidden && (
-                          <i
-                            className="bi bi-trash3-fill text-danger"
-                            style={{ marginLeft: "30px" }}
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="right"
-                            title="Delete forever"
-                            onClick={() => {
-                              setUnbookmarkAction(false);
-                              setDeleteConfirmationPopup(true);
-                              setDeleteId(key.ID);
-                              setDeleteIdForever(key.hidden);
-                              setSourceUidForDeleteSlide(key.source_uid);
-                            }}
-                          ></i>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="card d-flex h-auto">
-              <div>NO Data</div>
-            </div>
-          )}
+                            });
+                          }
+                        } else if (window.confirm(`Are you sure you want to delete: ${source.path}`)) {
+                          dispatch(DeleteSource({
+                            source_uid: source.source_uid,
+                            path: source.path,
+                          })).finally(() => {
+                            refetchSources();
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <i className="bi bi-trash3"></i>
+                    {source.hidden && (
+                      <i className="bi bi-x-circle-fill text-danger position-absolute top-0 start-100 translate-middle fs-6"></i>
+                    )}
+                  </span>
+                  {source.hidden && (
+                    <i
+                      className="bi bi-trash3-fill text-danger"
+                      style={{ marginLeft: "30px" }}
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="right"
+                      title="Delete forever"
+                      onClick={() => {
+                        console.log('Delete forever');
+                        if (window.confirm(`Are you sure you want to FOREVER delete: ${source.path}`)) {
+                          dispatch(DeleteSource({
+                            forever: true,
+                            source_uid: source.source_uid,
+                            path: source.path,
+                          })).finally(() => {
+                            refetchSources();
+                          });
+                        }
+                      }}
+                    ></i>
+                  )}
+                </td>
+              </>
+            )}
+          />
         </div>
       </div>
+      }
     </>
   );
 };
