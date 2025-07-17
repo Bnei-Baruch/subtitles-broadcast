@@ -26,7 +26,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.DELETE("/source-slide/:source_uid", handler.DeleteSourceSlides)
 	v1.POST("/custom_slide", handler.AddCustomSlides)
 
-	v1.GET("/file_slide", handler.GetSlides)
+	// v1.GET("/file_slide", handler.GetSlides)
 	v1.GET("/author", handler.GetAuthors)
 	v1.GET("/auto_complete", handler.GetSourceValuesByQuery)
 	v1.GET("/source_language", handler.GetLanguageListSourceSupports)
@@ -36,6 +36,8 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.GET("/user/settings", handler.GetUserSettings)
 	v1.POST("/user/settings", handler.UpdateUserSettings)
+
+	v1.GET("/ready", handler.Ready)
 
 	router.NoMethod(func(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{

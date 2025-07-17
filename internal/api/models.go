@@ -6,17 +6,6 @@ import (
 	"github.com/lib/pq"
 )
 
-// pagination model
-
-type Pagination struct {
-	Limit      int   `json:"limit"`
-	Page       int   `json:"page"`
-	TotalRows  int64 `json:"total_rows"`
-	TotalPages int   `json:"total_pages"`
-}
-
-// api model
-
 type File struct {
 	ID        uint           `gorm:"primarykey"`
 	Type      string         `json:"type"`
@@ -26,10 +15,10 @@ type File struct {
 	SourceUid string         `json:"source_uid"`
 	FileUid   string         `json:"file_uid"`
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-  CreatedBy   string    `json:"created_by"`
-  UpdatedBy   string    `json:"updated_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
 }
 
 type Bookmark struct {
@@ -43,17 +32,17 @@ type Bookmark struct {
 }
 
 type Slide struct {
-	ID          uint      `gorm:"primarykey"`
-	FileUid     string    `json:"file_uid"`
-	Slide       string    `json:"slide"`
-	OrderNumber int       `json:"order_number"`
-	LeftToRight bool      `json:"left_to_right"`
-	SlideType   string    `json:"slide_type"`
+	ID          uint   `gorm:"primarykey"`
+	FileUid     string `json:"file_uid"`
+	Slide       string `json:"slide"`
+	OrderNumber int    `json:"order_number"`
+	LeftToRight bool   `json:"left_to_right"`
+	SlideType   string `json:"slide_type"`
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-  CreatedBy   string    `json:"created_by"`
-  UpdatedBy   string    `json:"updated_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
 }
 
 type SlideDetail struct {
@@ -72,10 +61,10 @@ type SourcePath struct {
 	SourceUid string         `json:"source_uid"`
 	Path      string         `json:"path"`
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-  CreatedBy   string    `json:"created_by"`
-  UpdatedBy   string    `json:"updated_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
 }
 
 // archive model

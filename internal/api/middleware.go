@@ -40,6 +40,16 @@ func CORSMiddleware() gin.HandlerFunc {
 
 func UserRoleHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		// Paths to skip authentication
+		noAuthPaths := map[string]bool{
+			"/api/v1/ready": true,
+		}
+
+		if noAuthPaths[ctx.FullPath()] {
+			ctx.Next()
+			return
+		}
+
 		authHeader := ctx.GetHeader("Authorization")
 		if len(authHeader) == 0 {
 			handleResponse(ctx, http.StatusUnauthorized, "there is no authorization token")

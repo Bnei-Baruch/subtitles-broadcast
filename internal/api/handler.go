@@ -1,10 +1,11 @@
 package api
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"regexp"
 	"sort"
@@ -228,12 +229,25 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 // Get all slides with bookmarked info by user
 func (h *Handler) GetSlides(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
-	page, listLimit, offset, err := getPaginationParams(ctx)
+	offsetStr := ctx.Query("offset")
+	offset := 0
+	var err error
+	if len(offsetStr) > 0 {
+		offset, err = strconv.Atoi(offsetStr)
+	}
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed"))
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed, failed to atoi offset"))
 		return
 	}
-	var totalRows int64
+	limitStr := ctx.Query("limit")
+	limit := 0
+	if len(limitStr) > 0 {
+		limit, err = strconv.Atoi(limitStr)
+	}
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed, failed to atoi limit"))
+		return
+	}
 	sourceUid := ctx.Query("source_uid")
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
@@ -250,85 +264,60 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	if len(language) > 0 {
 		query = query.Where("? = ANY(files.languages)", language)
 	}
-	if len(keyword) > 0 {
-		if ctx.FullPath() == "/api/v1/file_slide" {
-			query.Where("slides.slide ILIKE ?", "%"+keyword+"%")
-		} else {
-			query.Where("(slides.slide ILIKE ? OR source_paths.path ILIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
-		}
-	}
 	if hidden != "true" {
 		query = query.Where("slides.hidden = FALSE")
 	}
-	result := query.Count(&totalRows).Limit(listLimit).Offset(offset).Find(&slides)
+	var lastModified sql.NullTime
+	result := query.Select("MAX(slides.updated_at)").Scan(&lastModified)
+	if result.Error != nil {
+		log.Error(result.Error)
+		ctx.JSON(http.StatusInternalServerError,
+			getResponse(false, nil, result.Error.Error(), "Getting data has failed, while looking max last modified"))
+		return
+	}
+	if len(keyword) > 0 {
+		if ctx.FullPath() == "/api/v1/file_slide" {
+			query = query.Where("slides.slide ILIKE ?", "%"+keyword+"%")
+		} else {
+			query = query.Where("(slides.slide ILIKE ? OR source_paths.path ILIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
+		}
+	}
+	var totalRows int64
+	finalQuery := query.
+		Select("slides.*, source_paths.id AS source_path_id, source_paths.path AS source_path, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
+		Order("slides.file_uid").Order("slides.order_number").Order("slides.updated_at").
+		Count(&totalRows)
+	if limit > 0 {
+		finalQuery = finalQuery.Limit(limit).Offset(offset)
+	}
+	result = finalQuery.Find(&slides)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
-
 	}
 
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			constructResponsePagination(page, listLimit, totalRows, slides),
-			"", "Getting data has succeeded"))
+	slidesWithMetadata := struct {
+		Slides       []*SlideDetail `json:"slides"`
+		LastModified sql.NullTime   `json:"last_modified"`
+		Total        int64          `json:"total"`
+	}{
+		Slides:       slides,
+		LastModified: lastModified,
+		Total:        totalRows,
+	}
+
+	ctx.JSON(http.StatusOK, getResponse(true, slidesWithMetadata, "", "Getting data has succeeded"))
 }
 
-// constructSlideQuery constructs the slide query based on user, fileUID, and keyword
+// Constructs the base slide query based on user, fileUID, and keyword
 func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
 	return h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
-		Select("slides.*, source_paths.id AS source_path_id, source_paths.path AS source_path, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
-		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId).
-		Order("slides.file_uid").Order("order_number").Order("created_at")
-}
-
-// getPaginationParams extracts pagination parameters from the context
-func getPaginationParams(ctx *gin.Context) (int, int, int, error) {
-	var errPage, errLimit error
-	var offset, limit int
-	page := 1
-	listLimit := defaultListLimit
-	pageStr := ctx.Query("page")
-	if len(pageStr) > 0 {
-		page, errPage = strconv.Atoi(pageStr)
-	}
-	limitStr := ctx.Query("limit")
-	if len(limitStr) > 0 {
-		limit, errLimit = strconv.Atoi(limitStr)
-	}
-	err := errors.Join(errPage, errLimit)
-	if err != nil {
-		log.Error(err)
-		return 0, 0, 0, err
-	}
-	if limit > 0 {
-		listLimit = limit
-	}
-	if page > 1 {
-		offset = listLimit * (page - 1)
-	}
-
-	return page, listLimit, offset, nil
-}
-
-// constructResponsePagination constructs the pagination response
-func constructResponsePagination(page, listLimit int, totalRows int64, slides []*SlideDetail) interface{} {
-	return struct {
-		Pagination *Pagination    `json:"pagination"`
-		Slides     []*SlideDetail `json:"slides"`
-	}{
-		Pagination: &Pagination{
-			Limit:      listLimit,
-			Page:       page,
-			TotalRows:  totalRows,
-			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
-		},
-		Slides: slides,
-	}
+		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId)
 }
 
 func (h *Handler) UpdateSlides(ctx *gin.Context) {
@@ -475,9 +464,10 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 
 func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	queryParams := struct {
-		ForceDeleteBookmarks bool `form:"force_delete_bookmarks"`
-		Undelete             bool `form:"undelete"`
-		Forever              bool `form:"forever"`
+		ForceDeleteBookmarks bool   `form:"force_delete_bookmarks"`
+		Undelete             bool   `form:"undelete"`
+		Forever              bool   `form:"forever"`
+		DebugPath            string `form:"debug_path"`
 	}{}
 	if err := ctx.BindQuery(&queryParams); err != nil {
 		log.Error(err)
@@ -487,6 +477,8 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	}
 
 	sourceUid := ctx.Param("source_uid")
+	userId, _ := ctx.Get("user_id")
+	log.Info(fmt.Sprintf("Deleting SourceSlides - sourceUid: %+v, queryParams: %+v, userId: %+v", sourceUid, queryParams, userId))
 	tx := h.Database.Debug().WithContext(ctx).Begin()
 	if tx.Error != nil {
 		log.Error(tx.Error)
@@ -522,7 +514,6 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 		return
 	}
 
-	userId, _ := ctx.Get("user_id")
 	updates := map[string]interface{}{
 		"hidden":     !queryParams.Undelete,
 		"updated_by": userId,
@@ -593,10 +584,10 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	req := struct {
-		FileUid string `json:"file_uid"`
-		SlideId int    `json:"slide_id"`
-		Update  bool   `json:"update"`
-		Order   int    `json:"order"`
+		FileUid     string `json:"file_uid"`
+		SlideId     int    `json:"slide_id"`
+		Update      bool   `json:"update"`
+		OrderNumber *int   `json:"order_number"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -606,15 +597,20 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 	}
 	bookmark := Bookmark{}
 	if req.Update {
-		result := h.Database.Debug().WithContext(ctx).Exec(
-			`UPDATE bookmarks
+		updateOrder := ""
+		placeholders := []interface{}{req.SlideId}
+		if req.OrderNumber != nil {
+			placeholders = append(placeholders, *req.OrderNumber)
+			updateOrder = "order_number = ?,"
+		}
+		placeholders = append(placeholders, time.Now(), req.FileUid, userId.(string))
+		updateQuery := fmt.Sprintf(`UPDATE bookmarks
 			 SET slide_id = ?,
-			 order_number = ?,
+			 %s
 			 updated_at = ?
 			 WHERE file_uid = ?
-			 AND user_id = ?`,
-			req.SlideId, req.Order, time.Now(), req.FileUid, userId.(string),
-		).Table(DBTableBookmarks).
+			 AND user_id = ?`, updateOrder)
+		result := h.Database.Debug().WithContext(ctx).Exec(updateQuery, placeholders...).Table(DBTableBookmarks).
 			Select("*").
 			Where("file_uid = ? AND user_id = ?", req.FileUid, userId.(string)).
 			First(&bookmark)
@@ -630,11 +626,16 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			return
 		}
 	} else {
+		if req.OrderNumber == nil {
+			msg := "Expected order_number when adding bookmark."
+			ctx.JSON(http.StatusBadRequest, getResponse(false, nil, msg, msg))
+			return
+		}
 		now := time.Now()
 		bookmark.SlideId = req.SlideId
 		bookmark.FileUid = req.FileUid
 		bookmark.UserId = userId.(string)
-		bookmark.OrderNumber = req.Order
+		bookmark.OrderNumber = *req.OrderNumber
 		bookmark.CreatedAt = now
 		bookmark.UpdatedAt = now
 		err = h.Database.Debug().Create(&bookmark).Error
@@ -669,11 +670,11 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Slide_Id     uint   `json:"slide_id"`
 		BookmarkId   uint   `json:"bookmark_id"`
 		BookmarkPath string `json:"bookmark_path"`
-		Order        int    `json:"order"`
+		OrderNumber  int    `json:"order_number"`
 		FileUid      string `json:"file_uid"`
 	}{}
 	query := h.Database.Debug().WithContext(ctx).
-		Select("bookmarks.slide_id AS slide_id, bookmarks.order_number AS order, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.order_number+1 AS bookmark_path, files.file_uid AS file_uid").
+		Select("bookmarks.slide_id AS slide_id, bookmarks.order_number AS order_number, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.order_number+1 AS bookmark_path, files.file_uid AS file_uid").
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
@@ -829,39 +830,33 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		return
 	}
 	keyword := ctx.Query("keyword")
-	page, listLimit, offset, err := getPaginationParams(ctx)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Getting data has failed"))
-		return
-	}
-	var totalRows int64
 	type SourcePathData struct {
-		SlideID    uint           `json:"slide_id"`
-		BookmarkID *string        `json:"bookmark_id"`
-		SourceUID  string         `json:"source_uid"`
-		FileUID    string         `json:"file_uid"`
-		Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
-		Path       string         `json:"path"`
-		Hidden     bool           `json:"hidden"`
-		CreatedBy  string         `json:"created_by"`
-		CreatedAt  time.Time      `json:"created_at"`
-		UpdatedBy  string         `json:"updated_by"`
-		UpdatedAt  time.Time      `json:"updated_at"`
+		SlideID     uint           `json:"slide_id"`
+		SlidesCount uint           `json:"slides_count"`
+		BookmarkID  *string        `json:"bookmark_id"`
+		SourceUID   string         `json:"source_uid"`
+		FileUID     string         `json:"file_uid"`
+		Languages   pq.StringArray `json:"languages" gorm:"type:text[]"`
+		Path        string         `json:"path"`
+		Hidden      bool           `json:"hidden"`
+		CreatedBy   string         `json:"created_by"`
+		CreatedAt   time.Time      `json:"created_at"`
+		UpdatedBy   string         `json:"updated_by"`
+		UpdatedAt   time.Time      `json:"updated_at"`
 	}
 	paths := []*SourcePathData{}
-	limitSql := fmt.Sprintf(" LIMIT %d", listLimit)
-	offsetSql := fmt.Sprintf(" OFFSET %d", offset)
 	fields := `
     slides.id AS slide_id,
+		c.count as slides_count,
     bookmarks.id AS bookmark_id,
     source_paths.source_uid AS source_uid,
     files.file_uid AS file_uid,
     source_paths.languages AS languages,
     source_paths.path AS path,
     slides.hidden AS hidden,source_paths.created_by AS created_by,
-	source_paths.created_at AS created_at,
-	source_paths.updated_by AS updated_by,
-	source_paths.updated_at AS updated_at,
+		source_paths.created_at AS created_at,
+		source_paths.updated_by AS updated_by,
+		source_paths.updated_at AS updated_at,
     RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number
   `
 	orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
@@ -872,6 +867,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
     FROM "slides"
     LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = '%s'
     INNER JOIN files ON slides.file_uid = files.file_uid
+		INNER JOIN (SELECT slides.file_uid, COUNT(*) as count FROM slides GROUP BY slides.file_uid) AS c ON c.file_uid = files.file_uid
     INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages
     WHERE TRUE
       AND '%s' = ANY(files.languages)
@@ -884,38 +880,17 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		hiddenSql = "AND slides.hidden = FALSE"
 	}
 	querySql := fmt.Sprintf(templateSql,
+		// DISTINCT will "choose" the first RANK() OVER, e.g., rank_number.
 		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
 		fields, userId, language, keyword, hiddenSql)
-	countQuerySql := fmt.Sprintf(templateSql,
-		"COUNT(DISTINCT (source_paths.path, source_paths.source_uid))",
-		"", userId, language, keyword, hiddenSql)
-	// Count total.
-	h.Database.Debug().WithContext(ctx).Raw(countQuerySql).Scan(&totalRows)
-	// Get specific page.
-	result := h.Database.Debug().WithContext(ctx).Raw(
-		querySql + orderBySql + limitSql + offsetSql).Scan(&paths)
+	result := h.Database.Debug().WithContext(ctx).Raw(querySql + orderBySql).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed"))
 		return
 	}
-	sourcePathList := struct {
-		Pagination *Pagination       `json:"pagination"`
-		Paths      []*SourcePathData `json:"paths"`
-	}{
-		Pagination: &Pagination{
-			Limit:      listLimit,
-			Page:       page,
-			TotalRows:  totalRows,
-			TotalPages: int(math.Ceil(float64(totalRows) / float64(listLimit))),
-		},
-		Paths: paths,
-	}
-	ctx.JSON(http.StatusOK,
-		getResponse(true,
-			sourcePathList,
-			"", "Getting data has succeeded"))
+	ctx.JSON(http.StatusOK, getResponse(true, paths, "", "Getting data has succeeded"))
 }
 
 // UpdateSourcePath updates the source_path field for a given source_uid
@@ -1116,3 +1091,25 @@ func (h *Handler) UpdateUserSettings(ctx *gin.Context) {
 // func (h *Handler) roleChecker(role string) bool {
 // 	return (userRole == role)
 // }
+// Get all slides with bookmarked info by user
+
+func (h *Handler) Ready(ctx *gin.Context) {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	sqlDb, err := h.Database.DB()
+	if err != nil {
+		log.Error(fmt.Sprintf("Failed to get database: %v", err))
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to get database."))
+		return
+	}
+
+	err = sqlDb.PingContext(ctxWithTimeout)
+	if err != nil {
+		log.Error(fmt.Sprintf("Failed to ping to database: %v", err))
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to ping database."))
+		return
+	}
+	log.Info("Is ready?!")
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Ready"))
+}
