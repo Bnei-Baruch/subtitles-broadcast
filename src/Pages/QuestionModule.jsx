@@ -24,11 +24,7 @@ const QuestionModule = () => {
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
-  const broadcastProgrammCode = useSelector(
-    (state) =>
-      state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
-  );
+  const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_program_code || "morning_lesson");
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode
   );

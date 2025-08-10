@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
-import { UnBookmarkSlide } from "../Redux/ArchiveTab/ArchiveSlice";
+import { UnBookmarkSlide } from "../Redux/BookmarksSlice";
 import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
-import { MAX_SLIDE_LIMIT } from "../Utils/Const";
 import { useSelector } from "react-redux";
-import { setUserSelectedSlide } from "../Redux/MQTT/mqttSlice";
-import LoadingOverlay from "../Components/LoadingOverlay";
-import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import { updateMergedUserSettings } from "../Redux/UserSettingsSlice";
 import { publishSubtitle } from "../Utils/UseMqttUtils";
 
 const ItemTypes = {
@@ -23,30 +20,23 @@ const DraggableItem = ({
   parentBookmarkId,
   setIsLtr,
   parentSlideId,
+  bookmarkDeleted,
 }) => {
-  const [loading, setLoading] = useState(false);
-  const bookmarkList = useSelector((state) => state.ArchiveList.bookmarkList);
   const dispatch = useDispatch();
+
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
     item: { parentId, parentIndex },
   });
 
-  const userSettings = useSelector((state) => state.userSettings.userSettings);
-  const userSelectedFileUID = userSettings?.selected_file_uid || null;
+  const {
+    language,
+    channel,
+    selected_file_uid: userSelectedFileUID,
+  } = useSelector((state) => state.userSettings.userSettings);
   const selected = userSelectedFileUID === parentBookmarkFileUid;
 
-  const subtitlesDisplayMode = useSelector(
-    (state) => state.mqtt.subtitlesDisplayMode
-  );
-  const broadcastProgrammCode = useSelector(
-    (state) =>
-      state.userSettings.userSettings.broadcast_programm_code ||
-      "morning_lesson"
-  );
-  const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he",
-  );
+  const subtitlesDisplayMode = useSelector((state) => state.mqtt.subtitlesDisplayMode);
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
   const [, drop] = useDrop({
@@ -59,48 +49,15 @@ const DraggableItem = ({
     },
   });
 
-  const handleBookMarkClick = (targetBookmarkFileUid, targetSlideId) => {
-    setLoading(true);
-
-    dispatch(
-      updateMergedUserSettings({
-        selected_slide_id: targetSlideId,
-        selected_file_uid: targetBookmarkFileUid,
-      }),
-    );
-
-    dispatch(
-      GetSubtitleData({
-        file_uid: targetBookmarkFileUid,
-        limit: MAX_SLIDE_LIMIT,
-      }),
-    )
-      .then((response) => {
-        if (!bookmarkList?.data) return;
-        const bookmark = bookmarkList?.data?.find(
-          (b) => b.file_uid === targetBookmarkFileUid,
-        );
-
-        if (bookmark) {
-          const selectedSlide = response.payload.data.slides.find(
-            (slide) => slide.ID === bookmark.slide_id,
-          );
-
-          if (selectedSlide) {
-            dispatch(setUserSelectedSlide(selectedSlide));
-
-            publishSubtitle(selectedSlide, mqttMessages, broadcastProgrammCode, broadcastLangCode, subtitlesDisplayMode);
-          }
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const handleBookmarkClick = (targetBookmarkFileUid, targetSlideId) => {
+    dispatch(updateMergedUserSettings({
+      selected_slide_id: targetSlideId,
+      selected_file_uid: targetBookmarkFileUid,
+    }));
   };
 
   return (
     <>
-      <LoadingOverlay loading={loading} />
       <div
         className={
           "d-flex justify-content-between cursor-pointer" +
@@ -112,19 +69,13 @@ const DraggableItem = ({
           border: "1px solid #ccc",
           marginBottom: "4px",
           position: "relative",
-          zIndex: loading ? 1000 : "auto",
         }}
       >
         <i className="bi bi-grip-vertical me-3" />
         <i
-          onClick={() =>
-            dispatch(
-              UnBookmarkSlide({
-                bookmark_id: parentBookmarkId,
-                language: broadcastLangCode,
-              }),
-            )
-          }
+          onClick={() => {
+            dispatch(UnBookmarkSlide({ bookmark_id: parentBookmarkId })).then(() => bookmarkDeleted());
+          }}
           className="bi bi-trash"
         />
         <span
@@ -133,9 +84,7 @@ const DraggableItem = ({
           data-bs-placement="top"
           title={text}
           style={{ width: "600px" }}
-          onClick={() =>
-            handleBookMarkClick(parentBookmarkFileUid, parentSlideId)
-          }
+          onClick={() => handleBookmarkClick(parentBookmarkFileUid, parentSlideId)}
         >
           {text}
         </span>

@@ -12,7 +12,7 @@ const QuestionMessage = () => {
   );
   const broadcastProgrammCode = useSelector(
     (state) =>
-      state.userSettings.userSettings.broadcast_programm_code ||
+      state.userSettings.userSettings.broadcast_program_code ||
       "morning_lesson"
   );
   const subtitlesDisplayMode = useSelector(

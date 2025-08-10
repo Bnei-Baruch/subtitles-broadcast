@@ -22,7 +22,7 @@ export default function useMqtt() {
   const firstName = useSelector((state) => state.UserProfile.userProfile.profile.firstName);
   const lastName = useSelector((state) => state.UserProfile.userProfile.profile.lastName);
   const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
-  const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_programm_code || "morning_lesson"); 
+  const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_program_code || "morning_lesson"); 
   const isConnected = useSelector((state) => state.mqtt.isConnected);
   const userSettingsLoaded = useSelector((state) => state.userSettings.isLoaded);
 
@@ -57,7 +57,7 @@ export default function useMqtt() {
 
   useEffect(() => {
     if (!clientRef.current) {
-      debugLog("Connecting to MQTT Broker...");
+      debugLog("Connecting to MQTT Broker...", mqttBrokerUrl);
       clientRef.current = mqtt.connect(mqttBrokerUrl, {
         keepalive: 60, // seconds
         reconnectPeriod: 2000, // ms

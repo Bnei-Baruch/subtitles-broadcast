@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import debugLog from "../../Utils/debugLog";
+import debugLog from "../Utils/debugLog";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -8,14 +8,8 @@ const initialState = {
   userSettings: {
     selected_slide_id: null,
     selected_file_uid: null,
-    selected_bookmark_language: null,
-    broadcast_programm_code: "morning_lesson",
+    broadcast_program_code: "morning_lesson",
     broadcast_language_code: "he",
-    source_pagination: { page: 1, limit: 10 },
-    archive_pagination: { page: 1, limit: 10 },
-    file_uid_for_edit_slide: null,
-    bookmar_id_for_edit: null,
-    slide_id_for_edit: null,
   },
   loading: false,
   isLoaded: false,
@@ -52,12 +46,13 @@ export const updateMergedUserSettings =
   (newSettings) => async (dispatch, getState) => {
     if (!newSettings) return;
 
-    const currentSettings = getState().userSettings.userSettings || {};
+    const currentSettings = getState().userSettings.userSettings || initialState.userSettings;
     const updatedSettings = { ...currentSettings, ...newSettings };
 
-    if (newSettings.selected_file_uid) {
-      updatedSettings.selected_bookmark_language =
-        updatedSettings.broadcast_language_code;
+    if (updatedSettings.broadcast_language_code !== currentSettings.broadcast_language_code ||
+      updatedSettings.broadcast_program_code !== currentSettings.broadcast_program_code) {
+      updatedSettings.selected_file_uid = null;
+      updatedSettings.selected_slide_id = null;
     }
 
     debugLog("Merging and updating user settings:", updatedSettings);
@@ -94,7 +89,8 @@ const UserSettingsSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(fetchUserSettings.fulfilled, (state, action) => {
       debugLog("User Settings Loaded", action.payload);
-      state.userSettings = action.payload;
+      // In case database has stale broken settings, use initial state as basis.
+      state.userSettings = { ...initialState.userSettings, ...action.payload };
       state.isLoaded = true;
     });
   },

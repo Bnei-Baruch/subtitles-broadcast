@@ -5,7 +5,7 @@ import UserSettingsForm from "../Components/UserSettingsForm";
 const Settings = () => {
   return (
     <Container className="mt-4">
-      <h2>🔧 User Settings</h2>
+      <h2>User Settings</h2>
       <UserSettingsForm />
     </Container>
   );

@@ -9,7 +9,7 @@ import "./App.css";
 import SideNavBar from "./Layout/SideNavBar";
 import MainRoutes from "./Routes/Routes";
 import { markErrorAsUiPresented } from "./Redux/MQTT/mqttSlice";
-import { fetchUserSettings } from "./Redux/UserSettings/UserSettingsSlice";
+import { fetchUserSettings } from "./Redux/UserSettingsSlice";
 import { showErrorToast } from "./Utils/Common";
 
 const App = ({ auth }) => {

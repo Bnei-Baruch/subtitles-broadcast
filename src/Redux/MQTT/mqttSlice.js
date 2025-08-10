@@ -63,7 +63,7 @@ const mqttSlice = createSlice({
         delete state.mqttTopics[topic];
       }
     },
-    setUserSelectedSlide(state, action) {
+    setMqttSelectedSlide(state, action) {
       state.selectedSubtitleSlide = action.payload;
     },
     mqttMessageReceived(state, action, dispatch) {
@@ -144,7 +144,7 @@ export const {
   setActiveBroadcastMessage,
   setSubtitlesDisplayMode,
   setClientId,
-  setUserSelectedSlide,
+  setMqttSelectedSlide,
   setRounRobinIndex,
   addMqttError,
   clearMqttErrors,

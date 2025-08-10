@@ -38,6 +38,8 @@ export const broadcastLanguages = [
   { value: "tr", label: "Turkish", isLtr: true, order_num: 6 },
 ];
 
+export const isLtr = (lang) => (broadcastLanguages.find((option) => option.value === lang) || { isLtr: true }).isLtr
+
 export const roundRobinQuestionsLanguages = ["he", "en", "ru", "es"];
 
 export let broadcastLangMapObj = {};
@@ -57,7 +59,6 @@ brodcastProgrammArr.forEach((programmItem, index) => {
   brodcastProgrammMapObj[programmItem.value] = programmItem;
 });
 
-export const MAX_SLIDE_LIMIT = 2000;
 export const DEF_BROADCAST_LANG = "he";
 export const DEF_BROADCAST_PROG = "morning_lessone";
 

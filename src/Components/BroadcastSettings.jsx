@@ -12,14 +12,15 @@ import {
   brodcastProgrammMapObj,
 } from "../Utils/Const";
 import { useDispatch, useSelector } from "react-redux";
-import { updateMergedUserSettings } from "../Redux/UserSettings/UserSettingsSlice";
+import { updateMergedUserSettings } from "../Redux/UserSettingsSlice";
 import "../Pages/PagesCSS/BroadcastSettings.css";
 
 const leftColSize = 4;
 const rightColSize = 8;
 
-export function BroadcastSettings({ props }) {
+export const BroadcastSettings = ({ props }) => {
   const dispatch = useDispatch();
+
   const [showBroadcastSettings, setShowBroadcastSettings] = useState(() => {
     return localStorage.getItem("isBroadcastSettingsShown") === "true"
       ? false
@@ -34,7 +35,7 @@ export function BroadcastSettings({ props }) {
 
   const broadcastProgrammCode = useSelector(
     (state) =>
-      state.userSettings.userSettings.broadcast_programm_code ||
+      state.userSettings.userSettings.broadcast_program_code ||
       "morning_lesson",
   );
   const currentProgrammItem = brodcastProgrammMapObj[broadcastProgrammCode];
@@ -43,7 +44,7 @@ export function BroadcastSettings({ props }) {
   const updateBroadcastProgramm = (newProgrammItem) => {
     dispatch(
       updateMergedUserSettings({
-        broadcast_programm_code: newProgrammItem.value,
+        broadcast_program_code: newProgrammItem.value,
       }),
     );
   };
@@ -104,7 +105,7 @@ export function BroadcastSettings({ props }) {
               </Col>
               <Col xs={rightColSize} md={rightColSize}>
                 <DropdownButtonDef
-                  id="brodcast_programm"
+                  id="brodcast_program"
                   data={brodcastProgrammArr}
                   currentValue={currentProgrammItem}
                   setDataRef={updateBroadcastProgramm}
@@ -139,6 +140,6 @@ export function BroadcastSettings({ props }) {
       </Modal>
     </>
   );
-}
+};
 
 export default BroadcastSettings;

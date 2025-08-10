@@ -47,9 +47,6 @@
   box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.05);
   border-radius: 4px;
 }
-.archiveBackground .card {
-  margin: 13px;
-}
 .archiveBackground .search-box {
   margin: 13px 5px 20px;
 }
@@ -91,9 +88,6 @@ table {
 
   color: #0000008a;
 }
-.Edit {
-  padding-top: 12px;
-}
 
 .Edit .box {
   font-family: "Roboto";
@@ -113,6 +107,8 @@ table {
 }
 .Edit .card {
   background: none;
+  padding-right: 2px;
+  padding-left: 2px;
 }
 .Edit .first {
   width: 40%;
@@ -155,7 +151,6 @@ table {
   background: #e0e0e0;
   box-shadow: 0px 0px 14px 0px rgba(53, 64, 82, 0.05);
   position: relative;
-  margin-right: 10px;
 }
 
 .Edit .save {
@@ -210,19 +205,30 @@ select {
   text-align: left;
 }
 
-/* Styles for the dropdown container */
-.form-group.autoComplete {
-  left: 0;
-  margin-left: 5px;
+.top-autocomplete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  width: 100%;
 }
 
-.top-autocomplete .form-group.autoComplete {
-  position: absolute;
+.top-autocomplete .form-check {
+  display: flex;
+  align-items: center;
 }
 
-/* Styles for the input */
+.top-autocomplete span {
+  font-size: 25px;
+  margin-left: 10px;
+}
+
+.top-autocomplete div.autoComplete {
+  width: 50%;
+}
+
 .form-group.autoComplete input {
-  width: 100%; /* Set input width to 100% of the container */
+  width: 100%;
   padding: 10px;
 }
 
@@ -265,9 +271,14 @@ select {
   flex-direction: column;
 }
 .adjustable-font {
-  max-font-size: 24px;
-  transition: font-size 0.3s ease;
   outline: 1px solid black;
+}
+.slide-edit-container {
+  position: relative;
+  .outline {
+    position: absolute;
+    outline: 1px solid black;
+  }
 }
 
 .delete-icon {
@@ -306,23 +317,11 @@ select {
 .EditActiveSlide {
   outline: 2px solid black;
 }
-/* pagination css */
-/* TwoFlexBoxes.css */
+
 .flex-container {
   display: flex;
-  align-items: center; /* Center vertically within the entire container */
-  margin: 0px 13px;
-  justify-content: center;
-}
-
-.flex-box-start {
-  /* No need for flex property, it will take the necessary space */
-}
-
-.flex-box-center {
-  display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: start;
 }
 
 .pagination-item {
@@ -331,7 +330,7 @@ select {
 }
 
 .pagination-item.disabled {
-  opacity: 0.5; /* Adjust the opacity to visually indicate the disabled state */
+  opacity: 0.5;
   color: #212121;
   cursor: not-allowed;
 }
@@ -339,24 +338,24 @@ select {
   margin: 0;
 }
 
-.bookmarkedrow {
+.bookmarked-cell {
   background-color: grey;
 }
 
 button {
-  height: 40px; /* Ensure consistent height */
-  line-height: 40px; /* Align text vertically */
-  margin: 0; /* Remove unnecessary margins */
+  height: 40px;
+  line-height: 40px;
+  margin: 0;
 }
 
 .inline-flex {
   display: inline-flex;
-  align-items: center; /* Vertical alignment */
-  gap: 10px; /* Adjust spacing between items */
+  align-items: center;
+  gap: 10px;
 }
 
 .update-source-path-inp {
-  flex: 1; /* Allow input to take available space */
+  flex: 1;
   min-width: 640px;
   width: 640px;
   height: 42px !important;
@@ -383,11 +382,14 @@ button {
 }
 
 .responsive-container {
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px; /* Space between elements */
-  flex-wrap: wrap; /* Allow wrapping to next line */
+  justify-content: space-between;
+
+  span {
+    font-size: 25px;
+  }
 }
 
 .button-container {
@@ -399,14 +401,64 @@ button {
   top: 10px;
   padding-bottom: 10px;
   padding-top: 10px;
-  padding-left: 10px;
+  padding-left: 2px;
+  padding-right: 2px;
   z-index: 100;
   background-color: white;
   margin-bottom: 2px;
+
+  .btn {
+    white-space: nowrap;
+  }
 }
 
 .nowrap-cell {
   white-space: nowrap;
   font-size: 0.85rem;
   vertical-align: middle;
+}
+
+.source-path {
+  position: absolute;
+  top: -4px;
+  right: 16px;
+  background: rgba(255, 255, 255, .9);
+  font-size: 12px;
+  padding-left: 10px;
+  padding-right: 10px;
+  color: gray;
+}
+
+.action-buttons {
+  position: absolute;
+  top: -2px;
+  left: 16px;
+  background: rgba(255, 255, 255, .9);
+  font-size: 12px;
+  color: gray;
+}
+
+.search-span {
+  background-color: #01cd27;
+}
+
+.card.sources-container {
+  height: calc(100vh - 50px);
+}
+
+.edit-container {
+  height: calc(100vh - 125px);
+}
+
+.edit-row {
+  display: flex;
+}
+
+.edit-textarea {
+  width: 50%;
+  padding: 2px;
+}
+
+.edit-slide {
+  width: 50%;
 }
