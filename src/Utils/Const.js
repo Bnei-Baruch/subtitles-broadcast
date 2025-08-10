@@ -35,7 +35,8 @@ export const broadcastLanguages = [
   { value: "es", label: "Spanish", isLtr: true, order_num: 4 },
   { value: "ua", label: "Ukrainian", isLtr: true, order_num: 5 },
   { value: "it", label: "Italian", isLtr: true, order_num: 6 },
-  { value: "tr", label: "Turkish", isLtr: true, order_num: 6 },
+  { value: "tr", label: "Turkish", isLtr: true, order_num: 7 },
+  { value: "de", label: "German", isLtr: true, order_num: 8 },
 ];
 
 export const isLtr = (lang) => (broadcastLanguages.find((option) => option.value === lang) || { isLtr: true }).isLtr
