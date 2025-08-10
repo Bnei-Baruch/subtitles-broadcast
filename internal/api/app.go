@@ -22,21 +22,23 @@ const (
 	LanguageCodeSpanish   = "es"
 	LanguageCodeHebrew    = "he"
 	LanguageCodeRussian   = "ru"
-  LanguageCodeUkrainian = "ua"
-  LanguageCodeItalian   = "it"
-  LanguageCodeTurkish   = "tr"
+	LanguageCodeUkrainian = "ua"
+	LanguageCodeItalian   = "it"
+	LanguageCodeTurkish   = "tr"
+	LanguageCodeGerman    = "de"
 
 	SourcePathUpdateTermHour = 6
 )
 
-var LanguageCodes = []string {
-  LanguageCodeEnglish,
-  LanguageCodeSpanish,
-  LanguageCodeHebrew,
-  LanguageCodeRussian,
-  LanguageCodeUkrainian,
-  LanguageCodeItalian,
-  LanguageCodeTurkish,
+var LanguageCodes = []string{
+	LanguageCodeEnglish,
+	LanguageCodeSpanish,
+	LanguageCodeHebrew,
+	LanguageCodeRussian,
+	LanguageCodeUkrainian,
+	LanguageCodeItalian,
+	LanguageCodeTurkish,
+	LanguageCodeGerman,
 }
 
 func NewApp(sig chan os.Signal) *http.Server {
