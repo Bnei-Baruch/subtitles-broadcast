@@ -468,11 +468,18 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 		Undelete             bool   `form:"undelete"`
 		Forever              bool   `form:"forever"`
 		DebugPath            string `form:"debug_path"`
+		Language             string `form:"language"`
 	}{}
 	if err := ctx.BindQuery(&queryParams); err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, err.Error(), "Getting data has failed"))
+		return
+	}
+	if len(queryParams.Language) == 0 {
+		msg := "Language must be set for deletion."
+		log.Error(msg)
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, msg, msg))
 		return
 	}
 
@@ -489,7 +496,8 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	fileUids := []string{}
 	query := tx.Select("DISTINCT ON (slides.file_uid) slides.file_uid AS file_uid").
 		Table(DBTableSlides).
-		Joins("INNER JOIN files ON files.file_uid = slides.file_uid AND files.source_uid = ?", sourceUid)
+		Joins("INNER JOIN files ON ? = ANY(files.languages) AND files.file_uid = slides.file_uid AND files.source_uid = ?",
+			queryParams.Language, sourceUid)
 	if !queryParams.ForceDeleteBookmarks {
 		result := query.Joins("INNER JOIN bookmarks ON slides.id = bookmarks.slide_id").Find(&fileUids)
 		if result.Error != nil {
@@ -520,7 +528,9 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 		"updated_at": time.Now(),
 	}
 	if queryParams.Forever {
-		result = tx.Where("file_uid in ?", fileUids).Delete(&Slide{})
+		result = tx.
+			Where("file_uid in ?", fileUids).
+			Delete(&Slide{})
 	} else {
 		result = tx.Model(&Slide{}).
 			Where("file_uid in ?", fileUids).
@@ -539,9 +549,13 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	}
 
 	if queryParams.Forever {
-		result = tx.Where("source_uid = ?", sourceUid).Delete(&File{})
+		result = tx.
+			Where("? = ANY(languages)", queryParams.Language).
+			Where("source_uid = ?", sourceUid).
+			Delete(&File{})
 	} else {
 		result = tx.Model(&File{}).
+			Where("? = ANY(languages)", queryParams.Language).
 			Where("source_uid = ?", sourceUid).
 			Updates(updates)
 	}
@@ -558,7 +572,10 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	}
 
 	if queryParams.Forever {
-		result = tx.Where("source_uid = ?", sourceUid).Delete(&SourcePath{})
+		result = tx.
+			Where("? = ANY(languages)", queryParams.Language).
+			Where("source_uid = ?", sourceUid).
+			Delete(&SourcePath{})
 		if result.Error != nil {
 			log.Error(result.Error)
 			ctx.JSON(http.StatusInternalServerError,
