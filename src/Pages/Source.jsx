@@ -262,6 +262,7 @@ const Source = () => {
                           hidden: true,  // Undelete
                           source_uid: source.source_uid,
                           path: source.path,
+                          language,
                         })).finally(() => {
                           refetchSources();
                         });
@@ -274,6 +275,7 @@ const Source = () => {
                               dispatch(DeleteSource({
                                 source_uid: source.source_uid,
                                 path: source.path,
+                                language,
                               })).finally(() => {
                                 refetchSources();
                               });
@@ -283,6 +285,7 @@ const Source = () => {
                           dispatch(DeleteSource({
                             source_uid: source.source_uid,
                             path: source.path,
+                            language,
                           })).finally(() => {
                             refetchSources();
                           });
@@ -309,6 +312,7 @@ const Source = () => {
                             forever: true,
                             source_uid: source.source_uid,
                             path: source.path,
+                            language,
                           })).finally(() => {
                             refetchSources();
                           });
