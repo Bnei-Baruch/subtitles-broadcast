@@ -20,8 +20,8 @@ const GreenScreen = () => {
     (state) => state.mqtt.subtitlesDisplayMode || DM_NONE,
   );
   const {
-    broadcastLangCode: language,
-    broadcastProgrammCode: channel,
+    broadcast_language_code: language,
+    broadcast_program_code: channel,
   } = useSelector((state) => state.userSettings.userSettings);
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, subtitlesDisplayMode, language, channel)));
@@ -31,7 +31,7 @@ const GreenScreen = () => {
     const scale = outerRef.current.clientWidth / 1920;
 
     document.querySelectorAll('.side-menu').forEach(el => {
-          el.style.display = 'none';
+      el.style.display = 'none';
     });
 
     if (isQuestion) {
