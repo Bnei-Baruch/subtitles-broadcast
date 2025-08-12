@@ -27,13 +27,14 @@ export const GetSources = createAsyncThunk(
 
 export const DeleteSource = createAsyncThunk(
   "sources/delete",
-  async ({ hidden, forever, path, source_uid }, thunkAPI) => {
-    const undeleteParam = hidden ? "&undelete=true" : "";
-    const foreverParam = forever ? "&forever=true" : "";
-    const debug = path ? "&debug_path=" + encodeURIComponent(path) : "";
-    const response = await axios.delete(
-      `${API}${"source-slide/" + source_uid + "?force_delete_bookmarks=true" + undeleteParam + foreverParam + debug}`
-    );
+  async ({ language, hidden, forever, path, source_uid }, thunkAPI) => {
+    const params = [
+      language ? `&language=${language}` : "",
+      hidden ? "&undelete=true" : "",
+      forever ? "&forever=true" : "",
+      path ? "&debug_path=" + encodeURIComponent(path) : "",
+    ];
+    const response = await axios.delete(`${API}source-slide/${source_uid}?force_delete_bookmarks=true${params.join('')}`);
     return {undelete: hidden, forever, success: response.data.success};
   }
 );
