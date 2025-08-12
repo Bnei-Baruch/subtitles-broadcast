@@ -28,6 +28,7 @@ func init() {
 	if envProfile != "" {
 		envProfile = fmt.Sprintf("_%s", envProfile)
 	}
+	log.Infof("Env variables file: %+v", EnvFile+envProfile)
 	err := godotenv.Load(EnvFile + envProfile)
 	if err != nil {
 		log.Fatalf("Error loading %s file: %v", EnvFile, err)

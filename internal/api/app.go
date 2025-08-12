@@ -42,6 +42,7 @@ var LanguageCodes = []string{
 }
 
 func NewApp(sig chan os.Signal) *http.Server {
+	log.Infof("Connecting to db: %+v", os.Getenv(config.EnvBssvrPostgresUri))
 	db, err := database.NewPostgres(os.Getenv(config.EnvBssvrPostgresUri))
 	if err != nil {
 		log.Fatalln(err)
