@@ -176,7 +176,7 @@ const Subtitles = () => {
         dispatch(clearSlices());
       }
     }
-  }, [editSlideId, searchSlide, userSelectedFileUID, dispatch, bookmarks]);
+  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, JSON.stringify(bookmarks)]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedBookmarks = [...bookmarks];

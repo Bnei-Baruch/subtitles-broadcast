@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useDispatch } from "react-redux";
 import { UnBookmarkSlide } from "../Redux/BookmarksSlice";
-import { GetSubtitleData } from "../Redux/Subtitle/SubtitleSlice";
 import { useSelector } from "react-redux";
 import { updateMergedUserSettings } from "../Redux/UserSettingsSlice";
-import { publishSubtitle } from "../Utils/UseMqttUtils";
 
 const ItemTypes = {
   CARD: "card",
@@ -30,14 +28,9 @@ const DraggableItem = ({
   });
 
   const {
-    language,
-    channel,
     selected_file_uid: userSelectedFileUID,
   } = useSelector((state) => state.userSettings.userSettings);
   const selected = userSelectedFileUID === parentBookmarkFileUid;
-
-  const subtitlesDisplayMode = useSelector((state) => state.mqtt.subtitlesDisplayMode);
-  const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
 
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,

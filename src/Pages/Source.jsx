@@ -3,8 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import "./PagesCSS/Archive.css";
 import { GetSources, DeleteSource } from "../Redux/SourceSlice";
 import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/BookmarksSlice";
-// import MessageBox from "../Components/MessageBox";
-// import { useLocation } from "react-router-dom";
 import { Search } from "../Layout/Search";
 import { TableVirtuoso } from 'react-virtuoso';
 import { Edit } from "../Components/Edit";
@@ -25,32 +23,11 @@ const Source = () => {
     broadcast_program_code: channel,
   } = useSelector((state) => state.userSettings.userSettings);
 
-  // const queryParams = new URLSearchParams(useLocation().search);
   const { sources } = useSelector((state) => state.sources);
 	const { bookmarks } = useSelector((state) => state.bookmarks);
 
   const [{editSlideId, editFileUid}, setEdit] = useState({ editSlideId: null, editFileUid: null });
   const [showDeleted, setShowDeleted] = useState(false);
-
-  // const [unbookmarkAction, setUnbookmarkAction] = useState(false);
-
-  // const message = "";
-  /*const [SourceUidForDeleteSlide, setSourceUidForDeleteSlide] = useState(
-    queryParams.get("source_uid")
-  );*/
-  // const [pathForDelete, setPathForDelete] = useState("default");
-
-  // const [toggle, setToggle] = useState(false);
-  // const [finalConfirm, setFinalConfirm] = useState(false);
-  // const [confirmation, setConfirmation] = useState(false);
-  /*const [deleteId, setDeleteId] = useState();
-  const [deleteIdHidden, setDeleteIdHidden] = useState(false);
-  const [deleteIdForever, setDeleteIdForever] = useState(false);
-  const [deleteConfirmationPopup, setDeleteConfirmationPopup] = useState(false);
-  const [bookmarkData, setBookmarkData] = useState({
-    file_uid: "",
-    update: "",
-  });*/
 
   const refetchSources = useCallback(() => {
     // Update number of bookmarks.
@@ -62,89 +39,11 @@ const Source = () => {
       keyword: search,
       hidden: showDeleted ? "true" : undefined,
     }));
-  }, [search, language, showDeleted]);
+  }, [dispatch, search, language, channel, showDeleted]);
 
   useEffect(() => {
     refetchSources();
   }, [refetchSources]);
-
-  /*
-  useEffect(() => {
-    if (finalConfirm === true) {
-      dispatch(DeleteSource({
-        source_uid: SourceUidForDeleteSlide,
-        debug_path: pathForDelete,
-        hidden: deleteIdHidden ? "true" : undefined,
-        forever: deleteIdForever ? "true" : undefined,
-      }));
-      setFinalConfirm(false);
-      setDeleteIdHidden(false);
-      setDeleteIdForever(false);
-    }
-    if (toggle) {
-      dispatch(
-        BookmarkSlideFromArchivePage({
-          search_keyword: search,
-          data: deleteId,
-          language,
-        })
-      );
-      setToggle(false);
-    }
-  }, [
-    finalConfirm,
-    toggle,
-    deleteId,
-    deleteIdHidden,
-    dispatch,
-    deleteIdForever,
-  ]);
-  */
-
-  /*const DelectConfirmationModal = useMemo(
-    () => (
-      <DeleteConfirmation
-        undelete={deleteIdHidden}
-        forever={deleteIdForever}
-        confirm={() => {
-          setFinalConfirm(true);
-          setDeleteConfirmationPopup(false);
-        }}
-        show={deleteConfirmationPopup}
-        handleClose={() => {
-          setDeleteConfirmationPopup(false);
-          setDeleteIdHidden(false);
-          setDeleteIdForever(false);
-        }}
-      />
-    ),
-    [deleteConfirmationPopup, deleteIdHidden, deleteIdForever]
-  );*/
-
-  /*const ConfirmationMessage = useMemo(() => {
-    if (!unbookmarkAction) {
-      return (
-        <MessageBox
-          setFinalConfirm={() => {
-            dispatch(
-              BookmarkSlideFromArchivePage({
-                search_keyword: sessionStorage.getItem(
-                  "headerSearchKeywordSource"
-                ),
-                data: bookmarkData,
-                language: broadcastLangCode,
-                params: page,
-              })
-            );
-          }}
-          message={"Are you sure , you want to bookmark this File slide"}
-          show={confirmation}
-          handleClose={() => setConfirmation(false)}
-        />
-      );
-    }
-  }, [confirmation, message, unbookmarkAction]);
-  */
 
   const handleEditSlide = (slide) => {
     setEdit({ editSlideId: slide.slide_id, editFileUid: slide.file_uid });
