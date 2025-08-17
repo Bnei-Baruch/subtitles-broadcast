@@ -96,7 +96,7 @@ const Archive = () => {
       all: false,
       limit,
     }));
-  }, [slides, language, channel, dispatch, search]);
+  }, [language, channel, dispatch, search]);
 
   const bookmarkHandler = (slide, index) => {
     dispatch(UpdateBookmarks({

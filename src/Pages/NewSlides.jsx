@@ -9,7 +9,6 @@ import GetFileUid from "../Utils/Source";
 import { useDispatch, useSelector } from "react-redux";
 import { languageIsLtr } from "../Utils/Common";
 import LoadingOverlay from "../Components/LoadingOverlay";
-import { updateSettingsInternal } from "../Redux/UserSettingsSlice";
 import { AutocompleteSources } from "../Redux/SourceSlice";
 import { Edit } from "../Components/Edit";
 
@@ -47,7 +46,7 @@ const NewSlides = () => {
     if (sourceUrl.length > 0) {
       dispatch(AutocompleteSources({ query: sourceUrl, language }));
     }
-  }, [sourceUrl]);
+  }, [dispatch, language, sourceUrl]);
 
   useEffect(() => {
     const ulElement = document.getElementById("suggestions");

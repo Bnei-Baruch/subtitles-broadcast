@@ -31,19 +31,20 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion }) => {
   }, [handleResize]);
 
   useEffect(() => {
+    let markedContent = content;
     if (searchKeyword !== undefined && searchKeyword !== "") {
       const escapeRegex = (str) => {
         return str.replace(/[.*+?^${}()|[\]\\]/ig, "\\$&");
       };
       const escapedKeyword = escapeRegex(searchKeyword);
       const regex = new RegExp(escapedKeyword, "ig");
-      content = content.replace(
+      markedContent = content.replace(
         regex,
         `<span style="background-color: ${backgroundColor};">$&</span>`,
       );
     }
-    slideRef.current.innerHTML = md.render(content ? content : "");
-  }, [content, md]);
+    slideRef.current.innerHTML = md.render(markedContent ? markedContent : "");
+  }, [content, md, searchKeyword]);
 
   return (
     <div
