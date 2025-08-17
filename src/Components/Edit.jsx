@@ -155,9 +155,10 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
       GetSlides({
         file_uid: fileUid,
         language,
+        channel,
       })
     );
-  }, [dispatch, fileUid, language]);
+  }, [dispatch, fileUid, language, channel]);
 
   // Load data when the component mounts
   useEffect(() => {
@@ -295,7 +296,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
       savePromises.push(dispatch(AddSlide(addNewSlideList)));
     }
 
-    Promise.all(savePromises).finally(() => refetchSlides());
+    return Promise.all(savePromises).finally(() => refetchSlides());
   }, [deleted, dispatch, isSlideDataChanged, isSourcePathChanged, editSlides, sourcePath, sourcePathId, refetchSlides]);
 
 	// Re-split slides from selected slide and on.
@@ -380,6 +381,8 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
           slide_id: editSlides[0].ID,
           order_number: bookmarks.length,
 				}],
+        language,
+        channel,
 				update: false,
 			})).then((response) => {
         if (response.payload[0].success) {

@@ -90,6 +90,8 @@ const Subtitles = () => {
             file_uid: targetSlideObj.file_uid,
             slide_id: targetSlideObj.ID,
           }],
+          language,
+          channel,
           update: true,
         })).then(() => {
           return dispatch(GetBookmarks({ language, channel }));
@@ -167,6 +169,8 @@ const Subtitles = () => {
           keyword: searchSlide,
           reset: true,
           all: true,
+          language,
+          channel,
         }));
       } else {
         dispatch(clearSlices());
@@ -182,6 +186,8 @@ const Subtitles = () => {
     dispatch(UpdateBookmarks({
       bookmarks: updatedBookmarks.map((bookmark, index) => ({...bookmark, order_number: index})),
       update: true,
+      language,
+      channel,
     })).then(() => {
       return dispatch(GetBookmarks({ language, channel }));
     });

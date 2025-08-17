@@ -27,16 +27,6 @@ export const GetSubtitleData = createAsyncThunk(
   }
 );
 
-/*
-export const GetSlidesDataFromFileId = createAsyncThunk(
-  "/GetSlidesDataFromFileId",
-  async (data, thunkAPI) => {
-    const response = await axios.get(`${process.env.REACT_APP_API_URL}/${data}`);
-    return response.data;
-  }
-);
-*/
-
 export const RemoveSubtitleData = createAsyncThunk(
   `/${API_URL.GetALL}`,
   async (data, thunkAPI) => {

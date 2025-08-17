@@ -20,17 +20,19 @@ export const GetBookmarks = createAsyncThunk(
 // Adds or updates bookmarks.
 export const UpdateBookmarks = createAsyncThunk(
   "bookmarks/update",
-  async (data, thunkAPI) => {
+  async ({bookmarks, update, channel, language}, thunkAPI) => {
     const updatedBookmarks = [];
     try {
-      for (const bookmark of data.bookmarks) {
+      for (const bookmark of bookmarks) {
         const response = await axios.post(`${API}bookmark`, {
           file_uid: bookmark.file_uid,
           slide_id: bookmark.slide_id,
           // Update order number of bookmark only if explicitly set.
           order_number: bookmark.order_number !== undefined ? bookmark.order_number : undefined,
           // If false, will create a bookmark, otherwise update.
-          update: data.update,
+          update,
+          channel,
+          language,
         });
         updatedBookmarks.push(response.data);
       };
