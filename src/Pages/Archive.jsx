@@ -38,10 +38,11 @@ const SearchSpan = ({text, searchKeyword}) => {
   );
 };
 
-const more = async (dispatch, language, search, slides, total) => {
+const more = async (dispatch, language, channel, search, slides, total) => {
 	if (slides.length < total) {
 		dispatch(GetSlides({
 			language,
+      channel, 
 			keyword: search,
 			reset: false,
 			all: false,
@@ -72,11 +73,12 @@ const Archive = () => {
   useEffect(() => {
 		dispatch(GetSlides({
 			language,
+      channel,
 			keyword: search,
 			reset: true,
 			all: false,
 		}));
-  }, [dispatch, language, search]);
+  }, [dispatch, language, channel, search]);
 
   useEffect(() => {
     dispatch(GetBookmarks({ language, channel }));
@@ -88,6 +90,7 @@ const Archive = () => {
     // Update slides.
     return dispatch(GetSlides({
       language,
+      channel,
       keyword: search,
       reset: true,
       all: false,
@@ -102,15 +105,19 @@ const Archive = () => {
         slide_id: slide.ID,
         order_number: bookmarks.length,
       }],
+      channel,
+      language,
       update: false,
     })).then((res) => {
-      if (res.payload === "The bookmark with the same file exists") {
+      if (res.payload.startsWith("The bookmark with the same file")) {
         if (window.confirm("A bookmark for this file exist, do you want to continue?")) {
           dispatch(UpdateBookmarks({
             bookmarks: [{
               file_uid: slide.file_uid,
               slide_id: slide.ID,
             }],
+            channel,
+            language,
             update: true,
           }))
         }
@@ -211,7 +218,7 @@ const Archive = () => {
               ref={virtualRef}
               data={slides}
               itemContent={Row}
-              endReached={() => more(dispatch, language, search, slides, total)}
+              endReached={() => more(dispatch, language, channel, search, slides, total)}
 							overscan={1000}
             />
           </div>

@@ -15,12 +15,12 @@ const LIMIT = 1000;
 
 export const GetSlides = createAsyncThunk(
   'slides/get',
-  async ({ reset = true, all = true, language, keyword, file_uid, limit = undefined }, { getState }) => {
-    console.log('GetSlides', reset, all, language, keyword, file_uid, limit);
+  async ({ reset = true, all = true, language, channel, keyword, file_uid, limit = undefined }, { getState }) => {
+    console.log('GetSlides', reset, all, language, channel, keyword, file_uid, limit);
     const { slides } = getState().slides;
     const offsetParams = all ? {} : { offset: reset ? 0 : slides.length, limit: limit || LIMIT };
     const response = await axios.get(`${API}slide`, {
-      params: { language, keyword, file_uid, ...offsetParams },
+      params: { language, channel, keyword, file_uid, ...offsetParams },
     });
     return { data: response.data.data, reset };
   }

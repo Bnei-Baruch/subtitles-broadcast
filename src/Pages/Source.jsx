@@ -58,6 +58,7 @@ const Source = () => {
     // Update sources.
     return dispatch(GetSources({
       language,
+      channel,
       keyword: search,
       hidden: showDeleted ? "true" : undefined,
     }));
@@ -238,6 +239,8 @@ const Source = () => {
                             slide_id: source.slide_id,
                             order_number: bookmarks.length,
                           }],
+                          language,
+                          channel,
                           update: false,
                         })).finally(() => {
                           refetchSources();
