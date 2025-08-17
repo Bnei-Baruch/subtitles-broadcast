@@ -13,9 +13,9 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1 := router.Group("/api/v1")
 
-	v1.POST("/bookmark", handler.AddOrUpdateUserBookmark)
-	v1.GET("/bookmark", handler.GetUserBookmarks)
-	v1.DELETE("/bookmark/:bookmark_id", handler.DeleteUserBookmark)
+	v1.POST("/bookmark", handler.AddOrUpdateBookmark)
+	v1.GET("/bookmark", handler.GetBookmarks)
+	v1.DELETE("/bookmark/:bookmark_id", handler.DeleteBookmark)
 
 	v1.POST("/slide", handler.AddSlides)
 	v1.GET("/slide", handler.GetSlides)
@@ -29,7 +29,7 @@ func NewRouter(handler *Handler) http.Handler {
 	// v1.GET("/file_slide", handler.GetSlides)
 	v1.GET("/author", handler.GetAuthors)
 	v1.GET("/auto_complete", handler.GetSourceValuesByQuery)
-	v1.GET("/source_language", handler.GetLanguageListSourceSupports)
+	// v1.GET("/source_language", handler.GetLanguageListSourceSupports)
 
 	v1.GET("/source_path", handler.GetSourcePath)
 	v1.PATCH("/source_path_id/:id", handler.UpdateSourcePath)

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -228,7 +227,6 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 
 // Get all slides with bookmarked info by user
 func (h *Handler) GetSlides(ctx *gin.Context) {
-	userId, _ := ctx.Get("user_id")
 	offsetStr := ctx.Query("offset")
 	offset := 0
 	var err error
@@ -251,22 +249,37 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	sourceUid := ctx.Query("source_uid")
 	fileUid := ctx.Query("file_uid")
 	language := ctx.Query("language")
+	channel := ctx.Query("channel")
 	keyword := ctx.Query("keyword")
 	hidden := ctx.Query("hidden")
 	slides := []*SlideDetail{}
-	query := h.constructSlideQuery(ctx, userId)
+	if len(language) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Query language is missing", "Query language is missing"))
+		return
+	}
+	if len(channel) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Query channel is missing", "Query channel is missing"))
+		return
+	}
+
+	query := h.Database.Debug().WithContext(ctx).
+		Table(DBTableSlides).
+		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
+		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
+		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.language = ? AND bookmarks.channel = ?", language, channel).
+		Where("? = ANY(files.languages)", language)
 	if len(sourceUid) > 0 {
 		query = query.Where("files.source_uid = ?", sourceUid)
 	}
 	if len(fileUid) > 0 {
 		query = query.Where("files.file_uid = ?", fileUid)
 	}
-	if len(language) > 0 {
-		query = query.Where("? = ANY(files.languages)", language)
-	}
 	if hidden != "true" {
 		query = query.Where("slides.hidden = FALSE")
 	}
+
 	var lastModified sql.NullTime
 	result := query.Select("MAX(slides.updated_at)").Scan(&lastModified)
 	if result.Error != nil {
@@ -275,6 +288,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			getResponse(false, nil, result.Error.Error(), "Getting data has failed, while looking max last modified"))
 		return
 	}
+
 	if len(keyword) > 0 {
 		if ctx.FullPath() == "/api/v1/file_slide" {
 			query = query.Where("slides.slide ILIKE ?", "%"+keyword+"%")
@@ -282,15 +296,25 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			query = query.Where("(slides.slide ILIKE ? OR source_paths.path ILIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 		}
 	}
+
 	var totalRows int64
-	finalQuery := query.
-		Select("slides.*, source_paths.id AS source_path_id, source_paths.path AS source_path, CASE WHEN bookmarks.user_id = ? THEN bookmarks.id END AS bookmark_id, files.source_uid, source_paths.languages, source_paths.path || ' / ' || slides.order_number+1 AS slide_source_path", userId).
+	query = query.
+		Select(`
+			slides.*,
+			source_paths.id AS source_path_id,
+			source_paths.path AS source_path,
+			CASE WHEN bookmarks.language = ? AND bookmarks.channel = ? THEN bookmarks.id END AS bookmark_id,
+			files.source_uid,
+			source_paths.languages,
+			source_paths.path || ' / ' || slides.order_number + 1 AS slide_source_path
+		`, language, channel).
 		Order("slides.file_uid").Order("slides.order_number").Order("slides.updated_at").
 		Count(&totalRows)
+
 	if limit > 0 {
-		finalQuery = finalQuery.Limit(limit).Offset(offset)
+		query = query.Limit(limit).Offset(offset)
 	}
-	result = finalQuery.Find(&slides)
+	result = query.Find(&slides)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -309,15 +333,6 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, getResponse(true, slidesWithMetadata, "", "Getting data has succeeded"))
-}
-
-// Constructs the base slide query based on user, fileUID, and keyword
-func (h *Handler) constructSlideQuery(ctx *gin.Context, userId interface{}) *gorm.DB {
-	return h.Database.Debug().WithContext(ctx).
-		Table(DBTableSlides).
-		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
-		Joins("INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages").
-		Joins("LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = ?", userId)
 }
 
 func (h *Handler) UpdateSlides(ctx *gin.Context) {
@@ -417,22 +432,33 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 		return
 	}
 
-	var totalRows int64
+	var bookmarksToRemove []int64
 	result := tx.Table(DBTableSlides).
+		Select("bookmarks.id").
 		Joins("INNER JOIN bookmarks ON slides.id = bookmarks.slide_id").
-		Where("slides.id In (?)", req.SlideIds).Count(&totalRows)
+		Where("slides.id IN (?)", req.SlideIds).Find(&bookmarksToRemove)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
 			getResponse(false, nil, result.Error.Error(), "Deleting slide data has failed"))
 		return
 	}
-	if !req.ForceDeleteBookmarks && totalRows > 0 {
-		errMsg := "There are bookmarks refer to slide(id) in table to delete"
-		log.Error(errMsg)
-		ctx.JSON(http.StatusBadRequest,
-			getResponse(false, nil, errMsg, "Deleting slide data has failed"))
-		return
+	if len(bookmarksToRemove) > 0 {
+		if !req.ForceDeleteBookmarks {
+			errMsg := "There are bookmarks refer to slide(id) in table to delete."
+			log.Error(errMsg)
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, errMsg, "Deleting slide data has failed."))
+			return
+		}
+		result = tx.Where("id IN (?)", bookmarksToRemove).Delete(&Bookmark{})
+		if result.Error != nil {
+			tx.Rollback()
+			log.Error(result.Error)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, result.Error.Error(), "Failed to delete slides bookmarks."))
+			return
+		}
 	}
 	result = tx.Where("id In (?)", req.SlideIds).Delete(&Slide{})
 	if result.Error != nil {
@@ -598,9 +624,11 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
-func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
+func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 	userId, _ := ctx.Get("user_id")
 	req := struct {
+		Language    string `json:"language"`
+		Channel     string `json:"channel"`
 		FileUid     string `json:"file_uid"`
 		SlideId     int    `json:"slide_id"`
 		Update      bool   `json:"update"`
@@ -612,6 +640,16 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
 		return
 	}
+	if len(req.Channel) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Query channel is missing", "Query channel is missing"))
+		return
+	}
+	if len(req.Language) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Query language is missing", "Query language is missing"))
+		return
+	}
 	bookmark := Bookmark{}
 	if req.Update {
 		updateOrder := ""
@@ -620,16 +658,18 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			placeholders = append(placeholders, *req.OrderNumber)
 			updateOrder = "order_number = ?,"
 		}
-		placeholders = append(placeholders, time.Now(), req.FileUid, userId.(string))
+		placeholders = append(placeholders, time.Now(), userId.(string), req.FileUid, req.Language, req.Channel)
 		updateQuery := fmt.Sprintf(`UPDATE bookmarks
 			 SET slide_id = ?,
 			 %s
-			 updated_at = ?
+			 updated_at = ?,
+			 updated_by = ?
 			 WHERE file_uid = ?
-			 AND user_id = ?`, updateOrder)
+			 AND language = ?
+			 AND channel = ?`, updateOrder)
 		result := h.Database.Debug().WithContext(ctx).Exec(updateQuery, placeholders...).Table(DBTableBookmarks).
 			Select("*").
-			Where("file_uid = ? AND user_id = ?", req.FileUid, userId.(string)).
+			Where("file_uid = ? AND language = ? AND channel = ?", req.FileUid, req.Language, req.Channel).
 			First(&bookmark)
 		if result.Error != nil {
 			log.Error(result.Error)
@@ -649,12 +689,15 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			return
 		}
 		now := time.Now()
+		bookmark.Language = req.Language
+		bookmark.Channel = req.Channel
 		bookmark.SlideId = req.SlideId
 		bookmark.FileUid = req.FileUid
-		bookmark.UserId = userId.(string)
 		bookmark.OrderNumber = *req.OrderNumber
 		bookmark.CreatedAt = now
+		bookmark.CreatedBy = userId.(string)
 		bookmark.UpdatedAt = now
+		bookmark.UpdatedBy = userId.(string)
 		err = h.Database.Debug().Create(&bookmark).Error
 		if err != nil {
 			log.Error(err)
@@ -665,7 +708,7 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 			}
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
 				ctx.JSON(http.StatusBadRequest,
-					getResponse(false, nil, err.Error(), "The bookmark with the same file exists"))
+					getResponse(false, nil, err.Error(), "The bookmark with the same file, language and channel already exist."))
 				return
 			}
 			ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Adding bookmark has failed"))
@@ -675,8 +718,13 @@ func (h *Handler) AddOrUpdateUserBookmark(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, bookmark, "", "Adding bookmark data has succeeded"))
 }
 
-func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
-	userId, _ := ctx.Get("user_id")
+func (h *Handler) GetBookmarks(ctx *gin.Context) {
+	channel := ctx.Query("channel")
+	if len(channel) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "Query channel is missing", "Query channel is missing"))
+		return
+	}
 	language := ctx.Query("language")
 	if len(language) == 0 {
 		ctx.JSON(http.StatusBadRequest,
@@ -696,7 +744,7 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages AND ? = ANY(files.languages)", language).
-		Where("bookmarks.user_id = ?", userId).
+		Where("bookmarks.language = ? AND bookmarks.channel = ?", language, channel).
 		Order("bookmarks.order_number").
 		Find(&result)
 	if query.Error != nil {
@@ -708,15 +756,14 @@ func (h *Handler) GetUserBookmarks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, result, "", "Getting data has succeeded"))
 }
 
-func (h *Handler) DeleteUserBookmark(ctx *gin.Context) {
-	userId, _ := ctx.Get("user_id")
+func (h *Handler) DeleteBookmark(ctx *gin.Context) {
 	bookmarkIdInt, err := strconv.Atoi(ctx.Param("bookmark_id"))
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Bookmark ID must be an integer"))
 		return
 	}
-	result := h.Database.Debug().WithContext(ctx).Where("id = ? AND user_id = ?", bookmarkIdInt, userId).Delete(&Bookmark{})
+	result := h.Database.Debug().WithContext(ctx).Where("id = ?", bookmarkIdInt).Delete(&Bookmark{})
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -819,6 +866,7 @@ func (h *Handler) GetSourceValuesByQuery(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, sourceValueSlideCountList, "", "Getting data has succeeded"))
 }
 
+/*
 func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	sourceUid := ctx.Query("source_uid")
 	files, err := getFiles(sourceUid)
@@ -836,14 +884,19 @@ func (h *Handler) GetLanguageListSourceSupports(ctx *gin.Context) {
 	sort.Strings(languageList)
 	ctx.JSON(http.StatusOK, getResponse(true, languageList, "", "Getting data has succeeded"))
 }
+*/
 
 func (h *Handler) GetSourcePath(ctx *gin.Context) {
-	userId, _ := ctx.Get("user_id")
 	language := ctx.Query("language")
-	languageLength := len(language)
-	if languageLength == 0 {
+	channel := ctx.Query("channel")
+	if len(language) == 0 {
 		ctx.JSON(http.StatusBadRequest,
 			getResponse(false, nil, "", "language is needed"))
+		return
+	}
+	if len(channel) == 0 {
+		ctx.JSON(http.StatusBadRequest,
+			getResponse(false, nil, "", "channel is needed"))
 		return
 	}
 	keyword := ctx.Query("keyword")
@@ -882,7 +935,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
       %s
       %s
     FROM "slides"
-    LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.user_id = '%s'
+    LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.language = '%s' AND bookmarks.channel = '%s'
     INNER JOIN files ON slides.file_uid = files.file_uid
 		INNER JOIN (SELECT slides.file_uid, COUNT(*) as count FROM slides GROUP BY slides.file_uid) AS c ON c.file_uid = files.file_uid
     INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages
@@ -899,7 +952,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	querySql := fmt.Sprintf(templateSql,
 		// DISTINCT will "choose" the first RANK() OVER, e.g., rank_number.
 		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
-		fields, userId, language, keyword, hiddenSql)
+		fields, language, channel, language, keyword, hiddenSql)
 	result := h.Database.Debug().WithContext(ctx).Raw(querySql + orderBySql).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
