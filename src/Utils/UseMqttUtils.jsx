@@ -18,9 +18,7 @@ export default function useMqtt() {
   const clientIdRef = useRef(null);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
-  const username = useSelector((state) => state.UserProfile.userProfile.profile.username);
-  const firstName = useSelector((state) => state.UserProfile.userProfile.profile.firstName);
-  const lastName = useSelector((state) => state.UserProfile.userProfile.profile.lastName);
+  const { username, firstName, lastName, token, email } = useSelector((state) => state.UserProfile.userProfile);
   const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
   const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_program_code || "morning_lesson"); 
   const isConnected = useSelector((state) => state.mqtt.isConnected);
@@ -61,6 +59,9 @@ export default function useMqtt() {
       clientRef.current = mqtt.connect(mqttBrokerUrl, {
         keepalive: 60, // seconds
         reconnectPeriod: 2000, // ms
+
+        username: email,
+        password: token,
 
         // In disconnected state, don't queue messages, drop them.
         queueQoSZero: false,
