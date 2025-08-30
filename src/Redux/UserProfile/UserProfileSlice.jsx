@@ -3,8 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 // const API = process.env.REACT_APP_API_BASE_URL;
 
 const initialState = {
-  userProfile: [],
-  selectedLang: "en",
+  userProfile: {},
 };
 
 const UserProfileSlice = createSlice({
@@ -12,16 +11,20 @@ const UserProfileSlice = createSlice({
   initialState,
   reducers: {
     StoreProfile: (state, { payload }) => {
-      return { ...state, userProfile: payload };
-    },
-    SelelectedLang: (state, { payload }) => {
-      return { ...state, selectedLang: payload };
+      console.log('StoreProfile', payload);
+      return {
+        ...state,
+        userProfile: {
+          ...state.userProfile,
+          ...payload.profile,
+        },
+      };
     },
   },
 
   extraReducers: (builder) => {},
 });
 
-export const { StoreProfile, SelelectedLang } = UserProfileSlice.actions;
+export const { StoreProfile } = UserProfileSlice.actions;
 
 export default UserProfileSlice.reducer;

@@ -63,6 +63,7 @@ const Auth = ({ children }) => {
               if (refreshed) {
                 console.log('Token refreshed successfully.');
                 localStorage.setItem("token", keycloak.token);
+                dispatch(StoreProfile({ profile: { token: keycloak.token } }));
               }
             });
           }, TOKEN_REFRESH_INTERVAL_SECONDS*1000);
@@ -75,9 +76,6 @@ const Auth = ({ children }) => {
             lastName: keycloak.profile.lastName,
             email: keycloak.profile.email,
             token: keycloak.token,
-
-            // TODO: Add gender to the response
-            gender: "male",
             securityRoles: securityRoles,
           };
           // profile.logout = keycloak.logout;
