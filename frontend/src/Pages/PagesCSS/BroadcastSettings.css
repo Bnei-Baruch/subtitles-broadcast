@@ -1,0 +1,46 @@
+.broadcast-settings-dialog {
+  max-width: 500px;
+}
+
+.broadcast-button {
+  text-align: left;
+  background-color: transparent !important;
+  transition: none;
+  border: none !important;
+  padding-top: 3px;
+}
+
+.broadcast-row {
+  height: 50px;
+}
+
+.broadcast-label {
+  margin-top: 6px;
+}
+
+.broadcast-dropdown {
+  width: 160px !important;
+  border: 1px solid grey;
+}
+
+.broadcast-icon {
+  margin-left: 3px;
+}
+
+.broadcast-label-main {
+  margin-right: 3px;
+  cursor: pointer;
+}
+
+.broadcast-label-main-val {
+  margin-right: 5px;
+  font-size: 14px;
+  width: 135px;
+  display: inline-block;
+}
+
+.broadcast-label-main-last {
+  font-size: 14px;
+  width: 75px;
+  display: inline-block;
+}

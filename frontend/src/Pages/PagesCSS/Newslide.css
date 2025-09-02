@@ -1,0 +1,80 @@
+.New-Subtitle {
+  width: 600px;
+}
+
+.New-Subtitle .active-button {
+  border-bottom: 2px solid blue !important; /* Blue bottom border for active button */
+  background-color: white;
+  color: black;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.New-Subtitle .inactive-button {
+  border-bottom: 1px solid grey !important; /* Grey bottom border for inactive button */
+  background-color: transparent;
+  color: black;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.custom-checkbox {
+  position: relative;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  background-color: #fff;
+  border: 1px solid #000;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 8px;
+  top: 3px;
+  width: 6px;
+  height: 12px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.progress {
+  background-color: #2196f3 !important;
+}
+
+.textStyle label {
+  color: #6c6c6c;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.textStyle p {
+  color: #6c6c6c;
+  font-weight: 400;
+  font-size: 16px;
+}
+

@@ -1,0 +1,66 @@
+.form-Question {
+  padding: 10px;
+  width: 652px;
+}
+.form-Question .flex-column {
+  background-color: transparent !important;
+}
+.form-Question .QutionTitle {
+  font-family: Roboto;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 38.4px;
+  text-align: left;
+}
+
+.SendQutionTextBox {
+  position: relative;
+  background-color: white;
+  width: 630px;
+  height: 227px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px 0px 0px 0px;
+  border: 1px solid gray;
+  margin-bottom: 1em;
+}
+
+.SendQutionHistory {
+  background-color: white;
+  border-radius: 5px 0px 0px 0px;
+  width: 630px;
+  height: 525px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow-y: auto;
+}
+.SendQutionHistory ul {
+  padding-left: 5px;
+}
+
+.item {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item .datetime {
+  font-weight: bold;
+}
+
+.item .message {
+  color: #333;
+}
+.SentToast {
+  position: absolute;
+
+  background-color: #4caf50;
+  width: 200px;
+  height: 42px;
+}
+
+.new-question-txt {
+  height: 100%;
+  width: 100%;
+}

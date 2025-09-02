@@ -1,0 +1,16 @@
+.app {
+  display: flex;
+}
+
+.side-nav {
+  flex: 0 0 200px; /* Fixed width for the side navigation */
+  overflow-y: auto; /* Enable vertical scrolling for the side navigation */
+}
+
+.main-content {
+  flex: 1; /* Allow main content to grow and take up remaining space */
+}
+.bookmarkTruncate {
+  direction: rtl;
+  text-align: left;
+}

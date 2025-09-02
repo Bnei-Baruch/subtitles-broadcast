@@ -1,0 +1,15 @@
+node_modules
+build
+*.log
+*.lock
+.gitignore
+.git
+*.swp
+*.swo
+
+.env
+.env.development
+.env.staging
+.env.production
+.prettierignore
+.prettierrc
