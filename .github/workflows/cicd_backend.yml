@@ -1,0 +1,55 @@
+name: Backend CI/CD
+on:
+  workflow_dispatch:
+    # you can add push/pr triggers here
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          go test ./...
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: backend
+          push: true
+          tags: |
+            myregistry/subtitles_backend:latest
+            myregistry/subtitles_backend:gh_${{ github.run_number }}
+          build-args: |
+            build_number=gh_${{ github.run_number }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy backend over SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          proxy_host: ${{ secrets.PROXY_HOST }}
+          proxy_username: ${{ secrets.PROXY_USER }}
+          proxy_key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/subtitles-broadcast/backend   # adjust to your server’s path
+            sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
+            docker compose pull subtitles_backend
+            docker compose up -d subtitles_backend

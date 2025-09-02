@@ -1,0 +1,57 @@
+name: Frontend CI/CD
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and test frontend
+        run: |
+          cd frontend
+          npm ci
+          npm test
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          push: true
+          tags: |
+            myregistry/subtitles_frontend:latest
+            myregistry/subtitles_frontend:gh_${{ github.run_number }}
+          build-args: |
+            build_number=gh_${{ github.run_number }}
+            REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy frontend over SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          proxy_host: ${{ secrets.PROXY_HOST }}
+          proxy_username: ${{ secrets.PROXY_USER }}
+          proxy_key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/subtitles-broadcast/frontend
+            sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
+            docker compose down subtitles_frontend || true
+            docker compose pull subtitles_frontend
+            docker compose up -d subtitles_frontend
