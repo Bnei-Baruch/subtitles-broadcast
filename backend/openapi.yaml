@@ -1,0 +1,1005 @@
+openapi: 3.0.3
+info:
+  title: Broadcast Subtitles Server API
+  description: |-
+    This is a Subtitle Server API based on the OpenAPI 3.0 specification.  
+  
+  version: "0.1"
+servers:
+  - url: https://domain/api/v1
+tags:
+  - name: slide
+    description: Access and manage slide information
+  - name: bookmark
+    description: Access and manage bookmark
+paths:
+  /bookmark:
+    get:
+      tags:
+        - bookmark
+      summary: Get the user bookmark list
+      description: Finds bookmark paths by the user
+      operationId: GetUserBookmarks
+      parameters:
+        - name: language_code
+          in: query
+          description: language code
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          order:
+                            type: integer
+                            description: bookmark order
+                            example: 1
+                          slide_id:
+                            type: integer
+                            description: bookmarked slide id
+                            example: 1
+                          bookmark_id:
+                            type: integer
+                            description: bookmark id
+                            example: 1
+                          bookmark_path:
+                            type: string
+                            description: bookmark path
+                            example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 1"
+                          file_uid:
+                            type: string
+                            description: file uid the slide in bookmark path belongs to 
+                            example: OzSCqHYF
+        '401':
+          description: Invalid request jwt token
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:books
+    post:
+      tags:
+        - bookmark
+      summary: Add or update a slide id for the user bookmark path
+      description: Add or update a slide id for the user bookmark path
+      operationId: addOrUpdateUserBookmark
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                file_uid:
+                  type: string
+                  description: Filed uid the slide will be bookmarked belongs to
+                  example: OzSCqHYF
+                slide_id:
+                  type: integer
+                  description: Numeric ID of the slide to insert
+                  example: 1
+                update:
+                  type: boolean
+                  description: Value for whether to update or to create
+                  example: true
+                order:
+                  type: integer
+                  description: Bookmark order number in the bookmark list
+                  example: 1
+        description: Add or update user bookmark
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: bookmark id
+                          example: 1
+                        slide_id:
+                          type: integer
+                          description: slide id
+                          example: 1
+                        user_id:
+                          type: string
+                          description: user id
+                          example: d76322f7-ef67-402c-b151-14193e23a890
+                        file_uid:
+                          type: string
+                          description: file uid the bookmarked slide belongs to
+                          example: vlbukUc2
+                        order_number:
+                          type: integer
+                          description: bookmark order number
+                          example: 1
+                        created_at:
+                          type: string
+                          description: time the bookmarked added
+                          example: "2024-01-05T10:55:25.982590966+09:00"
+                        updated_at:
+                          type: string
+                          description: time the bookmarked updated
+                          example: "2024-01-05T10:55:25.982590966+09:00"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:bookmarks
+            - read:bookmarks
+  /bookmark/{bookmarkId}:
+    delete:
+      tags:
+        - bookmark
+      summary: Delete an user bookmark
+      description: Delete an user bookmark
+      operationId: deleteUserBookmark
+      parameters:
+        - in: path
+          name: bookmarkId
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the bookmark to delete
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:bookmarks
+            - delete:bookmarks
+  /slide:
+    post:
+      tags:
+        - slide
+      summary: Add a slide
+      description: Add a slide with meta data
+      operationId: addSlide
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  file_uid:
+                    type: string
+                    description: archive file uid
+                    example: "OzSCqHYF"
+                  slide:
+                    type: string
+                    description: slide text
+                    example: "you must know that all that is said in The Book of Zohar"
+                  order_number:
+                    type: integer
+                    description: slide order number
+                    example: 1
+        description: Created user slide data
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
+    get:
+      tags:
+        - slide
+      summary: Get slides
+      description: Finds all slide
+      operationId: getSlides
+      parameters:
+        - name: page
+          in: query
+          description: page number
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: page size
+          required: false
+          explode: true
+          schema:
+            type: string
+        - in: query
+          name: source_uid
+          schema:
+            type: string
+          description: archive source uid
+        - in: query
+          name: file_uid
+          schema:
+            type: string
+          description: archive file uid
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: language code
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: the keyword to search slide includes
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        pagination:
+                          type: object
+                          properties:
+                            limit:
+                              type: integer
+                              description: page size
+                              example: 10
+                            page:
+                              type: integer
+                              example: 1
+                            total_rows:
+                              type: integer
+                              example: 150
+                            total_pages:
+                              type: integer
+                              example: 15
+                        slides:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/SlideDetail'
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+    patch:
+      tags:
+        - slide
+      summary: Update a slide
+      description: Update a slide
+      operationId: updateSlide
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  slide_id:
+                    type: integer
+                    description: slide id to update
+                    example: 1
+                  slide:
+                    type: string
+                    description: slide text
+                    example: "you must know that all that is said in The Book of Zohar"
+                  order_number:
+                    type: integer
+                    description: slide order number
+                    example: 1
+        description: Update user slide text
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
+    delete:
+      tags:
+        - slide
+      summary: Delete a slide
+      description: Delete a slide
+      operationId: deleteSlide
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                force_delete_bookmarks:
+                  type: boolean
+                  description: mark to delete bookmakr refers to slide id
+                  example: true
+                slide_ids:
+                  type: array
+                  description: slide ids to delete
+                  example: [1, 2, 3]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+            - delete:slides
+  /file-slide/{fileUid}:
+    delete:
+      tags:
+        - slide
+      summary: Delete slides in a file
+      description: Delete slides in a file
+      operationId: deleteFileSlide
+      parameters:
+        - in: path
+          name: fileUid
+          schema:
+            type: integer
+          required: true
+          description: file uid to delete
+        - name: force_delete_bookmarks
+          in: query
+          description: boolean value to force deleting bookmarks
+          required: true
+          explode: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+            - delete:slides
+  /source-slide/{sourceUid}:
+    delete:
+      tags:
+        - slide
+      summary: Delete slides in files in source
+      description: Delete slides in files in source
+      operationId: deleteSourceSlide
+      parameters:
+        - in: path
+          name: sourceUid
+          schema:
+            type: integer
+          required: true
+          description: source uid to delete
+        - name: force_delete_bookmarks
+          in: query
+          description: boolean value to force deleting bookmarks
+          required: true
+          explode: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+            - delete:slides
+  /custom_slide:
+    post:
+      tags:
+        - slide
+      summary: Add a custom slide by new menu
+      description: Add a custom slide with meta data
+      operationId: addCustomSlide
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                file_name:
+                  type: string
+                  description: upload file name
+                  x-omitempty: true
+                  example: "myfile.html"
+                source_uid:
+                  type: string
+                  description: archive source uid
+                  x-omitempty: true
+                  example: "tswzgnWk"
+                file_uid:
+                  type: string
+                  description: archive file uid
+                  x-omitempty: true
+                  example: "OzSCqHYF"
+                slides:
+                  type: array
+                  items:
+                    type: string
+                    description: slide texts to upload
+                    example: ["you must know that all that is said in The Book of Zohar", "However, there are three boundaries "]
+                slides_types:
+                  type: array
+                  items:
+                    type: string
+                    description: slide type for each slide, e.g., subtitle or question
+                    example: ["question", "subtitle"]
+                languages:
+                  type: array
+                  items:
+                    type: string
+                    description: languages from custom slides
+                    example: ["en", "es", "he", "ru"]
+        description: Created user slide data
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                  - type: object
+                    properties:
+                      data:
+                        example: null
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request value
+        '405':
+          description: Validation http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
+  /file_slide:
+    get:
+      tags:
+        - slide
+      summary: Get slides for the file
+      description: Finds all slide for the file
+      operationId: getFileSlides
+      parameters:
+        - name: page
+          in: query
+          description: page number
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: page size
+          required: false
+          explode: true
+          schema:
+            type: string
+        - in: query
+          name: file_uid
+          schema:
+            type: string
+          description: archive file uid
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: the keyword to search slide includes
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        pagination:
+                          type: object
+                          properties:
+                            limit:
+                              type: integer
+                              description: page size
+                              example: 10
+                            page:
+                              type: integer
+                              example: 1
+                            total_rows:
+                              type: integer
+                              example: 150
+                            total_pages:
+                              type: integer
+                              example: 15
+                        slides:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/SlideDetail'
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:slides
+  /author:
+    get:
+      tags:
+        - author
+      summary: Get author names
+      description: Get author names
+      operationId: getAuthors
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: author name list
+                        example: "Yehuda Leib Ha-Levi Ashlag"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /auto_complete:
+    get:
+      tags:
+        - auto_complete
+      summary: Get article titles and author names by query
+      description: Get article titles and author names
+      operationId: GetArticleTitlesAndAuthorsByQuery
+      parameters:
+        - name: query
+          in: query
+          description: search keyword
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                            source_value:
+                              type: string
+                              description: source value list
+                              example: "Yehuda Leib Ha-Levi Ashlag"
+                            slide_count:
+                              type: integer
+                              description: the slide count that source value is refered
+                              example: 10
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /source_language:
+    get:
+      tags:
+        - source_language
+      summary: Get all language list for a source
+      description: Get all language list for a source
+      operationId: GetLanguageListSourceSupports
+      parameters:
+        - name: source_uid
+          in: query
+          description: search keyword
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: string
+                        description: all language list for a source
+                        example: "en"
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /source_path:
+    get:
+      tags:
+        - source_path
+      summary: Get source path with related slide data
+      description: Get source path with related slide data
+      operationId: GetSourcePaths
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BasicResponse'
+                - type: object
+                  required:
+                    - data
+                  properties:
+                    type: array
+                      items:
+                        type: object
+                        properties:
+                            slide_id:
+                              type: integer
+                              description: first slide id in the source with source uid 
+                              example: 123
+                            bookmark_id:
+                              type: integer
+                              description: If the slide id is bookmarked then show bookmark id
+                              example: 10
+                            bookmark_count:
+                              type: integer
+                              description: number of user bookmark in the source with source uid to judge update or create bookmark 
+                              example: 10
+                            source_uid:
+                              type: string
+                              description: source_uid
+                              example: upload_cL1dKbT6
+                            file_uid:
+                              type: string
+                              description: the file uid has slides in the source uid
+                              example: upload_lfZCWSKO
+                            languages:
+                              type: array
+                              items:
+                                type: string
+                                description: languages from custom slides
+                                example: ["en", "es", "he", "ru"]
+                            path:
+                              type: string
+                              description: source path name
+                              example: test2    
+        '401':
+          description: Invalid request jwt token
+        '400':
+          description: Invalid request query
+        '405':
+          description: Invalid http method
+        '500':
+          description: Internal error
+      security:
+        - bearerAuth:
+            - read:authors
+  /source_path_id/{id}:
+    patch:
+      summary: Update the source_path.path for a specific source_path.id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric ID of the source_path to update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source_path:
+                  type: string
+      responses:
+        '200':
+          description: Success message
+        '400':
+          description: Invalid JSON provided
+        '500':
+          description: Failed to update source path
+      security:
+        - bearerAuth:
+            - write:slides
+            - read:slides
+components:
+  schemas:
+    Slide:
+      title: Slide Data
+      description: An slide with meta data
+      type: object
+      properties:
+        id:
+          type: integer
+          description: slide id
+          example: 1
+        file_uid:
+          type: string
+          description: archive file uid
+          example: 1
+        slide:
+          type: string
+          description: slide
+          example: "Foreword to The Book of Zohar"
+        order_number:
+          type: integer
+          description: slide order number
+          example: 0
+        left_to_right:
+          type: boolean
+          description: slide text direction
+          example: true
+        created_at:
+          type: string
+          description: created time
+          example: "2023-09-04T09:26:23.086238Z"
+        update_at:
+          type: string
+          description: updated time
+          example: "2023-09-04T09:26:23.086238Z"
+        slide_type:
+          type: string
+          description: slide type, e.g., subtitle or question
+          example: "question"
+    SlideDetail:
+      title: Slide Data with extra data
+      description: An slide with meta data
+      type: object
+      properties:
+        id:
+          type: integer
+          description: slide id
+          example: 1
+        source_uid:
+          type: string
+          description: archive source uid
+          example: "tswzgnWk"
+        file_uid:
+          type: string
+          description: archive file uid
+          example: 1
+        source_path:
+          type: string
+          description: source path
+          example: "VDkDRNnR"
+        slide_source_path:
+          type: string
+          description: source path including author name for slide
+          example: "Yehuda Leib Ha-Levi Ashlag(Baal HaSulam) / ARTICLE / Foreword to The Book of Zohar / 7"
+        bookmark_id:
+          type: integer
+          description: user's bookmark_id, no bookmark then null
+          example: 1
+        slide:
+          type: string
+          description: slide
+          example: "Foreword to The Book of Zohar"
+        order_number:
+          type: integer
+          description: slide order number
+          example: 0
+        created_at:
+          type: string
+          description: created time
+          example: "2023-09-04T09:26:23.086238Z"
+        update_at:
+          type: string
+          description: updated time
+          example: "2023-09-04T09:26:23.086238Z"
+    BasicResponse:
+      type: object
+      required:
+        - success
+        - error
+        - description
+      properties:
+        success:
+          type: boolean
+          description: the boolean value if request has been successful or not 
+          example: true
+        error:
+          type: string
+          description: the error message when request has been failed
+          example: ""
+        description:
+          type: string
+          description: the description of the request result
+          example: Proper messages for the situations
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: auth-scheme
+      description: 'Bearer HTTP authentication through keycloak. Allowed headers -- Authorization: Bearer <api_key>'
+      scheme: bearer
+      type: http

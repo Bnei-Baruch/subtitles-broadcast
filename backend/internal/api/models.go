@@ -1,0 +1,112 @@
+package api
+
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
+
+type File struct {
+	ID        uint           `gorm:"primarykey"`
+	Type      string         `json:"type"`
+	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
+	Filename  string         `json:"filename"`
+	Content   []byte         `json:"content"`
+	SourceUid string         `json:"source_uid"`
+	FileUid   string         `json:"file_uid"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
+}
+
+type Bookmark struct {
+	ID          uint      `gorm:"primarykey"`
+	SlideId     int       `json:"slide_id"`
+	FileUid     string    `json:"file_uid"`
+	OrderNumber int       `json:"order_number,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	CreatedBy   string    `json:"created_by"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	UpdatedBy   string    `json:"created_by"`
+	Language    string    `json:"language"`
+	Channel     string    `json:"channel"`
+}
+
+type Slide struct {
+	ID          uint   `gorm:"primarykey"`
+	FileUid     string `json:"file_uid"`
+	Slide       string `json:"slide"`
+	OrderNumber int    `json:"order_number"`
+	LeftToRight bool   `json:"left_to_right"`
+	SlideType   string `json:"slide_type"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
+}
+
+type SlideDetail struct {
+	Slide
+	Languages       pq.StringArray `json:"languages,omitempty" gorm:"type:text[]"`
+	SlideSourcePath string         `json:"slide_source_path" gorm:"->"` // author/type/title/slide_id
+	Bookmark_id     *uint          `json:"bookmark_id" gorm:"->"`
+	SourceUid       string         `json:"source_uid" gorm:"->"`
+	SourcePath      string         `json:"source_path" gorm:"->"`
+	SourcePathId    string         `json:"source_path_id" gorm:"->"`
+}
+
+type SourcePath struct {
+	ID        uint           `gorm:"primarykey"`
+	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
+	SourceUid string         `json:"source_uid"`
+	Path      string         `json:"path"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
+}
+
+// archive model
+
+type ArchiveSources struct {
+	Sources []*Source `json:"sources"`
+}
+
+type Source struct {
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Children []*Source `json:"children,omitempty"`
+}
+
+type ArchiveFiles struct {
+	Total        int            `json:"total"`
+	ContentUnits []*ContentUnit `json:"content_units"`
+}
+
+type ContentUnit struct {
+	ID          string      `json:"id"`
+	ContentType string      `json:"content_type"`
+	FilmType    string      `json:"film_type,"`
+	Files       []*FileData `json:"files"`
+}
+
+type FileData struct {
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Size           int     `json:"size"`
+	Language       string  `json:"language"`
+	MimeType       string  `json:"mimetype"`
+	Type           string  `json:"type"`
+	InsertType     string  `json:"insert_type"`
+	IsHls          bool    `json:"is_hls"`
+	VideoQualities *string `json:"video_qualities"`
+}
+
+type AchiveTempData struct {
+	Texts []string
+	File  *File
+}
