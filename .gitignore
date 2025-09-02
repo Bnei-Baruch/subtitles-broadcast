@@ -1,0 +1,55 @@
+# General OS files
+.DS_Store
+Thumbs.db
+
+# Editor swap files
+*.swp
+*.swo
+
+# Environment files (don’t commit secrets)
+.env*
+config_test.yaml
+
+# Logs
+*.log
+
+########################################
+# Go backend ignore rules
+########################################
+
+# Compiled binaries and build artifacts
+/backend/bin/
+/backend/*.exe
+/backend/*.out
+
+# Compiled packages (Go sometimes uses a pkg/ dir for cached objects)
+# Only ignore pkg at the root of backend, not source pkg directories
+/backend/pkg/
+
+# IDE-specific files
+/backend/.idea/
+.backend/.vscode/
+
+########################################
+# React frontend ignore rules
+########################################
+
+# Node modules directory
+/frontend/node_modules/
+
+# Production build output
+/frontend/build/
+
+# Lockfiles other than package-lock.json (package-lock.json can be committed)
+# If you prefer to commit yarn.lock or pnpm-lock.yaml, remove those patterns
+/frontend/*.lock
+
+# Ignore environment files for each stage
+/frontend/.env*
+# Prettier config is often committed; remove these lines if you want them tracked
+/frontend/.prettierignore
+/frontend/.prettierrc
+
+# IDE-specific files
+/frontend/.idea/
+frontend/.vscode/
