@@ -1,418 +1,180 @@
-# Design Document: Keycloak Client Roles Migration & Admin Role Management
+# Design Document: Migrate to Keycloak Client Roles
 
-## Overview
+## Problem Statement
 
-Migrate the Subtitles Broadcast application from using Keycloak **Realm roles** to **Client roles**, and implement an admin interface for managing user roles.
+Currently, the Subtitles Broadcast application uses Keycloak **Realm roles** for authorization. This approach is not recommended because:
 
----
+- Realm roles are global across all clients in the realm
+- Client roles provide better isolation and are the recommended practice
+- Client roles are easier to manage per application
 
-## Current State Analysis
+## Proposed Solution
 
-### Frontend
+Migrate the application to use **Client roles** instead of Realm roles. Role management will continue to be done directly in Keycloak (no changes to Keycloak management workflow).
 
-- **Location**: `frontend/src/Utils/Auth.js` (lines 115-140)
-- **Current Implementation**:
-  - Reads roles from `keycloak.realmAccess.roles`
-  - Filters for roles matching pattern: `subtitles_*` or `admin`
-  - Extracts security roles: `operator`, `translator`, `admin`
-  - Stores in auth context and Redux state
+## Current Configuration
 
-### Backend
+### Production
 
-- **Location**: `backend/pkg/auth/auth.go`
-- **Current Implementation**:
-  - Token verification via OIDC provider
-  - **No role extraction** from JWT tokens (commented out for future use)
-  - Middleware validates JWT but doesn't enforce role-based access
+- **Keycloak URL**: `https://accounts.kab.info/auth`
+- **Realm**: `main`
+- **Client ID**: `subtitles`
 
-### Existing Roles
+### Development
 
-- `admin` - Full access + role management capabilities
+- **Keycloak URL**: `https://auth.2serv.eu/auth`
+- **Realm**: `master`
+- **Client ID**: `kolman-dev`
+
+## Current Roles
+
+- `admin` - Full access to all features
 - `operator` - Access to Subtitles, Archive, Source, New pages
 - `translator` - Access to Question page
 
----
+**Role naming pattern**: `subtitles_*` (e.g., `subtitles_operator`, `subtitles_translator`) or `admin`
 
-## Design Requirements
+## Changes Required
 
-### 1. Keycloak Client Roles Migration
+### 1. Frontend Changes
 
-#### Frontend Changes
+**File**: `frontend/src/Utils/Auth.js` (function `determineAccess`, lines 115-140)
 
-**File**: `frontend/src/Utils/Auth.js`
+**Current code** reads from:
 
 ```javascript
-// Change from:
 keycloak.realmAccess.roles;
+```
 
-// To:
+**New code** should read from:
+
+```javascript
 keycloak.resourceAccess[clientId].roles;
 ```
 
 **Implementation**:
 
-- Update `determineAccess()` function to read from `keycloak.resourceAccess[clientId]`
-- Maintain same role naming convention: `subtitles_operator`, `subtitles_translator`, `admin`
-- Handle cases where `resourceAccess` or client doesn't exist
-- Keep backward compatibility during migration (check both realm and client roles temporarily)
+- Update the `determineAccess()` function to check `keycloak.resourceAccess[clientId]` instead of `keycloak.realmAccess`
+- Handle cases where `resourceAccess` or the client doesn't exist (graceful fallback)
+- Keep the same role naming pattern and extraction logic
+- During migration: check both `resourceAccess` and `realmAccess` for backward compatibility
 
-#### Backend Changes
+### 2. Backend Changes
 
 **File**: `backend/pkg/auth/auth.go`
 
-```go
-// Uncomment and implement ResourceAccess structure
-type ResourceAccess struct {
-    Roles []string `json:"roles"`
-}
+**Current state**: Role extraction is commented out (lines 16-43)
 
-type IDTokenClaims struct {
-    // ... existing fields
-    ResourceAccess map[string]ResourceAccess `json:"resource_access"`
-}
-```
+**Required changes**:
 
-**New Functions**:
+1. Uncomment and update the `ResourceAccess` structure:
 
-- `(c *IDTokenClaims) GetClientRoles(clientId string) []string`
-- `(c *IDTokenClaims) HasRole(clientId, role string) bool`
+   ```go
+   type ResourceAccess struct {
+       Roles []string `json:"roles"`
+   }
+
+   type IDTokenClaims struct {
+       // ... existing fields
+       ResourceAccess map[string]ResourceAccess `json:"resource_access"`
+   }
+   ```
+
+2. Add helper methods:
+   ```go
+   func (c *IDTokenClaims) GetClientRoles(clientId string) []string
+   func (c *IDTokenClaims) HasRole(clientId, role string) bool
+   ```
 
 **File**: `backend/internal/api/middleware.go`
 
-- Update `UserRoleHandler()` to extract and validate client roles
-- Store user roles in context: `ctx.Set("user_roles", roles)`
-- Add role-based middleware: `RequireRole(role string) gin.HandlerFunc`
+- Update `UserRoleHandler()` to extract client roles from JWT token
+- Store roles in request context: `ctx.Set("user_roles", roles)`
+- Use roles for authorization where needed
 
-#### Configuration Changes
+**File**: `backend/internal/config/config.go`
 
-**Files**:
+- Add new constant: `EnvBssvrKeycloakClientId = "BSSVR_KEYCLOAK_CLIENT_ID"`
+- Backend will need the client ID to extract the correct roles from `resource_access`
 
-- `backend/internal/config/config.go` - Add `EnvBssvrKeycloakClientId`
-- Environment variables - Add `BSSVR_KEYCLOAK_CLIENT_ID`
+### 3. Environment Variables
 
----
+**Backend** (new variable needed):
 
-### 2. Admin Role Management Interface
-
-#### Frontend Components
-
-**New Page**: `frontend/src/Pages/AdminRoleManagement.jsx`
-
-- **Location**: New file in Pages directory
-- **Route**: `/admin/roles` (protected, admin-only)
-- **Features**:
-  - User search/list view
-  - Display current user roles
-  - Assign/remove roles to users
-  - Role management actions
-
-**Component Structure**:
-
-```
-AdminRoleManagement
-├── UserSearchBar (search users by email/username)
-├── UserList (table/list of users)
-│   └── UserRoleCard (for each user)
-│       ├── User info display
-│       ├── Current roles badges
-│       └── Role action buttons
-└── RoleAssignmentModal
-    ├── Available roles dropdown
-    └── Assign/Remove buttons
+```bash
+BSSVR_KEYCLOAK_CLIENT_ID=subtitles  # production
+# or
+BSSVR_KEYCLOAK_CLIENT_ID=kolman-dev  # development
 ```
 
-**New Route**: Update `frontend/src/Routes/Routes.jsx`
+**Frontend** (already exists):
 
-```javascript
-{
-  isAdmin(securityRoles) && (
-    <Route path="/admin/roles" element={<AdminRoleManagement />} />
-  );
-}
+```bash
+REACT_APP_KEYCLOAK_CLIENT_ID=subtitles  # production
+REACT_APP_KEYCLOAK_CLIENT_ID=kolman-dev  # development
 ```
 
-**Navigation**: Update `frontend/src/Layout/SideNavBar.jsx`
+## Migration Steps
 
-- Add "Admin" menu item for admin users
-- Icon: settings or shield icon
-- Link to `/admin/roles`
+### Phase 1: Code Changes (Backward Compatible)
 
-#### Backend API Endpoints
+1. Update frontend `Auth.js` to check both `resourceAccess` and `realmAccess`
+2. Update backend `auth.go` to extract and expose client roles
+3. Add backend environment variable for client ID
+4. Test in development environment
 
-**New File**: `backend/internal/api/admin.go`
+### Phase 2: Keycloak Configuration
 
-**Endpoints**:
-
-```
-GET    /api/v1/admin/users                    - List all users
-GET    /api/v1/admin/users/:user_id/roles     - Get user's roles
-POST   /api/v1/admin/users/:user_id/roles     - Assign role to user
-DELETE /api/v1/admin/users/:user_id/roles/:role - Remove role from user
-GET    /api/v1/admin/roles                    - List available client roles
-```
-
-**Authentication/Authorization**:
-
-- All endpoints require `admin` role
-- Use middleware: `RequireRole("admin")`
-
-**Keycloak Admin Client Integration**:
-
-- **Package**: `github.com/Nerzal/gocloak/v13`
-- Initialize Keycloak admin client with service account credentials
-- Implement role management operations:
-  - `GetRealmUsers()`
-  - `GetClientRoles(clientId)`
-  - `GetUserClientRoles(userId, clientId)`
-  - `AddClientRoleToUser(userId, clientId, roles)`
-  - `DeleteClientRoleFromUser(userId, clientId, roles)`
-
-**New Configuration**:
-
-```go
-// backend/internal/config/config.go
-EnvBssvrKeycloakAdminUser     = "BSSVR_KEYCLOAK_ADMIN_USER"
-EnvBssvrKeycloakAdminPassword = "BSSVR_KEYCLOAK_ADMIN_PASSWORD"
-EnvBssvrKeycloakRealm         = "BSSVR_KEYCLOAK_REALM"
-EnvBssvrKeycloakClientId      = "BSSVR_KEYCLOAK_CLIENT_ID"
-```
-
-**Router Update**: `backend/internal/api/router.go`
-
-```go
-admin := v1.Group("/admin")
-admin.Use(RequireRole("admin"))
-{
-    admin.GET("/users", handler.ListUsers)
-    admin.GET("/users/:user_id/roles", handler.GetUserRoles)
-    admin.POST("/users/:user_id/roles", handler.AssignUserRole)
-    admin.DELETE("/users/:user_id/roles/:role", handler.RemoveUserRole)
-    admin.GET("/roles", handler.ListAvailableRoles)
-}
-```
-
----
-
-## Data Models
-
-### Frontend Types
-
-```typescript
-// New types for admin functionality
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  enabled: boolean;
-}
-
-interface UserRole {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface UserWithRoles extends User {
-  roles: UserRole[];
-}
-```
-
-### Backend Models
-
-```go
-// backend/internal/api/models.go
-type UserInfo struct {
-    ID        string   `json:"id"`
-    Username  string   `json:"username"`
-    Email     string   `json:"email"`
-    FirstName string   `json:"firstName"`
-    LastName  string   `json:"lastName"`
-    Enabled   bool     `json:"enabled"`
-    Roles     []string `json:"roles,omitempty"`
-}
-
-type RoleAssignmentRequest struct {
-    RoleName string `json:"role_name" binding:"required"`
-}
-
-type AvailableRole struct {
-    ID          string `json:"id"`
-    Name        string `json:"name"`
-    Description string `json:"description,omitempty"`
-}
-```
-
----
-
-## Migration Strategy
-
-### Phase 1: Backend Preparation (No Breaking Changes)
-
-1. Add client role extraction to `auth.go`
-2. Update middleware to support both realm and client roles
-3. Add Keycloak admin client integration
-4. Implement admin API endpoints
-5. Add new environment variables
-
-### Phase 2: Frontend Client Roles (Feature Flag)
-
-1. Update `Auth.js` to check both realm and client roles
-2. Add feature flag: `REACT_APP_USE_CLIENT_ROLES`
-3. Test with client roles enabled
-
-### Phase 3: Admin UI
-
-1. Create admin page components
-2. Add routing and navigation
-3. Implement role management UI
-4. Add proper error handling and feedback
-
-### Phase 4: Keycloak Configuration
-
-1. Create client roles in Keycloak:
+1. Create client roles in Keycloak client (done by Keycloak admin):
    - `subtitles_operator`
    - `subtitles_translator`
    - `admin`
-2. Create service account for admin API access
-3. Migrate existing realm role assignments to client roles
+2. Assign client roles to users (migrate from realm roles)
+3. Verify all users have correct access
 
-### Phase 5: Cutover
+### Phase 3: Remove Realm Role Support
 
-1. Remove realm role checking code
-2. Remove feature flag
-3. Update documentation
-4. Deploy to production
+1. Remove backward compatibility code (realm role checking)
+2. Deploy to production
+3. Monitor for issues
 
----
-
-## Security Considerations
-
-1. **Admin API Protection**:
-
-   - All admin endpoints require `admin` role
-   - Validate user IDs and role names server-side
-   - Log all role assignment/removal actions
-
-2. **Service Account**:
-
-   - Use dedicated Keycloak service account
-   - Minimum required permissions: `manage-users`, `manage-clients`
-   - Store credentials securely (environment variables, secrets manager)
-
-3. **Input Validation**:
-
-   - Validate role names against allowed list
-   - Prevent role escalation (can't assign roles you don't have)
-   - Sanitize all user inputs
-
-4. **Audit Trail**:
-   - Log all role changes with timestamp, admin user, target user
-   - Consider adding audit table in database
-
----
-
-## Testing Strategy
-
-### Unit Tests
-
-- Frontend: Test role checking logic
-- Backend: Test JWT claims extraction, role validation
-
-### Integration Tests
-
-- Test Keycloak admin client operations
-- Test API endpoints with different role combinations
-
-### Manual Testing Checklist
+## Testing Checklist
 
 - [ ] Users with `operator` role can access operator pages
 - [ ] Users with `translator` role can access translator pages
-- [ ] Users with `admin` role can access admin panel
-- [ ] Admin can list all users
-- [ ] Admin can assign roles to users
-- [ ] Admin can remove roles from users
-- [ ] Non-admin users cannot access admin endpoints
-- [ ] Role changes reflect immediately (after token refresh)
+- [ ] Users with `admin` role can access all pages
+- [ ] Users without roles cannot access the application
+- [ ] Token refresh works correctly with client roles
+- [ ] Role checks work in both frontend and backend
 
----
+## Rollback Plan
 
-## Dependencies
+If issues occur:
 
-### New Backend Dependencies
+1. The code supports both realm and client roles during Phase 1
+2. Can revert deployment and investigate
+3. Keycloak realm roles remain intact until Phase 3
 
-```go
-// go.mod
-github.com/Nerzal/gocloak/v13 v13.x.x
-```
+## Keycloak Administration
 
-### New Frontend Dependencies
+**Note**: Role assignments will continue to be managed in the Keycloak admin console. This migration only changes how the application reads roles from the JWT token - no changes to the Keycloak management workflow.
 
-```json
-// package.json (if needed for admin UI)
-"@mui/icons-material": "^5.x.x" (already in project)
-```
+To assign roles (for Keycloak administrators):
 
----
+1. Go to Keycloak Admin Console
+2. Select Realm → Clients → `subtitles` (or `kolman-dev`)
+3. Go to Roles tab → select role
+4. Go to Users tab → assign role to users
 
-## Environment Variables
+## Timeline
 
-### Backend
-
-```bash
-# Existing
-BSSVR_KEYCLOAK_URI=https://auth.kab.info/auth/
-
-# New
-BSSVR_KEYCLOAK_REALM=main
-BSSVR_KEYCLOAK_CLIENT_ID=subtitles-app
-BSSVR_KEYCLOAK_ADMIN_USER=admin-service-account
-BSSVR_KEYCLOAK_ADMIN_PASSWORD=<secure-password>
-```
-
-### Frontend
-
-```bash
-# Existing
-REACT_APP_KEYCLOAK_REALM=main
-REACT_APP_KEYCLOAK_CLIENT_ID=membership_pay
-REACT_APP_KEYCLOAK_URL=https://accounts.kab.info/auth/
-
-# Optional (for migration)
-REACT_APP_USE_CLIENT_ROLES=true
-```
-
----
-
-## Timeline Estimate
-
-| Phase                    | Estimated Time | Description                                     |
-| ------------------------ | -------------- | ----------------------------------------------- |
-| 1. Backend Preparation   | 2-3 days       | Auth changes, admin client setup, API endpoints |
-| 2. Frontend Client Roles | 1 day          | Update role checking logic                      |
-| 3. Admin UI              | 3-4 days       | Build admin interface components                |
-| 4. Keycloak Config       | 1 day          | Setup roles, service account, migrate data      |
-| 5. Testing & Refinement  | 2-3 days       | Integration testing, bug fixes                  |
-| **Total**                | **9-12 days**  | Full implementation                             |
-
----
-
-## Open Questions
-
-1. Should role changes require user re-login or work after token refresh?
-2. Should we maintain an audit log in the database or rely on Keycloak logs?
-3. Do we need pagination for user list (for large user bases)?
-4. Should admins be able to create/delete roles or just assign existing ones?
-5. Do we need role groups/templates for common role combinations?
-
----
+- **Code changes & testing**: 2-3 days
+- **Keycloak configuration**: Coordinated with Keycloak admin
+- **Deployment & monitoring**: 1 day
 
 ## Success Criteria
 
-- [ ] Application uses client roles instead of realm roles
-- [ ] Admin users can manage user roles via web interface
-- [ ] No disruption to existing user access during migration
-- [ ] All role checks function correctly in both frontend and backend
-- [ ] Admin actions are properly logged and auditable
-- [ ] Documentation updated with new role management process
+- Application successfully authenticates users with client roles
+- All role-based access controls work correctly
+- No disruption to existing users during migration
+- Code is cleaner and follows Keycloak best practices
