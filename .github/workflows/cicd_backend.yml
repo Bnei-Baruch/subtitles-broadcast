@@ -42,13 +42,10 @@ jobs:
       - name: Deploy backend over SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          proxy_host: ${{ secrets.PROXY_HOST }}
-          proxy_username: ${{ secrets.PROXY_USER }}
-          proxy_key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
+      host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+     key: ${{ secrets.SSH_PRIVATE_KEY }
+          script: 
             cd /opt/subtitles-broadcast/backend   # adjust to your server’s path
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
             docker compose pull subtitles_backend
