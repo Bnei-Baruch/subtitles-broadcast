@@ -10,7 +10,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install and test frontend
         run: |
@@ -43,13 +43,11 @@ jobs:
       - name: Deploy frontend over SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-      host: ${{ secrets.SSH_HOST }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-         #   cd# /opt/subtitles-broadcast/frontend
-           cd /root/configs/subtitles_frontend
-
+            cd /root/configs/subtitles_frontend
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
             docker compose down subtitles_frontend || true
             docker compose pull subtitles_frontend
