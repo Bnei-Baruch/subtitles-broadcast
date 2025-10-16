@@ -46,7 +46,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
      key: ${{ secrets.SSH_PRIVATE_KEY }
           script: 
-            cd /opt/subtitles-broadcast/backend   # adjust to your server’s path
+          cd /root/configs/subtitles_backend  # adjust to your server's pathh
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
             docker compose pull subtitles_backend
             docker compose up -d subtitles_backend
