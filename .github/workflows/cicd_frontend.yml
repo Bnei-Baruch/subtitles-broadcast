@@ -47,7 +47,9 @@ jobs:
           username: ${{ secrets.SSH_USER }}
 key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/subtitles-broadcast/frontend
+         #   cd# /opt/subtitles-broadcast/frontend
+           cd /root/configs/subtitles_frontend
+
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
             docker compose down subtitles_frontend || true
             docker compose pull subtitles_frontend
