@@ -43,11 +43,8 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: root
-          key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
-          proxy_host: ${{ secrets.SSH_PROXY_HOST }}
-          proxy_username: ${{ secrets.SSH_PROXY_USERNAME }}
-          proxy_key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /root/configs/subtitles_backend
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
