@@ -416,3 +416,315 @@ REACT_APP_USE_CLIENT_ROLES=true
 - [ ] All role checks function correctly in both frontend and backend
 - [ ] Admin actions are properly logged and auditable
 - [ ] Documentation updated with new role management process
+
+---
+
+## Keycloak Setup Instructions for Amnon (amnonbb@gmail.com)
+
+### Overview
+
+This section provides step-by-step instructions for setting up Keycloak client roles and enabling admin functionality for the Subtitles Broadcast application.
+
+### Current Environment Status
+
+- **Development**: `kolman-dev` client already exists in `master` realm
+- **Production**: `subtitles` client exists in `main` realm
+- **Current Issue**: Application reads from `realm_access` instead of `resource_access`
+
+### Step 1: Create Client Roles
+
+#### For Development Environment (`kolman-dev` client)
+
+1. **Access Keycloak Admin Console**
+
+   - URL: `https://auth.2serv.eu/auth/admin/master/console/`
+   - Login with admin credentials
+
+2. **Navigate to Client Roles**
+
+   - Go to: `Configure` → `Clients` → `kolman-dev` → `Roles` tab
+   - You should see existing role: `kolman-dev-users`
+
+3. **Create Required Client Roles**
+   Click "Add Role" and create these roles:
+
+   ```
+   Role Name: subtitles_admin
+   Description: Full access to subtitles application + role management
+
+   Role Name: subtitles_operator
+   Description: Access to Subtitles, Archive, Source, New pages
+
+   Role Name: subtitles_translator
+   Description: Access to Question page
+   ```
+
+4. **Verify Role Creation**
+   - All three roles should appear in the roles table
+   - Each role should have `Composite: False`
+
+#### For Production Environment (`subtitles` client)
+
+1. **Access Production Keycloak**
+
+   - URL: `https://accounts.kab.info/auth/admin/main/console/`
+   - Login with production admin credentials
+
+2. **Navigate to Client Roles**
+
+   - Go to: `Configure` → `Clients` → `subtitles` → `Roles` tab
+
+3. **Create Same Client Roles**
+   ```
+   Role Name: subtitles_admin
+   Role Name: subtitles_operator
+   Role Name: subtitles_translator
+   ```
+
+### Step 2: Assign Client Roles to Users
+
+#### Development Environment
+
+1. **Navigate to Users**
+
+   - Go to: `Manage` → `Users`
+
+2. **Find Target User**
+
+   - Search for user (e.g., `slavapas13@gmail.com`)
+   - Click on the user
+
+3. **Assign Client Roles**
+
+   - Go to `Role Mappings` tab
+   - Click `Assign role` button
+   - Select `Filter by clients` dropdown
+   - Choose `kolman-dev`
+   - Select appropriate roles:
+     - For admin users: `subtitles_admin`
+     - For operators: `subtitles_operator`
+     - For translators: `subtitles_translator`
+
+4. **Verify Assignment**
+   - Roles should appear in "Assigned Roles" section
+   - Check that roles are under `kolman-dev` client, not realm
+
+#### Production Environment
+
+1. **Repeat same process** for production users in `main` realm
+2. **Assign roles** from `subtitles` client
+
+### Step 3: Enable Admin API Access (For Future Admin UI)
+
+#### Create Service Account for Admin Operations
+
+1. **Create Service Account User**
+
+   - Go to: `Manage` → `Users` → `Add user`
+   - Username: `subtitles-admin-service`
+   - Email: `subtitles-admin@kab.info`
+   - First name: `Subtitles`
+   - Last name: `Admin Service`
+   - Enable: `ON`
+   - Click `Create`
+
+2. **Set Service Account Credentials**
+
+   - Go to `Credentials` tab
+   - Set password (store securely)
+   - Turn OFF "Temporary" (make permanent)
+
+3. **Assign Admin Roles to Service Account**
+
+   - Go to `Role Mappings` tab
+   - Click `Assign role`
+   - Select `Filter by clients` → `realm-management`
+   - Assign these roles:
+     ```
+     manage-users
+     manage-clients
+     view-users
+     query-users
+     ```
+
+4. **Enable Service Account**
+   - Go to client settings: `Configure` → `Clients` → `subtitles` (or `kolman-dev`)
+   - Go to `Settings` tab
+   - Turn ON: `Service Accounts Enabled`
+   - Turn ON: `Authorization Enabled`
+
+### Step 4: Test Client Role Extraction
+
+#### Verify JWT Token Contains Client Roles
+
+1. **Login to Application**
+
+   - Go to: `http://localhost:3000`
+   - Login with test user
+
+2. **Check Browser Console**
+
+   - Open Developer Tools → Console
+   - Look for debug logs:
+     ```
+     Checking client roles for client: kolman-dev
+     Extracted security roles: ["admin", "operator", "translator"]
+     ```
+
+3. **Verify Token Structure**
+   - In browser console, run:
+     ```javascript
+     // Check if resource_access exists
+     console.log("Resource Access:", keycloak.resourceAccess);
+     console.log("Client Roles:", keycloak.resourceAccess["kolman-dev"]);
+     ```
+
+### Step 5: Migration Verification
+
+#### Test Role-Based Access
+
+1. **Test Admin Access**
+
+   - User with `subtitles_admin` should access all pages
+   - Check navigation shows all menu items
+
+2. **Test Operator Access**
+
+   - User with `subtitles_operator` should access:
+     - Subtitles page
+     - Archive page
+     - Source page
+     - New page
+   - Should NOT access admin features
+
+3. **Test Translator Access**
+   - User with `subtitles_translator` should access:
+     - Question page only
+   - Should NOT access other pages
+
+### Step 6: Environment Variables
+
+#### Backend Environment Variables
+
+Add to backend `.env` files:
+
+**Development:**
+
+```bash
+BSSVR_KEYCLOAK_CLIENT_ID=kolman-dev
+```
+
+**Production:**
+
+```bash
+BSSVR_KEYCLOAK_CLIENT_ID=subtitles
+```
+
+#### Frontend Environment Variables
+
+**Already configured:**
+
+- Development: `REACT_APP_KEYCLOAK_CLIENT_ID=kolman-dev`
+- Production: `REACT_APP_KEYCLOAK_CLIENT_ID=subtitles`
+
+### Step 7: Admin UI Integration (Future)
+
+#### For Amnon's Built-in Admin UI Solutions
+
+If you have existing admin UI components, here's how to integrate:
+
+1. **Keycloak Admin Client Setup**
+
+   ```javascript
+   // Use Keycloak Admin REST API
+   const adminClient = new KeycloakAdminClient({
+     baseUrl: "https://auth.2serv.eu/auth",
+     realmName: "master",
+   });
+
+   // Authenticate service account
+   await adminClient.auth({
+     username: "subtitles-admin-service",
+     password: "service-account-password",
+     grantType: "password",
+     clientId: "kolman-dev",
+   });
+   ```
+
+2. **User Management Functions**
+
+   ```javascript
+   // List all users
+   const users = await adminClient.users.find();
+
+   // Get user roles
+   const userRoles = await adminClient.users.listClientRoleMappings({
+     id: userId,
+     clientUniqueId: clientId,
+   });
+
+   // Assign role to user
+   await adminClient.users.addClientRoleMappings({
+     id: userId,
+     clientUniqueId: clientId,
+     roles: [roleToAssign],
+   });
+   ```
+
+3. **Required Admin UI Components**
+   - User search/filter component
+   - Role assignment interface
+   - User role display component
+   - Role management actions (assign/remove)
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Roles Not Appearing in Token**
+
+   - Check client has `Service Accounts Enabled`
+   - Verify roles are assigned to correct client (not realm)
+   - Check user has active session
+
+2. **Admin API Access Denied**
+
+   - Verify service account has correct roles
+   - Check service account credentials
+   - Ensure client has `Authorization Enabled`
+
+3. **Frontend Not Reading Client Roles**
+   - Check `REACT_APP_KEYCLOAK_CLIENT_ID` environment variable
+   - Verify client ID matches exactly
+   - Check browser console for debug logs
+
+#### Verification Commands
+
+**Check User Roles in Keycloak:**
+
+```bash
+# Using Keycloak CLI (if available)
+kcadm.sh get users -r master --query username=slavapas13@gmail.com
+kcadm.sh get-roles -r master --cclientid kolman-dev --uusername slavapas13@gmail.com
+```
+
+**Test JWT Token:**
+
+```bash
+# Decode JWT token (use online JWT decoder)
+# Check for "resource_access" section
+# Verify client roles are present
+```
+
+### Next Steps After Setup
+
+1. **Test Application** with new client roles
+2. **Remove Realm Role Dependencies** (Phase 3 of migration)
+3. **Implement Admin UI** for role management
+4. **Document Role Management Process** for future administrators
+
+### Contact Information
+
+- **Technical Questions**: Contact development team
+- **Keycloak Admin Issues**: Contact system administrator
+- **Role Assignment Requests**: Follow existing approval process

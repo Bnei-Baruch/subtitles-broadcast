@@ -15,11 +15,12 @@ var (
 )
 
 const (
-	EnvBssvrPort        = "BSSVR_BACKEND_PORT"
-	EnvBssvrLogLevel    = "BSSVR_LOG_LEVEL"
-	EnvBssvrPostgresUri = "BSSVR_POSTGRES_URI"
-	EnvBssvrKeycloakUri = "BSSVR_KEYCLOAK_URI"
-	EnvFile             = ".env"
+	EnvBssvrPort            = "BSSVR_BACKEND_PORT"
+	EnvBssvrLogLevel        = "BSSVR_LOG_LEVEL"
+	EnvBssvrPostgresUri     = "BSSVR_POSTGRES_URI"
+	EnvBssvrKeycloakUri     = "BSSVR_KEYCLOAK_URI"
+	EnvBssvrKeycloakClientId = "BSSVR_KEYCLOAK_CLIENT_ID"
+	EnvFile                 = ".env"
 )
 
 func init() {

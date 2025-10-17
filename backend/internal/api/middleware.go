@@ -3,11 +3,14 @@ package api
 import (
 	"context"
 	"net/http"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/internal/config"
 	"gitlab.com/gitlab.bbdev.team/vh/broadcast-subtitles/pkg/auth"
 )
 
@@ -66,11 +69,62 @@ func UserRoleHandler() gin.HandlerFunc {
 			return
 		}
 
-		// TODO: manage user role
+		// Extract roles from both client and realm access (backward compatible)
+		clientId := os.Getenv(config.EnvBssvrKeycloakClientId)
+		userRoles := extractSubtitlesRoles(claims, clientId)
 
 		ctx.Set("user_id", claims.Email)
+		ctx.Set("user_roles", userRoles)
+		ctx.Set("claims", claims)
 		ctx.Next()
 	}
+}
+
+// extractSubtitlesRoles extracts subtitles-related roles from JWT claims
+// Checks both client roles (resource_access) and realm roles for backward compatibility
+func extractSubtitlesRoles(claims *auth.IDTokenClaims, clientId string) []string {
+	roles := []string{}
+	roleMap := make(map[string]bool)
+
+	subtitlesRoleRegex := regexp.MustCompile(`subtitles_(?P<role>.*)|(?P<admin_role>admin)`)
+
+	// Check client roles first (preferred)
+	if clientId != "" {
+		clientRoles := claims.GetClientRoles(clientId)
+		for _, role := range clientRoles {
+			matches := subtitlesRoleRegex.FindStringSubmatch(role)
+			if matches != nil {
+				// Extract the role name from the regex groups
+				extractedRole := matches[1] // subtitles_<role> group
+				if extractedRole == "" {
+					extractedRole = matches[2] // admin group
+				}
+				if extractedRole != "" && !roleMap[extractedRole] {
+					roles = append(roles, extractedRole)
+					roleMap[extractedRole] = true
+				}
+			}
+		}
+	}
+
+	// Fallback to realm roles for backward compatibility
+	realmRoles := claims.GetRealmRoles()
+	for _, role := range realmRoles {
+		matches := subtitlesRoleRegex.FindStringSubmatch(role)
+		if matches != nil {
+			// Extract the role name from the regex groups
+			extractedRole := matches[1] // subtitles_<role> group
+			if extractedRole == "" {
+				extractedRole = matches[2] // admin group
+			}
+			if extractedRole != "" && !roleMap[extractedRole] {
+				roles = append(roles, extractedRole)
+				roleMap[extractedRole] = true
+			}
+		}
+	}
+
+	return roles
 }
 
 func HttpMethodChecker(router *gin.Engine) gin.HandlerFunc {

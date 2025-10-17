@@ -12,10 +12,13 @@ import (
 
 var provider *oidc.Provider
 
-// For future usage: user role management
-// type Roles struct {
-// 	Roles []string `json:"roles"`
-// }
+// Roles represents the roles structure in Keycloak tokens
+type Roles struct {
+	Roles []string `json:"roles"`
+}
+
+// ResourceAccess represents the resource_access structure in Keycloak tokens
+type ResourceAccess map[string]Roles
 
 type IDTokenClaims struct {
 	Email      string `json:"email"`
@@ -23,24 +26,55 @@ type IDTokenClaims struct {
 	FamilyName string `json:"family_name"`
 	GivenName  string `json:"given_name"`
 	Name       string `json:"name"`
-	// RealmAccess    Roles            `json:"realm_access"`
-	Sub string `json:"sub"`
+	Sub        string `json:"sub"`
 
-	// For future usage
-	// rolesMap map[string]struct{}
+	// Support both realm and client roles for backward compatibility
+	RealmAccess    *Roles          `json:"realm_access"`
+	ResourceAccess *ResourceAccess `json:"resource_access"`
 }
 
-// For future usage: user role management
-// func (c *IDTokenClaims) initRoleMap() {
-// 	if c.rolesMap == nil {
-// 		c.rolesMap = make(map[string]struct{})
-// 		if c.RealmAccess.Roles != nil {
-// 			for _, r := range c.RealmAccess.Roles {
-// 				c.rolesMap[r] = struct{}{}
-// 			}
-// 		}
-// 	}
-// }
+// GetClientRoles extracts roles for a specific client from resource_access
+func (c *IDTokenClaims) GetClientRoles(clientId string) []string {
+	if c.ResourceAccess == nil {
+		return []string{}
+	}
+
+	clientRoles, ok := (*c.ResourceAccess)[clientId]
+	if !ok {
+		return []string{}
+	}
+
+	return clientRoles.Roles
+}
+
+// GetRealmRoles extracts roles from realm_access
+func (c *IDTokenClaims) GetRealmRoles() []string {
+	if c.RealmAccess == nil {
+		return []string{}
+	}
+	return c.RealmAccess.Roles
+}
+
+// HasRole checks if the user has a specific role (checks both client and realm roles)
+func (c *IDTokenClaims) HasRole(clientId, role string) bool {
+	// Check client roles first
+	clientRoles := c.GetClientRoles(clientId)
+	for _, r := range clientRoles {
+		if r == role {
+			return true
+		}
+	}
+
+	// Fallback to realm roles for backward compatibility
+	realmRoles := c.GetRealmRoles()
+	for _, r := range realmRoles {
+		if r == role {
+			return true
+		}
+	}
+
+	return false
+}
 
 func init() {
 	var err error
