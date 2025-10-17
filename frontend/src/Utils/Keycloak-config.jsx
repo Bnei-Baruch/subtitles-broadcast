@@ -8,7 +8,6 @@ const keycloakConfigDev = {
   realm: "master",
   url: "https://auth.2serv.eu/auth",
   clientId: "kolman-dev",
-  clientSecret: "685416c5-87a7-4816-afc0-73d0e588f4b4",
 };
 
 // there is a problem with PM2 env variable.

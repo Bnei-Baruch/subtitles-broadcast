@@ -13,15 +13,6 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1 := router.Group("/api/v1")
 	
-	// Authentication routes (no auth required)
-	authHandler := NewAuthHandler()
-	auth := v1.Group("/auth")
-	{
-		auth.POST("/login", authHandler.FrontendLogin)
-		auth.POST("/refresh", authHandler.RefreshToken)
-		auth.POST("/logout", authHandler.Logout)
-	}
-	
 	// Admin routes (require admin role)
 	adminHandler := NewAdminHandler()
 	admin := v1.Group("/admin")
