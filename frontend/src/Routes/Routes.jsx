@@ -8,7 +8,8 @@ import QuestionsModule from "../Pages/QuestionModule";
 // import EditArchive from "../Pages/EditArchive";
 import Settings from "../Pages/Settings";
 import GreenScreen from "../Pages/GreenScreen";
-import {isOperator, isTranslator} from "../Utils/Auth";
+import AdminRoleManagement from "../Pages/AdminRoleManagement";
+import {isOperator, isTranslator, isAdmin} from "../Utils/Auth";
 
 const MainRoutes = ({ logout, securityRoles }) => {
   return (
@@ -33,6 +34,10 @@ const MainRoutes = ({ logout, securityRoles }) => {
         )}
 
         {securityRoles && securityRoles.length && <Route path="/settings" element={<Settings />} />}
+
+        {isAdmin(securityRoles) && (
+          <Route path="/admin/roles" element={<AdminRoleManagement />} />
+        )}
 
         {/** Public Routes */}
         {/** Wrap all Route under PublicRoutes element */}

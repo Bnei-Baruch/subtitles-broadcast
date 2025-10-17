@@ -49,6 +49,7 @@ const Auth = ({ children }) => {
       realm: authRealm,
       url: authApiUrl,
       clientId: authClientId,
+      clientSecret: process.env.REACT_APP_KEYCLOAK_CLIENT_SECRET,
     });
 
     keycloak

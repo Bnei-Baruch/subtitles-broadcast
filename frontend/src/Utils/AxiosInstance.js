@@ -1,17 +1,22 @@
 import axios from 'axios';
-import UserService from '../Services/KeycloakServices';
-import { BASE_URL } from '../utils/api.routes';
-import { notifyError } from './notify';
 
+// Get the base URL from environment or use default
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1';
 
-const axiosInstance = new axios.create(config);
+const axiosInstance = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 axiosInstance.interceptors.request.use(
   function (reqConfig) {
-    if (UserService.isLoggedIn()) {
-      reqConfig.headers = {
-        'Bearer': `${UserService.getToken()}`,
-      };
+    // Get token from localStorage (set by Auth.js)
+    const token = localStorage.getItem('token');
+    if (token) {
+      reqConfig.headers.Authorization = `Bearer ${token}`;
     }
     return reqConfig;
   },
@@ -27,7 +32,7 @@ axiosInstance.interceptors.response.use(
   },
   function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
-    notifyError(`#${error.response.status} Something went wrong while processing your request`);
+    console.error('API Error:', error.response?.status, error.response?.data || error.message);
     return Promise.reject(error);
   }
 );

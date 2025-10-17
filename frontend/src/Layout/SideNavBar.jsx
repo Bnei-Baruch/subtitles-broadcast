@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import "./Layout.css";
 import HeaderBar from "../Layout/HeaderBar";
-import { isOperator, isTranslator } from "../Utils/Auth";
+import { isOperator, isTranslator, isAdmin } from "../Utils/Auth";
 import MqttLogsDialog from "../Components/MqttLogsDialog";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 
@@ -66,6 +66,14 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
               <li>
                 <NavLink to={"/question"} className="nav-link text-white">
                   <img alt="slider" src="image/sliders.svg" /> Question
+                </NavLink>
+              </li>
+            )}
+
+            {isAdmin(securityRoles) && (
+              <li>
+                <NavLink to={"/admin/roles"} className="nav-link text-white">
+                  <img alt="settings" src="image/settings.svg" /> Admin
                 </NavLink>
               </li>
             )}
