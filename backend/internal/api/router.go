@@ -12,6 +12,21 @@ func NewRouter(handler *Handler) http.Handler {
 	router.Use(UserRoleHandler())
 
 	v1 := router.Group("/api/v1")
+	
+	// Admin routes (require admin role)
+	adminHandler := NewAdminHandler()
+	admin := v1.Group("/admin")
+	admin.Use(RequireAdminRole())
+	{
+		admin.GET("/users", adminHandler.ListUsers)
+		admin.GET("/users/:user_id/roles", adminHandler.GetUserRoles)
+		admin.POST("/users", adminHandler.CreateUser)
+		admin.PUT("/users/:user_id", adminHandler.UpdateUser)
+		admin.DELETE("/users/:user_id", adminHandler.DeleteUser)
+		admin.POST("/users/:user_id/roles", adminHandler.AssignUserRole)
+		admin.DELETE("/users/:user_id/roles/:role", adminHandler.RemoveUserRole)
+		admin.GET("/roles", adminHandler.ListAvailableRoles)
+	}
 
 	v1.POST("/bookmark", handler.AddOrUpdateBookmark)
 	v1.GET("/bookmark", handler.GetBookmarks)
