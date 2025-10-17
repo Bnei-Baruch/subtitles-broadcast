@@ -84,6 +84,8 @@ type CreateUserRequest struct {
 	LastName      string `json:"lastName"`
 	Enabled       bool   `json:"enabled"`
 	EmailVerified bool   `json:"emailVerified"`
+	Password      string `json:"password"`
+	Temporary     bool   `json:"temporary"`
 }
 
 // RoleAssignmentRequest represents a request to assign a role
@@ -280,6 +282,15 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Set password if provided
+	if req.Password != "" {
+		err = h.keycloakClient.SetPassword(ctx, h.adminToken, userID, h.realm, req.Password, req.Temporary)
+		if err != nil {
+			// Log the error but don't fail the user creation
+			fmt.Printf("Warning: Failed to set password for user %s: %v\n", userID, err)
+		}
+	}
+
 	// Return the created user
 	newUser := UserInfo{
 		ID:            userID,
@@ -373,6 +384,15 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to update user in Keycloak: "+err.Error())
 		return
+	}
+
+	// Update password if provided
+	if req.Password != "" {
+		err = h.keycloakClient.SetPassword(ctx, h.adminToken, userID, h.realm, req.Password, req.Temporary)
+		if err != nil {
+			handleResponse(c, http.StatusInternalServerError, "Failed to update password in Keycloak: "+err.Error())
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{

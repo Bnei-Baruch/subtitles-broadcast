@@ -34,6 +34,8 @@ const AdminRoleManagement = () => {
     lastName: "",
     enabled: true,
     emailVerified: false,
+    password: "",
+    temporary: false,
   });
   const [selectedRole, setSelectedRole] = useState("");
 
@@ -207,6 +209,8 @@ const AdminRoleManagement = () => {
         lastName: user.lastName || "",
         enabled: user.enabled !== false,
         emailVerified: user.emailVerified || false,
+        password: "", // Don't populate password for security
+        temporary: false, // Default to false for existing users
       });
       setSelectedUser(user);
     } else {
@@ -229,6 +233,8 @@ const AdminRoleManagement = () => {
       lastName: "",
       enabled: true,
       emailVerified: false,
+      password: "",
+      temporary: false,
     });
     setSelectedUser(null);
   };
@@ -536,6 +542,34 @@ const AdminRoleManagement = () => {
               />
               <Form.Text className="text-muted">
                 Mark email as verified for testing purposes
+              </Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                value={userForm.password}
+                onChange={(e) =>
+                  setUserForm({ ...userForm, password: e.target.value })
+                }
+                placeholder="Enter password (leave empty to keep current)"
+              />
+              <Form.Text className="text-muted">
+                Leave empty to keep current password unchanged
+              </Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="switch"
+                id="temporary-switch"
+                label="Temporary Password"
+                checked={userForm.temporary}
+                onChange={(e) =>
+                  setUserForm({ ...userForm, temporary: e.target.checked })
+                }
+              />
+              <Form.Text className="text-muted">
+                User will be required to change password on next login
               </Form.Text>
             </Form.Group>
           </Form>
