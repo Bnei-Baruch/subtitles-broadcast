@@ -39,6 +39,8 @@ const AdminRoleManagement = () => {
     temporary: false,
   });
   const [selectedRole, setSelectedRole] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   // Available client roles
   const clientRoles = [
@@ -256,6 +258,8 @@ const AdminRoleManagement = () => {
       temporary: false,
     });
     setSelectedUser(null);
+    setShowPassword(false);
+    setShowPasswordConfirm(false);
   };
 
   const getUserRoles = (user) => {
@@ -565,14 +569,25 @@ const AdminRoleManagement = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                value={userForm.password}
-                onChange={(e) =>
-                  setUserForm({ ...userForm, password: e.target.value })
-                }
-                placeholder="Enter password (leave empty to keep current)"
-              />
+              <div className="position-relative">
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  value={userForm.password}
+                  onChange={(e) =>
+                    setUserForm({ ...userForm, password: e.target.value })
+                  }
+                  placeholder="Enter password (leave empty to keep current)"
+                />
+                <Button
+                  variant="link"
+                  className="position-absolute end-0 top-50 translate-middle-y pe-3"
+                  style={{ border: 'none', background: 'none', padding: '0', zIndex: 10 }}
+                  onClick={() => setShowPassword(!showPassword)}
+                  type="button"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </Button>
+              </div>
               <Form.Text className="text-muted">
                 Leave empty to keep current password unchanged
               </Form.Text>
@@ -580,15 +595,26 @@ const AdminRoleManagement = () => {
             {userForm.password && (
               <Form.Group className="mb-3">
                 <Form.Label>Confirm Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  value={userForm.passwordConfirm}
-                  onChange={(e) =>
-                    setUserForm({ ...userForm, passwordConfirm: e.target.value })
-                  }
-                  placeholder="Confirm password"
-                  isInvalid={userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm}
-                />
+                <div className="position-relative">
+                  <Form.Control
+                    type={showPasswordConfirm ? "text" : "password"}
+                    value={userForm.passwordConfirm}
+                    onChange={(e) =>
+                      setUserForm({ ...userForm, passwordConfirm: e.target.value })
+                    }
+                    placeholder="Confirm password"
+                    isInvalid={userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm}
+                  />
+                  <Button
+                    variant="link"
+                    className="position-absolute end-0 top-50 translate-middle-y pe-3"
+                    style={{ border: 'none', background: 'none', padding: '0', zIndex: 10 }}
+                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                    type="button"
+                  >
+                    {showPasswordConfirm ? "🙈" : "👁️"}
+                  </Button>
+                </div>
                 {userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm && (
                   <Form.Control.Feedback type="invalid">
                     Passwords do not match
