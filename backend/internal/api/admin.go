@@ -324,21 +324,56 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		}
 	}
 
-	// TODO: Replace with actual Keycloak API call
-	// For now, update the mock user data
-	mockUsersMutex.Lock()
-	for i, user := range mockUsers {
-		if user.ID == userID {
-			mockUsers[i].Username = username
-			mockUsers[i].Email = req.Email
-			mockUsers[i].FirstName = req.FirstName
-			mockUsers[i].LastName = req.LastName
-			mockUsers[i].Enabled = req.Enabled
-			mockUsers[i].EmailVerified = req.EmailVerified
-			break
+	// Check if we have service account credentials
+	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
+	if clientSecret == "" {
+		// Fall back to mock mode if no service account is configured
+		mockUsersMutex.Lock()
+		for i, user := range mockUsers {
+			if user.ID == userID {
+				mockUsers[i].Username = username
+				mockUsers[i].Email = req.Email
+				mockUsers[i].FirstName = req.FirstName
+				mockUsers[i].LastName = req.LastName
+				mockUsers[i].Enabled = req.Enabled
+				mockUsers[i].EmailVerified = req.EmailVerified
+				break
+			}
 		}
+		mockUsersMutex.Unlock()
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data": gin.H{
+				"id":            userID,
+				"username":      username,
+				"email":         req.Email,
+				"firstName":     req.FirstName,
+				"lastName":      req.LastName,
+				"enabled":       req.Enabled,
+				"emailVerified": req.EmailVerified,
+			},
+			"err": "",
+		})
+		return
 	}
-	mockUsersMutex.Unlock()
+
+	// Update user in Keycloak
+	keycloakUser := gocloak.User{
+		ID:            &userID,
+		Username:      &username,
+		Email:         &req.Email,
+		FirstName:     &req.FirstName,
+		LastName:      &req.LastName,
+		Enabled:       &req.Enabled,
+		EmailVerified: &req.EmailVerified,
+	}
+
+	err := h.keycloakClient.UpdateUser(ctx, h.adminToken, h.realm, keycloakUser)
+	if err != nil {
+		handleResponse(c, http.StatusInternalServerError, "Failed to update user in Keycloak: "+err.Error())
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
