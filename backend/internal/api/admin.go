@@ -513,7 +513,7 @@ func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{
 		realm:          realm,
 		clientId:       clientId,
-		keycloakClient: &client,
+		keycloakClient: client,
 	}
 }
 
@@ -542,14 +542,14 @@ func (h *AuthHandler) FrontendLogin(c *gin.Context) {
 	ctx := context.Background()
 
 	// Authenticate with Keycloak using Resource Owner Password Credentials flow
-	token, err := (*h.keycloakClient).Login(ctx, h.clientId, os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET"), h.realm, req.Username, req.Password)
+	token, err := h.keycloakClient.Login(ctx, h.clientId, os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET"), h.realm, req.Username, req.Password)
 	if err != nil {
 		handleResponse(c, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
 
 	// Get user info
-	userInfo, err := (*h.keycloakClient).GetUserInfo(ctx, token.AccessToken, h.realm)
+	userInfo, err := h.keycloakClient.GetUserInfo(ctx, token.AccessToken, h.realm)
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to get user info")
 		return
@@ -583,7 +583,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	ctx := context.Background()
 
 	// Refresh token with Keycloak
-	token, err := (*h.keycloakClient).RefreshToken(ctx, refreshToken, h.clientId, os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET"), h.realm)
+	token, err := h.keycloakClient.RefreshToken(ctx, refreshToken, h.clientId, os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET"), h.realm)
 	if err != nil {
 		handleResponse(c, http.StatusUnauthorized, "Invalid refresh token")
 		return
@@ -616,7 +616,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	ctx := context.Background()
 
 	// Logout from Keycloak
-	err := (*h.keycloakClient).Logout(ctx, h.clientId, os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET"), h.realm, accessToken)
+	err := h.keycloakClient.Logout(ctx, h.clientId, os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET"), h.realm, accessToken)
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to logout")
 		return
