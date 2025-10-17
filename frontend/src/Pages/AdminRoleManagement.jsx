@@ -35,6 +35,7 @@ const AdminRoleManagement = () => {
     enabled: true,
     emailVerified: false,
     password: "",
+    passwordConfirm: "",
     temporary: false,
   });
   const [selectedRole, setSelectedRole] = useState("");
@@ -103,10 +104,18 @@ const AdminRoleManagement = () => {
   };
 
   const handleCreateUser = async () => {
+    // Validate password confirmation
+    if (userForm.password && userForm.password !== userForm.passwordConfirm) {
+      setError("Passwords do not match. Please check your password confirmation.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
-      await axios.post("/admin/users", userForm);
+      // Remove passwordConfirm from the request (it's only for frontend validation)
+      const { passwordConfirm, ...userData } = userForm;
+      await axios.post("/admin/users", userData);
       setSuccess("User created successfully!");
       setShowUserModal(false);
       resetUserForm();
@@ -121,10 +130,18 @@ const AdminRoleManagement = () => {
   };
 
   const handleUpdateUser = async () => {
+    // Validate password confirmation
+    if (userForm.password && userForm.password !== userForm.passwordConfirm) {
+      setError("Passwords do not match. Please check your password confirmation.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
-      await axios.put(`/admin/users/${selectedUser.id}`, userForm);
+      // Remove passwordConfirm from the request (it's only for frontend validation)
+      const { passwordConfirm, ...userData } = userForm;
+      await axios.put(`/admin/users/${selectedUser.id}`, userData);
       setSuccess("User updated successfully!");
       setShowUserModal(false);
       resetUserForm();
@@ -210,6 +227,7 @@ const AdminRoleManagement = () => {
         enabled: user.enabled !== false,
         emailVerified: user.emailVerified || false,
         password: "", // Don't populate password for security
+        passwordConfirm: "", // Don't populate password confirmation
         temporary: false, // Default to false for existing users
       });
       setSelectedUser(user);
@@ -234,6 +252,7 @@ const AdminRoleManagement = () => {
       enabled: true,
       emailVerified: false,
       password: "",
+      passwordConfirm: "",
       temporary: false,
     });
     setSelectedUser(null);
@@ -558,6 +577,28 @@ const AdminRoleManagement = () => {
                 Leave empty to keep current password unchanged
               </Form.Text>
             </Form.Group>
+            {userForm.password && (
+              <Form.Group className="mb-3">
+                <Form.Label>Confirm Password</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={userForm.passwordConfirm}
+                  onChange={(e) =>
+                    setUserForm({ ...userForm, passwordConfirm: e.target.value })
+                  }
+                  placeholder="Confirm password"
+                  isInvalid={userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm}
+                />
+                {userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm && (
+                  <Form.Control.Feedback type="invalid">
+                    Passwords do not match
+                  </Form.Control.Feedback>
+                )}
+                <Form.Text className="text-muted">
+                  Re-enter the password to confirm
+                </Form.Text>
+              </Form.Group>
+            )}
             <Form.Group className="mb-3">
               <Form.Check
                 type="switch"
