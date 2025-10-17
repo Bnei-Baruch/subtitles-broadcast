@@ -302,16 +302,6 @@ const AdminRoleManagement = () => {
             </Card.Header>
 
             <Card.Body>
-              {error && (
-                <Alert
-                  variant="danger"
-                  dismissible
-                  onClose={() => setError("")}
-                >
-                  {error}
-                </Alert>
-              )}
-
               {success && (
                 <Alert
                   variant="success"
@@ -489,6 +479,16 @@ const AdminRoleManagement = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {error && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setError("")}
+              className="mb-3"
+            >
+              {error}
+            </Alert>
+          )}
           <Form>
             <Row>
               <Col md={12}>
