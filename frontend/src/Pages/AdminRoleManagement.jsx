@@ -355,7 +355,7 @@ const AdminRoleManagement = () => {
         key={role.id || role.name}
         bg="primary"
         className="me-1 mb-1"
-        style={{ fontSize: "0.75em" }}
+        style={{ fontSize: "0.75em", verticalAlign: "middle" }}
       >
         {role.name || role.id}
       </Badge>
@@ -367,7 +367,7 @@ const AdminRoleManagement = () => {
           key="more"
           bg="secondary"
           className="me-1 mb-1"
-          style={{ fontSize: "0.75em" }}
+          style={{ fontSize: "0.75em", verticalAlign: "middle" }}
         >
           +{remainingCount} more
         </Badge>
