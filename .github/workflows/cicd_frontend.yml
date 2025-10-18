@@ -30,8 +30,8 @@ jobs:
           context: frontend
           push: true
           tags: |
-            myregistry/subtitles_frontend:latest
-            myregistry/subtitles_frontend:gh_${{ github.run_number }}
+            bneibaruch/subtitles_frontend:latest
+            bneibaruch/subtitles_frontend:gh_${{ github.run_number }}
           build-args: |
             build_number=gh_${{ github.run_number }}
             REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}

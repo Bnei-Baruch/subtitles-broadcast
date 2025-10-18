@@ -30,8 +30,8 @@ jobs:
           context: backend
           push: true
           tags: |
-            myregistry/subtitles_backend:latest
-            myregistry/subtitles_backend:gh_${{ github.run_number }}
+            bneibaruch/subtitles_backend:latest
+            bneibaruch/subtitles_backend:gh_${{ github.run_number }}
           build-args: |
             build_number=gh_${{ github.run_number }}
 
