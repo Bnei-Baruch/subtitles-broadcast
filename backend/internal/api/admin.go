@@ -105,6 +105,12 @@ func NewAdminHandler() *AdminHandler {
 	appClientId := os.Getenv(config.EnvBssvrKeycloakAppClientId)
 	keycloakURL := os.Getenv("BSSVR_KEYCLOAK_URL")
 
+	fmt.Printf("DEBUG: Environment variables loaded:\n")
+	fmt.Printf("  BSSVR_KEYCLOAK_REALM: '%s'\n", realm)
+	fmt.Printf("  BSSVR_KEYCLOAK_CLIENT_ID: '%s'\n", clientId)
+	fmt.Printf("  BSSVR_KEYCLOAK_APP_CLIENT_ID: '%s'\n", appClientId)
+	fmt.Printf("  BSSVR_KEYCLOAK_URL: '%s'\n", keycloakURL)
+
 	// Initialize Keycloak client
 	client := gocloak.NewClient(keycloakURL)
 
