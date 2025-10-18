@@ -10,6 +10,8 @@ import {
   Badge,
   Modal,
   Alert,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 import axios from "../Utils/AxiosInstance";
 
@@ -335,6 +337,71 @@ const AdminRoleManagement = () => {
     );
   };
 
+  // Render roles with truncation and tooltip for better table layout
+  const renderRolesWithTooltip = (user) => {
+    const roles = getUserRoles(user);
+    
+    if (roles.length === 0) {
+      return <span className="text-muted">No roles assigned</span>;
+    }
+
+    // Show first 2 roles, then "+X more" if there are more
+    const maxVisibleRoles = 2;
+    const visibleRoles = roles.slice(0, maxVisibleRoles);
+    const remainingCount = roles.length - maxVisibleRoles;
+
+    const roleElements = visibleRoles.map((role) => (
+      <Badge
+        key={role.id || role.name}
+        bg="primary"
+        className="me-1 mb-1"
+        style={{ fontSize: "0.75em" }}
+      >
+        {role.name || role.id}
+      </Badge>
+    ));
+
+    if (remainingCount > 0) {
+      roleElements.push(
+        <Badge
+          key="more"
+          bg="secondary"
+          className="me-1 mb-1"
+          style={{ fontSize: "0.75em" }}
+        >
+          +{remainingCount} more
+        </Badge>
+      );
+    }
+
+    // Create tooltip content with all roles
+    const tooltipContent = (
+      <Tooltip id={`tooltip-${user.id}`}>
+        <div>
+          <strong>All Roles:</strong>
+          <br />
+          {roles.map((role) => (
+            <div key={role.id || role.name}>
+              • {role.name || role.id}
+            </div>
+          ))}
+        </div>
+      </Tooltip>
+    );
+
+    return (
+      <OverlayTrigger
+        placement="top"
+        overlay={tooltipContent}
+        delay={{ show: 250, hide: 100 }}
+      >
+        <div className="d-flex flex-wrap" style={{ maxHeight: "2.5em", overflow: "hidden" }}>
+          {roleElements}
+        </div>
+      </OverlayTrigger>
+    );
+  };
+
   return (
     <Container className="mt-4">
       <Row>
@@ -445,39 +512,8 @@ const AdminRoleManagement = () => {
                               {user.enabled ? "Active" : "Inactive"}
                             </Badge>
                           </td>
-                          <td>
-                            <div className="d-flex flex-wrap">
-                              {getUserRoles(user).map((role) => (
-                                <div
-                                  key={role.id || role.name}
-                                  className="d-flex align-items-center me-2 mb-1"
-                                >
-                                  {getRoleBadge(role.id || role.name)}
-                                  <Button
-                                    variant="outline-danger"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleRemoveRole(
-                                        user.id,
-                                        role.id || role.name
-                                      )
-                                    }
-                                    disabled={loading}
-                                    style={{
-                                      padding: "2px 4px",
-                                      fontSize: "10px",
-                                    }}
-                                  >
-                                    ×
-                                  </Button>
-                                </div>
-                              ))}
-                              {getUserRoles(user).length === 0 && (
-                                <span className="text-muted">
-                                  No roles assigned
-                                </span>
-                              )}
-                            </div>
+                          <td style={{ verticalAlign: "middle", minHeight: "60px" }}>
+                            {renderRolesWithTooltip(user)}
                           </td>
                           <td>
                             <div className="d-flex gap-1">
