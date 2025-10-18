@@ -202,14 +202,44 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		// TODO: Implement proper temporary credential checking when gocloak supports it
 		temporary := true
 
+		// Add nil checks for pointer fields to prevent panic
+		id := ""
+		if keycloakUser.ID != nil {
+			id = *keycloakUser.ID
+		}
+		username := ""
+		if keycloakUser.Username != nil {
+			username = *keycloakUser.Username
+		}
+		email := ""
+		if keycloakUser.Email != nil {
+			email = *keycloakUser.Email
+		}
+		firstName := ""
+		if keycloakUser.FirstName != nil {
+			firstName = *keycloakUser.FirstName
+		}
+		lastName := ""
+		if keycloakUser.LastName != nil {
+			lastName = *keycloakUser.LastName
+		}
+		enabled := true
+		if keycloakUser.Enabled != nil {
+			enabled = *keycloakUser.Enabled
+		}
+		emailVerified := false
+		if keycloakUser.EmailVerified != nil {
+			emailVerified = *keycloakUser.EmailVerified
+		}
+
 		users[i] = UserInfo{
-			ID:            *keycloakUser.ID,
-			Username:      *keycloakUser.Username,
-			Email:         *keycloakUser.Email,
-			FirstName:     *keycloakUser.FirstName,
-			LastName:      *keycloakUser.LastName,
-			Enabled:       *keycloakUser.Enabled,
-			EmailVerified: *keycloakUser.EmailVerified,
+			ID:            id,
+			Username:      username,
+			Email:         email,
+			FirstName:     firstName,
+			LastName:      lastName,
+			Enabled:       enabled,
+			EmailVerified: emailVerified,
 			Temporary:     temporary,
 			Roles:         []string{}, // TODO: Get user roles
 		}
