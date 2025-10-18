@@ -59,8 +59,10 @@ type AdminHandler struct {
 	realm          string
 	clientId       string
 	appClientId    string
+	appClientUUID  string // Internal UUID of the application client
 	keycloakClient *gocloak.GoCloak
 	adminToken     string
+	clientUUIDMutex sync.RWMutex // Protect client UUID resolution
 }
 
 // UserInfo represents a user in the admin interface
@@ -124,12 +126,56 @@ func NewAdminHandler() *AdminHandler {
 	}
 }
 
+// resolveAppClientUUID resolves the internal UUID of the application client
+func (h *AdminHandler) resolveAppClientUUID(ctx context.Context) (string, error) {
+	h.clientUUIDMutex.RLock()
+	if h.appClientUUID != "" {
+		uuid := h.appClientUUID
+		h.clientUUIDMutex.RUnlock()
+		return uuid, nil
+	}
+	h.clientUUIDMutex.RUnlock()
+
+	h.clientUUIDMutex.Lock()
+	defer h.clientUUIDMutex.Unlock()
+
+	// Double-check in case another goroutine resolved it
+	if h.appClientUUID != "" {
+		return h.appClientUUID, nil
+	}
+
+	// Authenticate if needed
+	if err := h.authenticateAdmin(ctx); err != nil {
+		return "", fmt.Errorf("failed to authenticate: %w", err)
+	}
+
+	// Search for the client by client ID
+	params := gocloak.GetClientsParams{
+		ClientID: gocloak.StringP(h.appClientId),
+	}
+	
+	fmt.Printf("DEBUG: Looking up client UUID for client ID: '%s'\n", h.appClientId)
+	clients, err := h.keycloakClient.GetClients(ctx, h.adminToken, h.realm, params)
+	if err != nil {
+		return "", fmt.Errorf("failed to get clients: %w", err)
+	}
+
+	if len(clients) == 0 {
+		return "", fmt.Errorf("client '%s' not found", h.appClientId)
+	}
+
+	clientUUID := gocloak.PString(clients[0].ID)
+	if clientUUID == "" {
+		return "", fmt.Errorf("client '%s' has no ID", h.appClientId)
+	}
+
+	fmt.Printf("DEBUG: Found client UUID '%s' for client ID '%s'\n", clientUUID, h.appClientId)
+	h.appClientUUID = clientUUID
+	return clientUUID, nil
+}
+
 // authenticateAdmin authenticates with Keycloak using service account
 func (h *AdminHandler) authenticateAdmin(ctx context.Context) error {
-	// If we already have a valid token, use it
-	if h.adminToken != "" {
-		return nil
-	}
 
 	// Get service account credentials from environment
 	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
@@ -309,9 +355,38 @@ func (h *AdminHandler) GetUserRoles(c *gin.Context) {
 		return
 	}
 
-	// Get user roles from Keycloak (use app client ID where roles are defined)
+	// Get user roles from Keycloak (use app client UUID where roles are defined)
 	roles := []string{}
-	clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, h.appClientId, userID)
+	
+	// Resolve the client UUID first
+	clientUUID, err := h.resolveAppClientUUID(ctx)
+	if err != nil {
+		fmt.Printf("DEBUG: Error resolving client UUID: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm roles instead...\n")
+		
+		// Fall back to realm roles
+		realmRoles, realmErr := h.keycloakClient.GetRealmRolesByUserID(ctx, h.adminToken, h.realm, userID)
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error getting realm roles for user: %v\n", realmErr)
+			handleResponse(c, http.StatusInternalServerError, "Failed to get user roles: "+realmErr.Error())
+			return
+		}
+		
+		for _, role := range realmRoles {
+			if strings.HasPrefix(gocloak.PString(role.Name), "subtitles_") {
+				roles = append(roles, gocloak.PString(role.Name))
+			}
+		}
+		
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    roles,
+			"err":     "",
+		})
+		return
+	}
+	
+	clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, clientUUID, userID)
 	if err == nil {
 		for _, role := range clientRoles {
 			if role.Name != nil {
@@ -594,9 +669,42 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	// Get the role from Keycloak (use app client ID where roles are defined)
+	// Get the role from Keycloak (use app client UUID where roles are defined)
 	fmt.Printf("DEBUG: Looking for role '%s' in client '%s' in realm '%s'\n", req.RoleName, h.appClientId, h.realm)
-	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, req.RoleName)
+	
+	// Resolve the client UUID first
+	clientUUID, err := h.resolveAppClientUUID(ctx)
+	if err != nil {
+		fmt.Printf("DEBUG: Error resolving client UUID: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm role instead...\n")
+		
+		// Fall back to realm role
+		role, realmErr := h.keycloakClient.GetRealmRole(ctx, h.adminToken, h.realm, req.RoleName)
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error getting realm role: %v\n", realmErr)
+			handleResponse(c, http.StatusNotFound, "Role not found: "+req.RoleName)
+			return
+		}
+		
+		fmt.Printf("DEBUG: Found realm role: %+v\n", role)
+		
+		// Assign realm role to user
+		err = h.keycloakClient.AddRealmRoleToUser(ctx, h.adminToken, h.realm, userID, []gocloak.Role{*role})
+		if err != nil {
+			fmt.Printf("DEBUG: Error assigning realm role to user: %v\n", err)
+			handleResponse(c, http.StatusInternalServerError, "Failed to assign role: "+err.Error())
+			return
+		}
+		
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    fmt.Sprintf("Realm role %s assigned to user %s successfully", req.RoleName, userID),
+			"err":     "",
+		})
+		return
+	}
+	
+	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, clientUUID, req.RoleName)
 	if err != nil {
 		fmt.Printf("DEBUG: Error getting client role: %v\n", err)
 		fmt.Printf("DEBUG: Trying realm role instead...\n")
@@ -628,7 +736,7 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 	fmt.Printf("DEBUG: Found client role: %+v\n", role)
 
 	// Assign the role to the user
-	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
+	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, clientUUID, userID, []gocloak.Role{*role})
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to assign role: "+err.Error())
 		return
@@ -664,9 +772,42 @@ func (h *AdminHandler) RemoveUserRole(c *gin.Context) {
 		return
 	}
 
-	// Get the role from Keycloak (use app client ID where roles are defined)
+	// Get the role from Keycloak (use app client UUID where roles are defined)
 	fmt.Printf("DEBUG: Looking for role '%s' in client '%s' in realm '%s' for removal\n", roleName, h.appClientId, h.realm)
-	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, roleName)
+	
+	// Resolve the client UUID first
+	clientUUID, err := h.resolveAppClientUUID(ctx)
+	if err != nil {
+		fmt.Printf("DEBUG: Error resolving client UUID: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm role instead...\n")
+		
+		// Fall back to realm role
+		role, realmErr := h.keycloakClient.GetRealmRole(ctx, h.adminToken, h.realm, roleName)
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error getting realm role for removal: %v\n", realmErr)
+			handleResponse(c, http.StatusNotFound, "Role not found: "+roleName)
+			return
+		}
+		
+		fmt.Printf("DEBUG: Found realm role for removal: %+v\n", role)
+		
+		// Remove realm role from user
+		err = h.keycloakClient.DeleteRealmRoleFromUser(ctx, h.adminToken, h.realm, userID, []gocloak.Role{*role})
+		if err != nil {
+			fmt.Printf("DEBUG: Error removing realm role from user: %v\n", err)
+			handleResponse(c, http.StatusInternalServerError, "Failed to remove role: "+err.Error())
+			return
+		}
+		
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    fmt.Sprintf("Realm role %s removed from user %s successfully", roleName, userID),
+			"err":     "",
+		})
+		return
+	}
+	
+	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, clientUUID, roleName)
 	if err != nil {
 		fmt.Printf("DEBUG: Error getting client role for removal: %v\n", err)
 		fmt.Printf("DEBUG: Trying realm role instead...\n")
@@ -698,7 +839,7 @@ func (h *AdminHandler) RemoveUserRole(c *gin.Context) {
 	fmt.Printf("DEBUG: Found client role for removal: %+v\n", role)
 
 	// Remove the role from the user
-	err = h.keycloakClient.DeleteClientRoleFromUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
+	err = h.keycloakClient.DeleteClientRoleFromUser(ctx, h.adminToken, h.realm, clientUUID, userID, []gocloak.Role{*role})
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to remove role: "+err.Error())
 		return
@@ -752,7 +893,44 @@ func (h *AdminHandler) ListAvailableRoles(c *gin.Context) {
 
 	// Get actual roles from Keycloak - try client roles first, then realm roles
 	fmt.Printf("DEBUG: Fetching roles from client '%s' in realm '%s'\n", h.appClientId, h.realm)
-	keycloakRoles, err := h.keycloakClient.GetClientRoles(ctx, h.adminToken, h.realm, h.appClientId, gocloak.GetRoleParams{})
+	
+	// Resolve the client UUID first
+	clientUUID, err := h.resolveAppClientUUID(ctx)
+	if err != nil {
+		fmt.Printf("DEBUG: Error resolving client UUID: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm roles instead...\n")
+		
+		// Fall back to realm roles
+		realmRoles, realmErr := h.keycloakClient.GetRealmRoles(ctx, h.adminToken, h.realm, gocloak.GetRoleParams{})
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error fetching realm roles: %v\n", realmErr)
+			handleResponse(c, http.StatusInternalServerError, "Failed to get roles from Keycloak: "+err.Error())
+			return
+		}
+		
+		// Convert realm roles to our format
+		roles := make([]RoleInfo, 0)
+		for _, role := range realmRoles {
+			// Only include subtitles-related roles
+			if strings.HasPrefix(gocloak.PString(role.Name), "subtitles_") {
+				roles = append(roles, RoleInfo{
+					ID:          gocloak.PString(role.ID),
+					Name:        gocloak.PString(role.Name),
+					Description: gocloak.PString(role.Description),
+				})
+			}
+		}
+		
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    roles,
+			"err":     "",
+		})
+		return
+	}
+	
+	// Use the client UUID to get client roles
+	keycloakRoles, err := h.keycloakClient.GetClientRoles(ctx, h.adminToken, h.realm, clientUUID, gocloak.GetRoleParams{})
 	if err != nil {
 		fmt.Printf("DEBUG: Error fetching client roles: %v\n", err)
 		fmt.Printf("DEBUG: Trying realm roles instead...\n")
