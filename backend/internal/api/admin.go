@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -193,13 +194,21 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	// Get users from Keycloak with search parameters
+	// Get users from Keycloak with search parameters and pagination
 	params := gocloak.GetUsersParams{
-		Max: gocloak.IntP(1000), // Increase limit to get more users
+		Max: gocloak.IntP(50), // Limit to 50 users per page for performance
 	}
 	if searchTerm != "" {
 		params.Search = &searchTerm
 	}
+	
+	// Add pagination support
+	page := c.DefaultQuery("page", "1")
+	pageInt, err := strconv.Atoi(page)
+	if err != nil || pageInt < 1 {
+		pageInt = 1
+	}
+	params.First = gocloak.IntP((pageInt - 1) * 50) // Calculate offset
 
 	keycloakUsers, err := h.keycloakClient.GetUsers(ctx, h.adminToken, h.realm, params)
 	if err != nil {
@@ -265,6 +274,10 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		"success": true,
 		"data":    users,
 		"err":     "",
+		"total":   len(users),
+		"page":    pageInt,
+		"pageSize": 50,
+		"hasMore": len(users) == 50, // If we got exactly 50, there might be more
 	})
 }
 
