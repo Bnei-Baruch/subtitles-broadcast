@@ -57,6 +57,7 @@ var (
 type AdminHandler struct {
 	realm          string
 	clientId       string
+	appClientId    string
 	keycloakClient *gocloak.GoCloak
 	adminToken     string
 }
@@ -101,6 +102,7 @@ type RoleAssignmentRequest struct {
 func NewAdminHandler() *AdminHandler {
 	realm := os.Getenv("BSSVR_KEYCLOAK_REALM")
 	clientId := os.Getenv(config.EnvBssvrKeycloakClientId)
+	appClientId := os.Getenv(config.EnvBssvrKeycloakAppClientId)
 	keycloakURL := os.Getenv("BSSVR_KEYCLOAK_URL")
 
 	// Initialize Keycloak client
@@ -109,6 +111,7 @@ func NewAdminHandler() *AdminHandler {
 	return &AdminHandler{
 		realm:          realm,
 		clientId:       clientId,
+		appClientId:    appClientId,
 		keycloakClient: client,
 		adminToken:     "", // Will be set when we authenticate
 	}
@@ -284,9 +287,9 @@ func (h *AdminHandler) GetUserRoles(c *gin.Context) {
 		return
 	}
 
-	// Get user roles from Keycloak
+	// Get user roles from Keycloak (use app client ID where roles are defined)
 	roles := []string{}
-	clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, h.clientId, userID)
+	clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, h.appClientId, userID)
 	if err == nil {
 		for _, role := range clientRoles {
 			if role.Name != nil {
@@ -554,15 +557,15 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	// Get the role from Keycloak
-	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.clientId, req.RoleName)
+	// Get the role from Keycloak (use app client ID where roles are defined)
+	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, req.RoleName)
 	if err != nil {
 		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
 		return
 	}
 
 	// Assign the role to the user
-	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, h.clientId, userID, []gocloak.Role{*role})
+	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to assign role: "+err.Error())
 		return
@@ -598,15 +601,15 @@ func (h *AdminHandler) RemoveUserRole(c *gin.Context) {
 		return
 	}
 
-	// Get the role from Keycloak
-	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.clientId, roleName)
+	// Get the role from Keycloak (use app client ID where roles are defined)
+	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, roleName)
 	if err != nil {
 		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
 		return
 	}
 
 	// Remove the role from the user
-	err = h.keycloakClient.DeleteClientRoleFromUser(ctx, h.adminToken, h.realm, h.clientId, userID, []gocloak.Role{*role})
+	err = h.keycloakClient.DeleteClientRoleFromUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to remove role: "+err.Error())
 		return

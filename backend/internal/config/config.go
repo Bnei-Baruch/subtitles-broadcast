@@ -20,6 +20,7 @@ const (
 	EnvBssvrPostgresUri     = "BSSVR_POSTGRES_URI"
 	EnvBssvrKeycloakUri     = "BSSVR_KEYCLOAK_URI"
 	EnvBssvrKeycloakClientId = "BSSVR_KEYCLOAK_CLIENT_ID"
+	EnvBssvrKeycloakAppClientId = "BSSVR_KEYCLOAK_APP_CLIENT_ID"
 	EnvFile                 = ".env"
 )
 
