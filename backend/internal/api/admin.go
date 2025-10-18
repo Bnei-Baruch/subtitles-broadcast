@@ -201,7 +201,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	if searchTerm != "" {
 		params.Search = &searchTerm
 	}
-	
+
 	// Add pagination support
 	page := c.DefaultQuery("page", "1")
 	pageInt, err := strconv.Atoi(page)
@@ -271,13 +271,13 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    users,
-		"err":     "",
-		"total":   len(users),
-		"page":    pageInt,
+		"success":  true,
+		"data":     users,
+		"err":      "",
+		"total":    len(users),
+		"page":     pageInt,
 		"pageSize": 50,
-		"hasMore": len(users) == 50, // If we got exactly 50, there might be more
+		"hasMore":  len(users) == 50, // If we got exactly 50, there might be more
 	})
 }
 
