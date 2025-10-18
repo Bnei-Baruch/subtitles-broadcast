@@ -83,8 +83,28 @@ const AdminRoleManagement = () => {
         : "/admin/users";
       const response = await axios.get(url);
       const fetchedUsers = response.data.data || [];
-      setUsers(fetchedUsers);
-      setFilteredUsers(fetchedUsers); // Set filtered users to the same as fetched users
+      
+      // Fetch roles for each user
+      const usersWithRoles = await Promise.all(
+        fetchedUsers.map(async (user) => {
+          try {
+            const rolesResponse = await axios.get(`/admin/users/${user.id}/roles`);
+            return {
+              ...user,
+              roles: rolesResponse.data.data || []
+            };
+          } catch (err) {
+            console.error(`Failed to fetch roles for user ${user.id}:`, err);
+            return {
+              ...user,
+              roles: []
+            };
+          }
+        })
+      );
+      
+      setUsers(usersWithRoles);
+      setFilteredUsers(usersWithRoles); // Set filtered users to the same as fetched users
     } catch (err) {
       setError(
         "Failed to fetch users: " + (err.response?.data?.err || err.message)
@@ -265,7 +285,18 @@ const AdminRoleManagement = () => {
   };
 
   const getUserRoles = (user) => {
-    return user.roles || [];
+    // Handle both old format (array of role objects) and new format (array of role names)
+    if (!user.roles || !Array.isArray(user.roles)) {
+      return [];
+    }
+    
+    // If roles are strings (role names), convert to role objects
+    return user.roles.map(role => {
+      if (typeof role === 'string') {
+        return { id: role, name: role };
+      }
+      return role;
+    });
   };
 
   const hasRole = (user, roleId) => {
