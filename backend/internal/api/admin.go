@@ -305,6 +305,21 @@ func (h *AdminHandler) GetUserRoles(c *gin.Context) {
 				roles = append(roles, *role.Name)
 			}
 		}
+	} else {
+		fmt.Printf("DEBUG: Error getting client roles for user: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm roles for user instead...\n")
+		
+		// Fall back to realm roles
+		realmRoles, realmErr := h.keycloakClient.GetRealmRolesByUserID(ctx, h.adminToken, h.realm, userID)
+		if realmErr == nil {
+			for _, role := range realmRoles {
+				if role.Name != nil {
+					roles = append(roles, *role.Name)
+				}
+			}
+		} else {
+			fmt.Printf("DEBUG: Error getting realm roles for user: %v\n", realmErr)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
