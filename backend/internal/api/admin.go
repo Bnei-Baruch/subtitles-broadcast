@@ -558,11 +558,14 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 	}
 
 	// Get the role from Keycloak (use app client ID where roles are defined)
+	fmt.Printf("DEBUG: Looking for role '%s' in client '%s' in realm '%s'\n", req.RoleName, h.appClientId, h.realm)
 	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, req.RoleName)
 	if err != nil {
+		fmt.Printf("DEBUG: Error getting role: %v\n", err)
 		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
 		return
 	}
+	fmt.Printf("DEBUG: Found role: %+v\n", role)
 
 	// Assign the role to the user
 	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
@@ -631,23 +634,67 @@ func (h *AdminHandler) ListAvailableRoles(c *gin.Context) {
 		return
 	}
 
-	// Return the available client roles
-	roles := []RoleInfo{
-		{
-			ID:          "subtitles_admin",
-			Name:        "Admin",
-			Description: "Full access to subtitles application + role management",
-		},
-		{
-			ID:          "subtitles_operator",
-			Name:        "Operator",
-			Description: "Access to Subtitles, Archive, Source, New pages",
-		},
-		{
-			ID:          "subtitles_translator",
-			Name:        "Translator",
-			Description: "Access to Question page",
-		},
+	// Check if we have service account credentials
+	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
+	if clientSecret == "" {
+		// Fall back to hardcoded roles if no service account is configured
+		roles := []RoleInfo{
+			{
+				ID:          "subtitles_admin",
+				Name:        "Admin",
+				Description: "Full access to subtitles application + role management",
+			},
+			{
+				ID:          "subtitles_operator",
+				Name:        "Operator",
+				Description: "Access to Subtitles, Archive, Source, New pages",
+			},
+			{
+				ID:          "subtitles_translator",
+				Name:        "Translator",
+				Description: "Access to Question page",
+			},
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    roles,
+			"err":     "",
+		})
+		return
+	}
+
+	// Get actual roles from Keycloak
+	fmt.Printf("DEBUG: Fetching roles from client '%s' in realm '%s'\n", h.appClientId, h.realm)
+	keycloakRoles, err := h.keycloakClient.GetClientRoles(ctx, h.adminToken, h.realm, h.appClientId)
+	if err != nil {
+		fmt.Printf("DEBUG: Error fetching roles: %v\n", err)
+		handleResponse(c, http.StatusInternalServerError, "Failed to get roles from Keycloak: "+err.Error())
+		return
+	}
+
+	fmt.Printf("DEBUG: Found %d roles in Keycloak\n", len(keycloakRoles))
+	for i, role := range keycloakRoles {
+		fmt.Printf("DEBUG: Role %d: %+v\n", i, role)
+	}
+
+	// Convert Keycloak roles to our format
+	roles := make([]RoleInfo, len(keycloakRoles))
+	for i, role := range keycloakRoles {
+		roleName := ""
+		if role.Name != nil {
+			roleName = *role.Name
+		}
+		roleDescription := ""
+		if role.Description != nil {
+			roleDescription = *role.Description
+		}
+
+		roles[i] = RoleInfo{
+			ID:          roleName,
+			Name:        roleName,
+			Description: roleDescription,
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
