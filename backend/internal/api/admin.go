@@ -174,20 +174,9 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	// Convert Keycloak users to our UserInfo format
 	users := make([]UserInfo, len(keycloakUsers))
 	for i, keycloakUser := range keycloakUsers {
-		// Check if user has temporary credentials
+		// For now, we'll set temporary to false by default
+		// TODO: Implement proper temporary credential checking when gocloak supports it
 		temporary := false
-		if keycloakUser.ID != nil {
-			credentials, err := h.keycloakClient.GetUserCredentials(ctx, h.adminToken, h.realm, *keycloakUser.ID)
-			if err == nil && len(credentials) > 0 {
-				// Check if any credential is temporary
-				for _, cred := range credentials {
-					if cred.Temporary != nil && *cred.Temporary {
-						temporary = true
-						break
-					}
-				}
-			}
-		}
 
 		users[i] = UserInfo{
 			ID:            *keycloakUser.ID,
