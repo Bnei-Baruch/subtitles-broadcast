@@ -666,7 +666,7 @@ func (h *AdminHandler) ListAvailableRoles(c *gin.Context) {
 
 	// Get actual roles from Keycloak
 	fmt.Printf("DEBUG: Fetching roles from client '%s' in realm '%s'\n", h.appClientId, h.realm)
-	keycloakRoles, err := h.keycloakClient.GetClientRoles(ctx, h.adminToken, h.realm, h.appClientId)
+	keycloakRoles, err := h.keycloakClient.GetClientRoles(ctx, h.adminToken, h.realm, h.appClientId, gocloak.GetRoleParams{})
 	if err != nil {
 		fmt.Printf("DEBUG: Error fetching roles: %v\n", err)
 		handleResponse(c, http.StatusInternalServerError, "Failed to get roles from Keycloak: "+err.Error())
