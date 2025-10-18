@@ -36,7 +36,7 @@ const AdminRoleManagement = () => {
     emailVerified: false,
     password: "",
     passwordConfirm: "",
-    temporary: false,
+    temporary: true, // Default to true, matching Keycloak behavior
   });
   const [selectedRole, setSelectedRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -255,7 +255,7 @@ const AdminRoleManagement = () => {
       emailVerified: false,
       password: "",
       passwordConfirm: "",
-      temporary: false,
+      temporary: true, // Default to true, matching Keycloak behavior
     });
     setSelectedUser(null);
     setShowPassword(false);

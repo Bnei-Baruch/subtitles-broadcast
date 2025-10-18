@@ -24,7 +24,7 @@ var (
 			LastName:      "Admin",
 			Enabled:       true,
 			EmailVerified: true,
-			Temporary:     false,
+			Temporary:     true, // Default to true, matching Keycloak behavior
 			Roles:         []string{"subtitles_admin"},
 		},
 		{
@@ -35,7 +35,7 @@ var (
 			LastName:      "Operator",
 			Enabled:       true,
 			EmailVerified: true,
-			Temporary:     false,
+			Temporary:     true, // Default to true, matching Keycloak behavior
 			Roles:         []string{"subtitles_operator"},
 		},
 		{
@@ -46,7 +46,7 @@ var (
 			LastName:      "Translator",
 			Enabled:       true,
 			EmailVerified: false,
-			Temporary:     true,
+			Temporary:     true, // Default to true, matching Keycloak behavior
 			Roles:         []string{"subtitles_translator"},
 		},
 	}
@@ -174,9 +174,9 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	// Convert Keycloak users to our UserInfo format
 	users := make([]UserInfo, len(keycloakUsers))
 	for i, keycloakUser := range keycloakUsers {
-		// For now, we'll set temporary to false by default
+		// For now, we'll set temporary to true by default (matching Keycloak behavior)
 		// TODO: Implement proper temporary credential checking when gocloak supports it
-		temporary := false
+		temporary := true
 
 		users[i] = UserInfo{
 			ID:            *keycloakUser.ID,
