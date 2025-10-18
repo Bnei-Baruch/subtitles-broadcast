@@ -24,6 +24,7 @@ var (
 			LastName:      "Admin",
 			Enabled:       true,
 			EmailVerified: true,
+			Temporary:     false,
 			Roles:         []string{"subtitles_admin"},
 		},
 		{
@@ -34,6 +35,7 @@ var (
 			LastName:      "Operator",
 			Enabled:       true,
 			EmailVerified: true,
+			Temporary:     false,
 			Roles:         []string{"subtitles_operator"},
 		},
 		{
@@ -44,6 +46,7 @@ var (
 			LastName:      "Translator",
 			Enabled:       true,
 			EmailVerified: false,
+			Temporary:     true,
 			Roles:         []string{"subtitles_translator"},
 		},
 	}
@@ -67,6 +70,7 @@ type UserInfo struct {
 	LastName      string   `json:"lastName"`
 	Enabled       bool     `json:"enabled"`
 	EmailVerified bool     `json:"emailVerified"`
+	Temporary     bool     `json:"temporary"`
 	Roles         []string `json:"roles,omitempty"`
 }
 
@@ -170,6 +174,21 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	// Convert Keycloak users to our UserInfo format
 	users := make([]UserInfo, len(keycloakUsers))
 	for i, keycloakUser := range keycloakUsers {
+		// Check if user has temporary credentials
+		temporary := false
+		if keycloakUser.ID != nil {
+			credentials, err := h.keycloakClient.GetUserCredentials(ctx, h.adminToken, h.realm, *keycloakUser.ID)
+			if err == nil && len(credentials) > 0 {
+				// Check if any credential is temporary
+				for _, cred := range credentials {
+					if cred.Temporary != nil && *cred.Temporary {
+						temporary = true
+						break
+					}
+				}
+			}
+		}
+
 		users[i] = UserInfo{
 			ID:            *keycloakUser.ID,
 			Username:      *keycloakUser.Username,
@@ -178,6 +197,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 			LastName:      *keycloakUser.LastName,
 			Enabled:       *keycloakUser.Enabled,
 			EmailVerified: *keycloakUser.EmailVerified,
+			Temporary:     temporary,
 			Roles:         []string{}, // TODO: Get user roles
 		}
 	}

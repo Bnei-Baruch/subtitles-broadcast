@@ -230,7 +230,7 @@ const AdminRoleManagement = () => {
         emailVerified: user.emailVerified || false,
         password: "", // Don't populate password for security
         passwordConfirm: "", // Don't populate password confirmation
-        temporary: false, // Default to false for existing users
+        temporary: user.temporary || false, // Use actual temporary status from user data
       });
       setSelectedUser(user);
     } else {
