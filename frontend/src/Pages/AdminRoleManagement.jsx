@@ -41,6 +41,12 @@ const AdminRoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [paginationInfo, setPaginationInfo] = useState({
+    page: 1,
+    pageSize: 50,
+    hasMore: false,
+    total: 0,
+  });
 
   // Available client roles
   const clientRoles = [
@@ -70,41 +76,52 @@ const AdminRoleManagement = () => {
 
   useEffect(() => {
     // Fetch users when search term changes (server-side search)
-    fetchUsers();
+    // Reset to page 1 when search term changes
+    fetchUsers(1);
   }, [searchTerm]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
     setLoading(true);
     setError("");
     try {
-      // Send search parameter to backend for server-side filtering
+      // Send search parameter and page to backend for server-side filtering and pagination
       const url = searchTerm
-        ? `/admin/users?search=${encodeURIComponent(searchTerm)}`
-        : "/admin/users";
+        ? `/admin/users?search=${encodeURIComponent(searchTerm)}&page=${page}`
+        : `/admin/users?page=${page}`;
       const response = await axios.get(url);
       const fetchedUsers = response.data.data || [];
-      
-      // Fetch roles for each user
+
+      // Only fetch roles for users on current page (max 50 users)
       const usersWithRoles = await Promise.all(
         fetchedUsers.map(async (user) => {
           try {
-            const rolesResponse = await axios.get(`/admin/users/${user.id}/roles`);
+            const rolesResponse = await axios.get(
+              `/admin/users/${user.id}/roles`
+            );
             return {
               ...user,
-              roles: rolesResponse.data.data || []
+              roles: rolesResponse.data.data || [],
             };
           } catch (err) {
             console.error(`Failed to fetch roles for user ${user.id}:`, err);
             return {
               ...user,
-              roles: []
+              roles: [],
             };
           }
         })
       );
-      
+
       setUsers(usersWithRoles);
       setFilteredUsers(usersWithRoles); // Set filtered users to the same as fetched users
+
+      // Store pagination info
+      setPaginationInfo({
+        page: response.data.page || 1,
+        pageSize: response.data.pageSize || 50,
+        hasMore: response.data.hasMore || false,
+        total: response.data.total || usersWithRoles.length,
+      });
     } catch (err) {
       setError(
         "Failed to fetch users: " + (err.response?.data?.err || err.message)
@@ -209,7 +226,7 @@ const AdminRoleManagement = () => {
       setSuccess("Role assigned successfully!");
       setShowRoleModal(false);
       setSelectedRole("");
-      fetchUsers();
+      fetchUsers(paginationInfo.page); // Refresh current page
     } catch (err) {
       setError(
         "Failed to assign role: " + (err.response?.data?.err || err.message)
@@ -232,7 +249,7 @@ const AdminRoleManagement = () => {
     try {
       await axios.delete(`/admin/users/${userId}/roles/${roleName}`);
       setSuccess("Role removed successfully!");
-      fetchUsers();
+      fetchUsers(paginationInfo.page); // Refresh current page
     } catch (err) {
       setError(
         "Failed to remove role: " + (err.response?.data?.err || err.message)
@@ -289,10 +306,10 @@ const AdminRoleManagement = () => {
     if (!user.roles || !Array.isArray(user.roles)) {
       return [];
     }
-    
+
     // If roles are strings (role names), convert to role objects
-    return user.roles.map(role => {
-      if (typeof role === 'string') {
+    return user.roles.map((role) => {
+      if (typeof role === "string") {
         return { id: role, name: role };
       }
       return role;
@@ -498,6 +515,34 @@ const AdminRoleManagement = () => {
                     )}
                   </tbody>
                 </Table>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <div className="text-muted">
+                  Showing {users.length} of {paginationInfo.total} users
+                </div>
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    disabled={paginationInfo.page <= 1}
+                    onClick={() => fetchUsers(paginationInfo.page - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="align-self-center px-2">
+                    Page {paginationInfo.page}
+                  </span>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    disabled={!paginationInfo.hasMore}
+                    onClick={() => fetchUsers(paginationInfo.page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </Card.Body>
           </Card>
