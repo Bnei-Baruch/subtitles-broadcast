@@ -652,11 +652,37 @@ func (h *AdminHandler) RemoveUserRole(c *gin.Context) {
 	}
 
 	// Get the role from Keycloak (use app client ID where roles are defined)
+	fmt.Printf("DEBUG: Looking for role '%s' in client '%s' in realm '%s' for removal\n", roleName, h.appClientId, h.realm)
 	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, roleName)
 	if err != nil {
-		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
+		fmt.Printf("DEBUG: Error getting client role for removal: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm role instead...\n")
+
+		// Try realm role as fallback
+		realmRole, realmErr := h.keycloakClient.GetRealmRole(ctx, h.adminToken, h.realm, roleName)
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error getting realm role for removal: %v\n", realmErr)
+			handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
+			return
+		}
+
+		fmt.Printf("DEBUG: Found realm role for removal: %+v\n", realmRole)
+
+		// Remove the realm role from the user
+		err = h.keycloakClient.DeleteRealmRoleFromUser(ctx, h.adminToken, h.realm, userID, []gocloak.Role{*realmRole})
+		if err != nil {
+			handleResponse(c, http.StatusInternalServerError, "Failed to remove realm role: "+err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    fmt.Sprintf("Realm role %s removed from user %s successfully", roleName, userID),
+			"err":     "",
+		})
 		return
 	}
+	fmt.Printf("DEBUG: Found client role for removal: %+v\n", role)
 
 	// Remove the role from the user
 	err = h.keycloakClient.DeleteClientRoleFromUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
