@@ -395,7 +395,7 @@ const AdminRoleManagement = () => {
         overlay={tooltipContent}
         delay={{ show: 250, hide: 100 }}
       >
-        <div className="d-flex flex-wrap" style={{ maxHeight: "2.5em", overflow: "hidden" }}>
+        <div className="d-flex flex-wrap align-items-center" style={{ maxHeight: "2.5em", overflow: "hidden" }}>
           {roleElements}
         </div>
       </OverlayTrigger>
