@@ -137,13 +137,16 @@ func (h *AdminHandler) authenticateAdmin(ctx context.Context) error {
 		return nil
 	}
 
+	fmt.Printf("DEBUG: Authenticating service account with client '%s' in realm '%s'\n", h.clientId, h.realm)
 	// Authenticate with Keycloak using client credentials
 	token, err := h.keycloakClient.LoginClient(ctx, h.clientId, clientSecret, h.realm)
 	if err != nil {
+		fmt.Printf("DEBUG: Service account authentication failed: %v\n", err)
 		return fmt.Errorf("failed to authenticate with Keycloak: %v", err)
 	}
 
 	h.adminToken = token.AccessToken
+	fmt.Printf("DEBUG: Service account authenticated successfully\n")
 	return nil
 }
 
@@ -567,11 +570,34 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 	fmt.Printf("DEBUG: Looking for role '%s' in client '%s' in realm '%s'\n", req.RoleName, h.appClientId, h.realm)
 	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.appClientId, req.RoleName)
 	if err != nil {
-		fmt.Printf("DEBUG: Error getting role: %v\n", err)
-		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
+		fmt.Printf("DEBUG: Error getting client role: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm role instead...\n")
+		
+		// Try realm role as fallback
+		realmRole, realmErr := h.keycloakClient.GetRealmRole(ctx, h.adminToken, h.realm, req.RoleName)
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error getting realm role: %v\n", realmErr)
+			handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
+			return
+		}
+		
+		fmt.Printf("DEBUG: Found realm role: %+v\n", realmRole)
+		
+		// Assign the realm role to the user
+		err = h.keycloakClient.AddRealmRoleToUser(ctx, h.adminToken, h.realm, userID, []gocloak.Role{*realmRole})
+		if err != nil {
+			handleResponse(c, http.StatusInternalServerError, "Failed to assign realm role: "+err.Error())
+			return
+		}
+		
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    fmt.Sprintf("Realm role %s assigned to user %s successfully", req.RoleName, userID),
+			"err":     "",
+		})
 		return
 	}
-	fmt.Printf("DEBUG: Found role: %+v\n", role)
+	fmt.Printf("DEBUG: Found client role: %+v\n", role)
 
 	// Assign the role to the user
 	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, h.appClientId, userID, []gocloak.Role{*role})
@@ -670,12 +696,50 @@ func (h *AdminHandler) ListAvailableRoles(c *gin.Context) {
 		return
 	}
 
-	// Get actual roles from Keycloak
+	// Get actual roles from Keycloak - try client roles first, then realm roles
 	fmt.Printf("DEBUG: Fetching roles from client '%s' in realm '%s'\n", h.appClientId, h.realm)
 	keycloakRoles, err := h.keycloakClient.GetClientRoles(ctx, h.adminToken, h.realm, h.appClientId, gocloak.GetRoleParams{})
 	if err != nil {
-		fmt.Printf("DEBUG: Error fetching roles: %v\n", err)
-		handleResponse(c, http.StatusInternalServerError, "Failed to get roles from Keycloak: "+err.Error())
+		fmt.Printf("DEBUG: Error fetching client roles: %v\n", err)
+		fmt.Printf("DEBUG: Trying realm roles instead...\n")
+		
+		// Fall back to realm roles
+		realmRoles, realmErr := h.keycloakClient.GetRealmRoles(ctx, h.adminToken, h.realm, gocloak.GetRoleParams{})
+		if realmErr != nil {
+			fmt.Printf("DEBUG: Error fetching realm roles: %v\n", realmErr)
+			handleResponse(c, http.StatusInternalServerError, "Failed to get roles from Keycloak: "+err.Error())
+			return
+		}
+		
+		fmt.Printf("DEBUG: Found %d realm roles in Keycloak\n", len(realmRoles))
+		for i, role := range realmRoles {
+			fmt.Printf("DEBUG: Realm Role %d: %+v\n", i, role)
+		}
+		
+		// Convert realm roles to our format
+		roles := make([]RoleInfo, len(realmRoles))
+		for i, role := range realmRoles {
+			roleName := ""
+			if role.Name != nil {
+				roleName = *role.Name
+			}
+			roleDescription := ""
+			if role.Description != nil {
+				roleDescription = *role.Description
+			}
+
+			roles[i] = RoleInfo{
+				ID:          roleName,
+				Name:        roleName,
+				Description: roleDescription,
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    roles,
+			"err":     "",
+		})
 		return
 	}
 
