@@ -232,6 +232,19 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 			emailVerified = *keycloakUser.EmailVerified
 		}
 
+		// Get user roles from Keycloak
+		roles := []string{}
+		if id != "" {
+			clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, h.clientId, id)
+			if err == nil {
+				for _, role := range clientRoles {
+					if role.Name != nil {
+						roles = append(roles, *role.Name)
+					}
+				}
+			}
+		}
+
 		users[i] = UserInfo{
 			ID:            id,
 			Username:      username,
@@ -241,7 +254,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 			Enabled:       enabled,
 			EmailVerified: emailVerified,
 			Temporary:     temporary,
-			Roles:         []string{}, // TODO: Get user roles
+			Roles:         roles,
 		}
 	}
 
@@ -517,7 +530,32 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	// For now, return success (mock implementation)
+	// Check if we have service account credentials
+	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
+	if clientSecret == "" {
+		// Mock implementation for testing
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    fmt.Sprintf("Role %s assigned to user %s successfully", req.RoleName, userID),
+			"err":     "",
+		})
+		return
+	}
+
+	// Get the role from Keycloak
+	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.clientId, req.RoleName)
+	if err != nil {
+		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
+		return
+	}
+
+	// Assign the role to the user
+	err = h.keycloakClient.AddClientRoleToUser(ctx, h.adminToken, h.realm, h.clientId, userID, []gocloak.Role{*role})
+	if err != nil {
+		handleResponse(c, http.StatusInternalServerError, "Failed to assign role: "+err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    fmt.Sprintf("Role %s assigned to user %s successfully", req.RoleName, userID),
@@ -536,7 +574,32 @@ func (h *AdminHandler) RemoveUserRole(c *gin.Context) {
 		return
 	}
 
-	// For now, return success (mock implementation)
+	// Check if we have service account credentials
+	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
+	if clientSecret == "" {
+		// Mock implementation for testing
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    fmt.Sprintf("Role %s removed from user %s successfully", roleName, userID),
+			"err":     "",
+		})
+		return
+	}
+
+	// Get the role from Keycloak
+	role, err := h.keycloakClient.GetClientRole(ctx, h.adminToken, h.realm, h.clientId, roleName)
+	if err != nil {
+		handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
+		return
+	}
+
+	// Remove the role from the user
+	err = h.keycloakClient.DeleteClientRoleFromUser(ctx, h.adminToken, h.realm, h.clientId, userID, []gocloak.Role{*role})
+	if err != nil {
+		handleResponse(c, http.StatusInternalServerError, "Failed to remove role: "+err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    fmt.Sprintf("Role %s removed from user %s successfully", roleName, userID),
