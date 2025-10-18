@@ -76,22 +76,21 @@
 
 ## Keycloak Configuration Solution
 
-### ✅ Custom Realm Roles Implementation
+### ✅ Service Account Permissions Implementation
 
-**Problem Solved**: Service account `kolman-dev-service` couldn't access `kolman-dev` client roles due to missing permissions.
+**Problem Solved**: Service account needed proper permissions to access client roles.
 
-**Solution**: Created custom realm roles to grant proper permissions:
+**Solution**: Assigned standard realm-management roles to the service account:
 
-#### Custom Realm Roles Created:
-- ✅ **`view-clients`** - Permission to view clients
-- ✅ **`manage-clients`** - Permission to manage client roles
-- ✅ **`view-users`** - Permission to view users  
-- ✅ **`manage-users`** - Permission to manage user roles
+#### Standard Realm-Management Roles:
+- ✅ **`manage-users`** - Permission to manage users
+- ✅ **`manage-clients`** - Permission to manage clients
+- ✅ **`view-users`** - Permission to view users
+- ✅ **`query-clients`** - Permission to query clients
 
 #### Configuration Details:
-- **Composite Roles**: Set to **OFF** (simple permissions, not role containers)
-- **Description**: Clear permission descriptions
-- **Assignment**: All roles assigned to `kolman-dev-service` service account
+- **Standard Roles**: Using built-in Keycloak realm-management roles
+- **Assignment**: All roles assigned to service account via Service Account Roles tab
 
 #### Environment Configuration:
 ```bash
@@ -573,22 +572,13 @@ REACT_APP_KEYCLOAK_CLIENT_ID=YOUR_APP_CLIENT_ID
 - **Authorization Enabled**: ON
 
 **Required Service Account Permissions:**
-The service account needs custom realm roles with the following permissions:
-```
-Role Name: view-clients
-Description: Permission to view clients
+The service account needs standard realm-management roles:
+- `manage-users` - Permission to manage users
+- `manage-clients` - Permission to manage clients
+- `view-users` - Permission to view users
+- `query-clients` - Permission to query clients
 
-Role Name: manage-clients
-Description: Permission to manage client roles
-
-Role Name: view-users
-Description: Permission to view users
-
-Role Name: manage-users
-Description: Permission to manage user roles
-```
-
-**Note**: These custom realm roles should be created with "Composite Roles: OFF" and assigned to the service account.
+**Note**: These are standard Keycloak realm-management roles that should be assigned to the service account.
 
 ### Implementation Status
 
@@ -596,13 +586,13 @@ Description: Permission to manage user roles
 - **Client Role Migration**: Application successfully uses client roles with realm role fallback
 - **Admin Interface**: Complete web-based user and role management system
 - **Service Account Integration**: Backend authenticates with Keycloak using service account
-- **Custom Realm Roles**: Implemented custom permissions for service account access
+- **Service Account Permissions**: Configured standard realm-management roles for service account access
 - **Performance Optimization**: Efficient role fetching with pagination and caching
 
 #### 🔧 Technical Implementation
 
 **Backend Architecture:**
-- **Authentication**: Service account with custom realm roles
+- **Authentication**: Service account with standard realm-management roles
 - **Client UUID Resolution**: Automatic lookup and caching of client UUIDs
 - **Role Management**: Full CRUD operations for user roles
 - **Error Handling**: Graceful fallback to realm roles when client roles fail
