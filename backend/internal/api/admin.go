@@ -161,7 +161,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 	// Get search parameter from query string
 	searchTerm := c.Query("search")
-	
+
 	// Check if we have service account credentials
 	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
 	if clientSecret == "" {
@@ -200,7 +200,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	if searchTerm != "" {
 		params.Search = &searchTerm
 	}
-	
+
 	keycloakUsers, err := h.keycloakClient.GetUsers(ctx, h.adminToken, h.realm, params)
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to get users from Keycloak: "+err.Error())
@@ -308,7 +308,7 @@ func (h *AdminHandler) GetUserRoles(c *gin.Context) {
 	} else {
 		fmt.Printf("DEBUG: Error getting client roles for user: %v\n", err)
 		fmt.Printf("DEBUG: Trying realm roles for user instead...\n")
-		
+
 		// Fall back to realm roles
 		realmRoles, realmErr := h.keycloakClient.GetRealmRolesByUserID(ctx, h.adminToken, h.realm, userID)
 		if realmErr == nil {
@@ -587,7 +587,7 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("DEBUG: Error getting client role: %v\n", err)
 		fmt.Printf("DEBUG: Trying realm role instead...\n")
-		
+
 		// Try realm role as fallback
 		realmRole, realmErr := h.keycloakClient.GetRealmRole(ctx, h.adminToken, h.realm, req.RoleName)
 		if realmErr != nil {
@@ -595,16 +595,16 @@ func (h *AdminHandler) AssignUserRole(c *gin.Context) {
 			handleResponse(c, http.StatusNotFound, "Role not found: "+err.Error())
 			return
 		}
-		
+
 		fmt.Printf("DEBUG: Found realm role: %+v\n", realmRole)
-		
+
 		// Assign the realm role to the user
 		err = h.keycloakClient.AddRealmRoleToUser(ctx, h.adminToken, h.realm, userID, []gocloak.Role{*realmRole})
 		if err != nil {
 			handleResponse(c, http.StatusInternalServerError, "Failed to assign realm role: "+err.Error())
 			return
 		}
-		
+
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
 			"data":    fmt.Sprintf("Realm role %s assigned to user %s successfully", req.RoleName, userID),
@@ -717,7 +717,7 @@ func (h *AdminHandler) ListAvailableRoles(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("DEBUG: Error fetching client roles: %v\n", err)
 		fmt.Printf("DEBUG: Trying realm roles instead...\n")
-		
+
 		// Fall back to realm roles
 		realmRoles, realmErr := h.keycloakClient.GetRealmRoles(ctx, h.adminToken, h.realm, gocloak.GetRoleParams{})
 		if realmErr != nil {
@@ -725,12 +725,12 @@ func (h *AdminHandler) ListAvailableRoles(c *gin.Context) {
 			handleResponse(c, http.StatusInternalServerError, "Failed to get roles from Keycloak: "+err.Error())
 			return
 		}
-		
+
 		fmt.Printf("DEBUG: Found %d realm roles in Keycloak\n", len(realmRoles))
 		for i, role := range realmRoles {
 			fmt.Printf("DEBUG: Realm Role %d: %+v\n", i, role)
 		}
-		
+
 		// Convert realm roles to our format
 		roles := make([]RoleInfo, len(realmRoles))
 		for i, role := range realmRoles {

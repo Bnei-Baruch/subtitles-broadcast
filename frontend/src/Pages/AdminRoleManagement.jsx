@@ -78,7 +78,9 @@ const AdminRoleManagement = () => {
     setError("");
     try {
       // Send search parameter to backend for server-side filtering
-      const url = searchTerm ? `/admin/users?search=${encodeURIComponent(searchTerm)}` : "/admin/users";
+      const url = searchTerm
+        ? `/admin/users?search=${encodeURIComponent(searchTerm)}`
+        : "/admin/users";
       const response = await axios.get(url);
       const fetchedUsers = response.data.data || [];
       setUsers(fetchedUsers);
@@ -104,7 +106,9 @@ const AdminRoleManagement = () => {
   const handleCreateUser = async () => {
     // Validate password confirmation
     if (userForm.password && userForm.password !== userForm.passwordConfirm) {
-      setError("Passwords do not match. Please check your password confirmation.");
+      setError(
+        "Passwords do not match. Please check your password confirmation."
+      );
       return;
     }
 
@@ -130,7 +134,9 @@ const AdminRoleManagement = () => {
   const handleUpdateUser = async () => {
     // Validate password confirmation
     if (userForm.password && userForm.password !== userForm.passwordConfirm) {
-      setError("Passwords do not match. Please check your password confirmation.");
+      setError(
+        "Passwords do not match. Please check your password confirmation."
+      );
       return;
     }
 
@@ -269,9 +275,9 @@ const AdminRoleManagement = () => {
   };
 
   const getRoleBadge = (roleId) => {
-    const role = clientRoles.find((r) => r.id === roleId);
+    const role = availableRoles.find((r) => r.id === roleId);
     return role ? (
-      <Badge bg={role.color} className="me-1">
+      <Badge bg="primary" className="me-1">
         {role.name}
       </Badge>
     ) : (
@@ -577,7 +583,12 @@ const AdminRoleManagement = () => {
                 <Button
                   variant="link"
                   className="position-absolute end-0 top-50 translate-middle-y pe-3"
-                  style={{ border: 'none', background: 'none', padding: '0', zIndex: 10 }}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    padding: "0",
+                    zIndex: 10,
+                  }}
                   onClick={() => setShowPassword(!showPassword)}
                   type="button"
                 >
@@ -596,26 +607,38 @@ const AdminRoleManagement = () => {
                     type={showPasswordConfirm ? "text" : "password"}
                     value={userForm.passwordConfirm}
                     onChange={(e) =>
-                      setUserForm({ ...userForm, passwordConfirm: e.target.value })
+                      setUserForm({
+                        ...userForm,
+                        passwordConfirm: e.target.value,
+                      })
                     }
                     placeholder="Confirm password"
-                    isInvalid={userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm}
+                    isInvalid={
+                      userForm.passwordConfirm &&
+                      userForm.password !== userForm.passwordConfirm
+                    }
                   />
                   <Button
                     variant="link"
                     className="position-absolute end-0 top-50 translate-middle-y pe-3"
-                    style={{ border: 'none', background: 'none', padding: '0', zIndex: 10 }}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      padding: "0",
+                      zIndex: 10,
+                    }}
                     onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                     type="button"
                   >
                     {showPasswordConfirm ? "🙈" : "👁️"}
                   </Button>
                 </div>
-                {userForm.passwordConfirm && userForm.password !== userForm.passwordConfirm && (
-                  <Form.Control.Feedback type="invalid">
-                    Passwords do not match
-                  </Form.Control.Feedback>
-                )}
+                {userForm.passwordConfirm &&
+                  userForm.password !== userForm.passwordConfirm && (
+                    <Form.Control.Feedback type="invalid">
+                      Passwords do not match
+                    </Form.Control.Feedback>
+                  )}
                 <Form.Text className="text-muted">
                   Re-enter the password to confirm
                 </Form.Text>
@@ -671,7 +694,7 @@ const AdminRoleManagement = () => {
                 onChange={(e) => setSelectedRole(e.target.value)}
               >
                 <option value="">Choose a role...</option>
-                {clientRoles.map((role) => (
+                {availableRoles.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.name} - {role.description}
                   </option>
