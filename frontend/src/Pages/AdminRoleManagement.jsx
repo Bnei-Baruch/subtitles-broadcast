@@ -65,28 +65,24 @@ const AdminRoleManagement = () => {
   ];
 
   useEffect(() => {
-    fetchUsers();
     fetchAvailableRoles();
   }, []);
 
   useEffect(() => {
-    // Filter users based on search term
-    const filtered = users.filter(
-      (user) =>
-        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-  }, [users, searchTerm]);
+    // Fetch users when search term changes (server-side search)
+    fetchUsers();
+  }, [searchTerm]);
 
   const fetchUsers = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await axios.get("/admin/users");
-      setUsers(response.data.data || []);
+      // Send search parameter to backend for server-side filtering
+      const url = searchTerm ? `/admin/users?search=${encodeURIComponent(searchTerm)}` : "/admin/users";
+      const response = await axios.get(url);
+      const fetchedUsers = response.data.data || [];
+      setUsers(fetchedUsers);
+      setFilteredUsers(fetchedUsers); // Set filtered users to the same as fetched users
     } catch (err) {
       setError(
         "Failed to fetch users: " + (err.response?.data?.err || err.message)

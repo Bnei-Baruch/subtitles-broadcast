@@ -147,6 +147,9 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
+	// Get search parameter from query string
+	searchTerm := c.Query("search")
+	
 	// Check if we have service account credentials
 	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
 	if clientSecret == "" {
@@ -156,6 +159,20 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		copy(users, mockUsers)
 		mockUsersMutex.RUnlock()
 
+		// Apply client-side filtering for mock data
+		if searchTerm != "" {
+			filteredUsers := []UserInfo{}
+			for _, user := range users {
+				if strings.Contains(strings.ToLower(user.Username), strings.ToLower(searchTerm)) ||
+					strings.Contains(strings.ToLower(user.Email), strings.ToLower(searchTerm)) ||
+					strings.Contains(strings.ToLower(user.FirstName), strings.ToLower(searchTerm)) ||
+					strings.Contains(strings.ToLower(user.LastName), strings.ToLower(searchTerm)) {
+					filteredUsers = append(filteredUsers, user)
+				}
+			}
+			users = filteredUsers
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
 			"data":    users,
@@ -164,8 +181,15 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	// Get users from Keycloak
-	keycloakUsers, err := h.keycloakClient.GetUsers(ctx, h.adminToken, h.realm, gocloak.GetUsersParams{})
+	// Get users from Keycloak with search parameters
+	params := gocloak.GetUsersParams{
+		Max: gocloak.IntP(1000), // Increase limit to get more users
+	}
+	if searchTerm != "" {
+		params.Search = &searchTerm
+	}
+	
+	keycloakUsers, err := h.keycloakClient.GetUsers(ctx, h.adminToken, h.realm, params)
 	if err != nil {
 		handleResponse(c, http.StatusInternalServerError, "Failed to get users from Keycloak: "+err.Error())
 		return
