@@ -232,18 +232,9 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 			emailVerified = *keycloakUser.EmailVerified
 		}
 
-		// Get user roles from Keycloak
+		// For now, skip individual role fetching to avoid performance issues
+		// TODO: Implement batch role fetching or caching mechanism
 		roles := []string{}
-		if id != "" {
-			clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, h.clientId, id)
-			if err == nil {
-				for _, role := range clientRoles {
-					if role.Name != nil {
-						roles = append(roles, *role.Name)
-					}
-				}
-			}
-		}
 
 		users[i] = UserInfo{
 			ID:            id,
@@ -275,17 +266,38 @@ func (h *AdminHandler) GetUserRoles(c *gin.Context) {
 		return
 	}
 
-	// For now, return mock data
-	mockRoles := []string{"subtitles_admin"}
-	if strings.Contains(userID, "operator") {
-		mockRoles = []string{"subtitles_operator"}
-	} else if strings.Contains(userID, "translator") {
-		mockRoles = []string{"subtitles_translator"}
+	// Check if we have service account credentials
+	clientSecret := os.Getenv("BSSVR_KEYCLOAK_CLIENT_SECRET")
+	if clientSecret == "" {
+		// Mock implementation for testing
+		mockRoles := []string{"subtitles_admin"}
+		if strings.Contains(userID, "operator") {
+			mockRoles = []string{"subtitles_operator"}
+		} else if strings.Contains(userID, "translator") {
+			mockRoles = []string{"subtitles_translator"}
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    mockRoles,
+			"err":     "",
+		})
+		return
+	}
+
+	// Get user roles from Keycloak
+	roles := []string{}
+	clientRoles, err := h.keycloakClient.GetClientRolesByUserID(ctx, h.adminToken, h.realm, h.clientId, userID)
+	if err == nil {
+		for _, role := range clientRoles {
+			if role.Name != nil {
+				roles = append(roles, *role.Name)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    mockRoles,
+		"data":    roles,
 		"err":     "",
 	})
 }
