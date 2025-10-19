@@ -1,8 +1,19 @@
 import { useEffect, useRef } from "react";
 import mqtt from "mqtt";
 import { useDispatch, useSelector } from "react-redux";
-import { setConnected, updateMqttTopic, mqttMessageReceived, setClientId, addMqttError } from "../Redux/MQTT/mqttSlice";
-import { DM_NONE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
+import {
+  setConnected,
+  updateMqttTopic,
+  mqttMessageReceived,
+  setClientId,
+  addMqttError,
+} from "../Redux/MQTT/mqttSlice";
+import {
+  DM_NONE,
+  ST_QUESTION,
+  ST_SUBTITLE,
+  broadcastLanguages,
+} from "../Utils/Const";
 import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
@@ -13,29 +24,39 @@ const mqttPort = process.env.REACT_APP_MQTT_PORT;
 const mqttPath = process.env.REACT_APP_MQTT_PATH;
 
 // Debug logging to see what we're getting
-console.log('MQTT Path debug:', {
+console.log("MQTT Path debug:", {
   mqttPath,
   mqttPathType: typeof mqttPath,
-  mqttPathLength: mqttPath ? mqttPath.length : 'undefined',
-  mqttPathTrimmed: mqttPath ? mqttPath.trim() : 'undefined',
-  isEmpty: !mqttPath || mqttPath.trim() === ''
+  mqttPathLength: mqttPath ? mqttPath.length : "undefined",
+  mqttPathTrimmed: mqttPath ? mqttPath.trim() : "undefined",
+  isEmpty: !mqttPath || mqttPath.trim() === "",
 });
 
 // Handle empty or falsy MQTT path - use a default path or omit it entirely
-const mqttBrokerUrl = mqttPath && mqttPath.trim() !== '' 
-  ? `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
-  : `${mqttProtocol}://${mqttUrl}:${mqttPort}`;
+const mqttBrokerUrl =
+  mqttPath && mqttPath.trim() !== ""
+    ? `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
+    : `${mqttProtocol}://${mqttUrl}:${mqttPort}`;
 
 export default function useMqtt() {
   const clientRef = useRef(null);
   const clientIdRef = useRef(null);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
-  const { username, firstName, lastName, token, email } = useSelector((state) => state.UserProfile.userProfile);
-  const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
-  const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_program_code || "morning_lesson"); 
+  const { username, firstName, lastName, token, email } = useSelector(
+    (state) => state.UserProfile.userProfile
+  );
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
+  const broadcastProgrammCode = useSelector(
+    (state) =>
+      state.userSettings.userSettings.broadcast_program_code || "morning_lesson"
+  );
   const isConnected = useSelector((state) => state.mqtt.isConnected);
-  const userSettingsLoaded = useSelector((state) => state.userSettings.isLoaded);
+  const userSettingsLoaded = useSelector(
+    (state) => state.userSettings.isLoaded
+  );
 
   let clientId = useSelector((state) => state.mqtt.clientId);
   if (!clientId) {
@@ -48,16 +69,20 @@ export default function useMqtt() {
   useEffect(() => {
     if (isConnected && userSettingsLoaded) {
       // Subscribe to all topics.
-      const topics = Object.keys(mqttTopics).filter((topic) => !mqttTopics[topic]?.isSubscribed);
+      const topics = Object.keys(mqttTopics).filter(
+        (topic) => !mqttTopics[topic]?.isSubscribed
+      );
       if (topics.length) {
         clientRef.current.subscribe(topics, (err, granted) => {
           if (err) {
-            const errMsg = `MQTT failed to subsribe to ${topics.join(',')}: ${err}`;
+            const errMsg = `MQTT failed to subsribe to ${topics.join(",")}: ${err}`;
             console.err(errMsg);
             debugLog(errMsg);
           } else {
             for (const grant of granted) {
-              dispatch(updateMqttTopic({ topic: grant.topic, isSubscribed: true }));
+              dispatch(
+                updateMqttTopic({ topic: grant.topic, isSubscribed: true })
+              );
               debugLog("MQTT Subscribed to topic: ", grant.topic, grant.qos);
             }
           }
@@ -106,7 +131,7 @@ export default function useMqtt() {
           mqttMessageReceived({
             topic,
             message: message.toString(),
-            broadcastLangCode, 
+            broadcastLangCode,
           })
         );
       });
@@ -226,44 +251,121 @@ export function publishEvent(eventName, data) {
   document.dispatchEvent(event);
 }
 
-export const publishDisplyNoneMqttMessage = (mqttMessages, channel, langCode) => {
+export const publishDisplyNoneMqttMessage = (
+  mqttMessages,
+  channel,
+  langCode
+) => {
   republishSubtitle(mqttMessages, channel, langCode, DM_NONE);
   republishQuestion(mqttMessages, channel, langCode, DM_NONE);
 };
 
 // Used only locally in this file, will only update question displayMode if needed.
-function republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+function republishQuestion(
+  mqttMessages,
+  channel,
+  langCode,
+  displayMode,
+  ignoreLiveMode = false
+) {
   const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
   const lastQuestion = mqttMessages[questionMqttTopic] || {};
   if (lastQuestion.display_status !== displayMode) {
-    publishMessage(lastQuestion, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode);
+    publishMessage(
+      lastQuestion,
+      ST_QUESTION,
+      questionMqttTopic,
+      langCode,
+      displayMode,
+      ignoreLiveMode
+    );
   }
 }
 
 // Used only locally in this file, will only update subtitle displayMode if needed.
-function republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+function republishSubtitle(
+  mqttMessages,
+  channel,
+  langCode,
+  displayMode,
+  ignoreLiveMode = false
+) {
   const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
   const lastSubtitle = mqttMessages[subtitleMqttTopic] || {};
   if (lastSubtitle.display_status !== displayMode) {
-    publishMessage(lastSubtitle, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode);
+    publishMessage(
+      lastSubtitle,
+      ST_SUBTITLE,
+      subtitleMqttTopic,
+      langCode,
+      displayMode,
+      ignoreLiveMode
+    );
   }
 }
 
 // Updates question and if needed also updated subtitle displayMode.
-export function publishQuestion(question, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+export function publishQuestion(
+  question,
+  mqttMessages,
+  channel,
+  langCode,
+  displayMode,
+  ignoreLiveMode = false
+) {
   const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
-  publishMessage(question || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode);
-  republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode);
+  publishMessage(
+    question || {},
+    ST_QUESTION,
+    questionMqttTopic,
+    langCode,
+    displayMode,
+    ignoreLiveMode
+  );
+  republishSubtitle(
+    mqttMessages,
+    channel,
+    langCode,
+    displayMode,
+    ignoreLiveMode
+  );
 }
 
 // Updates subtitle and if needed also updated question displayMode.
-export function publishSubtitle(subtitle, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+export function publishSubtitle(
+  subtitle,
+  mqttMessages,
+  channel,
+  langCode,
+  displayMode,
+  ignoreLiveMode = false
+) {
   const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
-  publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode);
-  republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode);
+  publishMessage(
+    subtitle || {},
+    ST_SUBTITLE,
+    subtitleMqttTopic,
+    langCode,
+    displayMode,
+    ignoreLiveMode
+  );
+  republishQuestion(
+    mqttMessages,
+    channel,
+    langCode,
+    displayMode,
+    ignoreLiveMode
+  );
 }
 
-export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode) => {
+export const publishMessage = (
+  slide,
+  type,
+  topic,
+  lang,
+  displayMode,
+  ignoreLiveMode
+) => {
   const message = {
     slide_type: slide.slide_type || type,
     // Deprecated field. Keep for external systems.
@@ -275,7 +377,8 @@ export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLive
     order_number: slide.order_number,
     slide: slide.slide,
     source_uid: slide.source_uid,
-    isLtr: slide.isLtr !== undefined ? slide.isLtr : slide.left_to_right !== false,
+    isLtr:
+      slide.isLtr !== undefined ? slide.isLtr : slide.left_to_right !== false,
     lang: lang,
     visible: slide.visible === undefined ? true : slide.visible,
     previous_slide: slide.previous_slide,
@@ -284,5 +387,9 @@ export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLive
     display_status: displayMode,
   };
 
-  publishEvent("mqttPublish", { mqttTopic: topic, message: message, ignoreLiveMode });
+  publishEvent("mqttPublish", {
+    mqttTopic: topic,
+    message: message,
+    ignoreLiveMode,
+  });
 };
