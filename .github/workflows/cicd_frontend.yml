@@ -81,6 +81,9 @@ jobs:
             EOF
             fi
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
+            # Stop and remove existing container completely
+            docker stop subtitles_frontend || true
+            docker rm subtitles_frontend || true
             docker compose -f docker-compose.prod.yml down subtitles_frontend || true
             docker compose -f docker-compose.prod.yml pull subtitles_frontend
             docker compose -f docker-compose.prod.yml up -d subtitles_frontend
