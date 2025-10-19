@@ -1,5 +1,3 @@
--- Migration 17: Fix for missing migration
--- This migration ensures database schema is up to date
--- No changes needed, just a placeholder to satisfy migration system
-
-SELECT 1;
+-- 1. Add a new renderer column to allow different rendering per slide.
+ALTER TABLE slides ADD COLUMN renderer VARCHAR(20);
+UPDATE slides SET renderer = 'default';
