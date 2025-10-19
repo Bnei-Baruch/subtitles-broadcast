@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Define the staging server and SSH options
-STAGING_SERVER="root@135.125.213.39"
+# STAGING_SERVER="root@135.125.213.39"
+STAGING_SERVER="root@10.77.1.16"
 SSH_OPTIONS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
 # Required environment variables
@@ -30,8 +31,8 @@ ssh ${SSH_OPTIONS} ${STAGING_SERVER} <<EOF
     cd /root/configs/subtitles_frontend || { echo "Directory /root/configs/subtitles_frontend does not exist. Exiting."; exit 1; }
 
     # Stop and remove the existing Docker container
-    docker stop subtitles_frontend || true
-    docker rm subtitles_frontend || true
+    docker stop subtitles_frontend
+    docker rm subtitles_frontend
 
     # Clean up Docker resources
     docker builder prune -af
