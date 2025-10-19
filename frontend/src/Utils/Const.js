@@ -5,6 +5,11 @@ export const DM_NONE = "none";
 export const ST_SUBTITLE = "subtitle";
 export const ST_QUESTION = "question";
 
+export const renderers = [
+  { value: "default", label: "Default" },
+  { value: "contrast", label: "Contrast" },
+];
+
 function GetLangaugeCode() {
   return {
     English: "en",
