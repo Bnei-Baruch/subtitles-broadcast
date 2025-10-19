@@ -112,6 +112,7 @@ export function ActiveSlide() {
       }
       isQuestion={activeSlide?.slide && (
         activeSlide.type === ST_QUESTION || activeSlide.slide_type === ST_QUESTION)}
+      renderer={activeSlide?.renderer}
     />
   );
 }

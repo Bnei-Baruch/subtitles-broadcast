@@ -209,6 +209,10 @@ bdo {
   height: 246px;
 }
 
+.renderer-default .slide-content {
+  font-weight: bold;
+}
+
 .slide-content {
   position: absolute;
   top: 0;
@@ -216,7 +220,6 @@ bdo {
   overflow: hidden;
   font-family: Arial, sans-serif;
   font-size: 62px;
-  font-weight: bold;
   line-height: 62px;
   width: 1920px;
   height: 315px;

@@ -28,6 +28,11 @@ function GetLangaugeCode() {
   };
 }
 
+export const renderers = [
+  { value: "default", label: "Default" },
+  { value: "contrast", label: "Contrast" },
+];
+
 export const broadcastLanguages = [
   { value: "he", label: "Hebrew", isLtr: false, order_num: 1 },
   { value: "en", label: "English", isLtr: true, order_num: 2 },

@@ -83,6 +83,7 @@ const isDataChanged = (slidesA, slidesB) => {
       if (
         slideA.order_number !== slideB.order_number ||
         slideA.slide_type !== slideB.slide_type ||
+        slideA.renderer !== slideB.renderer ||
         slideA.left_to_right !== slideB.left_to_right ||
         slideA.slide.length !== slideB.slide.length ||
         slideA.slide !== slideB.slide
@@ -268,12 +269,13 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
     const updateSlideList = editSlides
       .filter(({ ID }) => ID !== undefined)
       .map(
-        ({ ID, slide, order_number, slide_type, left_to_right }, index) => ({
+        ({ ID, slide, order_number, slide_type, renderer, left_to_right }, index) => ({
           slide_id: ID,
           slide,
           left_to_right: left_to_right === false ? false : true,
           order_number: order_number,
           slide_type,
+          renderer,
         })
       );
     if (updateSlideList.length > 0) {
@@ -282,7 +284,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
 
     const addNewSlideList = editSlides
       .filter(({ ID }) => ID === undefined)
-      .map(({ slide, order_number, slide_type }) => ({
+      .map(({ slide, order_number, slide_type, renderer }) => ({
         slide,
         order_number,
         left_to_right:
@@ -291,6 +293,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
             : true,
         file_uid: editSlides[0]?.file_uid,
         slide_type,
+        renderer,
       }));
     if (addNewSlideList.length > 0) {
       savePromises.push(dispatch(AddSlide(addNewSlideList)));
@@ -338,6 +341,13 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
     setEditSlides(spliceSlideList(editSlides, index, 1, [{
       ...editSlides[index],
       slide_type: slide.slide_type === "question" ? "subtitle" : "question",
+    }]));
+  }
+
+  const toggleRenderer = (index, slide) => {
+    setEditSlides(spliceSlideList(editSlides, index, 1, [{
+      ...editSlides[index],
+      renderer: slide.renderer === "default" ? "contrast" : "default",
     }]));
   }
 
@@ -439,6 +449,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
           file_uid: slide.file_uid,
           slide: nextSlideText,
           slide_type: slide.slide_type,
+          renderer: slide.renderer,
           left_to_right: slide.left_to_right,
           languages: slide.languages,
         });
@@ -535,6 +546,22 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                   style={{
                     color: "black",
                     [slide.left_to_right === false ? "left" : "right"]:
+                      "104px",
+                  }}
+                />
+              )}
+
+              {index === selected && (
+                <i
+                  onClick={() => toggleRenderer(index, slide)}
+                  className={
+                    (slide.renderer === "default"
+                      ? "bi-circle-fill"
+                      : "bi-circle-half") + " bi delete-icon"
+                  }
+                  style={{
+                    color: "#6c757d",
+                    [slide.left_to_right === false ? "left" : "right"]:
                       "80px",
                   }}
                 />
@@ -555,6 +582,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                   }}
                 />
               )}
+
               {index === selected && (
                 <i
                   onClick={() => rerun()}
@@ -566,6 +594,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                   }}
                 />
               )}
+
               {index === selected && (
                 <i
                   onClick={() => {
@@ -574,6 +603,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                       slide: "",
                       addedNew: true,
                       slide_type: "subtitle",
+                      renderer: slide.renderer,
                       left_to_right: slide.left_to_right,
                       languages: slide.languages,
                     };
@@ -592,6 +622,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 content={slide.slide}
                 isLtr={slide && slide.left_to_right === false ? false : true}
                 isQuestion={slide.slide_type === "question"}
+                renderer={slide.renderer}
               />
               <span className="order-number">{`${
                 slide?.languages.length > 1

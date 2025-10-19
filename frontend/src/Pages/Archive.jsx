@@ -152,6 +152,7 @@ const Archive = () => {
             content={slide.slide}
             isLtr={slide.left_to_right}
             isQuestion={slide.slide_type === "question"}
+            renderer={slide.renderer}
             searchKeyword={search}
           />
         </div>

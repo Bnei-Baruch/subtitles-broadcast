@@ -4,13 +4,14 @@ import Select from "react-select";
 import { SplitToSlides, sourceToMarkdown } from "../Utils/SlideSplit";
 import GenerateUID from "../Utils/Uid";
 import { SetCustomSlideBySource } from "../Redux/NewSlide/NewSlide";
-import { broadcastLangMapObj, broadcastLanguages } from "../Utils/Const";
+import { broadcastLangMapObj, broadcastLanguages, renderers } from "../Utils/Const";
 import GetFileUid from "../Utils/Source";
 import { useDispatch, useSelector } from "react-redux";
 import { languageIsLtr } from "../Utils/Common";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { AutocompleteSources } from "../Redux/SourceSlice";
 import { Edit } from "../Components/Edit";
+import mammoth from "mammoth";
 
 const NewSlides = () => {
   const { broadcast_language_code: language } = useSelector((state) => state.userSettings.userSettings);
@@ -30,6 +31,7 @@ const NewSlides = () => {
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const { autocomplete } = useSelector((state) => state.sources);
+	const [selectedRenderer, setSelectedRenderer] = useState(renderers.find(r => r.value === "default"));
   const [selectedOptions, setSelectedOptions] = useState([{
 		label: broadcastLangMapObj[language].label,
 		value: language,
@@ -73,6 +75,7 @@ const NewSlides = () => {
         left_to_right: IsLangLtr(language),
         languages: language,
         slides: updateTagList,
+				renderer: selectedRenderer.value,
       };
       if (
         document.getElementById("upload_name") &&
@@ -154,16 +157,42 @@ const NewSlides = () => {
   const uploadFile = (filename) => {
     // Read from file.
     const reader = new FileReader();
+    const extension = filename.name.split(".").pop();
     reader.onload = (event) => {
-      setCustomText(event.target.result);
-      document.getElementById("custom-textarea").value = event.target.result;
+      const content = event.target.result;
+      if (extension === "docx") {
+				mammoth.convertToHtml({ arrayBuffer: content })
+					.then(result => {
+						const html = result.value; 
+
+						// Any messages, like unsupported formatting, are in result.messages
+						const messages = result.messages;
+						if (messages.length > 0) {
+							console.warn("Parsing issues:", messages);
+						}
+						console.log("Generated HTML:", html);
+
+						const markdown = sourceToMarkdown(html);
+						setCustomText(markdown);
+						document.getElementById("custom-textarea").value = markdown;
+					})
+					.catch(error => {
+						console.error("Error converting DOCX to HTML:", error);
+					});
+      } else {
+				setCustomText(content);
+				document.getElementById("custom-textarea").value = content;
+			}
     };
-    if (filename.name.split(".").pop() !== "txt") {
-      alert("The file must be txt file");
-      return;
-    }
     try {
-      reader.readAsText(filename);
+      if (extension === "docx") {
+        reader.readAsArrayBuffer(filename);
+      } else if (extension === "txt") {
+        reader.readAsText(filename);
+      } else {
+        alert("The file must be txt or docx file");
+        return;
+      }
     } catch (error) {
       console.error("Error reading input fileoccurred:", error);
     }
@@ -210,7 +239,7 @@ const NewSlides = () => {
   const loadSource = () => {
     setLoading(true);
     let sourceUrl = `${contentSource}`;
-    const fetchData = async () => {
+    const fetchSource = async () => {
       try {
         // get fileuid from source
         let sourceUidStr;
@@ -260,7 +289,7 @@ const NewSlides = () => {
         console.error("Error fetching or parsing data:", error.message);
       }
     };
-    fetchData();
+    fetchSource();
   };
 
   return (
@@ -329,6 +358,17 @@ const NewSlides = () => {
 							</div>
 							<div className="row m-4">
 								<div className="input-box col-7">
+									<label>Renderer</label>
+									<Select
+										id="rendererSelect"
+										options={renderers}
+										value={selectedRenderer}
+										onChange={r => setSelectedRenderer(r)}
+									/>
+								</div>
+							</div>
+							<div className="row m-4">
+								<div className="input-box col-7">
 									<input
 										type="file"
 										onChange={(event) => {
@@ -375,7 +415,18 @@ const NewSlides = () => {
 							<div className="row m-4">
 								<label>Language</label>
 								<p>{broadcastLangMapObj[language].label}</p>
-								<div className="input-box ">
+								<div>
+									<div className="input-box">
+										<label>Renderer</label>
+										<Select
+											id="rendererSelect"
+											options={renderers}
+											value={selectedRenderer}
+											onChange={r => setSelectedRenderer(r)}
+										/>
+									</div>
+								</div>
+								<div className="input-box">
 									<label className="w-100">Source Path</label>
 									<div className="form-group autoComplete">
 										<input

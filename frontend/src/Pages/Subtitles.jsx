@@ -238,6 +238,7 @@ const Subtitles = () => {
 
   const Row = (index) => {
     const slide = slides[index];
+    console.log('ROW', slide);
     return (
       <div
         key={`slide_${slide.ID}`}
@@ -252,7 +253,8 @@ const Subtitles = () => {
           isLtr={slide.left_to_right}
           searchKeyword={searchSlide}
           isQuestion={slide.slide_type === "question"}
-        ></Slide>
+          renderer={slide.renderer}
+        />
         <span className="order-number">{`${
           slide?.languages.length > 1
             ? slide?.languages[+index % slide?.languages.length]
