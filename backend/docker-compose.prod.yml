@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  subtitles_backend:
+    restart: unless-stopped
+    container_name: subtitles_backend
+    image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
+    environment:
+      GIN_MODE: release
+      BSSVR_LOG_LEVEL: debug
+      BSSVR_POSTGRES_URI: ${SUBTITLES_POSTGRES_URI}
+      BSSVR_KEYCLOAK_URI: ${SUBTITLES_KEYCLOAK_URI}
+      BSSVR_BACKEND_PORT: ${SUBTITLES_BACKEND_PORT}
+    ports:
+      - "${SUBTITLES_BACKEND_PORT}:${SUBTITLES_BACKEND_PORT}"
+    networks:
+      - subtitles-network
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+
+networks:
+  subtitles-network:
+    name: subtitles-network
+    external: true
