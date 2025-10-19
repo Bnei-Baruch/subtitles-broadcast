@@ -31,7 +31,7 @@ func init() {
 	log.Infof("Env variables file: %+v", EnvFile+envProfile)
 	err := godotenv.Load(EnvFile + envProfile)
 	if err != nil {
-		log.Fatalf("Error loading %s file: %v", EnvFile, err)
+		log.Warnf("Could not load %s file: %v (using environment variables instead)", EnvFile, err)
 	}
 	logLevel, err := log.ParseLevel(os.Getenv(EnvBssvrLogLevel))
 	if err != nil {
