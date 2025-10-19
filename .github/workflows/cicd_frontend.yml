@@ -34,7 +34,7 @@ jobs:
             bneibaruch/subtitles_frontend:gh_${{ github.run_number }}
           build-args: |
             build_number=gh_${{ github.run_number }}
-            REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
+            REACT_APP_BACKEND_URL=${{ secrets.SUBTITLES_REACT_APP_BACKEND_URL }}
 
   deploy:
     runs-on: ubuntu-latest
