@@ -11,7 +11,10 @@ const mqttUrl = process.env.REACT_APP_MQTT_URL;
 const mqttProtocol = process.env.REACT_APP_MQTT_PROTOCOL;
 const mqttPort = process.env.REACT_APP_MQTT_PORT;
 const mqttPath = process.env.REACT_APP_MQTT_PATH;
-const mqttBrokerUrl = `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`;
+// Handle empty or falsy MQTT path - if empty, don't include the trailing slash
+const mqttBrokerUrl = mqttPath && mqttPath.trim() !== '' 
+  ? `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
+  : `${mqttProtocol}://${mqttUrl}:${mqttPort}`;
 
 export default function useMqtt() {
   const clientRef = useRef(null);
