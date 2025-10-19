@@ -378,6 +378,8 @@ export const publishMessage = (
     // Deprecated field. Keep for external systems.
     type: slide.slide_type || type,
 
+    renderer: slide.renderer,
+
     ID: slide.ID,
     bookmark_id: slide.bookmark_id,
     file_uid: slide.file_uid,

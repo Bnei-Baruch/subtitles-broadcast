@@ -27,6 +27,7 @@ export const SetCustomSlideBySource = createAsyncThunk(
       left_to_right: data.left_to_right,
       slides: data.slides,
       slides_types: Array.from({length: data.slides.length}, (v, i) => 'subtitle'),
+      renderers: Array.from({length: data.slides.length}, (v, i) => data.renderer),
 
     };
     try {
