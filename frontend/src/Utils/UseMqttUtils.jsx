@@ -32,11 +32,17 @@ console.log("MQTT Path debug:", {
   isEmpty: !mqttPath || mqttPath.trim() === "",
 });
 
-// Handle empty or falsy MQTT path - use a default path or omit it entirely
-const mqttBrokerUrl =
-  mqttPath && mqttPath.trim() !== ""
-    ? `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
-    : `${mqttProtocol}://${mqttUrl}:${mqttPort}`;
+// Handle empty or falsy MQTT path - also handle literal '""' string
+const isPathEmpty = !mqttPath || 
+  mqttPath.trim() === "" || 
+  mqttPath.trim() === '""' || 
+  mqttPath.trim() === "''";
+
+const mqttBrokerUrl = !isPathEmpty
+  ? `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
+  : `${mqttProtocol}://${mqttUrl}:${mqttPort}`;
+
+console.log("Final MQTT URL:", mqttBrokerUrl);
 
 export default function useMqtt() {
   const clientRef = useRef(null);
