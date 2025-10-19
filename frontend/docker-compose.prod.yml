@@ -1,0 +1,23 @@
+services:
+  subtitles_frontend:
+    restart: unless-stopped
+    container_name: subtitles_frontend
+    image: bneibaruch/subtitles_frontend:${SUBTITLES_VERSION:-latest}
+    environment:
+      - REACT_APP_KEYCLOAK_CLIENT_ID=${REACT_APP_KEYCLOAK_CLIENT_ID}
+      - REACT_APP_KEYCLOAK_REALM=${REACT_APP_KEYCLOAK_REALM}
+      - REACT_APP_KEYCLOAK_URL=${REACT_APP_KEYCLOAK_URL}
+      - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+      - REACT_APP_MQTT_URL=${REACT_APP_MQTT_URL}
+      - REACT_APP_MQTT_PORT=${REACT_APP_MQTT_PORT}
+      - REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
+      - REACT_APP_MQTT_PROTOCOL=${REACT_APP_MQTT_PROTOCOL}
+      - SUBTITLES_BACKEND_URL=${SUBTITLES_BACKEND_URL}
+    ports:
+      - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
+    networks:
+      - subtitles-network
+
+networks:
+  subtitles-network:
+    external: true

@@ -51,7 +51,36 @@ jobs:
           proxy_key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
           script: |
             cd /root/configs/subtitles_frontend
+            # Ensure we have the production docker-compose file
+            if [ ! -f "docker-compose.prod.yml" ]; then
+              echo "Creating docker-compose.prod.yml..."
+              cat > docker-compose.prod.yml << 'EOF'
+            services:
+              subtitles_frontend:
+                restart: unless-stopped
+                container_name: subtitles_frontend
+                image: bneibaruch/subtitles_frontend:${SUBTITLES_VERSION:-latest}
+                environment:
+                  - REACT_APP_KEYCLOAK_CLIENT_ID=${REACT_APP_KEYCLOAK_CLIENT_ID}
+                  - REACT_APP_KEYCLOAK_REALM=${REACT_APP_KEYCLOAK_REALM}
+                  - REACT_APP_KEYCLOAK_URL=${REACT_APP_KEYCLOAK_URL}
+                  - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+                  - REACT_APP_MQTT_URL=${REACT_APP_MQTT_URL}
+                  - REACT_APP_MQTT_PORT=${REACT_APP_MQTT_PORT}
+                  - REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
+                  - REACT_APP_MQTT_PROTOCOL=${REACT_APP_MQTT_PROTOCOL}
+                  - SUBTITLES_BACKEND_URL=${SUBTITLES_BACKEND_URL}
+                ports:
+                  - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
+                networks:
+                  - subtitles-network
+
+            networks:
+              subtitles-network:
+                external: true
+            EOF
+            fi
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
-            docker compose down subtitles_frontend || true
-            docker compose pull subtitles_frontend
-            docker compose up -d subtitles_frontend
+            docker compose -f docker-compose.prod.yml down subtitles_frontend || true
+            docker compose -f docker-compose.prod.yml pull subtitles_frontend
+            docker compose -f docker-compose.prod.yml up -d subtitles_frontend
