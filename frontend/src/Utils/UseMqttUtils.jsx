@@ -24,7 +24,7 @@ const mqttPort = process.env.REACT_APP_MQTT_PORT;
 const mqttPath = process.env.REACT_APP_MQTT_PATH;
 
 // Debug logging to see what we're getting
-console.log("MQTT Path debug:", {
+debugLog("MQTT Path debug:", {
   mqttPath,
   mqttPathType: typeof mqttPath,
   mqttPathLength: mqttPath ? mqttPath.length : "undefined",
@@ -33,16 +33,17 @@ console.log("MQTT Path debug:", {
 });
 
 // Handle empty or falsy MQTT path - also handle literal '""' string
-const isPathEmpty = !mqttPath || 
-  mqttPath.trim() === "" || 
-  mqttPath.trim() === '""' || 
+const isPathEmpty =
+  !mqttPath ||
+  mqttPath.trim() === "" ||
+  mqttPath.trim() === '""' ||
   mqttPath.trim() === "''";
 
 const mqttBrokerUrl = !isPathEmpty
   ? `${mqttProtocol}://${mqttUrl}:${mqttPort}/${mqttPath}`
   : `${mqttProtocol}://${mqttUrl}:${mqttPort}`;
 
-console.log("Final MQTT URL:", mqttBrokerUrl);
+debugLog("Final MQTT URL:", mqttBrokerUrl);
 
 export default function useMqtt() {
   const clientRef = useRef(null);
