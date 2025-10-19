@@ -43,7 +43,7 @@ jobs:
       - name: Deploy frontend over SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ secrets.SUBTITLES_HOST_PRODUCTION }}
           username: root
           key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
           proxy_host: ${{ secrets.SSH_PROXY_HOST }}
