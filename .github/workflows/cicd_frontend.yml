@@ -4,6 +4,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: Production
     steps:
       - uses: actions/checkout@v4
 
@@ -34,16 +35,27 @@ jobs:
             bneibaruch/subtitles_frontend:gh_${{ github.run_number }}
           build-args: |
             build_number=gh_${{ github.run_number }}
-            REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
+            REACT_APP_KEYCLOAK_URL=${{ secrets.REACT_APP_KEYCLOAK_URL }}
+            REACT_APP_KEYCLOAK_CLIENT_ID=${{ secrets.REACT_APP_KEYCLOAK_CLIENT_ID }}
+            REACT_APP_KEYCLOAK_REALM=${{ secrets.REACT_APP_KEYCLOAK_REALM }}
+            REACT_APP_MQTT_URL=${{ secrets.REACT_APP_MQTT_URL }}
+            REACT_APP_MQTT_PORT=${{ secrets.REACT_APP_MQTT_PORT }}
+            REACT_APP_MQTT_PATH=${{ secrets.REACT_APP_MQTT_PATH }}
+            REACT_APP_MQTT_PROTOCOL=${{ secrets.REACT_APP_MQTT_PROTOCOL }}
+            REACT_APP_API_BASE_URL=${{ vars.REACT_APP_API_BASE_URL }}
+            SUBTITLES_BACKEND_URL=${{ vars.SUBTITLES_BACKEND_URL }}
+            SUBTITLES_FRONTEND_PORT=${{ vars.SUBTITLES_FRONTEND_PORT }}
+            REACT_APP_PORT=${{ vars.REACT_APP_PORT }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    environment: Production
     steps:
       - name: Deploy frontend over SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ secrets.SUBTITLES_HOST_PRODUCTION }}
           username: root
           key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
           proxy_host: ${{ secrets.SSH_PROXY_HOST }}
@@ -51,7 +63,39 @@ jobs:
           proxy_key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
           script: |
             cd /root/configs/subtitles_frontend
+            # Ensure we have the production docker-compose file
+            if [ ! -f "docker-compose.prod.yml" ]; then
+              echo "Creating docker-compose.prod.yml..."
+              cat > docker-compose.prod.yml << 'EOF'
+            services:
+              subtitles_frontend:
+                restart: unless-stopped
+                container_name: subtitles_frontend
+                image: bneibaruch/subtitles_frontend:${SUBTITLES_VERSION:-latest}
+                environment:
+                  - REACT_APP_KEYCLOAK_CLIENT_ID=${REACT_APP_KEYCLOAK_CLIENT_ID}
+                  - REACT_APP_KEYCLOAK_REALM=${REACT_APP_KEYCLOAK_REALM}
+                  - REACT_APP_KEYCLOAK_URL=${REACT_APP_KEYCLOAK_URL}
+                  - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+                  - REACT_APP_MQTT_URL=${REACT_APP_MQTT_URL}
+                  - REACT_APP_MQTT_PORT=${REACT_APP_MQTT_PORT}
+                  - REACT_APP_MQTT_PATH=${REACT_APP_MQTT_PATH}
+                  - REACT_APP_MQTT_PROTOCOL=${REACT_APP_MQTT_PROTOCOL}
+                  - SUBTITLES_BACKEND_URL=${SUBTITLES_BACKEND_URL}
+                ports:
+                  - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
+                networks:
+                  - subtitles-network
+
+            networks:
+              subtitles-network:
+                external: true
+            EOF
+            fi
             sed -i "s/SUBTITLES_VERSION.*/SUBTITLES_VERSION=gh_${{ github.run_number }}/g" .env
-            docker compose down subtitles_frontend || true
-            docker compose pull subtitles_frontend
-            docker compose up -d subtitles_frontend
+            # Stop and remove existing container completely
+            docker stop subtitles_frontend || true
+            docker rm subtitles_frontend || true
+            docker compose -f docker-compose.prod.yml down subtitles_frontend || true
+            docker compose -f docker-compose.prod.yml pull subtitles_frontend
+            docker compose -f docker-compose.prod.yml up -d subtitles_frontend
