@@ -1,5 +1,6 @@
 services:
   subtitles_frontend:
+    restart: unless-stopped
     container_name: subtitles_frontend
     build:
       context: .
@@ -27,8 +28,8 @@ services:
     ports:
       - "${SUBTITLES_FRONTEND_PORT}:${REACT_APP_PORT}"
     networks:
-      - subtitles_backend_subtitles-network
+      - subtitles-network
 
 networks:
-  subtitles_backend_subtitles-network:
+  subtitles-network:
     external: true
