@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Row,
@@ -362,6 +362,12 @@ const AdminRoleManagement = () => {
       (role) => role.id === roleId || role.name === roleId
     );
   };
+
+  // Compute roles that can still be assigned to the selected user (exclude already assigned)
+  const availableRolesForSelectedUser = useMemo(() => {
+    if (!selectedUser) return availableRoles;
+    return availableRoles.filter((r) => !hasRole(selectedUser, r.id));
+  }, [availableRoles, selectedUser]);
 
   const getRoleBadge = (roleId) => {
     const role = availableRoles.find((r) => r.id === roleId);
@@ -843,9 +849,10 @@ const AdminRoleManagement = () => {
               <Form.Select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
+                disabled={availableRolesForSelectedUser.length === 0}
               >
                 <option value="">Choose a role...</option>
-                {availableRoles.map((role) => (
+                {availableRolesForSelectedUser.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.name} - {role.description}
                   </option>
@@ -895,7 +902,11 @@ const AdminRoleManagement = () => {
           <Button
             variant="primary"
             onClick={handleAssignRole}
-            disabled={loading || !selectedRole}
+            disabled={
+              loading ||
+              !selectedRole ||
+              availableRolesForSelectedUser.length === 0
+            }
           >
             {loading ? "Assigning..." : "Assign Role"}
           </Button>
