@@ -369,20 +369,15 @@ const AdminRoleManagement = () => {
     return availableRoles.filter((r) => !hasRole(selectedUser, r.id));
   }, [availableRoles, selectedUser]);
 
-  const getRoleBadge = (roleId) => {
-    const role = availableRoles.find((r) => r.id === roleId);
-    return role ? (
-      <Badge bg="primary" className="me-1">
-        {role.name}
-      </Badge>
-    ) : (
-      <Badge bg="secondary" className="me-1">
-        {roleId}
-      </Badge>
-    );
+  // Shared truncated cell style
+  const cellTruncateStyle = {
+    maxWidth: "260px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   };
 
-  // Render roles with truncation and tooltip for better table layout
+  // Render roles as plain text with ellipsis and tooltip
   const renderRolesWithTooltip = (user) => {
     const roles = getUserRoles(user);
 
@@ -390,60 +385,15 @@ const AdminRoleManagement = () => {
       return <span className="text-muted">No roles assigned</span>;
     }
 
-    // Show first 2 roles, then "+X more" if there are more
-    const maxVisibleRoles = 2;
-    const visibleRoles = roles.slice(0, maxVisibleRoles);
-    const remainingCount = roles.length - maxVisibleRoles;
-
-    const roleElements = visibleRoles.map((role) => (
-      <Badge
-        key={role.id || role.name}
-        bg="primary"
-        className="me-1 mb-1"
-        style={{ fontSize: "0.6em", verticalAlign: "middle" }}
-      >
-        {role.name || role.id}
-      </Badge>
-    ));
-
-    if (remainingCount > 0) {
-      roleElements.push(
-        <Badge
-          key="more"
-          bg="secondary"
-          className="me-1 mb-1"
-          style={{ fontSize: "0.6em", verticalAlign: "middle" }}
-        >
-          +{remainingCount} more
-        </Badge>
-      );
-    }
-
-    // Create tooltip content with all roles
-    const tooltipContent = (
-      <Tooltip id={`tooltip-${user.id}`}>
-        <div>
-          <strong>All Roles:</strong>
-          <br />
-          {roles.map((role) => (
-            <div key={role.id || role.name}>• {role.name || role.id}</div>
-          ))}
-        </div>
-      </Tooltip>
-    );
+    const allRolesText = roles.map((r) => r.name || r.id).join(", ");
 
     return (
       <OverlayTrigger
         placement="top"
-        overlay={tooltipContent}
+        overlay={<Tooltip id={`roles-tip-${user.id}`}>{allRolesText}</Tooltip>}
         delay={{ show: 250, hide: 100 }}
       >
-        <div
-          className="d-flex flex-wrap align-items-start"
-          style={{ maxHeight: "2.5em", overflow: "hidden" }}
-        >
-          {roleElements}
-        </div>
+        <div style={cellTruncateStyle}>{allRolesText}</div>
       </OverlayTrigger>
     );
   };
@@ -542,13 +492,29 @@ const AdminRoleManagement = () => {
                       filteredUsers.map((user) => (
                         <tr key={user.id}>
                           <td>
-                            <div>
-                              <strong>
-                                {user.firstName} {user.lastName}
-                              </strong>
-                            </div>
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={
+                                <Tooltip id={`name-tip-${user.id}`}>
+                                  {user.firstName} {user.lastName}
+                                </Tooltip>
+                              }
+                            >
+                              <div style={cellTruncateStyle}>
+                                <strong>
+                                  {user.firstName} {user.lastName}
+                                </strong>
+                              </div>
+                            </OverlayTrigger>
                           </td>
-                          <td>{user.email}</td>
+                          <td>
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={<Tooltip id={`email-tip-${user.id}`}>{user.email}</Tooltip>}
+                            >
+                              <div style={cellTruncateStyle}>{user.email}</div>
+                            </OverlayTrigger>
+                          </td>
                           <td>
                             <Badge bg={user.enabled ? "success" : "secondary"}>
                               {user.enabled ? "Active" : "Inactive"}
