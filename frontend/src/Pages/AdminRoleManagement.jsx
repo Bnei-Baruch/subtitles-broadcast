@@ -839,7 +839,7 @@ const AdminRoleManagement = () => {
       <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>
-            Assign Role to {selectedUser?.firstName} {selectedUser?.lastName}
+            Manage Roles for {selectedUser?.firstName} {selectedUser?.lastName}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
