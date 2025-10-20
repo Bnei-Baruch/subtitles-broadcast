@@ -1,4 +1,7 @@
 import {
+  CutNonVisibleEndings,
+  IsTextTokenEnumeration,
+  MARE_MAKOM_PATTERN,
   TOKEN_BOLD,
   TOKEN_H1,
   TOKEN_H2,
@@ -9,11 +12,9 @@ import {
   TOKEN_TEXT,
   Tokenize,
   createMarkdownit,
-  IsTextTokenEnumeration,
+  createNewDiv,
   sourceToMarkdown,
   split,
-  createNewDiv,
-  MARE_MAKOM_PATTERN,
 } from "./SlideSplit";
 
 test('Markdown only two endlines to <p>', () => {
@@ -125,13 +126,13 @@ test('sourceToMarkdown', () => {
 const LINE_SIZE = 40;
 const LINE_HEIGHT = 70;
 
-const createNextDiv = (visible, index) => {
+const createNextDiv = (lineSize = LINE_SIZE, lineHeight = LINE_HEIGHT) => (visible, index) => {
   const div = createNewDiv(visible, index);
   Object.defineProperty(div, "clientHeight", {
     get() {
       let height = 0;
       if (this.innerHTML) {
-        height = LINE_HEIGHT * Math.floor(this.innerHTML.length/LINE_SIZE);
+        height = lineHeight * Math.floor(this.innerHTML.length/lineSize);
       }
       return height;
     },
@@ -148,13 +149,13 @@ test('split basic', () => {
     'one two',
     'three four',
   ].join('\n');
-  const result = split(md, divRef, markdown, /*visible=*/ false, createNextDiv);
+  const result = split(md, divRef, markdown, /*visible=*/ false, createNextDiv());
   expect(result).toEqual(['one two\rthree four']);
 
   const veryLongSimpleString = 'repeat '.repeat(30);
   const firstSlide = 'repeat '.repeat(27).trim();
   const secondSlide = 'repeat '.repeat(3).trim();
-  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv)).toEqual([firstSlide, secondSlide]);
+  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv())).toEqual([firstSlide, secondSlide]);
 });
 
 test('split format new slide', () => {
@@ -164,12 +165,12 @@ test('split format new slide', () => {
   let veryLongSimpleString = `*${'repeat '.repeat(30)}*`
   let firstSlide = `*${'repeat '.repeat(26).trim()}*`;
   let secondSlide = `*${'repeat '.repeat(4).trim()} *`;
-  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv)).toEqual([firstSlide, secondSlide]);
+  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv())).toEqual([firstSlide, secondSlide]);
 
-  veryLongSimpleString = `**${'repeat '.repeat(30)}**`
-  firstSlide = `**${'repeat '.repeat(25).trim()}**`;
-  secondSlide = `**${'repeat '.repeat(5).trim()} **`;
-  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv)).toEqual([firstSlide, secondSlide]);
+  veryLongSimpleString = `**${'   q '.repeat(5)}**`
+  firstSlide = `**${('q    '.repeat(3)).trim()}**`;
+  secondSlide = `**${('q    '.repeat(2)).trim()}**`;
+  expect(split(md, divRef, veryLongSimpleString, /*visible=*/ false, createNextDiv(6))).toEqual([firstSlide, secondSlide]);
 });
 
 test('split format', () => {
@@ -177,7 +178,7 @@ test('split format', () => {
   const divRef = document.createElement("div");
 
   const markdown = 'some *format* text';
-  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv)).toEqual(['some *format* text']);
+  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv())).toEqual(['some *format* text']);
 });
 
 test('split format new slide', () => {
@@ -185,7 +186,7 @@ test('split format new slide', () => {
   const divRef = document.createElement("div");
 
   const markdown = 'some *for\n===\rmat* text';
-  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv)).toEqual([
+  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv())).toEqual([
     'some *for',
     'mat* text'
   ]);
@@ -196,7 +197,7 @@ test('split slide', () => {
   const divRef = document.createElement("div");
 
   const markdown = 'some\n===\ntext';
-  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv)).toEqual(['some', 'text']);
+  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv())).toEqual(['some', 'text']);
 });
 
 test('split \r', () => {
@@ -204,7 +205,7 @@ test('split \r', () => {
   const divRef = document.createElement("div");
 
   const markdown = 'some\ntext';
-  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv)).toEqual(['some\rtext']);
+  expect(split(md, divRef, markdown, /*visible=*/ false, createNextDiv())).toEqual(['some\rtext']);
 });
 
 const expectSlide = (reference, slide, expected) => {
@@ -246,7 +247,7 @@ test('split source author', () => {
   expect(!!MARE_MAKOM_PATTERN.test('\n(final mare makom)')).toBe(false);
   expect(!!MARE_MAKOM_PATTERN.test('(final mare makom)')).toBe(true);
 
-  const result = split(md, divRef, markdown, false, createNextDiv);
+  const result = split(md, divRef, markdown, false, createNextDiv());
   console.log(result);
   expect(result.length).toEqual(4);
   expectSlide('result 0', result[0], 'some text title or anything\ranother interesting title\r\r');
@@ -297,7 +298,7 @@ meaning do this, give us the power of the desire to
 bestow. Otherwise, we are doomed; we will remain in 
 the will to receive for our own sake.
 %S ( RABASH, Article No. 5 (1991), "What Is, 'The Good Deeds of the Righteous Are the Generations,' in the Work?")`;
-  const slides = split(md, divRef, markdown, false, createNextDiv);
+  const slides = split(md, divRef, markdown, false, createNextDiv());
   expect(slides.length).toBe(15);
   expectSlide('slide 0', slides[0], '## Lesson 6-May 2025-World Kabbalah Convention-Connecting to There Is None Else Besides Him');
   expectSlide('slide 1', slides[1], '## Lesson 6-May 2025-World Kabbalah Convention-Connecting to There Is None Else Besides Him');
@@ -324,5 +325,10 @@ the will to receive for our own sake.
     'bestow. Otherwise, we are doomed; we will remain in \r' +
     'the will to receive for our own sake.\r---\r*( RABASH, Article No.');
   expectSlide('slide 14', slides[14], '5 (1991), "What Is, \'The Good Deeds of the Righteous Are the Generations,\' in the Work?")*');
+});
+
+test('cut non visible endings', () => {
+  expect(CutNonVisibleEndings("  a  ")).toBe("a");
+  expect(CutNonVisibleEndings("**  a  ")).toBe("**a");
 });
 

@@ -152,7 +152,8 @@ const QuestionMessage = () => {
               content={question.orgSlide ? question.orgSlide : question.slide}
               isLtr={question.isLtr}
               isQuestion={question.type === "question"}
-            ></Slide>
+              renderer={question.renderer}
+            />
           </div>
         ))
       ) : (

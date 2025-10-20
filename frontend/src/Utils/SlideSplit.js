@@ -74,6 +74,13 @@ export const sourceToMarkdown = (simpleHtml) => {
       return '*' + content.trim() + '*';
     }
   });
+  
+  turndownService.addRule('strong', {
+    filter: 'strong',
+    replacement: function (content) {
+      return ' **' + content.trim() + '** ';
+    }
+  });
 
   const convertedMarkdown = turndownService.turndown(simpleHtml);
   return convertedMarkdown;
@@ -265,7 +272,10 @@ export const Tokenize = (stack, index, text) => {
   return TextOrMarkdownToken(stack, index, text.length, text);
 };
 
-const CutNonVisibleEndings = (slideText) => {
+// Cuts spaces from head and tail also considering new lines.
+// Will eventually also cut spaces after ** at start and before
+// ** at end.
+export const CutNonVisibleEndings = (slideText) => {
   let from = 0;
   let newLinesStart = 0;
   for (; from < slideText.length; from++) {
@@ -285,7 +295,7 @@ const CutNonVisibleEndings = (slideText) => {
       continue;
     }
     return (newLinesStart >= 2 ? '\r\r' : '') +
-      slideText.slice(from, to+1) +
+      slideText.slice(from, to+1).replace(/(^\*\*)\s+/, '$1').replace(/\s+(\*\*)$/, '$1') +
       (newLinesEnd >= 2 ? '\r\r' : '');
   }
   return '';
@@ -385,6 +395,7 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
     prevHeight = 0;
     lastLineCutoffs = [];
 
+    console.log('NEW SLIDE', lastToken, token, restIndex, prevRestIndex);
     return {prevToken: lastToken, token, restIndex, prevRestIndex};
   };
 
