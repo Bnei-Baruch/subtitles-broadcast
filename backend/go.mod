@@ -6,6 +6,7 @@ toolchain go1.22.0
 
 require (
 	code.sajari.com/docconv v1.3.8
+	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
@@ -20,7 +21,6 @@ require (
 
 require (
 	github.com/JalfResi/justext v0.0.0-20170829062021-c0282dea7198 // indirect
-	github.com/Nerzal/gocloak/v13 v13.9.0 // indirect
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
 	github.com/advancedlogic/GoOse v0.0.0-20191112112754-e742535969c1 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
