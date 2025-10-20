@@ -546,10 +546,6 @@ const AdminRoleManagement = () => {
                               <strong>
                                 {user.firstName} {user.lastName}
                               </strong>
-                              <br />
-                              <small className="text-muted">
-                                @{user.username}
-                              </small>
                             </div>
                           </td>
                           <td>{user.email}</td>
