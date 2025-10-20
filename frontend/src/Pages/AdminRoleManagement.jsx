@@ -14,11 +14,13 @@ import {
   Tooltip,
 } from "react-bootstrap";
 import axios from "../Utils/AxiosInstance";
+import useDebounce from "../Services/useDebounce";
 
 const AdminRoleManagement = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms delay
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -77,18 +79,19 @@ const AdminRoleManagement = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch users when search term changes (server-side search)
+    // Fetch users when debounced search term changes (server-side search)
     // Reset to page 1 when search term changes
+    // This will only trigger after user stops typing for 500ms
     fetchUsers(1);
-  }, [searchTerm]);
+  }, [debouncedSearchTerm]);
 
   const fetchUsers = async (page = 1) => {
     setLoading(true);
     setError("");
     try {
       // Send search parameter and page to backend for server-side filtering and pagination
-      const url = searchTerm
-        ? `/admin/users?search=${encodeURIComponent(searchTerm)}&page=${page}`
+      const url = debouncedSearchTerm
+        ? `/admin/users?search=${encodeURIComponent(debouncedSearchTerm)}&page=${page}`
         : `/admin/users?page=${page}`;
       const response = await axios.get(url);
       const fetchedUsers = response.data.data || [];
