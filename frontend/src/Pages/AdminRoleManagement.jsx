@@ -385,7 +385,7 @@ const AdminRoleManagement = () => {
   // Render roles with truncation and tooltip for better table layout
   const renderRolesWithTooltip = (user) => {
     const roles = getUserRoles(user);
-    
+
     if (roles.length === 0) {
       return <span className="text-muted">No roles assigned</span>;
     }
@@ -426,9 +426,7 @@ const AdminRoleManagement = () => {
           <strong>All Roles:</strong>
           <br />
           {roles.map((role) => (
-            <div key={role.id || role.name}>
-              • {role.name || role.id}
-            </div>
+            <div key={role.id || role.name}>• {role.name || role.id}</div>
           ))}
         </div>
       </Tooltip>
@@ -440,7 +438,10 @@ const AdminRoleManagement = () => {
         overlay={tooltipContent}
         delay={{ show: 250, hide: 100 }}
       >
-        <div className="d-flex flex-wrap align-items-start" style={{ maxHeight: "2.5em", overflow: "hidden" }}>
+        <div
+          className="d-flex flex-wrap align-items-start"
+          style={{ maxHeight: "2.5em", overflow: "hidden" }}
+        >
           {roleElements}
         </div>
       </OverlayTrigger>
@@ -557,7 +558,9 @@ const AdminRoleManagement = () => {
                               {user.enabled ? "Active" : "Inactive"}
                             </Badge>
                           </td>
-                          <td style={{ verticalAlign: "top", minHeight: "60px" }}>
+                          <td
+                            style={{ verticalAlign: "top", minHeight: "60px" }}
+                          >
                             {renderRolesWithTooltip(user)}
                           </td>
                           <td>
@@ -862,30 +865,54 @@ const AdminRoleManagement = () => {
 
             {selectedUser && (
               <div>
+                {/* Local styles for role badge and delete control */}
+                <style>{`
+                  .role-badge {
+                    font-size: 0.85em;
+                    padding: 0.35rem 0.5rem;
+                  }
+                  .role-badge .role-delete-btn {
+                    border-left: 1px solid rgba(255, 255, 255, 0.6);
+                    padding-left: 6px;
+                    margin-left: 6px;
+                    line-height: 1;
+                    height: 1.2em;
+                    color: #ffffff;
+                    text-decoration: none;
+                    background-color: rgba(0, 0, 0, 0.15);
+                    border-radius: 4px;
+                    padding: 0 6px;
+                  }
+                  .role-badge .role-delete-btn:hover {
+                    color: #ffffff;
+                    border-left-color: #ffffff;
+                    background-color: rgba(0, 0, 0, 0.35);
+                  }
+                `}</style>
                 <h6>Current Roles:</h6>
                 <div className="d-flex flex-wrap align-items-start">
                   {getUserRoles(selectedUser).map((role) => (
-                    <div
+                    <Badge
                       key={role.id || role.name}
-                      className="d-flex align-items-center me-2 mb-2"
+                      bg="info"
+                      className="d-inline-flex align-items-center me-2 mb-2 role-badge"
                     >
-                      <Badge bg="info" className="me-1">
-                        {role.name || role.id}
-                      </Badge>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() =>
+                      <span>{role.name || role.id}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
                           handleRemoveRoleInModal(
                             selectedUser.id,
                             role.name || role.id
-                          )
-                        }
+                          );
+                        }}
                         title={`Remove ${role.name || role.id}`}
+                        className="btn btn-link p-0 ms-2 role-delete-btn"
                       >
-                        🗑️
-                      </Button>
-                    </div>
+                        ×
+                      </button>
+                    </Badge>
                   ))}
                   {getUserRoles(selectedUser).length === 0 && (
                     <span className="text-muted">No roles assigned</span>
