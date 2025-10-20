@@ -264,6 +264,42 @@ const AdminRoleManagement = () => {
     }
   };
 
+  // Remove role within the Role Assignment modal and update modal state optimistically
+  const handleRemoveRoleInModal = async (userId, roleName) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to remove the ${roleName} role from this user?`
+      )
+    )
+      return;
+
+    setLoading(true);
+    setError("");
+    try {
+      await axios.delete(`/admin/users/${userId}/roles/${roleName}`);
+      setSuccess("Role removed successfully!");
+
+      // Update roles inside the selected user locally so the modal reflects the change immediately
+      setSelectedUser((prev) => {
+        if (!prev) return prev;
+        const remainingRoles = getUserRoles(prev).filter(
+          (r) => (r.id || r.name) !== roleName
+        );
+        // Keep roles as strings for consistency with server payloads
+        return { ...prev, roles: remainingRoles.map((r) => r.name || r.id) };
+      });
+
+      // Also refresh the list in the background to stay in sync
+      fetchUsers(paginationInfo.page);
+    } catch (err) {
+      setError(
+        "Failed to remove role: " + (err.response?.data?.err || err.message)
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openUserModal = (user = null) => {
     if (user) {
       setUserForm({
@@ -820,15 +856,29 @@ const AdminRoleManagement = () => {
             {selectedUser && (
               <div>
                 <h6>Current Roles:</h6>
-                <div className="d-flex flex-wrap">
+                <div className="d-flex flex-wrap align-items-start">
                   {getUserRoles(selectedUser).map((role) => (
-                    <Badge
+                    <div
                       key={role.id || role.name}
-                      bg="info"
-                      className="me-1 mb-1"
+                      className="d-flex align-items-center me-2 mb-2"
                     >
-                      {role.name || role.id}
-                    </Badge>
+                      <Badge bg="info" className="me-1">
+                        {role.name || role.id}
+                      </Badge>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() =>
+                          handleRemoveRoleInModal(
+                            selectedUser.id,
+                            role.name || role.id
+                          )
+                        }
+                        title={`Remove ${role.name || role.id}`}
+                      >
+                        🗑️
+                      </Button>
+                    </div>
                   ))}
                   {getUserRoles(selectedUser).length === 0 && (
                     <span className="text-muted">No roles assigned</span>
