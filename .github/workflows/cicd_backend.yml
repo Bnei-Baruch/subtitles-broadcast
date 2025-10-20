@@ -1,7 +1,6 @@
 name: Backend CI/CD
 on:
   workflow_dispatch:
-    # you can add push/pr triggers here
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,8 +30,8 @@ jobs:
           context: backend
           push: true
           tags: |
-            myregistry/subtitles_backend:latest
-            myregistry/subtitles_backend:gh_${{ github.run_number }}
+            bneibaruch/subtitles_backend:latest
+            bneibaruch/subtitles_backend:gh_${{ github.run_number }}
           build-args: |
             build_number=gh_${{ github.run_number }}
 
@@ -44,11 +43,50 @@ jobs:
       - name: Deploy backend over SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SUBTITLES_HOST_PRODUCTION }}
+          username: root
+          key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
+          proxy_host: ${{ secrets.SSH_PROXY_HOST }}
+          proxy_username: ${{ secrets.SSH_PROXY_USERNAME }}
+          proxy_key: ${{ secrets.BBDEPLOYMENT_SSH_PRIVATE_KEY }}
           script: |
             cd /root/configs/subtitles_backend
+            # Ensure we have the production docker-compose file
+            if [ ! -f "docker-compose.prod.yml" ]; then
+              echo "Creating docker-compose.prod.yml..."
+              cat > docker-compose.prod.yml << 'EOF'
+            version: '3.7'
+
+            services:
+              subtitles_backend:
+                restart: unless-stopped
+                container_name: subtitles_backend
+                image: bneibaruch/subtitles_backend:${SUBTITLES_BACKEND_VERSION}
+                environment:
+                  GIN_MODE: release
+                  BSSVR_LOG_LEVEL: debug
+                  BSSVR_POSTGRES_URI: ${SUBTITLES_POSTGRES_URI}
+                  BSSVR_KEYCLOAK_URI: ${SUBTITLES_KEYCLOAK_URI}
+                  BSSVR_BACKEND_PORT: ${SUBTITLES_BACKEND_PORT}
+                ports:
+                  - "${SUBTITLES_BACKEND_PORT}:${SUBTITLES_BACKEND_PORT}"
+                networks:
+                  - subtitles-network
+                logging:
+                  driver: json-file
+                  options:
+                    tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+
+            networks:
+              subtitles-network:
+                name: subtitles-network
+                external: true
+            EOF
+            fi
             sed -i "s/SUBTITLES_BACKEND_VERSION.*/SUBTITLES_BACKEND_VERSION=gh_${{ github.run_number }}/g" .env
-            docker compose pull subtitles_backend
-            docker compose up -d subtitles_backend
+            # Stop and remove existing container completely
+            docker stop subtitles_backend || true
+            docker rm subtitles_backend || true
+            docker compose -f docker-compose.prod.yml down subtitles_backend || true
+            docker compose -f docker-compose.prod.yml pull subtitles_backend
+            docker compose -f docker-compose.prod.yml up -d subtitles_backend

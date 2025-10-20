@@ -13,36 +13,12 @@ services:
       BSSVR_BACKEND_PORT: ${SUBTITLES_BACKEND_PORT}
     ports:
       - "${SUBTITLES_BACKEND_PORT}:${SUBTITLES_BACKEND_PORT}"
-    #depends_on:
-    #  subtitles_backend_db:
-    #    condition: service_healthy
     networks:
       - subtitles-network
     logging:
       driver: json-file
       options:
         tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
-
-#  subtitles_backend_db:
-#    restart: unless-stopped
-#    container_name: subtitles_backend_db
-#    image: postgres:16
-#    shm_size: 1g
-#    environment:
-#      POSTGRES_USER: ${SUBTITLES_DB_USER}
-#      POSTGRES_PASSWORD: ${SUBTITLES_DB_PASSWORD}
-#      POSTGRES_DB: ${SUBTITLES_DB}
-#    ports:
-#      - "6363:5432"
-#    volumes:
-#      - /root/configs/subtitles_backend/data:/var/lib/postgresql/data
-#    healthcheck:
-#      test: ["CMD", "pg_isready", "-U", "postgres"]
-#      interval: 10s
-#      timeout: 10s
-#      retries: 5
-#    networks:
-#      - subtitles-network
 
 networks:
   subtitles-network:

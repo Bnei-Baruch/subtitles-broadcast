@@ -62,6 +62,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 		OrderNumber int    `json:"order_number"`
 		LeftToRight bool   `json:"left_to_right"`
 		SlideType   string `json:"slide_type"`
+		Renderer    string `json:"renderer"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -86,6 +87,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			OrderNumber: req.OrderNumber,
 			LeftToRight: req.LeftToRight,
 			SlideType:   req.SlideType,
+			Renderer:    req.Renderer,
 			CreatedAt:   now,
 			UpdatedAt:   now,
 			CreatedBy:   userId.(string),
@@ -116,6 +118,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		FileUid     string   `json:"file_uid"`
 		Slides      []string `json:"slides"`
 		SlidesTypes []string `json:"slides_types"`
+		Renderers   []string `json:"renderers"`
 		LeftToRight bool     `json:"left_to_right"`
 	}{}
 	err := ctx.BindJSON(&req)
@@ -199,6 +202,7 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			OrderNumber: idx / len(req.Languages),
 			LeftToRight: req.LeftToRight,
 			SlideType:   req.SlidesTypes[idx],
+			Renderer:    req.Renderers[idx],
 			CreatedBy:   userId.(string),
 			UpdatedBy:   userId.(string),
 			CreatedAt:   now,
@@ -342,6 +346,7 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 		OrderNumber int    `json:"order_number"`
 		LeftToRight bool   `json:"left_to_right"`
 		SlideType   string `json:"slide_type"`
+		Renderer    string `json:"renderer"`
 	}{}
 	err := ctx.BindJSON(&reqs)
 	if err != nil {
@@ -362,7 +367,7 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 
 	for _, req := range reqs {
 		// Use a placeholder for req.Slide and escape any special characters
-		value := fmt.Sprintf("(%d, ?, %d, %t, '%s')", req.SlideID, req.OrderNumber, req.LeftToRight, req.SlideType)
+		value := fmt.Sprintf("(%d, ?, %d, %t, '%s', '%s')", req.SlideID, req.OrderNumber, req.LeftToRight, req.SlideType, req.Renderer)
 		valuesQuery = append(valuesQuery, value)
 
 		// Append Slide value to placeholders
@@ -370,13 +375,14 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 	}
 
 	withQuery := `
-    WITH reqs(slide_id, slide, order_number, left_to_right, slide_type) AS
+    WITH reqs(slide_id, slide, order_number, left_to_right, slide_type, renderer) AS
     (VALUES ` + strings.Join(valuesQuery, ", ") + ") "
 	updateQuery := `UPDATE slides AS s SET
     slide = r.slide,
     order_number = r.order_number,
     left_to_right = r.left_to_right,
     slide_type = r.slide_type,
+    renderer = r.renderer,
     updated_at = ?,
     updated_by = ? `
 	query := withQuery + updateQuery + "FROM reqs AS r WHERE s.id = r.slide_id"

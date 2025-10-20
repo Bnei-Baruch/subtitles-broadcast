@@ -130,7 +130,7 @@ const QuestionModule = () => {
           />
         </div>
       </div>
-      <Slide content={questionText} isLtr={isLtr} isQuestion={true} />
+      <Slide content={questionText} isLtr={isLtr} isQuestion={true} renderer={"default"} />
       <div className="my-5">
         <p>History</p>
         <div className="SendQutionHistory">
