@@ -388,13 +388,9 @@ const AdminRoleManagement = () => {
     const allRolesText = roles.map((r) => r.name || r.id).join(", ");
 
     return (
-      <OverlayTrigger
-        placement="top"
-        overlay={<Tooltip id={`roles-tip-${user.id}`}>{allRolesText}</Tooltip>}
-        delay={{ show: 250, hide: 100 }}
-      >
-        <div style={cellTruncateStyle}>{allRolesText}</div>
-      </OverlayTrigger>
+      <div style={{ ...cellTruncateStyle, width: "100%" }} title={allRolesText}>
+        {allRolesText}
+      </div>
     );
   };
 
@@ -462,15 +458,20 @@ const AdminRoleManagement = () => {
               </Row>
 
               {/* Users Table */}
-              <div className="table-responsive">
-                <Table striped bordered hover>
+              <div className="table-responsive" style={{ overflowX: "hidden" }}>
+                <Table
+                  striped
+                  bordered
+                  hover
+                  style={{ tableLayout: "fixed", width: "100%" }}
+                >
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Email</th>
-                      <th>Status</th>
-                      <th>Roles</th>
-                      <th>Actions</th>
+                      <th style={{ width: "24%" }}>User</th>
+                      <th style={{ width: "28%" }}>Email</th>
+                      <th style={{ width: "12%" }}>Status</th>
+                      <th style={{ width: "26%" }}>Roles</th>
+                      <th style={{ width: "10%" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -492,28 +493,19 @@ const AdminRoleManagement = () => {
                       filteredUsers.map((user) => (
                         <tr key={user.id}>
                           <td>
-                            <OverlayTrigger
-                              placement="top"
-                              overlay={
-                                <Tooltip id={`name-tip-${user.id}`}>
-                                  {user.firstName} {user.lastName}
-                                </Tooltip>
-                              }
+                            <div
+                              style={cellTruncateStyle}
+                              title={`${user.firstName} ${user.lastName}`}
                             >
-                              <div style={cellTruncateStyle}>
-                                <strong>
-                                  {user.firstName} {user.lastName}
-                                </strong>
-                              </div>
-                            </OverlayTrigger>
+                              <strong>
+                                {user.firstName} {user.lastName}
+                              </strong>
+                            </div>
                           </td>
                           <td>
-                            <OverlayTrigger
-                              placement="top"
-                              overlay={<Tooltip id={`email-tip-${user.id}`}>{user.email}</Tooltip>}
-                            >
-                              <div style={cellTruncateStyle}>{user.email}</div>
-                            </OverlayTrigger>
+                            <div style={cellTruncateStyle} title={user.email}>
+                              {user.email}
+                            </div>
                           </td>
                           <td>
                             <Badge bg={user.enabled ? "success" : "secondary"}>
