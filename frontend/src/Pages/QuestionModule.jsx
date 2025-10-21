@@ -57,7 +57,8 @@ const QuestionModule = () => {
     if (!questionText.trim()) return;
 
     const jsonMsg = {
-      type: "question",
+      slide_type: "question",
+      renderer: "default",
       ID: Math.random().toString(16).substring(2, 8),
       lang: broadcastLangCode,
       slide: questionText,

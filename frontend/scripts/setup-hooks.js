@@ -5,7 +5,7 @@ const path = require("path");
 console.log("Current directory:", process.cwd());
 
 // New variable names
-const gitHooksDirectory = path.join(process.cwd(), ".git", "hooks"); // Directory for Git hooks
+const gitHooksDirectory = path.join(process.cwd(), "..", ".git", "hooks"); // Directory for Git hooks
 const appHooksDir = path.join(process.cwd(), ".hooks"); // Directory for app-defined hooks
 
 console.log("Git hooks directory:", gitHooksDirectory);
