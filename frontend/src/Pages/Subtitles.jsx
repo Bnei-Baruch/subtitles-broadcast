@@ -238,7 +238,6 @@ const Subtitles = () => {
 
   const Row = (index) => {
     const slide = slides[index];
-    console.log('ROW', slide);
     return (
       <div
         key={`slide_${slide.ID}`}
