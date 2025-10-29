@@ -720,6 +720,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
             markdown={wholeText}
             visible={false}
             active={split}
+            renderer={(slides && slides.length && slides[0].renderer) || ''}
             updateSlides={(slides) => {
               setUpdatedSlideTextList(slides);
             }}
