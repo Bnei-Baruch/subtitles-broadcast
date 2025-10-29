@@ -403,6 +403,7 @@ const NewSlides = () => {
 									markdown={wholeText}
 									active={splitActive}
 									visible={false}
+ 									renderer={selectedRenderer.value}
 									updateSlides={(slides) => {
 										setSplitActive(false);
 										setUpdateTagList(slides);
@@ -479,6 +480,7 @@ const NewSlides = () => {
 										markdown={wholeText}
 										active={splitActive}
 										visible={false}
+ 										renderer={selectedRenderer.value}
 										updateSlides={(slides) => {
 											setSplitActive(false);
 											setUpdateTagList(slides);
