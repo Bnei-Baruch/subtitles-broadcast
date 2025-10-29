@@ -377,7 +377,7 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
 
     if (visible) {
       divIndex += 1;
-      nextDiv.innerHTML = md.render(nextDivMarkdown); // Just for visualization...
+      nextDiv.innerHTML = md.render(CutNonVisibleEndings(nextDivMarkdown)); // Just for visualization...
       nextDiv = createNextDiv(visible, divIndex);
       divRef.current.appendChild(nextDiv);
     } else {
@@ -448,11 +448,11 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
       } else if (prevToken && prevToken.type === TOKEN_NEWLINE) {
         lastLineCutoffs = [];
       }
-      nextDiv.innerHTML = md.render(nextDivMarkdown + (type === TOKEN_SKIP ? '' : text) + 
+      nextDiv.innerHTML = md.render(CutNonVisibleEndings(nextDivMarkdown + (type === TOKEN_SKIP ? '' : text) + 
         // We want to add potential closing markdown tokens.
         (!OPEN_CLOSE_TOKENS.includes(type) ?
           stack.slice().filter(t => !HEADER_TOKENS.includes(t)).reverse().map(t =>TokenTypeToText(t)).join('')
-          : ''));
+          : '')));
 
       prevToken = token;
       prevRestIndex = restIndex;
@@ -474,7 +474,7 @@ export const split = (md, divRef, markdown, visible, createNextDiv) => {
   return slides;
 };
 
-export const SplitToSlides = ({markdown, updateSlides, active = false, visible = false}) => {
+export const SplitToSlides = ({markdown, updateSlides, renderer, active = false, visible = false}) => {
   const divRef = useRef(null);
   const md = useMemo(() => createMarkdownit(), []);
 
@@ -486,7 +486,7 @@ export const SplitToSlides = ({markdown, updateSlides, active = false, visible =
 
   return (
     <>
-      <div ref={divRef}></div>
+      <div ref={divRef} className={'slide-container renderer-' + renderer}></div>
     </>
   );
 };
