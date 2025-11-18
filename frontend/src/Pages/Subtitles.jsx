@@ -510,7 +510,7 @@ const Subtitles = () => {
                       parentIndex={index}
                       moveCard={moveCard}
                       parentSlideId={bookmark.slide_id}
-                      bookmarkDeleted={() => dispatch(GetBookmarks({ language, channel }))}
+                      bookmarkDeleted={(lsn = undefined) => dispatch(GetBookmarks({ language, channel, lsn }))}
                     />
                   ))}
               </div>

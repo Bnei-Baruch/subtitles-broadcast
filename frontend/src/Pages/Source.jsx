@@ -6,6 +6,7 @@ import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/Bookmar
 import { Search } from "../Layout/Search";
 import { TableVirtuoso } from 'react-virtuoso';
 import { Edit } from "../Components/Edit";
+import { getLatestLsn } from "../Utils/Common"
 
 const formatDateTimeLocal = (date) => {
   const pad = (n) => n.toString().padStart(2, '0');
@@ -29,16 +30,20 @@ const Source = () => {
   const [{editSlideId, editFileUid}, setEdit] = useState({ editSlideId: null, editFileUid: null });
   const [showDeleted, setShowDeleted] = useState(false);
 
-  const refetchSources = useCallback(() => {
-    // Update number of bookmarks.
-    dispatch(GetBookmarks({ language, channel }));
-    // Update sources.
-    return dispatch(GetSources({
-      language,
-      channel,
-      keyword: search,
-      hidden: showDeleted ? "true" : undefined,
-    }));
+  const refetchSources = useCallback((lsn = undefined) => {
+    console.log(`Refresh with lsn: ${lsn}`);
+    return Promise.all([
+      // Update number of bookmarks.
+      dispatch(GetBookmarks({ language, channel, lsn })),
+      // Update sources.
+      dispatch(GetSources({
+        language,
+        channel,
+        keyword: search,
+        hidden: showDeleted ? "true" : undefined,
+        lsn,
+      })),
+    ]);
   }, [dispatch, search, language, channel, showDeleted]);
 
   useEffect(() => {
@@ -120,30 +125,40 @@ const Source = () => {
                 <td className={`text-truncate ${source.bookmark_id !== null ? "bookmarked-cell" : ""}`} style={{ padding: "10px" }}>
                   {source.bookmark_id !== null ? (
                     <i
-                      onClick={() => {
-                        dispatch(UnBookmarkSlide({ 
-                          bookmark_id: source.bookmark_id,
-                        })).finally(() => {
+                      onClick={async () => {
+                        try {
+                          const ret = await dispatch(UnBookmarkSlide({ 
+                            bookmark_id: source.bookmark_id,
+                            return_lsn: true,
+                          })).unwrap();
+                          refetchSources(ret.lsn);
+                        } catch (error) {
+                          console.log(error);
                           refetchSources();
-                        });
+                        }
                       }}
                       className="bi bi-bookmark-check-fill m-2 cursor-pointer "
                     />
                   ) : (
                     <i
-                      onClick={() => {
-                        dispatch(UpdateBookmarks({
-                          bookmarks: [{
-                            file_uid: source.file_uid,
-                            slide_id: source.slide_id,
-                            order_number: bookmarks.length,
-                          }],
-                          language,
-                          channel,
-                          update: false,
-                        })).finally(() => {
+                      onClick={async () => {
+                        try {
+                          const ret = await dispatch(UpdateBookmarks({
+                            bookmarks: [{
+                              file_uid: source.file_uid,
+                              slide_id: source.slide_id,
+                              order_number: bookmarks.length,
+                            }],
+                            language,
+                            channel,
+                            update: false,
+                            return_lsn: true,
+                          })).unwrap();
+                          refetchSources((ret && ret[0] && ret[0].lsn) || undefined);
+                        } catch(error) {
+                          console.log(error);
                           refetchSources();
-                        });
+                        }
                       }}
                       className="bi bi-bookmark m-2 cursor-pointer "
                     />
@@ -157,40 +172,54 @@ const Source = () => {
                     data-bs-toggle="tooltip"
                     data-bs-placement="right"
                     title={source.hidden ? "Undelete" : "Delete"}
-                    onClick={() => {
-                      console.log('Undelete/Delete not implemented', source.hidden);
+                    onClick={async () => {
                       if (source.hidden) {
-                        dispatch(DeleteSource({
-                          hidden: true,  // Undelete
-                          source_uid: source.source_uid,
-                          path: source.path,
-                          language,
-                        })).finally(() => {
-                          refetchSources();
-                        });
-                      } else {
-                        if (source.bookmark_id) {
-                          if (window.confirm(`This source has bookmark, are you sure you want to delete the bookmark and the source: ${source.path}`)) {
-                            dispatch(UnBookmarkSlide({ 
-                              bookmark_id: source.bookmark_id,
-                            })).then(() => {
-                              dispatch(DeleteSource({
-                                source_uid: source.source_uid,
-                                path: source.path,
-                                language,
-                              })).finally(() => {
-                                refetchSources();
-                              });
-                            });
-                          }
-                        } else if (window.confirm(`Are you sure you want to delete: ${source.path}`)) {
-                          dispatch(DeleteSource({
+                        try {
+                          const ret = await dispatch(DeleteSource({
+                            hidden: true,  // Undelete
                             source_uid: source.source_uid,
                             path: source.path,
                             language,
-                          })).finally(() => {
+                            return_lsn: true,
+                          })).unwrap();
+                          refetchSources(ret.lsn);
+                        } catch(error) {
+                          console.log(error);
+                          refetchSources();
+                        }
+                      } else {
+                        if (source.bookmark_id) {
+                          if (window.confirm(`This source has bookmark, are you sure you want to delete the bookmark and the source: ${source.path}`)) {
+                            try {
+                              const bookmarkRet = await dispatch(UnBookmarkSlide({ 
+                                bookmark_id: source.bookmark_id,
+                                return_lsn: true,
+                              })).unwrap();
+                              const delRet = await dispatch(DeleteSource({
+                                source_uid: source.source_uid,
+                                path: source.path,
+                                language,
+                                return_lsn: true,
+                              })).unwrap();
+                              refetchSources(getLatestLsn(delRet.lsn, bookmarkRet.lsn));
+                            } catch(error) {
+                              console.log(error);
+                              refetchSources();
+                            }
+                          }
+                        } else if (window.confirm(`Are you sure you want to delete: ${source.path}`)) {
+                          try {
+                            const ret = await dispatch(DeleteSource({
+                              source_uid: source.source_uid,
+                              path: source.path,
+                              language,
+                              return_lsn: true,
+                            })).unwrap();
+                            refetchSources(ret.lsn);
+                          } catch(error) {
+                            console.log(error);
                             refetchSources();
-                          });
+                          }
                         }
                       }
                     }}
@@ -207,17 +236,22 @@ const Source = () => {
                       data-bs-toggle="tooltip"
                       data-bs-placement="right"
                       title="Delete forever"
-                      onClick={() => {
+                      onClick={async () => {
                         console.log('Delete forever');
                         if (window.confirm(`Are you sure you want to FOREVER delete: ${source.path}`)) {
-                          dispatch(DeleteSource({
-                            forever: true,
-                            source_uid: source.source_uid,
-                            path: source.path,
-                            language,
-                          })).finally(() => {
+                          try {
+                            const ret = await dispatch(DeleteSource({
+                              forever: true,
+                              source_uid: source.source_uid,
+                              path: source.path,
+                              language,
+                              return_lsn: true,
+                            })).unwrap();
+                            refetchSources(ret.lsn);
+                          } catch(error) {
+                            console.log(error);
                             refetchSources();
-                          });
+                          }
                         }
                       }}
                     ></i>

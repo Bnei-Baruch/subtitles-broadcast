@@ -15,12 +15,12 @@ const LIMIT = 1000;
 
 export const GetSlides = createAsyncThunk(
   'slides/get',
-  async ({ reset = true, all = true, language, channel, keyword, file_uid, limit = undefined }, { getState }) => {
-    console.log('GetSlides', reset, all, language, channel, keyword, file_uid, limit);
+  async ({ reset = true, all = true, language, channel, keyword, file_uid, limit = undefined, lsn = undefined }, { getState }) => {
+    console.log('GetSlides', reset, all, language, channel, keyword, file_uid, limit, lsn);
     const { slides } = getState().slides;
     const offsetParams = all ? {} : { offset: reset ? 0 : slides.length, limit: limit || LIMIT };
     const response = await axios.get(`${API}slide`, {
-      params: { language, channel, keyword, file_uid, ...offsetParams },
+      params: { lsn, language, channel, keyword, file_uid, ...offsetParams },
     });
     return { data: response.data.data, reset };
   }
@@ -28,8 +28,9 @@ export const GetSlides = createAsyncThunk(
 
 export const AddSlide = createAsyncThunk(
   "slides/post",
-  async (data, thunkAPI) => {
-    const response = await axios.post(`${API}slide`, data);
+  async ({ slides, return_lsn }, thunkAPI) => {
+    const param = return_lsn ? "?return_lsn=true" : "";
+    const response = await axios.post(`${API}slide${param}`, slides);
 
     if (response.data.success) {
       showSuccessToast(response.data.description);
@@ -41,8 +42,9 @@ export const AddSlide = createAsyncThunk(
 
 export const DeleteSlide = createAsyncThunk(
   "slides/delete",
-  async (data, thunkAPI) => {
-    const response = await axios.delete(`${API}slide`, { data });
+  async ({ data, return_lsn }, thunkAPI) => {
+    const param = return_lsn ? "?return_lsn=true" : "";
+    const response = await axios.delete(`${API}slide${param}`, { data });
 
     if (response.data.success) {
       showSuccessToast(response.data.description);
@@ -54,8 +56,9 @@ export const DeleteSlide = createAsyncThunk(
 
 export const UpdateSlide = createAsyncThunk(
   "slides/patch",
-  async (data, thunkAPI) => {
-    const response = await axios.patch(`${API}slide`, data);
+  async ({ slides, return_lsn }, thunkAPI) => {
+    const param = return_lsn ? "?return_lsn=true" : "";
+    const response = await axios.patch(`${API}slide${param}`, slides);
 
     if (response.data.success) {
       showSuccessToast(response.data.description);
@@ -67,11 +70,12 @@ export const UpdateSlide = createAsyncThunk(
 
 export const UpdateSourcePath = createAsyncThunk(
   "source_path/patch",
-  async (data, thunkAPI) => {
+  async ({ data, return_lsn }, thunkAPI) => {
     try {
 			console.log('Patch source path', data);
+      const param = return_lsn ? "?return_lsn=true" : "";
       const response = await axios.patch(
-       `${API}source_path_id/${data.sourcePathId}`,
+       `${API}source_path_id/${data.sourcePathId}${param}`,
         { source_path: data.sourcePath }
       );
 
