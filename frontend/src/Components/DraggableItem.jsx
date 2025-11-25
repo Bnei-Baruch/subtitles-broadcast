@@ -66,8 +66,17 @@ const DraggableItem = ({
       >
         <i className="bi bi-grip-vertical me-3" />
         <i
-          onClick={() => {
-            dispatch(UnBookmarkSlide({ bookmark_id: parentBookmarkId })).then(() => bookmarkDeleted());
+          onClick={async () => {
+            try {
+              const ret = await dispatch(UnBookmarkSlide({
+                bookmark_id: parentBookmarkId,
+                return_lsn: true,
+              })).unwrap();
+              bookmarkDeleted(ret.lsn);
+            } catch(error) {
+              console.error(error);
+              bookmarkDeleted();
+            }
           }}
           className="bi bi-trash"
         />

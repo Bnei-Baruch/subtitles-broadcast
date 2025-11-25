@@ -11,7 +11,102 @@ import { languageIsLtr } from "../Utils/Common";
 import LoadingOverlay from "../Components/LoadingOverlay";
 import { AutocompleteSources } from "../Redux/SourceSlice";
 import { Edit } from "../Components/Edit";
-import mammoth from "mammoth";
+import { renderAsync } from 'docx-preview';
+
+function wrapText(text, state) {
+  let content = text;
+  // Note: The order of wrapping matters for styling.
+  // We apply 'small' first, then 'strong'.
+  if (state.small) {
+    content = `<small>${content}</small>`;
+  }
+  if (state.bold) {
+    content = `<strong>${content}</strong>`;
+  }
+  return content;
+}
+
+function simplifyDocxHtml(messyHtml) {
+  // 1. Parse the HTML into a temporary DOM element
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = messyHtml;
+
+  // 2. Find the <article> element
+  const article = wrapper.querySelector('article');
+  if (!article) {
+    console.error("Could not find <article> tag in HTML.");
+    return "";
+  }
+
+  // 3. Get all paragraphs from the article
+  const paragraphs = article.querySelectorAll('p');
+  let finalHtml = "";
+
+  // 4. Loop over each paragraph
+  for (const p of paragraphs) {
+    // 5. Skip paragraphs that are completely empty
+    if (p.textContent.trim() === "") {
+      continue;
+    }
+
+    let newInnerHtml = "";
+    let spans = p.querySelectorAll('span');
+
+    let currentBuffer = "";
+    // 6. We now track two independent states
+    let currentState = { bold: false, small: false };
+
+    for (const span of spans) {
+      let text = span.textContent;
+      if (text === "") continue; // Skip totally empty spans
+
+      // --- Check styles from *this specific span* ---
+      let spanIsBold = false;
+      let spanIsSmall = false;
+
+      if (span.style) {
+        // Check for BOLD
+        const fontWeight = span.style.fontWeight;
+        if (fontWeight === 'bold' || parseInt(fontWeight, 10) >= 700) {
+          spanIsBold = true;
+        }
+
+        // Check for SMALL
+        const fontSize = span.style.fontSize;
+        if (fontSize && parseFloat(fontSize) <= 10) {
+          spanIsSmall = true;
+        }
+      }
+
+      const nextState = { bold: spanIsBold, small: spanIsSmall };
+
+      // 7. State Change Check: Flush buffer if *either* bold or small state changes
+      if (nextState.bold !== currentState.bold || nextState.small !== currentState.small) {
+        // The style is changing! Flush the buffer first.
+        if (currentBuffer !== "") {
+          newInnerHtml += wrapText(currentBuffer, currentState);
+        }
+        // Start a new buffer with the new state
+        currentBuffer = text;
+        currentState = nextState;
+      } else {
+        // Style is the same, just add to the buffer
+        currentBuffer += text;
+      }
+    } // End of spans loop
+
+    // --- Final Flush ---
+    // After the loop, flush any remaining text in the buffer
+    if (currentBuffer !== "") {
+      newInnerHtml += wrapText(currentBuffer, currentState);
+    }
+
+    // 8. Build the final clean <p> tag (no more 'pClass')
+    finalHtml += `<p>${newInnerHtml}</p>\n`;
+  }
+
+  return finalHtml;
+}
 
 const NewSlides = () => {
   const { broadcast_language_code: language } = useSelector((state) => state.userSettings.userSettings);
@@ -31,11 +126,11 @@ const NewSlides = () => {
   const [sourceUrl, setSourceUrl] = useState("");
   const [showAutocompleteBox, setShowAutocompleteBox] = useState(false);
   const { autocomplete } = useSelector((state) => state.sources);
-	const [selectedRenderer, setSelectedRenderer] = useState(renderers.find(r => r.value === "default"));
+  const [selectedRenderer, setSelectedRenderer] = useState(renderers.find(r => r.value === "default"));
   const [selectedOptions, setSelectedOptions] = useState([{
-		label: broadcastLangMapObj[language].label,
-		value: language,
-	}]);
+    label: broadcastLangMapObj[language].label,
+    value: language,
+  }]);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [isLtr] = useState(() => {
     return languageIsLtr(language);
@@ -75,7 +170,7 @@ const NewSlides = () => {
         left_to_right: IsLangLtr(language),
         languages: language,
         slides: updateTagList,
-				renderer: selectedRenderer.value,
+        renderer: selectedRenderer.value,
       };
       if (
         document.getElementById("upload_name") &&
@@ -130,8 +225,8 @@ const NewSlides = () => {
           setSourceUid("");
           alert(response.payload.description);
           const firstSlideId = response.payload.data?.slides?.[0]?.ID;
-					console.log(response, firstSlideId, fileUid);
-					setEditFileUid(fileUid);
+          console.log(response, firstSlideId, fileUid);
+          setEditFileUid(fileUid);
         }
       } catch (error) {
         console.error("Error occurred:", error); // Handle any errors
@@ -158,31 +253,19 @@ const NewSlides = () => {
     // Read from file.
     const reader = new FileReader();
     const extension = filename.name.split(".").pop();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target.result;
       if (extension === "docx") {
-				mammoth.convertToHtml({ arrayBuffer: content })
-					.then(result => {
-						const html = result.value; 
-
-						// Any messages, like unsupported formatting, are in result.messages
-						const messages = result.messages;
-						if (messages.length > 0) {
-							console.warn("Parsing issues:", messages);
-						}
-						console.log("Generated HTML:", html);
-
-						const markdown = sourceToMarkdown(html);
-						setCustomText(markdown);
-						document.getElementById("custom-textarea").value = markdown;
-					})
-					.catch(error => {
-						console.error("Error converting DOCX to HTML:", error);
-					});
+        const previewContainer = document.getElementById("some-id");
+        await renderAsync(content, previewContainer);
+        const simpleHtmlWithSmallText = simplifyDocxHtml(previewContainer.innerHTML);
+        const markdown = sourceToMarkdown(simpleHtmlWithSmallText);
+        setCustomText(markdown);
+        document.getElementById("custom-textarea").value = markdown;
       } else {
-				setCustomText(content);
-				document.getElementById("custom-textarea").value = content;
-			}
+        setCustomText(content);
+        document.getElementById("custom-textarea").value = content;
+      }
     };
     try {
       if (extension === "docx") {
@@ -293,206 +376,207 @@ const NewSlides = () => {
   };
 
   return (
-		<>
-			{editFileUid && <Edit fileUid={editFileUid} handleClose={() => setEditFileUid(null)} />}
-			{!editFileUid && 
-				<div className="form-newsubtitle body-content Edit New-Subtitle">
-					<LoadingOverlay loading={loading} />
-					<h3 className="mb-4">New slide set</h3>
-					<div className="row">
-						<button
-							className={
-								insertMethod === "custom_file"
-									? "active-button col-6"
-									: "inactive-button col-6"
-							}
-							onClick={() => setInsertMethod("custom_file")}
-						>
-							Custom
-						</button>
-						<button
-							className={
-								insertMethod === "source_url"
-									? "active-button col-6"
-									: "inactive-button col-6"
-							}
-							onClick={() => setInsertMethod("source_url")}
-						>
-							From KabbalahMedia
-						</button>
-					</div>
-					{insertMethod === "custom_file" ? (
-						<>
-							<div className="row m-4">
-								<div className="input-box ">
-									<label className="w-100">Name</label>
-									<input className="form-control" type="type" id="upload_name" />
-								</div>
-							</div>
-							<div className="row m-4">
-								<div className="input-box col-7">
-									<label>Languages</label>
-									<Select
-										id="languageSelect"
-										isMulti
-										options={
-											broadcastLanguages
-												.map((langObj) => {
-													if (langObj.value !== language) {
-														return {
-															label: langObj.label,
-															value: langObj.value,
-														};
-													} else {
-														return null; // Skip the undesired option
-													}
-												})
-												.filter((option) => option !== null) // Filter out null options
-										}
-										value={selectedOptions}
-										onChange={(selectedOptions) => {
-											setSelectedOptions(selectedOptions);
-										}}
-									/>
-								</div>
-							</div>
-							<div className="row m-4">
-								<div className="input-box col-7">
-									<label>Renderer</label>
-									<Select
-										id="rendererSelect"
-										options={renderers}
-										value={selectedRenderer}
-										onChange={r => setSelectedRenderer(r)}
-									/>
-								</div>
-							</div>
-							<div className="row m-4">
-								<div className="input-box col-7">
-									<input
-										type="file"
-										onChange={(event) => {
-											uploadFile(event.target.files[0]);
-										}}
-									/>
-									<textarea
-										id="custom-textarea"
-										style={{
-											marginTop: "1em",
-											marginBottom: "1em",
-											height: "500px",
-											width: "500px",
-										}}
-										onChange={(event) => {
-											setCustomText(event.target.value);
-										}}
-										dir={isLtr ? "ltr" : "rtl"}
-										placeholder="Enter text here"
-									/>
-									<button
-										className="btn btn-light rounded-pill col-4"
-										onClick={addSlidesFromCustomText}
-										disabled={!customText}
-									>
-										Add
-									</button>
-								</div>
-							</div>
-							<div>
-								<SplitToSlides
-									markdown={wholeText}
-									active={splitActive}
-									visible={false}
- 									renderer={selectedRenderer.value}
-									updateSlides={(slides) => {
-										setSplitActive(false);
-										setUpdateTagList(slides);
-									}}
-								/>
-							</div>
-						</>
-					) : (
-						<>
-							<div className="row m-4">
-								<label>Language</label>
-								<p>{broadcastLangMapObj[language].label}</p>
-								<div>
-									<div className="input-box">
-										<label>Renderer</label>
-										<Select
-											id="rendererSelect"
-											options={renderers}
-											value={selectedRenderer}
-											onChange={r => setSelectedRenderer(r)}
-										/>
-									</div>
-								</div>
-								<div className="input-box">
-									<label className="w-100">Source Path</label>
-									<div className="form-group autoComplete">
-										<input
-											className="form-control"
-											type="type"
-											value={contentSource}
-											onChange={(e) => {
-												setContentSource(e.target.value);
-												setShowAutocompleteBox(false);
-												clearTimeout(typingTimeout);
-												const timeoutId = setTimeout(() => {
-													// Perform action after typing has stopped
-													setShowAutocompleteBox(true);
-													setSourceUrl(e.target.value);
-												}, 500); // Adjust the timeout duration as needed
-												// Store the timeout ID for future reference
-												setTypingTimeout(timeoutId);
-											}}
-										/>
-										{showAutocompleteBox && sourceUrl.length > 0 && (
-											<ul
-												className="suggestions"
-												id="suggestions"
-												style={{ display: "none" }}
-											>
-												{autocomplete.map((suggestion, index) => (
-													<li
-														key={index}
-														onClick={(event) => {
-															event.target.parentNode.style.display = "none";
-															setContentSource(suggestion.source_path);
-															setSourceUid(suggestion.source_uid);
-														}}
-													>
-														{suggestion.source_path}
-													</li>
-												))}
-											</ul>
-										)}
-									</div>
-								</div>
-								<button
-									className="btn btn-primary btn-sm col-3 m-4"
-									onClick={loadSource}
-								>
-									Add Source
-								</button>
-								<div>
-									<SplitToSlides
-										markdown={wholeText}
-										active={splitActive}
-										visible={false}
- 										renderer={selectedRenderer.value}
-										updateSlides={(slides) => {
-											setSplitActive(false);
-											setUpdateTagList(slides);
-										}}
-									/>
-								</div>
-							</div>
-						</>
-					)}
-				</div>
-			}
-		</>
+    <>
+      {editFileUid && <Edit fileUid={editFileUid} handleClose={() => setEditFileUid(null)} />}
+      {!editFileUid && 
+        <div className="form-newsubtitle body-content Edit New-Subtitle">
+          <LoadingOverlay loading={loading} />
+          <h3 className="mb-4">New slide set</h3>
+          <div className="row">
+            <button
+              className={
+                insertMethod === "custom_file"
+                  ? "active-button col-6"
+                  : "inactive-button col-6"
+              }
+              onClick={() => setInsertMethod("custom_file")}
+            >
+              Custom
+            </button>
+            <button
+              className={
+                insertMethod === "source_url"
+                  ? "active-button col-6"
+                  : "inactive-button col-6"
+              }
+              onClick={() => setInsertMethod("source_url")}
+            >
+              From KabbalahMedia
+            </button>
+          </div>
+          {insertMethod === "custom_file" ? (
+            <>
+              <div className="row m-4">
+                <div className="input-box ">
+                  <label className="w-100">Name</label>
+                  <input className="form-control" type="type" id="upload_name" />
+                </div>
+              </div>
+              <div className="row m-4">
+                <div className="input-box col-7">
+                  <label>Languages</label>
+                  <Select
+                    id="languageSelect"
+                    isMulti
+                    options={
+                      broadcastLanguages
+                        .map((langObj) => {
+                          if (langObj.value !== language) {
+                            return {
+                              label: langObj.label,
+                              value: langObj.value,
+                            };
+                          } else {
+                            return null; // Skip the undesired option
+                          }
+                        })
+                        .filter((option) => option !== null) // Filter out null options
+                    }
+                    value={selectedOptions}
+                    onChange={(selectedOptions) => {
+                      setSelectedOptions(selectedOptions);
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="row m-4">
+                <div className="input-box col-7">
+                  <label>Renderer</label>
+                  <Select
+                    id="rendererSelect"
+                    options={renderers}
+                    value={selectedRenderer}
+                    onChange={r => setSelectedRenderer(r)}
+                  />
+                </div>
+              </div>
+              <div className="row m-4">
+                <div className="input-box col-7">
+                  <div id="some-id" style={{display: "none"}}></div>
+                  <input
+                    type="file"
+                    onChange={(event) => {
+                      uploadFile(event.target.files[0]);
+                    }}
+                  />
+                  <textarea
+                    id="custom-textarea"
+                    style={{
+                      marginTop: "1em",
+                      marginBottom: "1em",
+                      height: "500px",
+                      width: "500px",
+                    }}
+                    onChange={(event) => {
+                      setCustomText(event.target.value);
+                    }}
+                    dir={isLtr ? "ltr" : "rtl"}
+                    placeholder="Enter text here"
+                  />
+                  <button
+                    className="btn btn-light rounded-pill col-4"
+                    onClick={addSlidesFromCustomText}
+                    disabled={!customText}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+              <div>
+                <SplitToSlides
+                  markdown={wholeText}
+                  active={splitActive}
+                  visible={false}
+                   renderer={selectedRenderer.value}
+                  updateSlides={(slides) => {
+                    setSplitActive(false);
+                    setUpdateTagList(slides);
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="row m-4">
+                <label>Language</label>
+                <p>{broadcastLangMapObj[language].label}</p>
+                <div>
+                  <div className="input-box">
+                    <label>Renderer</label>
+                    <Select
+                      id="rendererSelect"
+                      options={renderers}
+                      value={selectedRenderer}
+                      onChange={r => setSelectedRenderer(r)}
+                    />
+                  </div>
+                </div>
+                <div className="input-box">
+                  <label className="w-100">Source Path</label>
+                  <div className="form-group autoComplete">
+                    <input
+                      className="form-control"
+                      type="type"
+                      value={contentSource}
+                      onChange={(e) => {
+                        setContentSource(e.target.value);
+                        setShowAutocompleteBox(false);
+                        clearTimeout(typingTimeout);
+                        const timeoutId = setTimeout(() => {
+                          // Perform action after typing has stopped
+                          setShowAutocompleteBox(true);
+                          setSourceUrl(e.target.value);
+                        }, 500); // Adjust the timeout duration as needed
+                        // Store the timeout ID for future reference
+                        setTypingTimeout(timeoutId);
+                      }}
+                    />
+                    {showAutocompleteBox && sourceUrl.length > 0 && (
+                      <ul
+                        className="suggestions"
+                        id="suggestions"
+                        style={{ display: "none" }}
+                      >
+                        {autocomplete.map((suggestion, index) => (
+                          <li
+                            key={index}
+                            onClick={(event) => {
+                              event.target.parentNode.style.display = "none";
+                              setContentSource(suggestion.source_path);
+                              setSourceUid(suggestion.source_uid);
+                            }}
+                          >
+                            {suggestion.source_path}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-primary btn-sm col-3 m-4"
+                  onClick={loadSource}
+                >
+                  Add Source
+                </button>
+                <div>
+                  <SplitToSlides
+                    markdown={wholeText}
+                    active={splitActive}
+                    visible={false}
+                     renderer={selectedRenderer.value}
+                    updateSlides={(slides) => {
+                      setSplitActive(false);
+                      setUpdateTagList(slides);
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      }
+    </>
   );
 };
 

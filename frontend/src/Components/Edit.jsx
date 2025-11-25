@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import { isLtr } from "../Utils/Const";
 import { Virtuoso } from 'react-virtuoso';
 import { Search } from "../Layout/Search";
+import { getLatestLsn } from "../Utils/Common"
 
 const findRow = (textArea) => {
   while (!!textArea && !textArea.className.includes("row")) {
@@ -151,12 +152,13 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
     dispatch(GetBookmarks({ language, channel }));
   }, [dispatch, language, channel]);
 
-  const refetchSlides = useCallback(async () => {
+  const refetchSlides = useCallback(async (lsn = undefined) => {
     dispatch(
       GetSlides({
         file_uid: fileUid,
         language,
         channel,
+        lsn,
       })
     );
   }, [dispatch, fileUid, language, channel]);
@@ -254,15 +256,21 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
     if (isSourcePathChanged()) {
 			console.log('Updating source path', sourcePath, sourcePathId);
       savePromises.push(dispatch(UpdateSourcePath({
-        sourcePathId,
-        sourcePath,
+        data: {
+          sourcePathId,
+          sourcePath,
+        },
+        return_lsn: true,
 			})));
     }
 
     if (deleted.length > 0) {
       savePromises.push(dispatch(DeleteSlide({
-        force_delete_bookmarks: true,
-        slide_ids: deleted,
+        data: {
+          force_delete_bookmarks: true,
+          slide_ids: deleted,
+        },
+        return_lsn: true,
       })));
     }
 
@@ -279,7 +287,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
         })
       );
     if (updateSlideList.length > 0) {
-      savePromises.push(dispatch(UpdateSlide(updateSlideList)));
+      savePromises.push(dispatch(UpdateSlide({ slides: updateSlideList, return_lsn: true })));
     }
 
     const addNewSlideList = editSlides
@@ -296,10 +304,12 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
         renderer,
       }));
     if (addNewSlideList.length > 0) {
-      savePromises.push(dispatch(AddSlide(addNewSlideList)));
+      savePromises.push(dispatch(AddSlide({ slides: addNewSlideList, return_lsn: true })));
     }
 
-    return Promise.all(savePromises).finally(() => refetchSlides());
+    const results = await Promise.all(savePromises);
+    const lsn = results.reduce((latest, result) => getLatestLsn(latest, result.payload.lsn), undefined);
+    refetchSlides(lsn);
   }, [deleted, dispatch, isSlideDataChanged, isSourcePathChanged, editSlides, sourcePath, sourcePathId, refetchSlides]);
 
 	// Re-split slides from selected slide and on.
