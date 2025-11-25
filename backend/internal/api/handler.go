@@ -412,7 +412,8 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 
 	var totalRows int64
 	query = query.
-		Select(`
+		Select(fmt.Sprintf(`
+			/* %d */
 			slides.*,
 			source_paths.id AS source_path_id,
 			source_paths.path AS source_path,
@@ -420,7 +421,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			files.source_uid,
 			source_paths.languages,
 			source_paths.path || ' / ' || slides.order_number + 1 AS slide_source_path
-		`, language, channel).
+		`, time.Now().UnixNano()), language, channel).
 		Order("slides.file_uid").Order("slides.order_number").Order("slides.updated_at").
 		Count(&totalRows)
 
@@ -883,7 +884,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		FileUid      string `json:"file_uid"`
 	}{}
 	query := h.Database.Debug().WithContext(ctx).
-		Select("bookmarks.slide_id AS slide_id, bookmarks.order_number AS order_number, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.order_number+1 AS bookmark_path, files.file_uid AS file_uid").
+		Select(fmt.Sprintf(" /* %d */ bookmarks.slide_id AS slide_id, bookmarks.order_number AS order_number, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.order_number+1 AS bookmark_path, files.file_uid AS file_uid", time.Now().UnixNano())).
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
