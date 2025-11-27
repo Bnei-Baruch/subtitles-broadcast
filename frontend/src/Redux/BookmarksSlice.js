@@ -18,12 +18,11 @@ export const GetBookmarks = createAsyncThunk(
 // Adds or updates bookmarks.
 export const UpdateBookmarks = createAsyncThunk(
   "bookmarks/update",
-  async ({bookmarks, update, channel, language, return_lsn}, thunkAPI) => {
+  async ({bookmarks, update, channel, language}, thunkAPI) => {
     const updatedBookmarks = [];
-    const lsn = return_lsn ? "?return_lsn=true" : "";
     try {
       for (const bookmark of bookmarks) {
-        const response = await axios.post(`${API}bookmark${lsn}`, {
+        const response = await axios.post(`${API}bookmark`, {
           file_uid: bookmark.file_uid,
           slide_id: bookmark.slide_id,
           // Update order number of bookmark only if explicitly set.
@@ -47,8 +46,7 @@ export const UpdateBookmarks = createAsyncThunk(
 export const UnBookmarkSlide = createAsyncThunk(
   "bookmarks/delete",
   async (data, thunkAPI) => {
-    const lsn = data.return_lsn ? "?return_lsn=true" : "";
-    const response = await axios.delete(`${API}bookmark/${data.bookmark_id}${lsn}`);
+    const response = await axios.delete(`${API}bookmark/${data.bookmark_id}`);
     return response.data;
   }
 );

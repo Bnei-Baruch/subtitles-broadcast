@@ -46,104 +46,12 @@ func NewHandler(database *gorm.DB) *Handler {
 	}
 }
 
-// WaitForLSN waits until the database has applied the transaction identified by lsnToken.
-// Strategy:
-// 1. On Primary (Master): pg_last_wal_replay_lsn() returns NULL. We return immediately.
-// 2. On Replica (Slave): It returns the LSN. We poll until pg_last_wal_replay_lsn() >= lsnToken.
-func WaitForLSN(ctx context.Context, db *gorm.DB, lsnToken string) error {
-	if lsnToken == "" {
-		return nil
-	}
-
-	// Create a timeout context to prevent indefinite blocking (e.g. if replication breaks).
-	waitCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	log.Debugf("Checking LSN consistency: %s", lsnToken)
-
-	// Ticker for polling frequency (100ms)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
-
-	// Immediate check (optimization: don't wait 100ms if already consistent)
-	if caughtUp, err := checkLSN(db.WithContext(waitCtx), lsnToken); err != nil {
-		return err // Database error
-	} else if caughtUp {
-		return nil // Master or Synced Replica
-	}
-
-	for {
-		select {
-		case <-waitCtx.Done():
-			// Timeout exceeded. We proceed anyway to show potential stale data rather than erroring.
-			log.Warnf("LSN wait timed out for token %s. Proceeding with potentially stale data.", lsnToken)
-			return nil
-
-		case <-ticker.C:
-			caughtUp, err := checkLSN(db.WithContext(waitCtx), lsnToken)
-			if err != nil {
-				return err
-			}
-			if caughtUp {
-				return nil
-			}
-			// Loop again if not caught up
-		}
-	}
-}
-
-// checkLSN runs the comparison query.
-// Returns true if Master (NULL) or if Replica is caught up (True).
-// Returns false if Replica is lagging.
-func checkLSN(db *gorm.DB, token string) (bool, error) {
-	var result struct {
-		IsSlave *bool `gorm:"column:is_slave"`
-		Lsn *string `gorm:"column:lsn"`
-		CaughtUp *bool `gorm:"column:caught_up"`
-	}
-
-	query := fmt.Sprintf(`
-		SELECT
-		pg_is_in_recovery() as is_slave,
-		CASE
-			WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn()
-			ELSE pg_current_wal_lsn()
-		END as lsn,
-		CASE
-			WHEN pg_is_in_recovery() THEN COALESCE(pg_last_wal_replay_lsn() >= ?::pg_lsn, false)
-			ELSE true
-		END as caught_up
-		/* %d */`, time.Now().UnixNano())
-	err := db.Raw(query, token).Scan(&result).Error
-	if err != nil {
-		// Handle non-fatal context errors gracefully
-		if strings.Contains(err.Error(), "context deadline exceeded") || 
-		   strings.Contains(err.Error(), "canceled") {
-			return false, nil // Let the main loop handle the timeout log
-		}
-		return false, fmt.Errorf("failed to check LSN status: %w", err)
-	}
-
-	log.Debugf("Result %v %s %v", *result.IsSlave, *result.Lsn, *result.CaughtUp)
-	if *result.IsSlave {
-		log.Debug("Slave")
-		return *result.CaughtUp, nil
-	} else {
-		log.Debug("Master")
-		return true, nil
-	}
-}
-
-func getResponse(success bool, data interface{}, err, description string, lsn ...string) gin.H {
+func getResponse(success bool, data interface{}, err, description string) gin.H {
 	res := gin.H{
 		responseSuccess:     success,
 		responseData:        data,
 		responseError:       err,
 		responseDescription: description,
-	}
-
-	if (len(lsn) > 0 && lsn[0] != "") {
-		res["lsn"] = lsn[0]
 	}
 
 	return res
@@ -200,12 +108,7 @@ func (h *Handler) AddSlides(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Adding slide data has failed"))
 		return
 	}
-  lsnToken := ""
-  returnLsn := ctx.Query("return_lsn")
-  if returnLsn == "true" {
-    h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-  }
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded", lsnToken))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding slide data has succeeded"))
 }
 
 func (h *Handler) AddCustomSlides(ctx *gin.Context) {
@@ -367,14 +270,9 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		return
 	}
 
-	lsnToken := ctx.Query("lsn")
-	if lsnToken != "" {
-		if err := WaitForLSN(ctx, h.Database, lsnToken); err != nil {
-			log.Error(err)
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Error getting slides while waiting for lsn"))
-			return
-		}
+	force_master := ""
+	if ctx.Query("read_after_write") == "true" {
+		force_master = "random(),"
 	}
 
 	query := h.Database.Debug().WithContext(ctx).
@@ -413,7 +311,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	var totalRows int64
 	query = query.
 		Select(fmt.Sprintf(`
-			/* %d */
+			%s
 			slides.*,
 			source_paths.id AS source_path_id,
 			source_paths.path AS source_path,
@@ -421,7 +319,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			files.source_uid,
 			source_paths.languages,
 			source_paths.path || ' / ' || slides.order_number + 1 AS slide_source_path
-		`, time.Now().UnixNano()), language, channel).
+		`, force_master), language, channel).
 		Order("slides.file_uid").Order("slides.order_number").Order("slides.updated_at").
 		Count(&totalRows)
 
@@ -526,12 +424,7 @@ func (h *Handler) UpdateSlides(ctx *gin.Context) {
 		return
 	}
 
-  lsnToken := ""
-  returnLsn := ctx.Query("return_lsn")
-  if returnLsn == "true" {
-    h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-  }
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded", lsnToken))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Updating data has succeeded"))
 }
 
 func (h *Handler) DeleteSlides(ctx *gin.Context) {
@@ -606,12 +499,7 @@ func (h *Handler) DeleteSlides(ctx *gin.Context) {
 		return
 	}
 
-  lsnToken := ""
-  returnLsn := ctx.Query("return_lsn")
-  if returnLsn == "true" {
-    h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-  }
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded", lsnToken))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
@@ -747,12 +635,7 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Deleting file slide data has failed"))
 		return
 	}
-  lsnToken := ""
-  returnLsn := ctx.Query("return_lsn")
-  if returnLsn == "true" {
-    h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-  }
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded", lsnToken))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
@@ -846,12 +729,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			return
 		}
 	}
-	lsnToken := ""
-	returnLsn := ctx.Query("return_lsn")
-	if returnLsn == "true" {
-		h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-	}
-	ctx.JSON(http.StatusOK, getResponse(true, bookmark, "", "Adding bookmark data has succeeded", lsnToken))
+	ctx.JSON(http.StatusOK, getResponse(true, bookmark, "", "Adding bookmark data has succeeded"))
 }
 
 func (h *Handler) GetBookmarks(ctx *gin.Context) {
@@ -867,14 +745,9 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 			getResponse(false, nil, "Query language is missing", "Query language is missing"))
 		return
 	}
-	lsnToken := ctx.Query("lsn")
-	if lsnToken != "" {
-		if err := WaitForLSN(ctx, h.Database, lsnToken); err != nil {
-			log.Error(err)
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Error getting bookmarks while waiting for lsn"))
-			return
-		}
+	force_master := "";
+	if ctx.Query("read_after_write") == "true" {
+		force_master = "random(),";
 	}
 	result := []struct {
 		Slide_Id     uint   `json:"slide_id"`
@@ -884,7 +757,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		FileUid      string `json:"file_uid"`
 	}{}
 	query := h.Database.Debug().WithContext(ctx).
-		Select(fmt.Sprintf(" /* %d */ bookmarks.slide_id AS slide_id, bookmarks.order_number AS order_number, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.order_number+1 AS bookmark_path, files.file_uid AS file_uid", time.Now().UnixNano())).
+		Select(fmt.Sprintf(" %s bookmarks.slide_id AS slide_id, bookmarks.order_number AS order_number, bookmarks.id AS bookmark_id, source_paths.path || ' / ' || slides.order_number+1 AS bookmark_path, files.file_uid AS file_uid", force_master)).
 		Table(DBTableBookmarks).
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
@@ -920,14 +793,7 @@ func (h *Handler) DeleteBookmark(ctx *gin.Context) {
 			getResponse(false, nil, "No bookmarked slide with the user", "No bookmarked slide with the user"))
 		return
 	}
-
-	lsnToken := ""
-	returnLsn := ctx.Query("return_lsn")
-	if returnLsn == "true" {
-		h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-	}
-
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded", lsnToken))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {
@@ -1051,15 +917,9 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			getResponse(false, nil, "", "channel is needed"))
 		return
 	}
-	lsnToken := ctx.Query("lsn")
-	if lsnToken != "" {
-		log.Info(fmt.Sprintf("LSN: %s", lsnToken))
-		if err := WaitForLSN(ctx, h.Database, lsnToken); err != nil {
-			log.Error(err)
-			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Error getting source path while waiting for lsn"))
-			return
-		}
+	force_master := ""
+	if ctx.Query("read_after_write") == "true" {
+		force_master = "random(),"
 	}
 	keyword := ctx.Query("keyword")
 	type SourcePathData struct {
@@ -1096,6 +956,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		SELECT
 			%s
 			%s
+			%s
 		FROM "slides"
 		LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.language = '%s' AND bookmarks.channel = '%s'
 		INNER JOIN files ON slides.file_uid = files.file_uid
@@ -1114,7 +975,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	querySql := fmt.Sprintf(templateSql,
 		// DISTINCT will "choose" the first RANK() OVER, e.g., rank_number.
 		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
-		fields, language, channel, language, keyword, hiddenSql)
+		force_master, fields, language, channel, language, keyword, hiddenSql)
 	result := h.Database.Debug().WithContext(ctx).Raw(querySql + orderBySql).Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -1177,14 +1038,8 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 		return
 	}
 
-	lsnToken := ""
-	returnLsn := ctx.Query("return_lsn")
-	if returnLsn == "true" {
-		h.Database.Raw("SELECT pg_current_wal_lsn()").Row().Scan(&lsnToken)
-	}
-
 	// Respond with a success message
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "message": "Source path updated successfully", "lsn": lsnToken})
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "message": "Source path updated successfully"})
 }
 
 func (h *Handler) GetUserSettings(ctx *gin.Context) {
