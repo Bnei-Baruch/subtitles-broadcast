@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { createMarkdownit } from "../Utils/SlideSplit";
 
-export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer }) => {
+export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, onOverflow = undefined }) => {
   const outerRef = useRef();
   const slideRef = useRef();
   const blueStripeRef = useRef();
@@ -44,6 +44,9 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer }) =
       );
     }
     slideRef.current.innerHTML = md.render(markedContent ? markedContent : "");
+    if (onOverflow) {
+      onOverflow(slideRef.current.scrollHeight > slideRef.current.clientHeight);
+    }
   }, [content, md, searchKeyword]);
 
   return (

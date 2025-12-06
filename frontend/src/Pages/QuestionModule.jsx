@@ -34,6 +34,8 @@ const QuestionModule = () => {
   const mqttLogs = useSelector((state) => state.mqtt.mqttLogs);
   const allQuestions = mqttLogs.filter((message) => message.type === ST_QUESTION).sort((a, b) => messageTime(b) - messageTime(a));
 
+  const [overflow, setOverflow] = useState(false);
+
   useEffect(() => {
     setIsLtr(languageIsLtr(broadcastLangCode));
   }, [broadcastLangCode]);
@@ -104,6 +106,7 @@ const QuestionModule = () => {
           <button
             className="btn btn-success mx-1"
             onClick={sendQuestionButtonClickHandler}
+            disabled={overflow}
           >
             Send question
           </button>
@@ -131,7 +134,14 @@ const QuestionModule = () => {
           />
         </div>
       </div>
-      <Slide content={questionText} isLtr={isLtr} isQuestion={true} renderer={"default"} />
+      <div className={overflow && "red-border"}>
+        <Slide
+          content={questionText}
+          isLtr={isLtr}
+          isQuestion={true}
+          renderer={"default"}
+          onOverflow={(newOverflow) => setOverflow(newOverflow)} />
+      </div>
       <div className="my-5">
         <p>History</p>
         <div className="SendQutionHistory">
