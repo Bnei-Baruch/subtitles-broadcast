@@ -100,8 +100,31 @@ const QuestionMessage = () => {
     publishQuestionUpdate(updatedMessage);
   };
 
+  const clearAllQuestions = () => {
+    allQuestions.forEach((questionMsg) => {
+      clearQuestionHandler(questionMsg);
+    });
+  };
+
+  const isClearAllDisabled = () => {
+    return !allQuestions.some(q => !isClearDisabled(q));
+  };
+
   return (
     <>
+      {allQuestions.length > 0 && (
+        <i
+          className={`bi bi-trash3 mx-2 ${isClearAllDisabled() ? "text-muted disabled" : ""}`}
+          onClick={clearAllQuestions}
+          title="Clear All Questions"
+          style={{
+            position: "absolute",
+            top: "23px",
+            right: "15px",
+            cursor: isClearAllDisabled() ? "not-allowed" : "pointer",
+          }}
+        />
+      )}
       {allQuestions.length > 0 ? (
         allQuestions.map((question) => (
           <div className="QuestionSection" data-key={question.ID} key={question.ID}>
