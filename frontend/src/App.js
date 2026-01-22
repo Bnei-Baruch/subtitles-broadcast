@@ -8,26 +8,31 @@ import useMqtt from "./Utils/UseMqttUtils";
 import "./App.css";
 import SideNavBar from "./Layout/SideNavBar";
 import MainRoutes from "./Routes/Routes";
-import { markErrorAsUiPresented } from "./Redux/MQTT/mqttSlice";
+import { markNotificationAsUiPresented } from "./Redux/MQTT/mqttSlice";
 import { fetchUserSettings } from "./Redux/UserSettingsSlice";
-import { showErrorToast } from "./Utils/Common";
+import { showErrorToast, showSuccessToast } from "./Utils/Common";
 
 const App = ({ auth }) => {
   // Initialize and setup MQTT.
   const { unsubscribe } = useMqtt();
 
   const dispatch = useDispatch();
-  const mqttErrors = useSelector((state) => state.mqtt.errorLogs);
+  const mqttNotifications = useSelector((state) => state.mqtt.notificationLogs);
 
   useEffect(() => {
-    // Log the error if there is one
-    mqttErrors.forEach((errorObj) => {
-      if (!errorObj.uiPresented) {
-        showErrorToast(errorObj.message);
-        dispatch(markErrorAsUiPresented(errorObj.id));
+    // Display notifications
+    mqttNotifications.forEach((notification) => {
+      if (!notification.uiPresented) {
+        if (notification.type === "success") {
+          showSuccessToast(notification.message);
+        } else {
+          // Default to error for "error" type and any unknown types
+          showErrorToast(notification.message);
+        }
+        dispatch(markNotificationAsUiPresented(notification.id));
       }
     });
-  }, [mqttErrors, dispatch]);
+  }, [mqttNotifications, dispatch]);
 
   useEffect(() => {
     dispatch(fetchUserSettings());

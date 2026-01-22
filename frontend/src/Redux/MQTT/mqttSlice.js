@@ -34,12 +34,12 @@ const initialState = {
   mqttTopics: {},    // Keys are topics, value isSubscribed.
   mqttMessages: {},  // Keys are topics, value last message.
   // Last MQTT_LOGS_MAX_LENGTH messages on any topic.
-  mqttLogs: [],      
+  mqttLogs: [],
 
   selectedSubtitleSlide: null,
   subtitlesDisplayMode: null,
   isLiveModeEnabled: false,
-  errorLogs: [],
+  notificationLogs: [],
 };
 
 const mqttSlice = createSlice({
@@ -81,9 +81,9 @@ const mqttSlice = createSlice({
       } catch (error) {
         debugLog("MQTT Message Processing Error:", error);
         dispatch(
-          addMqttError({
+          addMqttNotification({
             message: "MQTT Message Processing Error",
-            type: "Processing",
+            type: "error",
           })
         );
       }
@@ -97,37 +97,37 @@ const mqttSlice = createSlice({
     setClientId: (state, action) => {
       state.clientId = action.payload;
     },
-    addMqttError: (state, action) => {
-      const generateErrorId = () => Math.random().toString(36).substr(2, 9);
+    addMqttNotification: (state, action) => {
+      const generateNotificationId = () => Math.random().toString(36).substr(2, 9);
 
-      const errorData =
+      const notificationData =
         typeof action.payload === "string"
           ? {
-              id: generateErrorId(),
+              id: generateNotificationId(),
               message: action.payload,
               timestamp: new Date().toISOString(),
-              type: "General",
+              type: "error",
               uiPresented: false,
             }
           : {
-              id: generateErrorId(),
-              message: action.payload.message || "Unknown MQTT Error",
+              id: generateNotificationId(),
+              message: action.payload.message || "Unknown MQTT Notification",
               timestamp: action.payload.timestamp || new Date().toISOString(),
-              type: action.payload.type || "General",
+              type: action.payload.type || "error",
               uiPresented: false,
             };
 
-      state.errorLogs.push(errorData);
+      state.notificationLogs.push(notificationData);
     },
-    clearMqttErrors: (state) => {
-      state.errorLogs = [];
+    clearMqttNotifications: (state) => {
+      state.notificationLogs = [];
     },
-    markErrorAsUiPresented: (state, action) => {
-      const index = state.errorLogs.findIndex(
-        (error) => error.id === action.payload
+    markNotificationAsUiPresented: (state, action) => {
+      const index = state.notificationLogs.findIndex(
+        (notification) => notification.id === action.payload
       );
       if (index !== -1) {
-        state.errorLogs[index].uiPresented = true;
+        state.notificationLogs[index].uiPresented = true;
       }
     },
     setLiveModeEnabled(state, action) {
@@ -146,9 +146,9 @@ export const {
   setClientId,
   setMqttSelectedSlide,
   setRounRobinIndex,
-  addMqttError,
-  clearMqttErrors,
-  markErrorAsUiPresented,
+  addMqttNotification,
+  clearMqttNotifications,
+  markNotificationAsUiPresented,
   updateSubtitlesDisplayMode,
   setLiveModeEnabled,
 } = mqttSlice.actions;
