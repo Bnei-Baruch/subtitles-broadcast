@@ -330,43 +330,43 @@ export function publishEvent(eventName, data) {
 }
 
 export const publishDisplyNoneMqttMessage = (mqttMessages, channel, langCode) => {
-  republishSubtitle(mqttMessages, channel, langCode, DM_NONE);
-  republishQuestion(mqttMessages, channel, langCode, DM_NONE);
+  republishSubtitle(mqttMessages, channel, langCode, DM_NONE, false, "mode_change");
+  republishQuestion(mqttMessages, channel, langCode, DM_NONE, false, "mode_change");
 };
 
 // Used only locally in this file, will only update question displayMode if needed.
-function republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+function republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false, action = "republish") {
   const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
   const lastQuestion = mqttMessages[questionMqttTopic] || {};
   if (lastQuestion.display_status !== displayMode) {
-    publishMessage(lastQuestion, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode);
+    publishMessage(lastQuestion, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode, action);
   }
 }
 
 // Used only locally in this file, will only update subtitle displayMode if needed.
-function republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+function republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false, action = "republish") {
   const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
   const lastSubtitle = mqttMessages[subtitleMqttTopic] || {};
   if (lastSubtitle.display_status !== displayMode) {
-    publishMessage(lastSubtitle, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode);
+    publishMessage(lastSubtitle, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode, action);
   }
 }
 
 // Updates question and if needed also updated subtitle displayMode.
-export function publishQuestion(question, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+export function publishQuestion(question, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false, action = "send") {
   const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
-  publishMessage(question || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode);
-  republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode);
+  publishMessage(question || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode, action);
+  republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode, ["send", "clear", "restore"].includes(action) ? "republish" : action);
 }
 
 // Updates subtitle and if needed also updated question displayMode.
-export function publishSubtitle(subtitle, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false) {
+export function publishSubtitle(subtitle, mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false, action = "send") {
   const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
-  publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode);
-  republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode);
+  publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode, action);
+  republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode, action === "send" ? "republish" : action);
 }
 
-export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode) => {
+export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {
   const message = {
     slide_type: slide.slide_type || type,
     // Deprecated field. Keep for external systems.
@@ -384,6 +384,7 @@ export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLive
     lang: lang,
     visible: slide.visible === undefined ? true : slide.visible,
     previous_slide: slide.previous_slide,
+    action,
 
     // Important to override display mode.
     display_status: displayMode,

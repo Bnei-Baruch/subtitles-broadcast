@@ -55,13 +55,15 @@ const QuestionMessage = () => {
     );
   };
 
-  const publishQuestionUpdate = (updatedMessage) => {
+  const publishQuestionUpdate = (updatedMessage, action) => {
     publishQuestion(
       updatedMessage,
       mqttMessages,
       broadcastProgrammCode,
       updatedMessage.lang ? updatedMessage.lang : broadcastLangCode,
-      subtitlesDisplayMode
+      subtitlesDisplayMode,
+      false,
+      action
     );
   };
 
@@ -73,7 +75,7 @@ const QuestionMessage = () => {
       visible: !questionMsg.visible,
     };
 
-    publishQuestionUpdate(updatedMessage);
+    publishQuestionUpdate(updatedMessage, "toggle_visibility");
   };
 
   const clearQuestionHandler = (questionMsg) => {
@@ -85,7 +87,7 @@ const QuestionMessage = () => {
       slide: "",
     };
 
-    publishQuestionUpdate(updatedMessage);
+    publishQuestionUpdate(updatedMessage, "clear");
   };
 
   const restoreQuestionHandler = (questionMsg) => {
@@ -97,7 +99,7 @@ const QuestionMessage = () => {
       slide: questionMsg.previous_slide,
     };
 
-    publishQuestionUpdate(updatedMessage);
+    publishQuestionUpdate(updatedMessage, "restore");
   };
 
   const clearAllQuestions = () => {
@@ -172,7 +174,7 @@ const QuestionMessage = () => {
             </div>
 
             <Slide
-              content={question.orgSlide ? question.orgSlide : question.slide}
+              content={question.slide}
               isLtr={question.isLtr}
               isQuestion={question.type === "question"}
               renderer={question.renderer}
