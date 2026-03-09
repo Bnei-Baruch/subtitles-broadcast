@@ -34,6 +34,13 @@ const QuestionModule = () => {
   const mqttLogs = useSelector((state) => state.mqtt.mqttLogs);
   const allQuestions = mqttLogs.filter((message) => message.type === ST_QUESTION).sort((a, b) => messageTime(b) - messageTime(a));
 
+  const shouldShowContent = (question) => {
+    if (question.action === "send" || question.action === "restore") return true;
+    if (question.action === "toggle_visibility" && question.visible) return true;
+    if (question.action === "mode_change" && question.display_status === "questions") return true;
+    return false;
+  };
+
   const [overflow, setOverflow] = useState(false);
 
   useEffect(() => {
@@ -157,11 +164,14 @@ const QuestionModule = () => {
                         {broadcastLangMapObj[question.lang].label}
                         &nbsp;&nbsp;
                         {question.username}
+                        &nbsp;&nbsp;
+                        <strong>{question.action === "mode_change" ? `mode_change → ${question.display_status}` : question.action}</strong>
                       </span>
-                      <br />
-                      <div className={`message ${question.isLtr ? "ltr" : "rtl"}`}>
-                        {question.orgSlide ? question.orgSlide : question.slide}
-                      </div>
+                      {shouldShowContent(question) && (
+                        <div className={`message ${question.isLtr ? "ltr" : "rtl"}`}>
+                          {question.slide}
+                        </div>
+                      )}
                     </li>
                     <hr />
                   </div>

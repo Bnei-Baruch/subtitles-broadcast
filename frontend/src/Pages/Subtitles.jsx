@@ -202,7 +202,7 @@ const Subtitles = () => {
 
     // Republish existing question.
     const questionMqttTopic = getQuestionMqttTopic(channel, language);
-    publishQuestion(mqttMessages[questionMqttTopic] || {}, mqttMessages, channel, language, DM_QUESTIONS);
+    publishQuestion(mqttMessages[questionMqttTopic] || {}, mqttMessages, channel, language, DM_QUESTIONS, false, "mode_change");
   }
 
   function subtitlesBtnOnClick(evt) {
@@ -211,7 +211,7 @@ const Subtitles = () => {
     btnNoneRef.current.classList.remove("btn-success");
 
     dispatch(setSubtitlesDisplayMode(DM_SUBTITLES));
-    publishSubtitle(selectedUserSubtitleSlide, mqttMessages, channel, language, DM_SUBTITLES);
+    publishSubtitle(selectedUserSubtitleSlide, mqttMessages, channel, language, DM_SUBTITLES, false, "mode_change");
   }
 
   function noneBtnOnClick(evt) {
