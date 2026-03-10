@@ -38,9 +38,10 @@ const QuestionModule = () => {
   const filteredQuestions = selectedLang === "all" ? allQuestions : allQuestions.filter((q) => q.lang === selectedLang);
 
   const shouldShowContent = (question) => {
-    if (question.action === "send" || question.action === "restore") return true;
-    if (question.action === "toggle_visibility" && question.visible) return true;
-    if (question.action === "mode_change" && question.display_status === "questions") return true;
+    const action = question.action || "unknown";
+    if (action === "send" || action === "restore" || action === "unknown") return true;
+    if (action === "toggle_visibility" && question.visible) return true;
+    if (action === "mode_change" && question.display_status === "questions") return true;
     return false;
   };
 
@@ -174,7 +175,7 @@ const QuestionModule = () => {
                         &nbsp;&nbsp;
                         {question.username}
                         &nbsp;&nbsp;
-                        <strong>{question.action === "mode_change" ? `mode_change → ${question.display_status}` : question.action}</strong>
+                        <strong>{question.action === "mode_change" ? `mode_change → ${question.display_status}` : (question.action || "unknown")}</strong>
                       </span>
                       {shouldShowContent(question) && (
                         <div className={`message ${question.isLtr ? "ltr" : "rtl"}`}>
