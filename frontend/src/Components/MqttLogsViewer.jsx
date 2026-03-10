@@ -14,6 +14,7 @@ const MqttLogsViewer = () => {
 
   const [userSortOrder, setUserSortOrder] = useState("desc");
   const [messageSortOrder, setMessageSortOrder] = useState("desc");
+  const [selectedLang, setSelectedLang] = useState("all");
 
   if (mqttLogs.length === 0) {
     return <Typography>No MQTT messages received yet.</Typography>;
@@ -37,10 +38,10 @@ const MqttLogsViewer = () => {
     "username"
   );
 
-  const sorted = mqttLogs.slice().sort((a, b) =>
-    messageSortOrder === "desc"
-      ? messageTime(b) - messageTime(a)
-      : messageTime(a) - messageTime(b));
+  const langs = [...new Set(mqttLogs.map((m) => m.lang).filter(Boolean))];
+  const sorted = mqttLogs
+    .filter((m) => selectedLang === "all" || m.lang === selectedLang)
+    .sort((a, b) => messageSortOrder === "desc" ? messageTime(b) - messageTime(a) : messageTime(a) - messageTime(b));
 
   return (
     <Box>
@@ -81,9 +82,13 @@ const MqttLogsViewer = () => {
           justifyContent="space-between"
           alignItems="center"
         >
-          <Typography variant="h6">
-            MQTT Messages ({sorted.length})
-          </Typography>
+          <Stack direction="row" alignItems="center" gap={1}>
+            <Typography variant="h6">MQTT Messages ({sorted.length})</Typography>
+            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)}>
+              <option value="all">All</option>
+              {langs.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
+            </select>
+          </Stack>
           <IconButton
             onClick={() =>
               setMessageSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))
