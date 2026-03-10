@@ -32,7 +32,10 @@ const QuestionModule = () => {
   const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
 
   const mqttLogs = useSelector((state) => state.mqtt.mqttLogs);
+  const [selectedLang, setSelectedLang] = useState("all");
   const allQuestions = mqttLogs.filter((message) => message.type === ST_QUESTION).sort((a, b) => messageTime(b) - messageTime(a));
+  const langs = [...new Set(allQuestions.map((q) => q.lang).filter(Boolean))];
+  const filteredQuestions = selectedLang === "all" ? allQuestions : allQuestions.filter((q) => q.lang === selectedLang);
 
   const shouldShowContent = (question) => {
     if (question.action === "send" || question.action === "restore") return true;
@@ -150,11 +153,17 @@ const QuestionModule = () => {
           onOverflow={(newOverflow) => setOverflow(newOverflow)} />
       </div>
       <div className="my-5">
-        <p>History</p>
+        <div className="d-flex align-items-center gap-2 mb-2">
+          <p className="mb-0">History</p>
+          <select className="form-select form-select-sm w-auto" value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)}>
+            <option value="all">All</option>
+            {langs.map((lang) => <option key={lang} value={lang}>{broadcastLangMapObj[lang]?.label || lang}</option>)}
+          </select>
+        </div>
         <div className="SendQutionHistory">
           <ul>
-            {allQuestions.length > 0 ? (
-              allQuestions.map((question, index) => (
+            {filteredQuestions.length > 0 ? (
+              filteredQuestions.map((question, index) => (
                 <div key={index}>
                   <div>
                     <li className="item">
