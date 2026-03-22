@@ -923,18 +923,20 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	}
 	keyword := ctx.Query("keyword")
 	type SourcePathData struct {
-		SlideID     uint           `json:"slide_id"`
-		SlidesCount uint           `json:"slides_count"`
-		BookmarkID  *string        `json:"bookmark_id"`
-		SourceUID   string         `json:"source_uid"`
-		FileUID     string         `json:"file_uid"`
-		Languages   pq.StringArray `json:"languages" gorm:"type:text[]"`
-		Path        string         `json:"path"`
-		Hidden      bool           `json:"hidden"`
-		CreatedBy   string         `json:"created_by"`
-		CreatedAt   time.Time      `json:"created_at"`
-		UpdatedBy   string         `json:"updated_by"`
-		UpdatedAt   time.Time      `json:"updated_at"`
+		SlideID      uint           `json:"slide_id"`
+		SlidesCount  uint           `json:"slides_count"`
+		BookmarkID   *string        `json:"bookmark_id"`
+		SourceUID    string         `json:"source_uid"`
+		FileUID      string         `json:"file_uid"`
+		Languages    pq.StringArray `json:"languages" gorm:"type:text[]"`
+		Path         string         `json:"path"`
+		Hidden       bool           `json:"hidden"`
+		CreatedBy    string         `json:"created_by"`
+		CreatedAt    time.Time      `json:"created_at"`
+		UpdatedBy    string         `json:"updated_by"`
+		UpdatedAt    time.Time      `json:"updated_at"`
+		HasQuestions bool           `json:"has_questions"`
+		HasSubtitles bool           `json:"has_subtitles"`
 	}
 	paths := []*SourcePathData{}
 	fields := `
@@ -949,6 +951,8 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		source_paths.created_at AS created_at,
 		source_paths.updated_by AS updated_by,
 		source_paths.updated_at AS updated_at,
+		st.has_questions AS has_questions,
+		st.has_subtitles AS has_subtitles,
 		RANK() OVER (PARTITION BY source_paths.path, source_paths.source_uid ORDER BY bookmarks.id, slides.id) rank_number
 	`
 	orderBySql := " ORDER BY source_paths.path, source_paths.source_uid"
@@ -962,6 +966,15 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		INNER JOIN files ON slides.file_uid = files.file_uid
 		INNER JOIN (SELECT slides.file_uid, COUNT(*) as count FROM slides GROUP BY slides.file_uid) AS c ON c.file_uid = files.file_uid
 		INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages
+		LEFT JOIN (
+			SELECT files.source_uid, files.languages,
+				BOOL_OR(slides.slide_type = 'question') AS has_questions,
+				BOOL_OR(slides.slide_type != 'question' OR slides.slide_type IS NULL) AS has_subtitles
+			FROM slides
+			INNER JOIN files ON slides.file_uid = files.file_uid
+			WHERE slides.hidden = FALSE
+			GROUP BY files.source_uid, files.languages
+		) AS st ON st.source_uid = source_paths.source_uid AND st.languages = source_paths.languages
 		WHERE TRUE
 			AND '%s' = ANY(files.languages)
 			AND source_paths.path ILIKE '%%%s%%'

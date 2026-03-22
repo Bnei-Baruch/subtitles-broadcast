@@ -215,7 +215,6 @@ select {
 
 .top-autocomplete .form-check {
   display: flex;
-  align-items: center;
 }
 
 .top-autocomplete span {
@@ -224,7 +223,7 @@ select {
 }
 
 .top-autocomplete div.autoComplete {
-  width: 50%;
+  width: 100%;
 }
 
 .form-group.autoComplete input {
