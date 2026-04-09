@@ -55,6 +55,10 @@ export function getQuestionMqttTopic(broadcastProgrammCode, broadcastLangCode) {
   return `subtitles/${broadcastProgrammCode}/${broadcastLangCode}/question`;
 }
 
+export function getOnOffAirTopic(broadcastProgrammCode) {
+  return `subtitles/${broadcastProgrammCode}/on_off_air`;
+}
+
 export function getSubtitlesDisplayModeTopic(
   broadcastProgrammCode,
   broadcastLangCode

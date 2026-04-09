@@ -3,7 +3,7 @@ import mqtt from "mqtt";
 import { useDispatch, useSelector } from "react-redux";
 import { setConnected, updateMqttTopic, mqttMessageReceived, setClientId, addMqttNotification } from "../Redux/MQTT/mqttSlice";
 import { DM_NONE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
-import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
 
@@ -156,7 +156,7 @@ export default function useMqtt() {
           }));
         }
 
-        // Populate MQTT topics for the questions and subtitles
+        // Populate MQTT topics for the questions, subtitles, and on/off air
         let broadcastMqttTopics = broadcastLanguages
           .map((langItem) => {
             return [
@@ -165,6 +165,7 @@ export default function useMqtt() {
             ];
           })
           .flat();
+        broadcastMqttTopics.push(getOnOffAirTopic(broadcastProgrammCode));
 
         debugLog(`[CONNECT EVENT] Resetting ${broadcastMqttTopics.length} topics to isSubscribed=false`);
         broadcastMqttTopics.forEach((topic) => {

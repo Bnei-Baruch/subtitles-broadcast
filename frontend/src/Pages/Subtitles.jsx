@@ -59,6 +59,7 @@ const Subtitles = () => {
     mqttTopics,
     mqttMessages,
     isLiveModeEnabled,
+    isOnAir,
   } = useSelector((state) => state.mqtt);
 
   const subtitleTopic = getSubtitleMqttTopic(channel, language);
@@ -491,6 +492,9 @@ const Subtitles = () => {
 
         <div className="right-section">
           <div className="first-sec">
+            <span className={`badge on-air-badge ${isOnAir ? "on-air" : "off-air"}`}>
+              {isOnAir ? "● ON AIR" : "● OFF AIR"}
+            </span>
             <Preview />
           </div>
           <div className="book-mark whit-s overflow-auto">
