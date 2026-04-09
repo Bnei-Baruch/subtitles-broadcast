@@ -317,6 +317,27 @@ bdo {
   display: flex;
   align-items: center;
 }
+.first-sec {
+  position: relative;
+}
+.on-air-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.on-air-badge.on-air {
+  background-color: #dc3545;
+  color: #fff;
+}
+.on-air-badge.off-air {
+  background-color: #444;
+  color: #aaa;
+}
 .innerhead .right-sec .btn {
   border-radius: 4px !important;
   margin-left: 10px !important ;

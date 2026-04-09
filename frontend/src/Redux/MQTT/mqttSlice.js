@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../../Utils/Common";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic } from "../../Utils/Common";
 import { DM_SUBTITLES, DM_QUESTIONS, broadcastLanguages } from "../../Utils/Const";
 import debugLog from "../../Utils/debugLog";
 
@@ -39,6 +39,7 @@ const initialState = {
   selectedSubtitleSlide: null,
   subtitlesDisplayMode: null,
   isLiveModeEnabled: false,
+  isOnAir: false,
   notificationLogs: [],
 };
 
@@ -68,6 +69,10 @@ const mqttSlice = createSlice({
     },
     mqttMessageReceived(state, action, dispatch) {
       const { topic, message, broadcastLangCode } = action.payload;
+      if (topic.endsWith("/on_off_air")) {
+        state.isOnAir = message.includes("onair");
+        return;
+      }
       try {
         const parsedMessage = JSON.parse(message);
         state.mqttMessages[topic] = parsedMessage;
