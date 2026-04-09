@@ -124,7 +124,7 @@ export default function useMqtt() {
   useEffect(() => {
     if (!clientRef.current) {
       debugLog("Connecting to MQTT Broker...", mqttBrokerUrl);
-      clientRef.current = mqtt.connect(mqttBrokerUrl, {
+      const client = mqtt.connect(mqttBrokerUrl, {
         keepalive: 60, // seconds
         reconnectPeriod: 2000, // ms
 
@@ -134,11 +134,12 @@ export default function useMqtt() {
         // In disconnected state, don't queue messages, drop them.
         queueQoSZero: false,
       });
+      clientRef.current = client;
 
       // Start connection check immediately - runs regardless of connection state
       startConnectionCheck();
 
-      clientRef.current.on("connect", () => {
+      client.on("connect", () => {
         const state = store.getState();
         const existingTopics = Object.keys(state.mqtt.mqttTopics);
         const isReconnect = existingTopics.length > 0;
@@ -171,7 +172,7 @@ export default function useMqtt() {
         });
       });
 
-      clientRef.current.on("message", (topic, message) => {
+      client.on("message", (topic, message) => {
         const state = store.getState();
         const currentSubState = state.mqtt.mqttTopics[topic];
 
@@ -196,7 +197,8 @@ export default function useMqtt() {
         );
       });
 
-      clientRef.current.on("error", (err) => {
+      client.on("error", (err) => {
+        if (clientRef.current !== client) return;
         console.error("MQTT Connection Error:", err);
         debugLog("[ERROR EVENT] MQTT connection error - will reconnect");
         dispatch(addMqttNotification({
@@ -208,11 +210,13 @@ export default function useMqtt() {
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);
       });
 
-      clientRef.current.on("reconnect", () => {
+      client.on("reconnect", () => {
+        if (clientRef.current !== client) return;
         debugLog("[RECONNECT EVENT] MQTT attempting reconnection...");
       });
 
-      clientRef.current.on("offline", () => {
+      client.on("offline", () => {
+        if (clientRef.current !== client) return;
         debugLog("[OFFLINE EVENT] MQTT went offline");
         dispatch(setConnected(false));
         dispatch(addMqttNotification({
@@ -223,7 +227,8 @@ export default function useMqtt() {
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);
       });
 
-      clientRef.current.on("close", () => {
+      client.on("close", () => {
+        if (clientRef.current !== client) return;
         debugLog("[CLOSE EVENT] MQTT connection closed");
         dispatch(setConnected(false));
         // Immediately try to reconnect on close
