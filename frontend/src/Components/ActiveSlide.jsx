@@ -8,15 +8,14 @@ import isEqual from 'lodash/isEqual';
 
 const QST_SWAP_TIME = 10 * 1000;  // 10s
 
-export function ActiveSlide({ subtitlesDisplayModeOverride } = {}) {
+export function ActiveSlide() {
   const [timeoutId, setTimeoutId] = useState(null);
   const [{nextIndex, activeQuestion}, setState] = useState({nextIndex: 0, activeQuestion: null});
   const [visibleQuestions, setVisibleQuestions] = useState([]);
-
-  const subtitlesDisplayModeFromStore = useSelector(
+  
+  const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode || "none",
   );
-  const subtitlesDisplayMode = subtitlesDisplayModeOverride ?? subtitlesDisplayModeFromStore;
 
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he",

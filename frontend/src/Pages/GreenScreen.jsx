@@ -10,8 +10,8 @@ import FullscreenExitIcon from "@mui/icons-material/FullscreenExit"
 
 import "./PagesCSS/GreenWindow.css";
 
-const FADE_DURATION = 500; // ms
 const CURSOR_HIDE_DELAY = 3000; // ms
+
 
 const GreenScreen = () => {
   const outerRef = useRef();
@@ -33,35 +33,13 @@ const GreenScreen = () => {
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode || DM_NONE,
   );
-
-  const [opacity, setOpacity] = useState(1);
-  const [delayedMode, setDelayedMode] = useState(subtitlesDisplayMode);
-  const prevModeRef = useRef(subtitlesDisplayMode);
-
-  useEffect(() => {
-    const prev = prevModeRef.current;
-    prevModeRef.current = subtitlesDisplayMode;
-    const wasNone = prev === DM_NONE;
-    const isNone = subtitlesDisplayMode === DM_NONE;
-
-    if (!wasNone && isNone) {
-      setOpacity(0);
-      setTimeout(() => setDelayedMode(DM_NONE), FADE_DURATION);
-    } else if (wasNone && !isNone) {
-      setDelayedMode(subtitlesDisplayMode);
-      setOpacity(0);
-      requestAnimationFrame(() => requestAnimationFrame(() => setOpacity(1)));
-    } else {
-      setDelayedMode(subtitlesDisplayMode);
-    }
-  }, [subtitlesDisplayMode]);
   const {
     broadcast_language_code: language,
     broadcast_program_code: channel,
   } = useSelector((state) => state.userSettings.userSettings);
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
-  const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, delayedMode, language, channel)));
-  const isQuestion = slide && delayedMode === DM_QUESTIONS && slide.slide_type === ST_QUESTION;
+  const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, subtitlesDisplayMode, language, channel)));
+  const isQuestion = slide && subtitlesDisplayMode === DM_QUESTIONS && slide.slide_type === ST_QUESTION;
 
   const handleResize = useCallback(() => {
     const scale = outerRef.current.clientWidth / 1920;
@@ -102,9 +80,7 @@ const GreenScreen = () => {
 				</IconButton>
 			</div>
       <div ref={spacerRef} className="spacer"></div>
-      <div style={{ opacity, transition: `opacity ${FADE_DURATION}ms ease` }}>
-        <ActiveSlide subtitlesDisplayModeOverride={delayedMode} />
-      </div>
+      <ActiveSlide />
     </div>
   );
 };
