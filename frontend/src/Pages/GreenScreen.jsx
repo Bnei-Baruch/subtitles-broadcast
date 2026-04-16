@@ -11,12 +11,24 @@ import FullscreenExitIcon from "@mui/icons-material/FullscreenExit"
 import "./PagesCSS/GreenWindow.css";
 
 const FADE_DURATION = 500; // ms
+const CURSOR_HIDE_DELAY = 3000; // ms
 
 const GreenScreen = () => {
   const outerRef = useRef();
   const spacerRef = useRef();
 
   const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const [isCursorVisible, setIsCursorVisible] = useState(true);
+  const cursorTimeoutRef = useRef(null);
+
+  const handleMouseMove = useCallback(() => {
+    setIsCursorVisible(true);
+    clearTimeout(cursorTimeoutRef.current);
+    cursorTimeoutRef.current = setTimeout(() => setIsCursorVisible(false), CURSOR_HIDE_DELAY);
+  }, []);
+
+  useEffect(() => () => clearTimeout(cursorTimeoutRef.current), []);
 
   const subtitlesDisplayMode = useSelector(
     (state) => state.mqtt.subtitlesDisplayMode || DM_NONE,
@@ -83,7 +95,7 @@ const GreenScreen = () => {
   }, [isFullScreen]);
 
   return (
-    <div ref={outerRef} className="background">
+    <div ref={outerRef} className="background" onMouseMove={handleMouseMove} style={{ cursor: isCursorVisible ? 'default' : 'none' }}>
 			<div className="full-screen-button-parent">
 				<IconButton className="full-screen-button" color="inherit" onClick={handleToggle}>
 					{isFullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
