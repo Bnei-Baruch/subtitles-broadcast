@@ -706,7 +706,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                     isLtr(language) ? "ltr" : "rtl"
                   }`}
                   value={sourcePath}
-                  onChange={(e) => { console.log(e.target.value.trim());  setSourcePath(e.target.value.trim()); }}
+                  onChange={(e) => setSourcePath(e.target.value)}
                   placeholder="Update Source Path"
                 />
               </div>
