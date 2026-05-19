@@ -49,12 +49,13 @@ const GROUP_LABELS = { "": "All", songbook: "Songbook", shabat: "Shabat", origin
 
 const SETLIST_DRAG_TYPE = "karaoke-setlist-item";
 
-const DraggableSetlistItem = ({ item, idx, isActive, onSelect, onRemove, moveCard }) => {
+const DraggableSetlistItem = ({ item, idx, isActive, onSelect, onRemove, moveCard, onDragEnd }) => {
   const ref = useRef(null);
 
   const [, drag] = useDrag({
     type: SETLIST_DRAG_TYPE,
     item: { index: idx },
+    end: onDragEnd,
   });
 
   const [, drop] = useDrop({
@@ -152,6 +153,7 @@ const Karaoke = () => {
   const [editMode, setEditMode] = useState(false);
   const [editingTexts, setEditingTexts] = useState({});
   const [localEditSlides, setLocalEditSlides] = useState([]);
+  const [localSetlist, setLocalSetlist] = useState([]);
 
   const { songs, setlist, slides, activeSongFileUid, activeSlideIndex, activeGroup, karaokeEvents, activeKaraokeEvent } = useSelector(
     (state) => state.karaoke
@@ -182,6 +184,10 @@ const Karaoke = () => {
       dispatch(GetKaraokeSetlist({ channel, event: activeKaraokeEvent }));
     }
   }, [dispatch, channel, activeKaraokeEvent]);
+
+  useEffect(() => {
+    setLocalSetlist(setlist);
+  }, [setlist]);
 
   const handleGroupChange = useCallback(
     (group) => {
@@ -264,19 +270,21 @@ const Karaoke = () => {
     [dispatch]
   );
 
-  const moveSetlistCard = useCallback(
-    (fromIndex, toIndex) => {
-      const newSetlist = [...setlist];
-      const [moved] = newSetlist.splice(fromIndex, 1);
-      newSetlist.splice(toIndex, 0, moved);
-      dispatch(
-        ReorderSetlist({
-          items: newSetlist.map((item, i) => ({ id: item.id, order_number: i })),
-        })
-      );
-    },
-    [dispatch, setlist]
-  );
+  const moveSetlistCard = useCallback((fromIndex, toIndex) => {
+    setLocalSetlist((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const handleSetlistReorderEnd = useCallback(() => {
+    setLocalSetlist((current) => {
+      dispatch(ReorderSetlist({ items: current.map((item, i) => ({ id: item.id, order_number: i })) }));
+      return current;
+    });
+  }, [dispatch]);
 
   const handleDeleteSong = useCallback(
     (sourceUid) => {
@@ -381,8 +389,6 @@ const Karaoke = () => {
     window.addEventListener("mouseup", onUp);
   }, [libraryWidth, setlistWidth]);
 
-  const lyricsSlides = slides;
-
   const handleSelectSlide = useCallback(
     (slide) => {
       dispatch(setActiveSlideIndex(slide.order_number));
@@ -395,12 +401,12 @@ const Karaoke = () => {
 
   const navigateSlide = useCallback(
     (delta) => {
-      const currentIdx = lyricsSlides.findIndex((s) => s.order_number === activeSlideIndex);
+      const currentIdx = slides.findIndex((s) => s.order_number === activeSlideIndex);
       const nextIdx = currentIdx + delta;
-      if (nextIdx < 0 || nextIdx >= lyricsSlides.length) return;
-      handleSelectSlide(lyricsSlides[nextIdx]);
+      if (nextIdx < 0 || nextIdx >= slides.length) return;
+      handleSelectSlide(slides[nextIdx]);
     },
-    [lyricsSlides, activeSlideIndex, handleSelectSlide]
+    [slides, activeSlideIndex, handleSelectSlide]
   );
 
   // Keyboard navigation
@@ -705,7 +711,7 @@ const Karaoke = () => {
             />
           </div>
           <div className="setlist-list">
-            {setlist.map((item, idx) => (
+            {localSetlist.map((item, idx) => (
               <DraggableSetlistItem
                 key={item.id ?? item.ID}
                 item={item}
@@ -714,6 +720,7 @@ const Karaoke = () => {
                 onSelect={handleSelectSong}
                 onRemove={handleRemoveFromSetlist}
                 moveCard={moveSetlistCard}
+                onDragEnd={handleSetlistReorderEnd}
               />
             ))}
             {setlist.length === 0 && (

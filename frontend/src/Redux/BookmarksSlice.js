@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { showErrorToast } from "../Utils/Common";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -19,17 +20,27 @@ export const GetBookmarkEvents = createAsyncThunk(
 
 export const CreateBookmarkEvent = createAsyncThunk(
   "bookmarks/createEvent",
-  async ({ channel, event }) => {
-    await axios.post(`${API}bookmark/events`, { channel, event, type: "subtitles" });
-    return event;
+  async ({ channel, event }, { rejectWithValue }) => {
+    try {
+      await axios.post(`${API}bookmark/events`, { channel, event, type: "subtitles" });
+      return event;
+    } catch (err) {
+      showErrorToast(err.response?.data?.description || "Failed to create event");
+      return rejectWithValue(err.response?.data);
+    }
   }
 );
 
 export const DeleteBookmarkEvent = createAsyncThunk(
   "bookmarks/deleteEvent",
-  async ({ channel, language, event }) => {
-    await axios.delete(`${API}bookmark/events`, { params: { channel, language, event, type: "subtitles" } });
-    return event;
+  async ({ channel, language, event }, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${API}bookmark/events`, { params: { channel, language, event, type: "subtitles" } });
+      return event;
+    } catch (err) {
+      showErrorToast(err.response?.data?.description || "Failed to delete event");
+      return rejectWithValue(err.response?.data);
+    }
   }
 );
 

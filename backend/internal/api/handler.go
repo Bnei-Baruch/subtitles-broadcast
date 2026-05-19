@@ -673,23 +673,27 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 	if req.Type == "karaoke" {
 		if req.Update {
 			now := time.Now()
-			h.Database.Debug().WithContext(ctx).Exec(
+			if err = h.Database.WithContext(ctx).Exec(
 				`UPDATE bookmarks SET slide_id = ?, updated_at = ?, updated_by = ?
 				 WHERE file_uid = ? AND channel = ? AND event = ? AND type = 'karaoke'`,
 				req.SlideId, now, userId.(string), req.FileUid, req.Channel, req.Event,
-			)
-			h.Database.Debug().WithContext(ctx).Table(DBTableBookmarks).
+			).Error; err != nil {
+				log.Error(err)
+				ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Updating setlist slide has failed"))
+				return
+			}
+			h.Database.WithContext(ctx).Table(DBTableBookmarks).
 				Where("file_uid = ? AND channel = ? AND event = ? AND type = 'karaoke'", req.FileUid, req.Channel, req.Event).
 				First(&bookmark)
 		} else {
 			var firstSlideId int
-			h.Database.Debug().WithContext(ctx).Raw(
+			h.Database.WithContext(ctx).Raw(
 				"SELECT id FROM slides WHERE file_uid = ? AND slide_type = 'karaoke' ORDER BY order_number ASC LIMIT 1",
 				req.FileUid,
 			).Scan(&firstSlideId)
 
 			var maxOrder int
-			h.Database.Debug().WithContext(ctx).Table(DBTableBookmarks).
+			h.Database.WithContext(ctx).Table(DBTableBookmarks).
 				Where("channel = ? AND event = ? AND type = 'karaoke'", req.Channel, req.Event).
 				Select("COALESCE(MAX(order_number), -1)").
 				Scan(&maxOrder)
@@ -706,7 +710,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			bookmark.CreatedBy = userId.(string)
 			bookmark.UpdatedAt = now
 			bookmark.UpdatedBy = userId.(string)
-			if err = h.Database.Debug().Create(&bookmark).Error; err != nil {
+			if err = h.Database.Create(&bookmark).Error; err != nil {
 				log.Error(err)
 				if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
 					ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Song already in setlist for this channel and event"))
@@ -819,7 +823,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		}
 		karaokeEvent := ctx.Query("event")
 		var items []karaokeRow
-		result := h.Database.Debug().WithContext(ctx).
+		result := h.Database.WithContext(ctx).
 			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename, COUNT(s.id) as slide_count").
 			Table(DBTableBookmarks+" b").
 			Joins("INNER JOIN "+DBTableFiles+" f ON f.file_uid = b.file_uid").
@@ -920,7 +924,7 @@ func (h *Handler) GetBookmarkEvents(ctx *gin.Context) {
 	bookmarkType := ctx.DefaultQuery("type", "subtitles")
 	var events []string
 	if bookmarkType == "karaoke" {
-		rows, err := h.Database.Debug().WithContext(ctx).Raw(`
+		rows, err := h.Database.WithContext(ctx).Raw(`
 			SELECT event FROM bookmark_events WHERE channel = ? AND type = 'karaoke'
 			UNION
 			SELECT DISTINCT event FROM bookmarks WHERE channel = ? AND type = 'karaoke'
@@ -951,7 +955,7 @@ func (h *Handler) GetBookmarkEvents(ctx *gin.Context) {
 				getResponse(false, nil, "Query language is missing", "Query language is missing"))
 			return
 		}
-		rows, err := h.Database.Debug().WithContext(ctx).Raw(`
+		rows, err := h.Database.WithContext(ctx).Raw(`
 			SELECT event FROM bookmark_events WHERE channel = ? AND type = 'subtitles'
 			UNION
 			SELECT DISTINCT event FROM bookmarks WHERE language = ? AND channel = ? AND type = 'subtitles'
@@ -985,7 +989,7 @@ func (h *Handler) DeleteBookmark(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Bookmark ID must be an integer"))
 		return
 	}
-	result := h.Database.Debug().WithContext(ctx).Where("id = ?", bookmarkIdInt).Delete(&Bookmark{})
+	result := h.Database.WithContext(ctx).Where("id = ?", bookmarkIdInt).Delete(&Bookmark{})
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,
@@ -1018,7 +1022,7 @@ func (h *Handler) CreateBookmarkEvent(ctx *gin.Context) {
 		req.Type = "subtitles"
 	}
 	ke := BookmarkEvent{Channel: req.Channel, Event: req.Event, Type: req.Type}
-	result := h.Database.Debug().WithContext(ctx).
+	result := h.Database.WithContext(ctx).
 		Where(BookmarkEvent{Channel: req.Channel, Event: req.Event, Type: req.Type}).
 		FirstOrCreate(&ke)
 	if result.Error != nil {
@@ -1037,7 +1041,7 @@ func (h *Handler) DeleteBookmarkEvent(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel and event are required", "channel and event are required"))
 		return
 	}
-	result := h.Database.Debug().WithContext(ctx).
+	result := h.Database.WithContext(ctx).
 		Where("channel = ? AND event = ? AND type = ?", channel, event, bookmarkType).
 		Delete(&Bookmark{})
 	if result.Error != nil {
@@ -1045,7 +1049,7 @@ func (h *Handler) DeleteBookmarkEvent(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Deleting event has failed"))
 		return
 	}
-	h.Database.Debug().WithContext(ctx).
+	h.Database.WithContext(ctx).
 		Where("channel = ? AND event = ? AND type = ?", channel, event, bookmarkType).
 		Delete(&BookmarkEvent{})
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Event deleted"))
@@ -1069,7 +1073,15 @@ func (h *Handler) RenameBookmarkEvent(ctx *gin.Context) {
 	if req.Type == "" {
 		req.Type = "subtitles"
 	}
-	result := h.Database.Debug().WithContext(ctx).
+	var existingCount int64
+	h.Database.WithContext(ctx).Table(DBTableBookmarks).
+		Where("channel = ? AND event = ? AND type = ?", req.Channel, req.NewEvent, req.Type).
+		Count(&existingCount)
+	if existingCount > 0 {
+		ctx.JSON(http.StatusConflict, getResponse(false, nil, "target event already exists", "An event with that name already exists"))
+		return
+	}
+	result := h.Database.WithContext(ctx).
 		Table(DBTableBookmarks).
 		Where("channel = ? AND event = ? AND type = ?", req.Channel, req.Event, req.Type).
 		Update("event", req.NewEvent)
@@ -1078,7 +1090,7 @@ func (h *Handler) RenameBookmarkEvent(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Renaming event has failed"))
 		return
 	}
-	h.Database.Debug().WithContext(ctx).
+	h.Database.WithContext(ctx).
 		Model(&BookmarkEvent{}).
 		Where("channel = ? AND event = ? AND type = ?", req.Channel, req.Event, req.Type).
 		Update("event", req.NewEvent)
@@ -1303,7 +1315,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			%s
 			%s
 		FROM "slides"
-		LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.language = '%s' AND bookmarks.channel = '%s'
+		LEFT JOIN bookmarks ON slides.id = bookmarks.slide_id AND bookmarks.language = ? AND bookmarks.channel = ?
 		INNER JOIN files ON slides.file_uid = files.file_uid
 		INNER JOIN (SELECT slides.file_uid, COUNT(*) as count FROM slides GROUP BY slides.file_uid) AS c ON c.file_uid = files.file_uid
 		INNER JOIN source_paths ON source_paths.source_uid = files.source_uid AND source_paths.languages = files.languages
@@ -1317,8 +1329,8 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			GROUP BY files.source_uid, files.languages
 		) AS st ON st.source_uid = source_paths.source_uid AND st.languages = source_paths.languages
 		WHERE TRUE
-			AND '%s' = ANY(files.languages)
-			AND source_paths.path ILIKE '%%%s%%'
+			AND ? = ANY(files.languages)
+			AND source_paths.path ILIKE ?
 			%s
 	`
 	hidden := ctx.Query("hidden")
@@ -1329,8 +1341,8 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 	querySql := fmt.Sprintf(templateSql,
 		// DISTINCT will "choose" the first RANK() OVER, e.g., rank_number.
 		"DISTINCT ON (source_paths.path, source_paths.source_uid)",
-		force_master, fields, language, channel, language, keyword, hiddenSql)
-	result := h.Database.Debug().WithContext(ctx).Raw(querySql + orderBySql).Scan(&paths)
+		force_master, fields, hiddenSql)
+	result := h.Database.WithContext(ctx).Raw(querySql+orderBySql, language, channel, language, "%"+keyword+"%").Scan(&paths)
 	if result.Error != nil {
 		log.Error(result.Error)
 		ctx.JSON(http.StatusInternalServerError,

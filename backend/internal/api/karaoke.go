@@ -38,7 +38,7 @@ type parsedSlide struct {
 }
 
 func generateKaraokeUID() string {
-	b := make([]byte, 4)
+	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }
@@ -333,7 +333,7 @@ func (h *Handler) ImportKaraokeFile(ctx *gin.Context) {
 	fileUID := generateKaraokeUID()
 	now := time.Now()
 
-	tx := h.Database.Debug().WithContext(ctx).Begin()
+	tx := h.Database.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
@@ -412,9 +412,9 @@ func (h *Handler) GetKaraokeSlides(ctx *gin.Context) {
 	}
 
 	var slides []Slide
-	result := h.Database.Debug().WithContext(ctx).
+	result := h.Database.WithContext(ctx).
 		Table(DBTableSlides).
-		Where("file_uid = ? AND slide_type = 'karaoke' AND hidden = FALSE", fileUID).
+		Where("file_uid = ? AND slide_type = ? AND hidden = FALSE", fileUID, KaraokeSlideType).
 		Order("order_number ASC").
 		Find(&slides)
 

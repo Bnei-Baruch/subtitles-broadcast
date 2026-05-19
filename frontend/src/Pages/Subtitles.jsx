@@ -32,7 +32,7 @@ const Subtitles = () => {
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
-  const btnKaraokeRef = React.createRef();
+  const btnKaraokeRef = useRef();
   const virtualRef = useRef();
 
   const dispatch = useDispatch();
@@ -239,8 +239,14 @@ const Subtitles = () => {
     btnNoneRef.current.classList.remove("btn-success");
     dispatch(setSubtitlesDisplayMode(DM_KARAOKE));
     const lastKaraoke = mqttMessages[getKaraokeMqttTopic(channel)];
-    if (lastKaraoke) {
-      publishKaraoke(lastKaraoke, channel, DM_KARAOKE);
+    if (lastKaraoke?.slide) {
+      publishKaraoke({
+        slide: lastKaraoke.slide,
+        ID: lastKaraoke.ID,
+        file_uid: lastKaraoke.file_uid,
+        order_number: lastKaraoke.order_number,
+        renderer: lastKaraoke.renderer,
+      }, channel, DM_KARAOKE);
     }
   }
 
