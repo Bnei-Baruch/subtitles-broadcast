@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import "./PagesCSS/Archive.css";
 import { GetSources, DeleteSource } from "../Redux/SourceSlice";
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkEvents } from "../Redux/BookmarksSlice";
+import BookmarkEventDialog from "../Components/BookmarkEventDialog";
 import { Search } from "../Layout/Search";
 import { TableVirtuoso } from 'react-virtuoso';
 import { Edit } from "../Components/Edit";
@@ -46,6 +47,8 @@ const Source = () => {
 
   const { sources } = useSelector((state) => state.sources);
 	const { bookmarks } = useSelector((state) => state.bookmarks);
+  const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false);
+  const [pendingBookmarkSource, setPendingBookmarkSource] = useState(null);
 
   const [{editSlideId, editFileUid}, setEdit] = useState({ editSlideId: null, editFileUid: null });
   const [showDeleted, setShowDeleted] = useState(false);
@@ -101,7 +104,25 @@ const Source = () => {
 
   useEffect(() => {
     refetchSources();
+    dispatch(GetBookmarkEvents({ language, channel }));
   }, [refetchSources]);
+
+  const handleBookmarkConfirm = (event) => {
+    setBookmarkDialogOpen(false);
+    const source = pendingBookmarkSource;
+    setPendingBookmarkSource(null);
+    dispatch(UpdateBookmarks({
+      bookmarks: [{
+        file_uid: source.file_uid,
+        slide_id: source.slide_id,
+        order_number: bookmarks.length,
+      }],
+      language,
+      channel,
+      event,
+      update: false,
+    })).finally(() => refetchSources(true));
+  };
 
   const handleEditSlide = (slide) => {
     setEdit({ editSlideId: slide.slide_id, editFileUid: slide.file_uid });
@@ -213,19 +234,7 @@ const Source = () => {
                     />
                   ) : (
                     <i
-                      onClick={async () => {
-                        await dispatch(UpdateBookmarks({
-                          bookmarks: [{
-                            file_uid: source.file_uid,
-                            slide_id: source.slide_id,
-                            order_number: bookmarks.length,
-                          }],
-                          language,
-                          channel,
-                          update: false,
-                        }));
-                        refetchSources(/* read_after_write */ true);
-                      }}
+                      onClick={() => { setPendingBookmarkSource(source); setBookmarkDialogOpen(true); }}
                       className="bi bi-bookmark m-2 cursor-pointer "
                     />
                   )}
@@ -306,6 +315,13 @@ const Source = () => {
         </div>
       </div>
       }
+      <BookmarkEventDialog
+        open={bookmarkDialogOpen}
+        onClose={() => { setBookmarkDialogOpen(false); setPendingBookmarkSource(null); }}
+        onConfirm={handleBookmarkConfirm}
+        language={language}
+        channel={channel}
+      />
     </>
   );
 };

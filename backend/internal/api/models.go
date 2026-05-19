@@ -29,9 +29,11 @@ type Bookmark struct {
 	CreatedAt   time.Time `json:"created_at"`
 	CreatedBy   string    `json:"created_by"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	UpdatedBy   string    `json:"created_by"`
+	UpdatedBy   string    `json:"updated_by"`
 	Language    string    `json:"language"`
 	Channel     string    `json:"channel"`
+	Event       string    `json:"event"`
+	Type        string    `json:"type"`
 }
 
 type Slide struct {
@@ -60,16 +62,27 @@ type SlideDetail struct {
 }
 
 type SourcePath struct {
-	ID        uint           `gorm:"primarykey"`
-	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
-	SourceUid string         `json:"source_uid"`
-	Path      string         `json:"path"`
+	ID         uint           `gorm:"primarykey"`
+	Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
+	SourceUid  string         `json:"source_uid"`
+	Path       string         `json:"path"`
+	SourceType string         `json:"source_type"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	CreatedBy string    `json:"created_by"`
 	UpdatedBy string    `json:"updated_by"`
 }
+
+type BookmarkEvent struct {
+	ID        uint      `gorm:"primaryKey"`
+	Channel   string    `json:"channel"`
+	Event     string    `json:"event"`
+	Type      string    `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (BookmarkEvent) TableName() string { return "bookmark_events" }
 
 // archive model
 
@@ -111,3 +124,4 @@ type AchiveTempData struct {
 	Texts []string
 	File  *File
 }
+

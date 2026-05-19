@@ -8,6 +8,7 @@ import QuestionsModule from "../Pages/QuestionModule";
 // import EditArchive from "../Pages/EditArchive";
 import Settings from "../Pages/Settings";
 import GreenScreen from "../Pages/GreenScreen";
+import Karaoke from "../Pages/Karaoke";
 import {isOperator, isTranslator} from "../Utils/Auth";
 
 const MainRoutes = ({ logout, securityRoles }) => {
@@ -25,6 +26,7 @@ const MainRoutes = ({ logout, securityRoles }) => {
             <Route path="/source" element={<Source />} />
             <Route path="/new" element={<NewSlides />} />
             <Route path="/green-window" element={<GreenScreen />} />
+            <Route path="/karaoke" element={<Karaoke />} />
           </>
         )}
 

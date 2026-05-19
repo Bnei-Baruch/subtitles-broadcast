@@ -9,6 +9,7 @@ import SubtitleSlice from "./Subtitle/SubtitleSlice";
 import SourceSlice from "./SourceSlice";
 import mqttReducer from "./MQTT/mqttSlice";
 import UserSettingsReducer from "./UserSettingsSlice";
+import karaokeReducer from "./KaraokeSlice";
 
 const persistConfig = {
   key: "root",
@@ -23,6 +24,7 @@ const RootReducer = combineReducers({
   sources: SourceSlice,
   mqtt: mqttReducer,
   userSettings: UserSettingsReducer,
+  karaoke: karaokeReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, RootReducer);
