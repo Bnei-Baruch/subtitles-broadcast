@@ -15,6 +15,11 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.POST("/bookmark", handler.AddOrUpdateBookmark)
 	v1.GET("/bookmark", handler.GetBookmarks)
+	v1.PATCH("/bookmark/reorder", handler.ReorderBookmarks)
+	v1.GET("/bookmark/events", handler.GetBookmarkEvents)
+	v1.POST("/bookmark/events", handler.CreateBookmarkEvent)
+	v1.DELETE("/bookmark/events", handler.DeleteBookmarkEvent)
+	v1.PATCH("/bookmark/events", handler.RenameBookmarkEvent)
 	v1.DELETE("/bookmark/:bookmark_id", handler.DeleteBookmark)
 
 	v1.POST("/slide", handler.AddSlides)
@@ -36,6 +41,9 @@ func NewRouter(handler *Handler) http.Handler {
 
 	v1.GET("/user/settings", handler.GetUserSettings)
 	v1.POST("/user/settings", handler.UpdateUserSettings)
+
+	v1.POST("/karaoke/import", handler.ImportKaraokeFile)
+	v1.GET("/karaoke/slides", handler.GetKaraokeSlides)
 
 	v1.GET("/ready", handler.Ready)
 

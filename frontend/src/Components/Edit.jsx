@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GetSlides, UpdateSourcePath, AddSlide, DeleteSlide, UpdateSlide } from "../Redux/SlidesSlice";
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkEvents } from "../Redux/BookmarksSlice";
+import BookmarkEventDialog from "./BookmarkEventDialog";
 import { Slide } from "../Components/Slide";
 import { SplitToSlides } from "../Utils/SlideSplit";
 import Button from "@mui/material/Button";
@@ -128,6 +129,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
   const {slides} = useSelector((state) => state.slides);
   const [editSlides, setEditSlides] = useState([]);
   const { bookmarks } = useSelector((state) => state.bookmarks);
+  const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false);
 
   const [search, setSearch] = useState("")
 
@@ -146,9 +148,9 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
 
   const [bookmarkId, setBookmarkId] = useState("");
 
-  // Get bookmarks for order number if user adds a bookmark.
   useEffect(() => {
     dispatch(GetBookmarks({ language, channel }));
+    dispatch(GetBookmarkEvents({ language, channel }));
   }, [dispatch, language, channel]);
 
   const refetchSlides = useCallback(async (read_after_write = undefined) => {
@@ -387,26 +389,30 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
 					setBookmarkId("");
 				}
 			}).finally(() => {
-        // Update number of bookmarks.
         dispatch(GetBookmarks({ language, channel }));
       });
     } else {
-      dispatch(UpdateBookmarks({
-				bookmarks: [{
-          file_uid: editSlides[0].file_uid,
-          slide_id: editSlides[0].ID,
-          order_number: bookmarks.length,
-				}],
-        language,
-        channel,
-				update: false,
-			})).then((response) => {
-        if (response.payload[0].success) {
-          setBookmarkId(response.payload[0].data.ID);
-        }
-        console.log(response);
-      });
+      setBookmarkDialogOpen(true);
     }
+  };
+
+  const handleBookmarkConfirm = (event) => {
+    setBookmarkDialogOpen(false);
+    dispatch(UpdateBookmarks({
+      bookmarks: [{
+        file_uid: editSlides[0].file_uid,
+        slide_id: editSlides[0].ID,
+        order_number: bookmarks.length,
+      }],
+      language,
+      channel,
+      event,
+      update: false,
+    })).then((response) => {
+      if (response.payload[0]?.success) {
+        setBookmarkId(response.payload[0].data.ID);
+      }
+    });
   };
 
   const textareaKeydown = (e, index, slide) => {
@@ -733,6 +739,13 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
           />
         </div>
       </div>
+      <BookmarkEventDialog
+        open={bookmarkDialogOpen}
+        onClose={() => setBookmarkDialogOpen(false)}
+        onConfirm={handleBookmarkConfirm}
+        language={language}
+        channel={channel}
+      />
     </>
   );
 };

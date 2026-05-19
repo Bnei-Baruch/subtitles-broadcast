@@ -62,6 +62,14 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
               </li>
             )}
 
+            {isOperator(securityRoles) && (
+              <li>
+                <NavLink to={"/karaoke"} className="nav-link text-white">
+                  <img alt="karaoke" src="image/queue.svg" /> Karaoke
+                </NavLink>
+              </li>
+            )}
+
             {isTranslator(securityRoles) && (
               <li>
                 <NavLink to={"/question"} className="nav-link text-white">

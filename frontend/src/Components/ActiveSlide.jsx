@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Slide } from "../Components/Slide";
+import { KaraokeSlide } from "../Components/KaraokeSlide";
 import { useSelector } from "react-redux";
-import { ST_QUESTION, broadcastLanguages, roundRobinQuestionsLanguages } from "../Utils/Const";
+import { ST_QUESTION, broadcastLanguages, roundRobinQuestionsLanguages, DM_KARAOKE } from "../Utils/Const";
 import { visibleSlideOrNull, useDeepMemo } from "../Utils/Common"
 import { getAllQuestions, lastMessage } from "../Redux/MQTT/mqttSlice"
-import isEqual from 'lodash/isEqual'; 
+import isEqual from 'lodash/isEqual';
 
 const QST_SWAP_TIME = 10 * 1000;  // 10s
 
@@ -102,6 +103,11 @@ export function ActiveSlide() {
   if (!activeSlide) {
     return null;
   }
+
+  if (subtitlesDisplayMode === DM_KARAOKE) {
+    return <KaraokeSlide content={activeSlide.slide || ""} />;
+  }
+
   return (
     <Slide
       content={(activeSlide && activeSlide.slide) || ""}

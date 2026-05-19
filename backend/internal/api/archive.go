@@ -155,7 +155,7 @@ func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
   log.Printf("Currently has %d source paths.", len(currentSourcePaths))
 	for _, currentSourcePath := range currentSourcePaths {
     key := sourcePathKey(currentSourcePath)
-		if !strings.Contains(currentSourcePath.SourceUid, "upload_") {
+		if !strings.Contains(currentSourcePath.SourceUid, "upload_") && currentSourcePath.SourceType == "" {
       sourcePathsToDelete[key] = currentSourcePath
     }
 	}

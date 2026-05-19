@@ -2,7 +2,7 @@ import React from "react";
 import { ActiveSlide } from "../Components/ActiveSlide";
 import { useSelector } from "react-redux";
 import { visibleSlideOrNull, useDeepMemo } from "../Utils/Common"
-import { DM_NONE, DM_QUESTIONS, ST_QUESTION } from "../Utils/Const"
+import { DM_NONE, DM_QUESTIONS, DM_KARAOKE, ST_QUESTION } from "../Utils/Const"
 import { lastMessage } from "../Redux/MQTT/mqttSlice"
 
 export function Preview() {
@@ -20,15 +20,15 @@ export function Preview() {
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
   const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, subtitlesDisplayMode, broadcastLangCode, broadcastProgrammCode)));
 
+  const isKaraoke = subtitlesDisplayMode === DM_KARAOKE;
+
   return (
     <div className="active-slide-msg-main-cont">
-      <div className={`green-part-cont active-slide-messaging`}>
-        &nbsp;
-      </div>
+      {!isKaraoke && <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
       <div className="slide-part-cont">
         <ActiveSlide />
       </div>
-      {(!slide || subtitlesDisplayMode === DM_QUESTIONS || slide.slide_type === ST_QUESTION) &&
+      {!isKaraoke && (!slide || subtitlesDisplayMode === DM_QUESTIONS || slide.slide_type === ST_QUESTION) &&
         <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
     </div>
   );

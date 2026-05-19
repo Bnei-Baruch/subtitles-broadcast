@@ -3,7 +3,7 @@ import mqtt from "mqtt";
 import { useDispatch, useSelector } from "react-redux";
 import { setConnected, updateMqttTopic, mqttMessageReceived, setClientId, addMqttNotification } from "../Redux/MQTT/mqttSlice";
 import { DM_NONE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
-import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic } from "../Utils/Common";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic, getKaraokeMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
 
@@ -166,6 +166,7 @@ export default function useMqtt() {
           })
           .flat();
         broadcastMqttTopics.push(getOnOffAirTopic(broadcastProgrammCode));
+        broadcastMqttTopics.push(getKaraokeMqttTopic(broadcastProgrammCode));
 
         debugLog(`[CONNECT EVENT] Resetting ${broadcastMqttTopics.length} topics to isSubscribed=false`);
         broadcastMqttTopics.forEach((topic) => {
@@ -370,6 +371,42 @@ export function publishSubtitle(subtitle, mqttMessages, channel, langCode, displ
   const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
   publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode, action);
   republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode, action === "send" ? "republish" : action);
+}
+
+function detectIsLtr(text) {
+  if (!text) return true;
+  const rtlPattern = /[֐-׿؀-ۿ]/;
+  return !rtlPattern.test(text);
+}
+
+export function publishKaraoke(slide, channel, displayMode = "karaoke", ignoreLiveMode = false) {
+  const karaokeTopic = getKaraokeMqttTopic(channel);
+  const isLtr = detectIsLtr(slide?.slide);
+  const message = {
+    slide_type: "karaoke",
+    type: "karaoke",
+    ID: slide?.ID,
+    file_uid: slide?.file_uid,
+    order_number: slide?.order_number,
+    slide: slide?.slide || "",
+    isLtr,
+    visible: true,
+    renderer: slide?.renderer || "default",
+    display_status: displayMode,
+  };
+  publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
+}
+
+export function clearKaraoke(channel, ignoreLiveMode = false) {
+  const karaokeTopic = getKaraokeMqttTopic(channel);
+  const message = {
+    slide_type: "karaoke",
+    type: "karaoke",
+    slide: "",
+    visible: false,
+    display_status: DM_NONE,
+  };
+  publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
 }
 
 export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {

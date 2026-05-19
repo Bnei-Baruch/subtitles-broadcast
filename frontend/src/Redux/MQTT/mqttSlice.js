@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic } from "../../Utils/Common";
-import { DM_SUBTITLES, DM_QUESTIONS, broadcastLanguages } from "../../Utils/Const";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic, getKaraokeMqttTopic } from "../../Utils/Common";
+import { DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE, broadcastLanguages } from "../../Utils/Const";
 import debugLog from "../../Utils/debugLog";
 
 export const lastMessage = (mqttMessages, subtitlesDisplayMode, lang, channel) => {
@@ -10,6 +10,9 @@ export const lastMessage = (mqttMessages, subtitlesDisplayMode, lang, channel) =
   } else if (subtitlesDisplayMode === DM_QUESTIONS) {
     const questionTopic = getQuestionMqttTopic(channel, lang);
     return mqttMessages[questionTopic] || null;
+  } else if (subtitlesDisplayMode === DM_KARAOKE) {
+    const karaokeTopic = getKaraokeMqttTopic(channel);
+    return mqttMessages[karaokeTopic] || null;
   }
   return null;
 }
@@ -80,7 +83,9 @@ const mqttSlice = createSlice({
         if (state.mqttLogs.length > MQTT_LOGS_MAX_LENGTH) {
           state.mqttLogs.shift();
         }
-        if (broadcastLangCode === parsedMessage.lang) {
+        if (topic.endsWith("/karaoke")) {
+          state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
+        } else if (broadcastLangCode === parsedMessage.lang) {
           state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
         }
       } catch (error) {
