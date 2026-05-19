@@ -195,6 +195,7 @@ export default function useMqtt() {
             topic,
             message: message.toString(),
             broadcastLangCode,
+            broadcastChannel: broadcastProgrammCode,
           })
         );
       });

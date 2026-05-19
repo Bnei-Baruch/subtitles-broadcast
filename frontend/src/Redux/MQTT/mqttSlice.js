@@ -71,7 +71,7 @@ const mqttSlice = createSlice({
       state.selectedSubtitleSlide = action.payload;
     },
     mqttMessageReceived(state, action, dispatch) {
-      const { topic, message, broadcastLangCode } = action.payload;
+      const { topic, message, broadcastLangCode, broadcastChannel } = action.payload;
       if (topic.endsWith("/on_off_air")) {
         state.isOnAir = message.includes("onair");
         return;
@@ -84,7 +84,9 @@ const mqttSlice = createSlice({
           state.mqttLogs.shift();
         }
         if (topic.endsWith("/karaoke")) {
-          state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
+          if (broadcastChannel && topic === getKaraokeMqttTopic(broadcastChannel)) {
+            state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
+          }
         } else if (broadcastLangCode === parsedMessage.lang) {
           state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
         }
