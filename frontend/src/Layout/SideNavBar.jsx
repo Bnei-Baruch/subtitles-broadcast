@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
 import "./Layout.css";
 import HeaderBar from "../Layout/HeaderBar";
 import { isOperator, isTranslator } from "../Utils/Auth";
@@ -8,6 +9,9 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 
 const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
   const [mqttDialogOpen, setMqttDialogOpen] = useState(false);
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
 
   return (
     <>
@@ -62,7 +66,7 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
               </li>
             )}
 
-            {isOperator(securityRoles) && (
+            {isOperator(securityRoles) && broadcastLangCode === "he" && (
               <li>
                 <NavLink to={"/karaoke"} className="nav-link text-white">
                   <img alt="karaoke" src="image/queue.svg" /> Karaoke
