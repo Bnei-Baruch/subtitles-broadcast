@@ -613,6 +613,15 @@ func (h *Handler) DeleteSourceSlides(ctx *gin.Context) {
 		return
 	}
 
+	if queryParams.ForceDeleteBookmarks && len(fileUids) > 0 {
+		if err := tx.Where("file_uid IN ? AND type = 'karaoke'", fileUids).Delete(&Bookmark{}).Error; err != nil {
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError,
+				getResponse(false, nil, err.Error(), "Removing song from setlists has failed"))
+			return
+		}
+	}
+
 	if queryParams.Forever {
 		spQuery := tx.Where("source_uid = ?", sourceUid)
 		if len(queryParams.Language) > 0 {
