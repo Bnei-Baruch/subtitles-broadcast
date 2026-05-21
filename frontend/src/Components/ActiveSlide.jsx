@@ -99,13 +99,15 @@ export function ActiveSlide() {
     questionMessagesList,
   ]);
 
+  if (subtitlesDisplayMode === DM_KARAOKE) {
+    const karaokeMsg = lastMessage(mqttMessages, DM_KARAOKE, broadcastLangCode, broadcastProgrammCode);
+    const content = karaokeMsg?.visible !== false ? (karaokeMsg?.slide || "") : "";
+    return <KaraokeSlide content={content} />;
+  }
+
   const activeSlide = visibleSlideOrNull(activeQuestion) || visibleSlideOrNull(slide);
   if (!activeSlide) {
     return null;
-  }
-
-  if (subtitlesDisplayMode === DM_KARAOKE) {
-    return <KaraokeSlide content={activeSlide.slide || ""} />;
   }
 
   return (
