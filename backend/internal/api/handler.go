@@ -1220,7 +1220,9 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		SlidesCount  uint           `json:"slides_count"`
 		BookmarkID   *string        `json:"bookmark_id"`
 		SourceUID    string         `json:"source_uid"`
+		SourcePathID uint           `json:"source_path_id"`
 		FileUID      string         `json:"file_uid"`
+		Filename     string         `json:"filename"`
 		Languages    pq.StringArray `json:"languages" gorm:"type:text[]"`
 		Path         string         `json:"path"`
 		SourceType   string         `json:"source_type"`
@@ -1249,7 +1251,8 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		}
 		query := h.Database.Debug().WithContext(ctx).
 			Table(DBTableSourcePaths+" sp").
-			Select(`sp.source_uid AS source_uid,
+			Select(`sp.id AS source_path_id,
+				sp.source_uid AS source_uid,
 				sp.path AS path,
 				sp.source_type AS source_type,
 				sp.languages AS languages,
@@ -1258,11 +1261,12 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 				sp.updated_by AS updated_by,
 				sp.updated_at AS updated_at,
 				f.file_uid AS file_uid,
+				f.filename AS filename,
 				f.hidden AS hidden,
 				COUNT(s.id) AS slides_count`).
 			Joins(filesJoin).
 			Joins(slidesJoin).
-			Group("sp.source_uid, sp.path, sp.source_type, sp.languages, sp.created_by, sp.created_at, sp.updated_by, sp.updated_at, f.file_uid, f.hidden").
+			Group("sp.id, sp.source_uid, sp.path, sp.source_type, sp.languages, sp.created_by, sp.created_at, sp.updated_by, sp.updated_at, f.file_uid, f.filename, f.hidden").
 			Order("sp.path")
 		if sourceType != "" {
 			query = query.Where("sp.source_type = ?", sourceType)
@@ -1380,7 +1384,7 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 	result := h.Database.Debug().WithContext(ctx).
 		Table(DBTableSourcePaths).
 		Where("id = ?", sourcePathID).
-		Where("source_uid LIKE 'upload_%'").
+		Where("source_uid LIKE 'upload_%' OR source_type IS NOT NULL").
 		Count(&uploadSourcePath)
 	if result.Error != nil {
 		log.Error(result.Error)
