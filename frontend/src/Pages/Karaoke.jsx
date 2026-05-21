@@ -288,15 +288,21 @@ const Karaoke = () => {
 
   const handleDeleteSong = useCallback(
     (sourceUid) => {
+      const deletedSong = songs.find((s) => s.source_uid === sourceUid);
       dispatch(DeleteKaraokeSong({ source_uid: sourceUid })).then((result) => {
         if (!result.error) {
+          // Remove from every setlist entry that uses this song's file_uid
+          if (deletedSong) {
+            const toRemove = setlist.filter((s) => s.file_uid === deletedSong.file_uid);
+            toRemove.forEach((s) => dispatch(RemoveFromSetlist({ id: s.id })));
+          }
           dispatch(GetKaraokeSongs({ group: activeGroup, showHidden }));
           dispatch(GetKaraokeSetlist({ channel, event: activeKaraokeEvent }));
         }
       });
       setConfirmDeleteSourceUid(null);
     },
-    [dispatch, activeGroup, showHidden, channel, activeKaraokeEvent]
+    [dispatch, activeGroup, showHidden, channel, activeKaraokeEvent, songs, setlist]
   );
 
   const handleRestoreSong = useCallback(
