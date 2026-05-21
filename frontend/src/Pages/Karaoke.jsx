@@ -291,11 +291,12 @@ const Karaoke = () => {
       dispatch(DeleteKaraokeSong({ source_uid: sourceUid })).then((result) => {
         if (!result.error) {
           dispatch(GetKaraokeSongs({ group: activeGroup, showHidden }));
+          dispatch(GetKaraokeSetlist({ channel, event: activeKaraokeEvent }));
         }
       });
       setConfirmDeleteSourceUid(null);
     },
-    [dispatch, activeGroup, showHidden]
+    [dispatch, activeGroup, showHidden, channel, activeKaraokeEvent]
   );
 
   const handleRestoreSong = useCallback(
