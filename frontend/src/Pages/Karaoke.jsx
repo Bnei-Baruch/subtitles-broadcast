@@ -701,8 +701,8 @@ const Karaoke = () => {
             <span>Setlist</span>
           </div>
           <div className="karaoke-setlist-preview">
-            {subtitlesDisplayMode === DM_KARAOKE ? (
-              <KaraokeSlide content={liveSlide?.slide || ""} />
+            {subtitlesDisplayMode === DM_KARAOKE && liveSlide?.slide?.trim() ? (
+              <KaraokeSlide content={liveSlide.slide} />
             ) : (
               <div className="setlist-preview-empty">—</div>
             )}
