@@ -29,6 +29,7 @@ import {
   DeleteKaraokeEvent,
   RenameKaraokeEvent,
   UpdateKaraokeSlide,
+  UpdateKaraokeSongName,
   DeleteKaraokeSlide,
   AddKaraokeSlide,
   ReorderKaraokeSlides,
@@ -49,7 +50,7 @@ const GROUP_LABELS = { "": "All", songbook: "Songbook", shabat: "Shabat", origin
 
 const SETLIST_DRAG_TYPE = "karaoke-setlist-item";
 
-const DraggableSetlistItem = ({ item, idx, isActive, onSelect, onRemove, moveCard, onDragEnd }) => {
+const DraggableSetlistItem = ({ item, idx, isActive, displayName, onSelect, onRemove, moveCard, onDragEnd }) => {
   const ref = useRef(null);
 
   const [, drag] = useDrag({
@@ -79,7 +80,7 @@ const DraggableSetlistItem = ({ item, idx, isActive, onSelect, onRemove, moveCar
     >
       <DragIndicatorIcon fontSize="small" sx={{ color: isActive ? "#aac" : "#ccc", flexShrink: 0 }} />
       <span className="setlist-num">{idx + 1}</span>
-      <span className="setlist-name" title={item.filename}>{item.filename}</span>
+      <span className="setlist-name" title={displayName}>{displayName}</span>
       <div className="setlist-actions">
         <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}>
           <CloseIcon fontSize="small" />
@@ -150,6 +151,7 @@ const Karaoke = () => {
   const [importGroup, setImportGroup] = useState("general");
   const [importProgress, setImportProgress] = useState(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [editingSongName, setEditingSongName] = useState(null); // { sourceUid, sourcePathId, value }
   const [editMode, setEditMode] = useState(false);
   const [editingTexts, setEditingTexts] = useState({});
   const [localEditSlides, setLocalEditSlides] = useState([]);
@@ -315,6 +317,16 @@ const Karaoke = () => {
     },
     [dispatch, activeGroup, showHidden]
   );
+
+  const handleSaveSongName = useCallback(() => {
+    if (!editingSongName) return;
+    const { sourceUid, sourcePathId, value } = editingSongName;
+    const trimmed = value.trim();
+    if (trimmed && sourcePathId) {
+      dispatch(UpdateKaraokeSongName({ sourcePathId, name: trimmed, sourceUid }));
+    }
+    setEditingSongName(null);
+  }, [dispatch, editingSongName]);
 
   const enterEditMode = useCallback(() => {
     const texts = {};
@@ -624,17 +636,49 @@ const Karaoke = () => {
             {filteredSongs.map((song) => {
               const songFileUid = song.file_uid;
               const songSourceUid = song.source_uid;
-              const songName = song.path || song.filename || songSourceUid;
+              const displayName = song.path || song.filename || songSourceUid;
+              const isEditingThis = editingSongName?.sourceUid === songSourceUid;
               const inSetlist = setlist.some((s) => s.file_uid === songFileUid);
               const isLoaded = activeSongFileUid === songFileUid;
               return (
                 <div
                   key={songSourceUid || songFileUid}
                   className={`song-item${isLoaded ? " loaded" : ""}${song.hidden ? " song-hidden" : ""}`}
-                  onClick={() => handleSelectSong(songFileUid)}
+                  onClick={() => !isEditingThis && handleSelectSong(songFileUid)}
                 >
-                  <div className="song-item-name" title={songName}>
-                    {songName}
+                  <div className="song-item-name" title={displayName}>
+                    {isEditingThis ? (
+                      <input
+                        className="song-name-input"
+                        autoFocus
+                        value={editingSongName.value}
+                        placeholder={song.filename || songSourceUid}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setEditingSongName((prev) => ({ ...prev, value: e.target.value }))}
+                        onBlur={handleSaveSongName}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveSongName();
+                          if (e.key === "Escape") setEditingSongName(null);
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <span>{displayName}</span>
+                        {!song.hidden && (
+                          <IconButton
+                            size="small"
+                            className="song-name-edit-btn"
+                            title="Rename song"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSongName({ sourceUid: songSourceUid, sourcePathId: song.source_path_id, value: song.path || song.filename || "" });
+                            }}
+                          >
+                            <EditIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        )}
+                      </>
+                    )}
                   </div>
                   <div className="song-item-meta">{song.slides_count ?? song.slide_count} slides</div>
                   {song.source_type && song.source_type !== activeGroup && (
@@ -718,18 +762,22 @@ const Karaoke = () => {
             />
           </div>
           <div className="setlist-list">
-            {localSetlist.map((item, idx) => (
+            {localSetlist.map((item, idx) => {
+              const setlistSong = songs.find((s) => s.file_uid === item.file_uid);
+              return (
               <DraggableSetlistItem
                 key={item.id ?? item.ID}
                 item={item}
                 idx={idx}
+                displayName={setlistSong?.path || item.filename || item.file_uid}
                 isActive={activeSongFileUid === item.file_uid}
                 onSelect={handleSelectSong}
                 onRemove={handleRemoveFromSetlist}
                 moveCard={moveSetlistCard}
                 onDragEnd={handleSetlistReorderEnd}
               />
-            ))}
+              );
+            })}
             {setlist.length === 0 && (
               <div className="empty-hint">Add songs from the library using +</div>
             )}

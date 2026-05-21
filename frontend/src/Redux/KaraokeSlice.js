@@ -69,6 +69,20 @@ export const DeleteKaraokeSong = createAsyncThunk("karaoke/deleteSong", async ({
   }
 });
 
+export const UpdateKaraokeSongName = createAsyncThunk(
+  "karaoke/updateSongName",
+  async ({ sourcePathId, name, sourceUid }, { rejectWithValue }) => {
+    try {
+      await axios.patch(`${API}source_path_id/${sourcePathId}`, { source_path: name });
+      showSuccessToast("Song name updated");
+      return { sourceUid, name };
+    } catch (err) {
+      showErrorToast(err.response?.data?.description || "Failed to update song name");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
 export const GetKaraokeEvents = createAsyncThunk("karaoke/getEvents", async ({ channel }) => {
   const response = await axios.get(`${API}bookmark/events`, { params: { channel, type: "karaoke" } });
   return response.data.data;
@@ -225,6 +239,11 @@ const KaraokeSlice = createSlice({
     builder
       .addCase(GetKaraokeSongs.fulfilled, (state, action) => {
         state.songs = action.payload || [];
+      })
+      .addCase(UpdateKaraokeSongName.fulfilled, (state, action) => {
+        const { sourceUid, name } = action.payload;
+        const song = state.songs.find((s) => s.source_uid === sourceUid);
+        if (song) song.path = name;
       })
       .addCase(GetKaraokeSlides.fulfilled, (state, action) => {
         state.slides = action.payload || [];
