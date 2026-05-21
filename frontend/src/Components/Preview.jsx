@@ -21,14 +21,23 @@ export function Preview() {
   const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, subtitlesDisplayMode, broadcastLangCode, broadcastProgrammCode)));
 
   const isKaraoke = subtitlesDisplayMode === DM_KARAOKE;
+  const karaokeMsg = isKaraoke ? lastMessage(mqttMessages, DM_KARAOKE, broadcastLangCode, broadcastProgrammCode) : null;
+  const hasLiveKaraoke = karaokeMsg?.visible !== false && karaokeMsg?.slide?.trim();
 
   return (
     <div className="active-slide-msg-main-cont">
-      {!isKaraoke && <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
-      <div className="slide-part-cont">
-        <ActiveSlide />
-      </div>
-      {!isKaraoke && (!slide || subtitlesDisplayMode === DM_QUESTIONS || slide.slide_type === ST_QUESTION) &&
+      <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>
+      {!isKaraoke && (
+        <div className="slide-part-cont">
+          <ActiveSlide />
+        </div>
+      )}
+      {isKaraoke && hasLiveKaraoke && (
+        <div className="slide-part-cont">
+          <ActiveSlide />
+        </div>
+      )}
+      {((!isKaraoke && (!slide || subtitlesDisplayMode === DM_QUESTIONS || slide.slide_type === ST_QUESTION)) || (isKaraoke && !hasLiveKaraoke)) &&
         <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
     </div>
   );
