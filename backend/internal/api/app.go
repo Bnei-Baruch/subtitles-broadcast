@@ -53,16 +53,14 @@ func NewApp(sig chan os.Signal) *http.Server {
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalln(err)
 	}
-	sourcePaths, err := getSourcePathListByLanguages(LanguageCodes)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	updateSourcePath(db, sourcePaths)
-	// archiveDataCopy(db, sourcePaths)
-
 	ticker := time.NewTicker(SourcePathUpdateTermHour * time.Hour)
 	go func() {
+		sourcePaths, err := getSourcePathListByLanguages(LanguageCodes)
+		if err != nil {
+			log.Println(err)
+		} else {
+			updateSourcePath(db, sourcePaths)
+		}
 		for {
 			select {
 			case <-ticker.C:
@@ -70,6 +68,7 @@ func NewApp(sig chan os.Signal) *http.Server {
 				sourcePaths, err := getSourcePathListByLanguages(LanguageCodes)
 				if err != nil {
 					log.Println(err)
+					continue
 				}
 				updateSourcePath(db, sourcePaths)
 			case <-sig:
