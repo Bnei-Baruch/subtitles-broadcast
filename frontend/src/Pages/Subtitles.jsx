@@ -84,6 +84,7 @@ const Subtitles = () => {
 
     const targetSlideObj = slides.find((key) => key?.order_number === newSelectedSlideOrderNum);
     if (targetSlideObj) {
+      setSearchSlide("");
       publishSubtitle(targetSlideObj, mqttMessages, channel, language, subtitlesDisplayMode);
       Promise.all([
         dispatch(setMqttSelectedSlide(targetSlideObj)),
@@ -102,7 +103,6 @@ const Subtitles = () => {
         }),
       ]).then(() => {
         canUpdateSelectedSlide.current = true;
-        setSearchSlide("");
       });
     }
   }, [slides, maxSlideIndex, dispatch, language, mqttMessages, subtitlesDisplayMode, channel]);
