@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	KaraokeFileType  = "karaoke"
-	KaraokeSlideType = "karaoke"
+	KaraokeUploadType = "upload"
+	KaraokeSlideType  = "karaoke"
 
 	drawingMLNS      = "http://schemas.openxmlformats.org/drawingml/2006/main"
 	wordprocessingNS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -340,8 +340,8 @@ func (h *Handler) ImportKaraokeFile(ctx *gin.Context) {
 	}
 
 	fileData := &File{
-		Type:      KaraokeFileType,
-		Filename:  title,
+		UploadType: KaraokeUploadType,
+		Filename:   title,
 		FileUid:   fileUID,
 		SourceUid: fileUID,
 		CreatedBy: userIdStr,
@@ -376,10 +376,11 @@ func (h *Handler) ImportKaraokeFile(ctx *gin.Context) {
 	}
 
 	sourcePathData := &SourcePath{
-		Languages:  pq.StringArray{},
-		SourceUid:  fileUID,
-		Path:       title,
-		SourceType: group,
+		Languages:   pq.StringArray{},
+		SourceUid:   fileUID,
+		Path:        title,
+		SourceType:  "karaoke",
+		SourceGroup: group,
 		CreatedBy:  userIdStr,
 		UpdatedBy:  userIdStr,
 		CreatedAt:  now,

@@ -681,8 +681,8 @@ const Karaoke = () => {
                     )}
                   </div>
                   <div className="song-item-meta">{song.slides_count ?? song.slide_count} slides</div>
-                  {song.source_type && song.source_type !== activeGroup && (
-                    <div className="song-item-group">{GROUP_LABELS[song.source_type] || song.source_type}</div>
+                  {song.source_group && song.source_group !== activeGroup && (
+                    <div className="song-item-group">{GROUP_LABELS[song.source_group] || song.source_group}</div>
                   )}
                   <div className="song-item-actions">
                     {song.hidden ? (
