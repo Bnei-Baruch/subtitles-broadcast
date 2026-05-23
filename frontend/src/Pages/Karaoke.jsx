@@ -117,19 +117,24 @@ const DraggableSlideEditCard = ({ slide, idx, editText, onTextChange, onBlur, on
   drag(dragRef);
   drop(ref);
 
+  const currentText = editText ?? slide.slide;
+
   return (
     <div ref={ref} className={`slide-card-edit${isDragging ? " dragging" : ""}`} style={{ opacity: isDragging ? 0.4 : 1 }}>
       <div ref={dragRef} className="slide-drag-handle" title="Drag to reorder">
         <DragIndicatorIcon fontSize="small" sx={{ color: "#bbb", cursor: "grab" }} />
       </div>
       <span className="slide-num">{idx + 1}</span>
-      <textarea
-        className="slide-edit-textarea"
-        value={editText ?? slide.slide}
-        onChange={(e) => onTextChange(id, e.target.value)}
-        onBlur={onBlur}
-        rows={3}
-      />
+      <div className="slide-edit-main">
+        <KaraokeSlide content={currentText} />
+        <textarea
+          className="slide-edit-textarea"
+          value={currentText}
+          onChange={(e) => onTextChange(id, e.target.value)}
+          onBlur={onBlur}
+          rows={3}
+        />
+      </div>
       <IconButton size="small" className="slide-delete-btn" title="Delete slide" onClick={() => onDelete(slide)}>
         <DeleteIcon fontSize="small" />
       </IconButton>
