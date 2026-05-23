@@ -55,15 +55,15 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   order_number INT,
   language     VARCHAR(2),
   channel      VARCHAR(50),
-  event        VARCHAR(100) NOT NULL DEFAULT '',
+  preset       VARCHAR(100) NOT NULL DEFAULT '',
   type         VARCHAR(20)  NOT NULL DEFAULT 'subtitles',
   created_at   TIMESTAMP WITHOUT TIME ZONE,
   updated_at   TIMESTAMP WITHOUT TIME ZONE,
   created_by   VARCHAR(50),
   updated_by   VARCHAR(50)
 );
-CREATE UNIQUE INDEX bookmarks_subtitles_unique ON bookmarks (file_uid, language, channel, event) WHERE type = 'subtitles';
-CREATE UNIQUE INDEX bookmarks_karaoke_unique   ON bookmarks (file_uid, channel, event)           WHERE type = 'karaoke';
+CREATE UNIQUE INDEX bookmarks_subtitles_unique ON bookmarks (file_uid, language, channel, preset) WHERE type = 'subtitles';
+CREATE UNIQUE INDEX bookmarks_karaoke_unique   ON bookmarks (file_uid, channel, preset)           WHERE type = 'karaoke';
 
 CREATE TABLE IF NOT EXISTS user_settings (
   user_id      VARCHAR(50) PRIMARY KEY,
@@ -74,15 +74,15 @@ CREATE TABLE IF NOT EXISTS user_settings (
   updated_by   VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS bookmark_events (
+CREATE TABLE IF NOT EXISTS bookmark_presets (
   id         SERIAL PRIMARY KEY,
   channel    VARCHAR(50)  NOT NULL,
-  event      VARCHAR(100) NOT NULL,
+  preset     VARCHAR(100) NOT NULL,
   type       VARCHAR(20)  NOT NULL DEFAULT 'karaoke',
   created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
-  UNIQUE (channel, event)
+  UNIQUE (channel, preset)
 );
-CREATE INDEX idx_bookmark_events_type ON bookmark_events (channel, type);
+CREATE INDEX idx_bookmark_presets_type ON bookmark_presets (channel, type);
 
 -- Backfill source_paths for any karaoke files imported before this migration
 INSERT INTO source_paths (source_uid, path, source_type, languages, created_at, updated_at, created_by, updated_by)

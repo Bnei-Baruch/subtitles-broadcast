@@ -13,8 +13,8 @@ const initialState = {
   activeSongFileUid: null,
   activeSlideIndex: null,
   activeGroup: "",
-  karaokeEvents: [],
-  activeKaraokeEvent: "",
+  karaokePresets: [],
+  activeKaraokePreset: "",
 };
 
 export const GetKaraokeSongs = createAsyncThunk("karaoke/getSongs", async ({ group = "", showHidden = false } = {}) => {
@@ -83,19 +83,19 @@ export const UpdateKaraokeSongName = createAsyncThunk(
   }
 );
 
-export const GetKaraokeEvents = createAsyncThunk("karaoke/getEvents", async ({ channel }) => {
-  const response = await axios.get(`${API}bookmark/events`, { params: { channel, type: "karaoke" } });
+export const GetKaraokePresets = createAsyncThunk("karaoke/getPresets", async ({ channel }) => {
+  const response = await axios.get(`${API}bookmark/presets`, { params: { channel, type: "karaoke" } });
   return response.data.data;
 });
 
-export const GetKaraokeSetlist = createAsyncThunk("karaoke/getSetlist", async ({ channel, event = "" }) => {
-  const response = await axios.get(`${API}bookmark`, { params: { channel, event, type: "karaoke" } });
+export const GetKaraokeSetlist = createAsyncThunk("karaoke/getSetlist", async ({ channel, preset = "" }) => {
+  const response = await axios.get(`${API}bookmark`, { params: { channel, preset, type: "karaoke" } });
   return response.data.data;
 });
 
-export const AddToSetlist = createAsyncThunk("karaoke/addToSetlist", async ({ file_uid, channel, event = "" }, { rejectWithValue }) => {
+export const AddToSetlist = createAsyncThunk("karaoke/addToSetlist", async ({ file_uid, channel, preset = "" }, { rejectWithValue }) => {
   try {
-    const response = await axios.post(`${API}bookmark`, { file_uid, channel, event, type: "karaoke" });
+    const response = await axios.post(`${API}bookmark`, { file_uid, channel, preset, type: "karaoke" });
     return response.data.data;
   } catch (err) {
     showErrorToast(err.response?.data?.description || err.response?.data?.err || "Failed to add to setlist");
@@ -113,22 +113,22 @@ export const ReorderSetlist = createAsyncThunk("karaoke/reorderSetlist", async (
   return items;
 });
 
-export const CreateKaraokeEvent = createAsyncThunk("karaoke/createEvent", async ({ channel, event }, { rejectWithValue }) => {
+export const CreateKaraokePreset = createAsyncThunk("karaoke/createPreset", async ({ channel, preset }, { rejectWithValue }) => {
   try {
-    await axios.post(`${API}bookmark/events`, { channel, event, type: "karaoke" });
-    return event;
+    await axios.post(`${API}bookmark/presets`, { channel, preset, type: "karaoke" });
+    return preset;
   } catch (err) {
-    showErrorToast(err.response?.data?.description || "Failed to create event");
+    showErrorToast(err.response?.data?.description || "Failed to create preset");
     return rejectWithValue(err.response?.data);
   }
 });
 
-export const DeleteKaraokeEvent = createAsyncThunk("karaoke/deleteEvent", async ({ channel, event }, { rejectWithValue }) => {
+export const DeleteKaraokePreset = createAsyncThunk("karaoke/deletePreset", async ({ channel, preset }, { rejectWithValue }) => {
   try {
-    await axios.delete(`${API}bookmark/events`, { params: { channel, event, type: "karaoke" } });
-    return event;
+    await axios.delete(`${API}bookmark/presets`, { params: { channel, preset, type: "karaoke" } });
+    return preset;
   } catch (err) {
-    showErrorToast(err.response?.data?.description || "Failed to delete event");
+    showErrorToast(err.response?.data?.description || "Failed to delete preset");
     return rejectWithValue(err.response?.data);
   }
 });
@@ -200,12 +200,12 @@ export const AddKaraokeSlide = createAsyncThunk(
   }
 );
 
-export const RenameKaraokeEvent = createAsyncThunk("karaoke/renameEvent", async ({ channel, event, new_event }, { rejectWithValue }) => {
+export const RenameKaraokePreset = createAsyncThunk("karaoke/renamePreset", async ({ channel, preset, new_preset }, { rejectWithValue }) => {
   try {
-    await axios.patch(`${API}bookmark/events`, { channel, event, new_event, type: "karaoke" });
-    return { event, new_event };
+    await axios.patch(`${API}bookmark/presets`, { channel, preset, new_preset, type: "karaoke" });
+    return { preset, new_preset };
   } catch (err) {
-    showErrorToast(err.response?.data?.description || "Failed to rename event");
+    showErrorToast(err.response?.data?.description || "Failed to rename preset");
     return rejectWithValue(err.response?.data);
   }
 });
@@ -230,8 +230,8 @@ const KaraokeSlice = createSlice({
     setActiveGroup(state, action) {
       state.activeGroup = action.payload;
     },
-    setActiveKaraokeEvent(state, action) {
-      state.activeKaraokeEvent = action.payload;
+    setActiveKaraokePreset(state, action) {
+      state.activeKaraokePreset = action.payload;
       state.setlist = [];
     },
   },
@@ -265,13 +265,13 @@ const KaraokeSlice = createSlice({
         const sourceUid = action.payload;
         state.songs = state.songs.filter((s) => s.source_uid !== sourceUid);
       })
-      .addCase(GetKaraokeEvents.fulfilled, (state, action) => {
-        state.karaokeEvents = action.payload || [];
+      .addCase(GetKaraokePresets.fulfilled, (state, action) => {
+        state.karaokePresets = action.payload || [];
       })
-      .addCase(CreateKaraokeEvent.fulfilled, (state, action) => {
-        const ev = action.payload;
-        if (ev && !state.karaokeEvents.includes(ev)) {
-          state.karaokeEvents = [...state.karaokeEvents, ev].sort();
+      .addCase(CreateKaraokePreset.fulfilled, (state, action) => {
+        const p = action.payload;
+        if (p && !state.karaokePresets.includes(p)) {
+          state.karaokePresets = [...state.karaokePresets, p].sort();
         }
       })
       .addCase(GetKaraokeSetlist.fulfilled, (state, action) => {
@@ -295,11 +295,11 @@ const KaraokeSlice = createSlice({
           .map((item) => ({ ...item, order_number: orderMap[item.id] ?? item.order_number }))
           .sort((a, b) => a.order_number - b.order_number);
       })
-      .addCase(DeleteKaraokeEvent.fulfilled, (state, action) => {
+      .addCase(DeleteKaraokePreset.fulfilled, (state, action) => {
         const deleted = action.payload;
-        state.karaokeEvents = state.karaokeEvents.filter((e) => e !== deleted);
-        if (state.activeKaraokeEvent === deleted) {
-          state.activeKaraokeEvent = "";
+        state.karaokePresets = state.karaokePresets.filter((p) => p !== deleted);
+        if (state.activeKaraokePreset === deleted) {
+          state.activeKaraokePreset = "";
           state.setlist = [];
         }
       })
@@ -314,15 +314,15 @@ const KaraokeSlice = createSlice({
       .addCase(DeleteKaraokeSlide.fulfilled, (state, action) => {
         state.slides = state.slides.filter((s) => (s.ID ?? s.id) !== action.payload);
       })
-      .addCase(RenameKaraokeEvent.fulfilled, (state, action) => {
-        const { event, new_event } = action.payload;
-        state.karaokeEvents = state.karaokeEvents.map((e) => (e === event ? new_event : e));
-        if (state.activeKaraokeEvent === event) {
-          state.activeKaraokeEvent = new_event;
+      .addCase(RenameKaraokePreset.fulfilled, (state, action) => {
+        const { preset, new_preset } = action.payload;
+        state.karaokePresets = state.karaokePresets.map((p) => (p === preset ? new_preset : p));
+        if (state.activeKaraokePreset === preset) {
+          state.activeKaraokePreset = new_preset;
         }
       });
   },
 });
 
-export const { setActiveSong, setActiveSlideIndex, clearKaraokeSlides, setActiveGroup, setActiveKaraokeEvent } = KaraokeSlice.actions;
+export const { setActiveSong, setActiveSlideIndex, clearKaraokeSlides, setActiveGroup, setActiveKaraokePreset } = KaraokeSlice.actions;
 export default KaraokeSlice.reducer;

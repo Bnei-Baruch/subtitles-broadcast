@@ -655,7 +655,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 	req := struct {
 		Language    string `json:"language"`
 		Channel     string `json:"channel"`
-		Event       string `json:"event"`
+		Preset      string `json:"preset"`
 		FileUid     string `json:"file_uid"`
 		SlideId     int    `json:"slide_id"`
 		Update      bool   `json:"update"`
@@ -684,15 +684,15 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			now := time.Now()
 			if err = h.Database.WithContext(ctx).Exec(
 				`UPDATE bookmarks SET slide_id = ?, updated_at = ?, updated_by = ?
-				 WHERE file_uid = ? AND channel = ? AND event = ? AND type = 'karaoke'`,
-				req.SlideId, now, userId.(string), req.FileUid, req.Channel, req.Event,
+				 WHERE file_uid = ? AND channel = ? AND preset = ? AND type = 'karaoke'`,
+				req.SlideId, now, userId.(string), req.FileUid, req.Channel, req.Preset,
 			).Error; err != nil {
 				log.Error(err)
 				ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Updating setlist slide has failed"))
 				return
 			}
 			h.Database.WithContext(ctx).Table(DBTableBookmarks).
-				Where("file_uid = ? AND channel = ? AND event = ? AND type = 'karaoke'", req.FileUid, req.Channel, req.Event).
+				Where("file_uid = ? AND channel = ? AND preset = ? AND type = 'karaoke'", req.FileUid, req.Channel, req.Preset).
 				First(&bookmark)
 		} else {
 			var firstSlideId int
@@ -703,7 +703,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 
 			var maxOrder int
 			h.Database.WithContext(ctx).Table(DBTableBookmarks).
-				Where("channel = ? AND event = ? AND type = 'karaoke'", req.Channel, req.Event).
+				Where("channel = ? AND preset = ? AND type = 'karaoke'", req.Channel, req.Preset).
 				Select("COALESCE(MAX(order_number), -1)").
 				Scan(&maxOrder)
 
@@ -711,7 +711,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			bookmark.Type = "karaoke"
 			bookmark.Language = ""
 			bookmark.Channel = req.Channel
-			bookmark.Event = req.Event
+			bookmark.Preset = req.Preset
 			bookmark.SlideId = firstSlideId
 			bookmark.FileUid = req.FileUid
 			bookmark.OrderNumber = maxOrder + 1
@@ -722,7 +722,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			if err = h.Database.Create(&bookmark).Error; err != nil {
 				log.Error(err)
 				if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == ERR_UNIQUE_VIOLATION_CODE {
-					ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Song already in setlist for this channel and event"))
+					ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Song already in setlist for this channel and preset"))
 					return
 				}
 				ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Adding to setlist has failed"))
@@ -746,7 +746,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			placeholders = append(placeholders, *req.OrderNumber)
 			updateOrder = "order_number = ?,"
 		}
-		placeholders = append(placeholders, time.Now(), userId.(string), req.FileUid, req.Language, req.Channel, req.Event)
+		placeholders = append(placeholders, time.Now(), userId.(string), req.FileUid, req.Language, req.Channel, req.Preset)
 		updateQuery := fmt.Sprintf(`UPDATE bookmarks
 			 SET slide_id = ?,
 			 %s
@@ -755,10 +755,10 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 			 WHERE file_uid = ?
 			 AND language = ?
 			 AND channel = ?
-			 AND event = ?`, updateOrder)
+			 AND preset = ?`, updateOrder)
 		result := h.Database.Debug().WithContext(ctx).Exec(updateQuery, placeholders...).Table(DBTableBookmarks).
 			Select("*").
-			Where("file_uid = ? AND language = ? AND channel = ? AND event = ?", req.FileUid, req.Language, req.Channel, req.Event).
+			Where("file_uid = ? AND language = ? AND channel = ? AND preset = ?", req.FileUid, req.Language, req.Channel, req.Preset).
 			First(&bookmark)
 		if result.Error != nil {
 			log.Error(result.Error)
@@ -781,7 +781,7 @@ func (h *Handler) AddOrUpdateBookmark(ctx *gin.Context) {
 		bookmark.Type = "subtitles"
 		bookmark.Language = req.Language
 		bookmark.Channel = req.Channel
-		bookmark.Event = req.Event
+		bookmark.Preset = req.Preset
 		bookmark.SlideId = req.SlideId
 		bookmark.FileUid = req.FileUid
 		bookmark.OrderNumber = *req.OrderNumber
@@ -830,14 +830,14 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 			CreatedAt   time.Time `json:"created_at"`
 			CreatedBy   string    `json:"created_by"`
 		}
-		karaokeEvent := ctx.Query("event")
+		karaokePreset := ctx.Query("preset")
 		var items []karaokeRow
 		result := h.Database.WithContext(ctx).
 			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename, COUNT(s.id) as slide_count").
 			Table(DBTableBookmarks+" b").
 			Joins("INNER JOIN "+DBTableFiles+" f ON f.file_uid = b.file_uid").
 			Joins("LEFT JOIN "+DBTableSlides+" s ON s.file_uid = b.file_uid AND s.slide_type IN ('karaoke','karaoke_separator')").
-			Where("b.channel = ? AND b.type = 'karaoke' AND b.event = ?", channel, karaokeEvent).
+			Where("b.channel = ? AND b.type = 'karaoke' AND b.preset = ?", channel, karaokePreset).
 			Group("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename").
 			Order("b.order_number ASC").
 			Find(&items)
@@ -859,7 +859,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 			getResponse(false, nil, "Query language is missing", "Query language is missing"))
 		return
 	}
-	event := ctx.Query("event")
+	preset := ctx.Query("preset")
 	force_master := ""
 	if ctx.Query("read_after_write") == "true" {
 		force_master = "random(),"
@@ -877,7 +877,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		Joins("INNER JOIN slides ON bookmarks.slide_id = slides.id").
 		Joins("INNER JOIN files ON slides.file_uid = files.file_uid").
 		Joins("INNER JOIN source_paths ON files.source_uid = source_paths.source_uid AND source_paths.languages = files.languages AND ? = ANY(files.languages)", language).
-		Where("bookmarks.language = ? AND bookmarks.channel = ? AND bookmarks.event = ? AND bookmarks.type = 'subtitles'", language, channel, event).
+		Where("bookmarks.language = ? AND bookmarks.channel = ? AND bookmarks.preset = ? AND bookmarks.type = 'subtitles'", language, channel, preset).
 		Order("bookmarks.order_number").
 		Find(&result)
 	if query.Error != nil {
@@ -923,7 +923,7 @@ func (h *Handler) ReorderBookmarks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Bookmarks reordered"))
 }
 
-func (h *Handler) GetBookmarkEvents(ctx *gin.Context) {
+func (h *Handler) GetBookmarkPresets(ctx *gin.Context) {
 	channel := ctx.Query("channel")
 	if len(channel) == 0 {
 		ctx.JSON(http.StatusBadRequest,
@@ -931,31 +931,31 @@ func (h *Handler) GetBookmarkEvents(ctx *gin.Context) {
 		return
 	}
 	bookmarkType := ctx.DefaultQuery("type", "subtitles")
-	var events []string
+	var presets []string
 	if bookmarkType == "karaoke" {
 		rows, err := h.Database.WithContext(ctx).Raw(`
-			SELECT event FROM bookmark_events WHERE channel = ? AND type = 'karaoke'
+			SELECT preset FROM bookmark_presets WHERE channel = ? AND type = 'karaoke'
 			UNION
-			SELECT DISTINCT event FROM bookmarks WHERE channel = ? AND type = 'karaoke'
-			ORDER BY event
+			SELECT DISTINCT preset FROM bookmarks WHERE channel = ? AND type = 'karaoke'
+			ORDER BY preset
 		`, channel, channel).Rows()
 		if err != nil {
 			log.Error(err)
 			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting bookmark events has failed"))
+				getResponse(false, nil, err.Error(), "Getting bookmark presets has failed"))
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			var ev string
-			if scanErr := rows.Scan(&ev); scanErr == nil {
-				events = append(events, ev)
+			var p string
+			if scanErr := rows.Scan(&p); scanErr == nil {
+				presets = append(presets, p)
 			}
 		}
-		if events == nil {
-			events = []string{}
+		if presets == nil {
+			presets = []string{}
 		}
-		ctx.JSON(http.StatusOK, getResponse(true, events, "", "Getting data has succeeded"))
+		ctx.JSON(http.StatusOK, getResponse(true, presets, "", "Getting data has succeeded"))
 		return
 	} else {
 		language := ctx.Query("language")
@@ -965,28 +965,28 @@ func (h *Handler) GetBookmarkEvents(ctx *gin.Context) {
 			return
 		}
 		rows, err := h.Database.WithContext(ctx).Raw(`
-			SELECT event FROM bookmark_events WHERE channel = ? AND type = 'subtitles'
+			SELECT preset FROM bookmark_presets WHERE channel = ? AND type = 'subtitles'
 			UNION
-			SELECT DISTINCT event FROM bookmarks WHERE language = ? AND channel = ? AND type = 'subtitles'
-			ORDER BY event
+			SELECT DISTINCT preset FROM bookmarks WHERE language = ? AND channel = ? AND type = 'subtitles'
+			ORDER BY preset
 		`, channel, language, channel).Rows()
 		if err != nil {
 			log.Error(err)
 			ctx.JSON(http.StatusInternalServerError,
-				getResponse(false, nil, err.Error(), "Getting bookmark events has failed"))
+				getResponse(false, nil, err.Error(), "Getting bookmark presets has failed"))
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			var ev string
-			if scanErr := rows.Scan(&ev); scanErr == nil {
-				events = append(events, ev)
+			var p string
+			if scanErr := rows.Scan(&p); scanErr == nil {
+				presets = append(presets, p)
 			}
 		}
-		if events == nil {
-			events = []string{}
+		if presets == nil {
+			presets = []string{}
 		}
-		ctx.JSON(http.StatusOK, getResponse(true, events, "", "Getting data has succeeded"))
+		ctx.JSON(http.StatusOK, getResponse(true, presets, "", "Getting data has succeeded"))
 		return
 	}
 }
@@ -1013,70 +1013,70 @@ func (h *Handler) DeleteBookmark(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Deleting data has succeeded"))
 }
 
-func (h *Handler) CreateBookmarkEvent(ctx *gin.Context) {
+func (h *Handler) CreateBookmarkPreset(ctx *gin.Context) {
 	req := struct {
 		Channel string `json:"channel"`
-		Event   string `json:"event"`
+		Preset  string `json:"preset"`
 		Type    string `json:"type"`
 	}{}
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	if req.Channel == "" || req.Event == "" {
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel and event are required", "channel and event are required"))
+	if req.Channel == "" || req.Preset == "" {
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel and preset are required", "channel and preset are required"))
 		return
 	}
 	if req.Type == "" {
 		req.Type = "subtitles"
 	}
-	ke := BookmarkEvent{Channel: req.Channel, Event: req.Event, Type: req.Type}
+	kp := BookmarkPreset{Channel: req.Channel, Preset: req.Preset, Type: req.Type}
 	result := h.Database.WithContext(ctx).
-		Where(BookmarkEvent{Channel: req.Channel, Event: req.Event, Type: req.Type}).
-		FirstOrCreate(&ke)
+		Where(BookmarkPreset{Channel: req.Channel, Preset: req.Preset, Type: req.Type}).
+		FirstOrCreate(&kp)
 	if result.Error != nil {
 		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Creating event has failed"))
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Creating preset has failed"))
 		return
 	}
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Event created"))
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Preset created"))
 }
 
-func (h *Handler) DeleteBookmarkEvent(ctx *gin.Context) {
+func (h *Handler) DeleteBookmarkPreset(ctx *gin.Context) {
 	channel := ctx.Query("channel")
-	event := ctx.Query("event")
+	preset := ctx.Query("preset")
 	bookmarkType := ctx.DefaultQuery("type", "subtitles")
-	if len(channel) == 0 || len(event) == 0 {
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel and event are required", "channel and event are required"))
+	if len(channel) == 0 || len(preset) == 0 {
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel and preset are required", "channel and preset are required"))
 		return
 	}
 	result := h.Database.WithContext(ctx).
-		Where("channel = ? AND event = ? AND type = ?", channel, event, bookmarkType).
+		Where("channel = ? AND preset = ? AND type = ?", channel, preset, bookmarkType).
 		Delete(&Bookmark{})
 	if result.Error != nil {
 		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Deleting event has failed"))
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Deleting preset has failed"))
 		return
 	}
 	h.Database.WithContext(ctx).
-		Where("channel = ? AND event = ? AND type = ?", channel, event, bookmarkType).
-		Delete(&BookmarkEvent{})
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Event deleted"))
+		Where("channel = ? AND preset = ? AND type = ?", channel, preset, bookmarkType).
+		Delete(&BookmarkPreset{})
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Preset deleted"))
 }
 
-func (h *Handler) RenameBookmarkEvent(ctx *gin.Context) {
+func (h *Handler) RenameBookmarkPreset(ctx *gin.Context) {
 	req := struct {
-		Channel  string `json:"channel"`
-		Event    string `json:"event"`
-		NewEvent string `json:"new_event"`
-		Type     string `json:"type"`
+		Channel   string `json:"channel"`
+		Preset    string `json:"preset"`
+		NewPreset string `json:"new_preset"`
+		Type      string `json:"type"`
 	}{}
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, err.Error(), "Binding data has failed"))
 		return
 	}
-	if req.Channel == "" || req.Event == "" || req.NewEvent == "" {
-		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel, event, new_event are required", "channel, event, new_event are required"))
+	if req.Channel == "" || req.Preset == "" || req.NewPreset == "" {
+		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel, preset, new_preset are required", "channel, preset, new_preset are required"))
 		return
 	}
 	if req.Type == "" {
@@ -1084,26 +1084,26 @@ func (h *Handler) RenameBookmarkEvent(ctx *gin.Context) {
 	}
 	var existingCount int64
 	h.Database.WithContext(ctx).Table(DBTableBookmarks).
-		Where("channel = ? AND event = ? AND type = ?", req.Channel, req.NewEvent, req.Type).
+		Where("channel = ? AND preset = ? AND type = ?", req.Channel, req.NewPreset, req.Type).
 		Count(&existingCount)
 	if existingCount > 0 {
-		ctx.JSON(http.StatusConflict, getResponse(false, nil, "target event already exists", "An event with that name already exists"))
+		ctx.JSON(http.StatusConflict, getResponse(false, nil, "target preset already exists", "A preset with that name already exists"))
 		return
 	}
 	result := h.Database.WithContext(ctx).
 		Table(DBTableBookmarks).
-		Where("channel = ? AND event = ? AND type = ?", req.Channel, req.Event, req.Type).
-		Update("event", req.NewEvent)
+		Where("channel = ? AND preset = ? AND type = ?", req.Channel, req.Preset, req.Type).
+		Update("preset", req.NewPreset)
 	if result.Error != nil {
 		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Renaming event has failed"))
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Renaming preset has failed"))
 		return
 	}
 	h.Database.WithContext(ctx).
-		Model(&BookmarkEvent{}).
-		Where("channel = ? AND event = ? AND type = ?", req.Channel, req.Event, req.Type).
-		Update("event", req.NewEvent)
-	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Event renamed"))
+		Model(&BookmarkPreset{}).
+		Where("channel = ? AND preset = ? AND type = ?", req.Channel, req.Preset, req.Type).
+		Update("preset", req.NewPreset)
+	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Preset renamed"))
 }
 
 func (h *Handler) GetAuthors(ctx *gin.Context) {

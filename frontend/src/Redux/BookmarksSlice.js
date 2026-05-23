@@ -6,39 +6,39 @@ const API = process.env.REACT_APP_API_BASE_URL;
 
 const initialState = {
   bookmarks: [],
-  events: [],
-  activeEvent: "",
+  presets: [],
+  activePreset: "",
 };
 
-export const GetBookmarkEvents = createAsyncThunk(
-  "bookmarks/getEvents",
+export const GetBookmarkPresets = createAsyncThunk(
+  "bookmarks/getPresets",
   async ({ language, channel }) => {
-    const response = await axios.get(`${API}bookmark/events`, { params: { language, channel, type: "subtitles" } });
+    const response = await axios.get(`${API}bookmark/presets`, { params: { language, channel, type: "subtitles" } });
     return response.data.data;
   }
 );
 
-export const CreateBookmarkEvent = createAsyncThunk(
-  "bookmarks/createEvent",
-  async ({ channel, event }, { rejectWithValue }) => {
+export const CreateBookmarkPreset = createAsyncThunk(
+  "bookmarks/createPreset",
+  async ({ channel, preset }, { rejectWithValue }) => {
     try {
-      await axios.post(`${API}bookmark/events`, { channel, event, type: "subtitles" });
-      return event;
+      await axios.post(`${API}bookmark/presets`, { channel, preset, type: "subtitles" });
+      return preset;
     } catch (err) {
-      showErrorToast(err.response?.data?.description || "Failed to create event");
+      showErrorToast(err.response?.data?.description || "Failed to create preset");
       return rejectWithValue(err.response?.data);
     }
   }
 );
 
-export const DeleteBookmarkEvent = createAsyncThunk(
-  "bookmarks/deleteEvent",
-  async ({ channel, language, event }, { rejectWithValue }) => {
+export const DeleteBookmarkPreset = createAsyncThunk(
+  "bookmarks/deletePreset",
+  async ({ channel, language, preset }, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API}bookmark/events`, { params: { channel, language, event, type: "subtitles" } });
-      return event;
+      await axios.delete(`${API}bookmark/presets`, { params: { channel, language, preset, type: "subtitles" } });
+      return preset;
     } catch (err) {
-      showErrorToast(err.response?.data?.description || "Failed to delete event");
+      showErrorToast(err.response?.data?.description || "Failed to delete preset");
       return rejectWithValue(err.response?.data);
     }
   }
@@ -55,7 +55,7 @@ export const GetBookmarks = createAsyncThunk(
 // Adds or updates bookmarks.
 export const UpdateBookmarks = createAsyncThunk(
   "bookmarks/update",
-  async ({bookmarks, update, channel, language, event = ""}, thunkAPI) => {
+  async ({bookmarks, update, channel, language, preset = ""}, thunkAPI) => {
     const updatedBookmarks = [];
     try {
       for (const bookmark of bookmarks) {
@@ -67,13 +67,13 @@ export const UpdateBookmarks = createAsyncThunk(
           update,
           channel,
           language,
-          event,
+          preset,
         });
         updatedBookmarks.push(response.data);
       };
       return updatedBookmarks;
     } catch (error) {
-      return error.response.data.description; // This will be available as action.error.message
+      return error.response.data.description;
     }
   }
 );
@@ -92,8 +92,8 @@ const BookmarksSlice = createSlice({
   name: "bookmarks",
   initialState,
   reducers: {
-    setActiveEvent(state, action) {
-      state.activeEvent = action.payload;
+    setActivePreset(state, action) {
+      state.activePreset = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -102,24 +102,24 @@ const BookmarksSlice = createSlice({
         const { data } = action.payload;
         state.bookmarks = data;
       })
-      .addCase(GetBookmarkEvents.fulfilled, (state, action) => {
-        state.events = (action.payload || []).filter((e) => e !== "");
+      .addCase(GetBookmarkPresets.fulfilled, (state, action) => {
+        state.presets = (action.payload || []).filter((p) => p !== "");
       })
-      .addCase(CreateBookmarkEvent.fulfilled, (state, action) => {
-        const ev = action.payload;
-        if (ev && !state.events.includes(ev)) {
-          state.events = [...state.events, ev].sort();
+      .addCase(CreateBookmarkPreset.fulfilled, (state, action) => {
+        const p = action.payload;
+        if (p && !state.presets.includes(p)) {
+          state.presets = [...state.presets, p].sort();
         }
       })
-      .addCase(DeleteBookmarkEvent.fulfilled, (state, action) => {
+      .addCase(DeleteBookmarkPreset.fulfilled, (state, action) => {
         const deleted = action.payload;
-        state.events = state.events.filter((e) => e !== deleted);
-        if (state.activeEvent === deleted) {
-          state.activeEvent = "";
+        state.presets = state.presets.filter((p) => p !== deleted);
+        if (state.activePreset === deleted) {
+          state.activePreset = "";
         }
       });
   },
 });
 
-export const { setActiveEvent } = BookmarksSlice.actions;
+export const { setActivePreset } = BookmarksSlice.actions;
 export default BookmarksSlice.reducer;

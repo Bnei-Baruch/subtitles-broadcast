@@ -6,7 +6,7 @@ import { Slide } from "../Components/Slide";
 import { Edit } from "../Components/Edit";
 import { Search } from "../Layout/Search";
 import { Virtuoso } from 'react-virtuoso';
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkEvents } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkPresets } from "../Redux/BookmarksSlice";
 import BookmarkEventDialog from "../Components/BookmarkEventDialog";
 
 const SearchSpan = ({text, searchKeyword}) => {
@@ -85,7 +85,7 @@ const Archive = () => {
 
   useEffect(() => {
     dispatch(GetBookmarks({ language, channel }));
-    dispatch(GetBookmarkEvents({ language, channel }));
+    dispatch(GetBookmarkPresets({ language, channel }));
   }, [dispatch, language, channel]);
 
   const refetchSlidesAndBookmarks = useCallback((limit) => {
@@ -107,7 +107,7 @@ const Archive = () => {
     setBookmarkDialogOpen(true);
   };
 
-  const handleBookmarkConfirm = (event) => {
+  const handleBookmarkConfirm = (preset) => {
     setBookmarkDialogOpen(false);
     const slide = pendingBookmarkSlide;
     setPendingBookmarkSlide(null);
@@ -119,7 +119,7 @@ const Archive = () => {
       }],
       channel,
       language,
-      event,
+      preset,
       update: false,
     })).then((res) => {
       if (typeof res.payload === "string" && res.payload.startsWith("The bookmark with the same file")) {
@@ -128,7 +128,7 @@ const Archive = () => {
             bookmarks: [{ file_uid: slide.file_uid, slide_id: slide.ID }],
             channel,
             language,
-            event,
+            preset,
             update: true,
           }));
         }

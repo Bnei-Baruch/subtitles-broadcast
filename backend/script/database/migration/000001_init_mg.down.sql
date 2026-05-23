@@ -2,8 +2,8 @@ DELETE FROM source_paths
 WHERE source_uid IN (SELECT file_uid FROM files WHERE type = 'karaoke')
   AND source_type = 'general';
 
-DROP INDEX IF EXISTS idx_bookmark_events_type;
-DROP TABLE IF EXISTS bookmark_events;
+DROP INDEX IF EXISTS idx_bookmark_presets_type;
+DROP TABLE IF EXISTS bookmark_presets;
 
 DROP TABLE IF EXISTS user_settings;
 

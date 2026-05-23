@@ -18,16 +18,16 @@ import {
   GetKaraokeSongs,
   GetKaraokeSlides,
   GetKaraokeSetlist,
-  GetKaraokeEvents,
+  GetKaraokePresets,
   ImportKaraokeFile,
   DeleteKaraokeSong,
   RestoreKaraokeSong,
   AddToSetlist,
   RemoveFromSetlist,
   ReorderSetlist,
-  CreateKaraokeEvent,
-  DeleteKaraokeEvent,
-  RenameKaraokeEvent,
+  CreateKaraokePreset,
+  DeleteKaraokePreset,
+  RenameKaraokePreset,
   UpdateKaraokeSlide,
   UpdateKaraokeSongName,
   DeleteKaraokeSlide,
@@ -36,7 +36,7 @@ import {
   setActiveSong,
   setActiveSlideIndex,
   setActiveGroup,
-  setActiveKaraokeEvent,
+  setActiveKaraokePreset,
 } from "../Redux/KaraokeSlice";
 import { publishKaraoke, clearKaraoke, publishDisplyNoneMqttMessage } from "../Utils/UseMqttUtils";
 import { setLiveModeEnabled, setSubtitlesDisplayMode, lastMessage } from "../Redux/MQTT/mqttSlice";
@@ -157,7 +157,7 @@ const Karaoke = () => {
   const [localEditSlides, setLocalEditSlides] = useState([]);
   const [localSetlist, setLocalSetlist] = useState([]);
 
-  const { songs, setlist, slides, activeSongFileUid, activeSlideIndex, activeGroup, karaokeEvents, activeKaraokeEvent } = useSelector(
+  const { songs, setlist, slides, activeSongFileUid, activeSlideIndex, activeGroup, karaokePresets, activeKaraokePreset } = useSelector(
     (state) => state.karaoke
   );
   const { broadcast_program_code: channel, broadcast_language_code: language } = useSelector(
@@ -177,15 +177,15 @@ const Karaoke = () => {
 
   useEffect(() => {
     if (channel) {
-      dispatch(GetKaraokeEvents({ channel }));
+      dispatch(GetKaraokePresets({ channel }));
     }
   }, [dispatch, channel]);
 
   useEffect(() => {
     if (channel) {
-      dispatch(GetKaraokeSetlist({ channel, event: activeKaraokeEvent }));
+      dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
     }
-  }, [dispatch, channel, activeKaraokeEvent]);
+  }, [dispatch, channel, activeKaraokePreset]);
 
   useEffect(() => {
     setLocalSetlist(setlist);
@@ -255,14 +255,14 @@ const Karaoke = () => {
 
   const handleAddToSetlist = useCallback(
     (fileUid) => {
-      dispatch(AddToSetlist({ file_uid: fileUid, channel, event: activeKaraokeEvent })).then((result) => {
+      dispatch(AddToSetlist({ file_uid: fileUid, channel, preset: activeKaraokePreset })).then((result) => {
         if (!result.error) {
-          dispatch(GetKaraokeSetlist({ channel, event: activeKaraokeEvent }));
-          dispatch(GetKaraokeEvents({ channel }));
+          dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+          dispatch(GetKaraokePresets({ channel }));
         }
       });
     },
-    [dispatch, channel, activeKaraokeEvent]
+    [dispatch, channel, activeKaraokePreset]
   );
 
   const handleRemoveFromSetlist = useCallback(
@@ -299,12 +299,12 @@ const Karaoke = () => {
             toRemove.forEach((s) => dispatch(RemoveFromSetlist({ id: s.id })));
           }
           dispatch(GetKaraokeSongs({ group: activeGroup, showHidden }));
-          dispatch(GetKaraokeSetlist({ channel, event: activeKaraokeEvent }));
+          dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
         }
       });
       setConfirmDeleteSourceUid(null);
     },
-    [dispatch, activeGroup, showHidden, channel, activeKaraokeEvent, songs, setlist]
+    [dispatch, activeGroup, showHidden, channel, activeKaraokePreset, songs, setlist]
   );
 
   const handleRestoreSong = useCallback(
@@ -753,12 +753,12 @@ const Karaoke = () => {
           </div>
           <div style={{ padding: "6px 8px", borderBottom: "1px solid #ddd", flexShrink: 0 }}>
             <EventDropdown
-              events={karaokeEvents}
-              activeEvent={activeKaraokeEvent}
-              onSelect={(ev) => dispatch(setActiveKaraokeEvent(ev))}
-              onCreate={(name) => { dispatch(CreateKaraokeEvent({ channel, event: name })); dispatch(setActiveKaraokeEvent(name)); }}
-              onDelete={(ev) => dispatch(DeleteKaraokeEvent({ channel, event: ev })).then((r) => { if (!r.error) dispatch(GetKaraokeEvents({ channel })); })}
-              onRename={(ev, newName) => dispatch(RenameKaraokeEvent({ channel, event: ev, new_event: newName })).then((r) => { if (!r.error) dispatch(GetKaraokeEvents({ channel })); })}
+              events={karaokePresets}
+              activeEvent={activeKaraokePreset}
+              onSelect={(ev) => dispatch(setActiveKaraokePreset(ev))}
+              onCreate={(name) => { dispatch(CreateKaraokePreset({ channel, preset: name })); dispatch(setActiveKaraokePreset(name)); }}
+              onDelete={(ev) => dispatch(DeleteKaraokePreset({ channel, preset: ev })).then((r) => { if (!r.error) dispatch(GetKaraokePresets({ channel })); })}
+              onRename={(ev, newName) => dispatch(RenameKaraokePreset({ channel, preset: ev, new_preset: newName })).then((r) => { if (!r.error) dispatch(GetKaraokePresets({ channel })); })}
             />
           </div>
           <div className="setlist-list">

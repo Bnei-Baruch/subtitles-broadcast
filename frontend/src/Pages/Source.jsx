@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import "./PagesCSS/Archive.css";
 import { GetSources, DeleteSource } from "../Redux/SourceSlice";
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkEvents } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkPresets } from "../Redux/BookmarksSlice";
 import BookmarkEventDialog from "../Components/BookmarkEventDialog";
 import { Search } from "../Layout/Search";
 import { TableVirtuoso } from 'react-virtuoso';
@@ -104,10 +104,10 @@ const Source = () => {
 
   useEffect(() => {
     refetchSources();
-    dispatch(GetBookmarkEvents({ language, channel }));
+    dispatch(GetBookmarkPresets({ language, channel }));
   }, [refetchSources]);
 
-  const handleBookmarkConfirm = (event) => {
+  const handleBookmarkConfirm = (preset) => {
     setBookmarkDialogOpen(false);
     const source = pendingBookmarkSource;
     setPendingBookmarkSource(null);
@@ -119,7 +119,7 @@ const Source = () => {
       }],
       language,
       channel,
-      event,
+      preset,
       update: false,
     })).finally(() => refetchSources(true));
   };

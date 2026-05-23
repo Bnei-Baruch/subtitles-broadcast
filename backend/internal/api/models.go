@@ -32,7 +32,7 @@ type Bookmark struct {
 	UpdatedBy   string    `json:"updated_by"`
 	Language    string    `json:"language"`
 	Channel     string    `json:"channel"`
-	Event       string    `json:"event"`
+	Preset      string    `json:"preset"`
 	Type        string    `json:"type"`
 }
 
@@ -74,15 +74,15 @@ type SourcePath struct {
 	UpdatedBy string    `json:"updated_by"`
 }
 
-type BookmarkEvent struct {
+type BookmarkPreset struct {
 	ID        uint      `gorm:"primaryKey"`
 	Channel   string    `json:"channel"`
-	Event     string    `json:"event"`
+	Preset    string    `json:"preset"`
 	Type      string    `json:"type"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func (BookmarkEvent) TableName() string { return "bookmark_events" }
+func (BookmarkPreset) TableName() string { return "bookmark_presets" }
 
 // archive model
 
