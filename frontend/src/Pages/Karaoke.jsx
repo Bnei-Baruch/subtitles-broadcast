@@ -748,15 +748,15 @@ const Karaoke = () => {
           className="karaoke-setlist karaoke-panel"
           style={{ flex: `0 0 ${setlistWidth}px`, minWidth: `${setlistWidth}px` }}
         >
-          <div className="panel-header">
-            <span>Setlist</span>
-          </div>
           <div className="karaoke-setlist-preview">
             {subtitlesDisplayMode === DM_KARAOKE && liveSlide?.slide?.trim() ? (
               <KaraokeSlide content={liveSlide.slide} />
             ) : (
               <div className="setlist-preview-empty">—</div>
             )}
+          </div>
+          <div className="panel-header">
+            <span>Presets</span>
           </div>
           <div style={{ padding: "6px 8px", borderBottom: "1px solid #ddd", flexShrink: 0 }}>
             <EventDropdown
