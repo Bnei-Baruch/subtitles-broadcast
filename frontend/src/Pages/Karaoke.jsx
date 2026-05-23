@@ -152,6 +152,7 @@ const Karaoke = () => {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [slidesFontSize, setSlidesFontSize] = useState(13);
   const [librarySearch, setLibrarySearch] = useState("");
+  const [slideSearch, setSlideSearch] = useState("");
   const [confirmDeleteSourceUid, setConfirmDeleteSourceUid] = useState(null);
   const [importGroup, setImportGroup] = useState("general");
   const [importProgress, setImportProgress] = useState(null);
@@ -467,7 +468,7 @@ const Karaoke = () => {
         }
       }
     }
-  }, [activeSlideIndex]);
+  }, [activeSlideIndex, slideSearch]);
 
   const handleToggleLiveMode = useCallback(() => {
     dispatch(setLiveModeEnabled(!isLiveModeEnabled));
@@ -798,6 +799,12 @@ const Karaoke = () => {
             <IconButton size="small" onClick={() => setSlidesFontSize((s) => Math.max(9, s - 1))}>A−</IconButton>
             <span className="slides-size-label">{slidesFontSize}px</span>
             <IconButton size="small" onClick={() => setSlidesFontSize((s) => Math.min(24, s + 1))}>A+</IconButton>
+            <input
+              className="slide-search-input"
+              placeholder="Search slides…"
+              value={slideSearch}
+              onChange={(e) => setSlideSearch(e.target.value)}
+            />
             {slides.length > 0 && !editMode && (
               <IconButton size="small" title="Edit slides" onClick={enterEditMode} sx={{ ml: "auto" }}>
                 <EditIcon fontSize="small" />
@@ -814,9 +821,25 @@ const Karaoke = () => {
               <div className="empty-hint">Click a song to load its slides</div>
             )}
             {slides.length > 0 && !editMode && (() => {
-              const half = Math.ceil(slides.length / 2);
+              const keyword = slideSearch.trim().toLowerCase();
+              const highlight = (text) => {
+                if (!keyword) return text;
+                const idx = text.toLowerCase().indexOf(keyword);
+                if (idx === -1) return text;
+                return (
+                  <>
+                    {text.slice(0, idx)}
+                    <mark className="slide-search-highlight">{text.slice(idx, idx + keyword.length)}</mark>
+                    {text.slice(idx + keyword.length)}
+                  </>
+                );
+              };
+              const visibleSlides = keyword
+                ? slides.filter((s) => s.slide.toLowerCase().includes(keyword))
+                : slides;
+              const half = Math.ceil(visibleSlides.length / 2);
               const renderSlide = (slide) => {
-                const isActive = subtitlesDisplayMode === DM_KARAOKE && activeSlideIndex === slide.order_number;
+                const isActive = activeSlideIndex === slide.order_number;
                 const lines = slide.slide.split("\n");
                 const firstLine = lines[0] || "";
                 const secondLine = lines[1] || "";
@@ -826,13 +849,13 @@ const Karaoke = () => {
                     key={slide.ID}
                     data-order={slide.order_number}
                     className={`slide-card${isActive ? " active" : ""}`}
-                    onClick={() => handleSelectSlide(slide)}
+                    onClick={() => { if (keyword) setSlideSearch(""); handleSelectSlide(slide); }}
                   >
                     <span className="slide-num">{slide.order_number + 1}</span>
                     <span className="slide-text-preview">
-                      <span>{firstLine.slice(0, 80)}</span>
+                      <span>{highlight(firstLine.slice(0, 80))}</span>
                       {sameLangSlide && (
-                        <span className="slide-text-secondary">{secondLine.slice(0, 80)}</span>
+                        <span className="slide-text-secondary">{highlight(secondLine.slice(0, 80))}</span>
                       )}
                     </span>
                   </div>
@@ -840,8 +863,8 @@ const Karaoke = () => {
               };
               return (
                 <>
-                  <div className="slides-column">{slides.slice(0, half).map(renderSlide)}</div>
-                  <div className="slides-column">{slides.slice(half).map(renderSlide)}</div>
+                  <div className="slides-column">{visibleSlides.slice(0, half).map(renderSlide)}</div>
+                  <div className="slides-column">{visibleSlides.slice(half).map(renderSlide)}</div>
                 </>
               );
             })()}
