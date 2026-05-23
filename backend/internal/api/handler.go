@@ -1276,7 +1276,10 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			query = query.Where("sp.source_group = ?", sourceGroup)
 		}
 		if keyword != "" {
-			query = query.Where("sp.path ILIKE ?", "%"+keyword+"%")
+			query = query.Where(
+				"(sp.path ILIKE ? OR EXISTS (SELECT 1 FROM "+DBTableSlides+" ks WHERE ks.file_uid = f.file_uid AND ks.slide ILIKE ?))",
+				"%"+keyword+"%", "%"+keyword+"%",
+			)
 		}
 		result := query.Find(&paths)
 		if result.Error != nil {
