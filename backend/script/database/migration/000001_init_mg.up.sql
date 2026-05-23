@@ -3,24 +3,25 @@
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE IF NOT EXISTS source_paths (
-  id          SERIAL PRIMARY KEY,
-  source_uid  VARCHAR(50),
-  path        VARCHAR,
-  languages   VARCHAR(2)[],
-  source_type VARCHAR(50),
-  created_at  TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  created_by  VARCHAR(50),
-  updated_by  VARCHAR(50),
+  id           SERIAL PRIMARY KEY,
+  source_uid   VARCHAR(50),
+  path         VARCHAR,
+  languages    VARCHAR(2)[],
+  source_type  VARCHAR(50),
+  source_group VARCHAR(50),
+  created_at   TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_by   VARCHAR(50),
+  updated_by   VARCHAR(50),
   UNIQUE (languages, source_uid)
 );
 CREATE INDEX idx_path ON source_paths (path);
 CREATE INDEX idx_source_paths_source_type ON source_paths (source_type);
 
 CREATE TABLE IF NOT EXISTS files (
-  id         SERIAL PRIMARY KEY,
-  type       VARCHAR(10),
-  filename   VARCHAR(200),
+  id          SERIAL PRIMARY KEY,
+  upload_type VARCHAR(10),
+  filename    VARCHAR(200),
   content    BYTEA,
   source_uid VARCHAR(50),
   file_uid   VARCHAR(50) UNIQUE,
@@ -85,8 +86,8 @@ CREATE TABLE IF NOT EXISTS bookmark_presets (
 CREATE INDEX idx_bookmark_presets_type ON bookmark_presets (channel, type);
 
 -- Backfill source_paths for any karaoke files imported before this migration
-INSERT INTO source_paths (source_uid, path, source_type, languages, created_at, updated_at, created_by, updated_by)
-SELECT f.file_uid, f.filename, 'general', '{}', f.created_at, f.updated_at, f.created_by, f.updated_by
+INSERT INTO source_paths (source_uid, path, source_type, source_group, languages, created_at, updated_at, created_by, updated_by)
+SELECT f.file_uid, f.filename, 'karaoke', 'general', '{}', f.created_at, f.updated_at, f.created_by, f.updated_by
 FROM files f
-WHERE f.type = 'karaoke'
+WHERE f.upload_type = 'upload'
   AND NOT EXISTS (SELECT 1 FROM source_paths sp WHERE sp.source_uid = f.file_uid);
