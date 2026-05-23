@@ -178,8 +178,11 @@ const Karaoke = () => {
   const liveSlide = visibleSlideOrNull(lastMessage(mqttMessages, DM_KARAOKE, "", channel));
 
   useEffect(() => {
-    dispatch(GetKaraokeSongs({ group: activeGroup, showHidden }));
-  }, [dispatch, activeGroup, showHidden]);
+    const timer = setTimeout(() => {
+      dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, keyword: librarySearch }));
+    }, librarySearch ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [dispatch, activeGroup, showHidden, librarySearch]);
 
   useEffect(() => {
     if (channel) {
@@ -474,9 +477,7 @@ const Karaoke = () => {
     dispatch(setLiveModeEnabled(!isLiveModeEnabled));
   }, [dispatch, isLiveModeEnabled]);
 
-  const filteredSongs = songs.filter((s) =>
-    (s.path || s.filename || "").toLowerCase().includes(librarySearch.toLowerCase())
-  );
+  const filteredSongs = songs;
 
   const activeSlide = activeSlideIndex !== null
     ? slides.find((s) => s.order_number === activeSlideIndex)

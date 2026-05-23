@@ -17,11 +17,12 @@ const initialState = {
   activeKaraokePreset: "",
 };
 
-export const GetKaraokeSongs = createAsyncThunk("karaoke/getSongs", async ({ group = "", showHidden = false } = {}) => {
+export const GetKaraokeSongs = createAsyncThunk("karaoke/getSongs", async ({ group = "", showHidden = false, keyword = "" } = {}) => {
   const params = {
     source_type: "karaoke",
     ...(group && { source_group: group }),
     ...(showHidden && { show_hidden: "true" }),
+    ...(keyword && { keyword }),
   };
   const response = await axios.get(`${API}source_path`, { params });
   return response.data.data;
