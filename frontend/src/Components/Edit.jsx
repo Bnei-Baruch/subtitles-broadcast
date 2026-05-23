@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GetSlides, UpdateSourcePath, AddSlide, DeleteSlide, UpdateSlide } from "../Redux/SlidesSlice";
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkEvents } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkPresets } from "../Redux/BookmarksSlice";
 import BookmarkEventDialog from "./BookmarkEventDialog";
 import { Slide } from "../Components/Slide";
 import { SplitToSlides } from "../Utils/SlideSplit";
@@ -150,7 +150,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
 
   useEffect(() => {
     dispatch(GetBookmarks({ language, channel }));
-    dispatch(GetBookmarkEvents({ language, channel }));
+    dispatch(GetBookmarkPresets({ language, channel }));
   }, [dispatch, language, channel]);
 
   const refetchSlides = useCallback(async (read_after_write = undefined) => {
@@ -396,7 +396,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
     }
   };
 
-  const handleBookmarkConfirm = (event) => {
+  const handleBookmarkConfirm = (preset) => {
     setBookmarkDialogOpen(false);
     dispatch(UpdateBookmarks({
       bookmarks: [{
@@ -406,7 +406,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
       }],
       language,
       channel,
-      event,
+      preset,
       update: false,
     })).then((response) => {
       if (response.payload[0]?.success) {

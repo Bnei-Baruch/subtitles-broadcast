@@ -10,7 +10,7 @@ import "./PagesCSS/Subtitle.css";
 
 import { Search } from "../Layout/Search";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { GetBookmarks, GetBookmarkEvents, CreateBookmarkEvent, DeleteBookmarkEvent, UpdateBookmarks, setActiveEvent } from "../Redux/BookmarksSlice";
+import { GetBookmarks, GetBookmarkPresets, CreateBookmarkPreset, DeleteBookmarkPreset, UpdateBookmarks, setActivePreset } from "../Redux/BookmarksSlice";
 import EventDropdown from "../Components/EventDropdown";
 import { GetSlides, clearSlices } from "../Redux/SlidesSlice";
 import DraggableItem from "../Components/DraggableItem";
@@ -42,7 +42,7 @@ const Subtitles = () => {
   const { slides } = useSelector((state) => state.slides);
   const maxSlideIndex = slides.length ? slides[slides.length - 1].order_number : 0;
 
-	const { bookmarks, events: bookmarkEvents, activeEvent } = useSelector((state) => state.bookmarks);
+	const { bookmarks, presets: bookmarkPresets, activePreset } = useSelector((state) => state.bookmarks);
 
   const {
     // Selected slide and file from bookmarks.
@@ -95,10 +95,10 @@ const Subtitles = () => {
           }],
           language,
           channel,
-          event: activeEvent,
+          preset: activePreset,
           update: true,
         })).then(() => {
-          return dispatch(GetBookmarks({ language, channel, event: activeEvent }));
+          return dispatch(GetBookmarks({ language, channel, preset: activePreset }));
         }),
       ]).then(() => {
         canUpdateSelectedSlide.current = true;
@@ -161,15 +161,15 @@ const Subtitles = () => {
 
   useEffect(() => {
     if (language && channel) {
-      dispatch(GetBookmarkEvents({ language, channel }));
+      dispatch(GetBookmarkPresets({ language, channel }));
     }
   }, [dispatch, language, channel]);
 
   useEffect(() => {
 		if (!editSlideId) {
-			dispatch(GetBookmarks({ language, channel, event: activeEvent }));
+			dispatch(GetBookmarks({ language, channel, preset: activePreset }));
 		}
-  }, [editSlideId, dispatch, language, channel, activeEvent]);
+  }, [editSlideId, dispatch, language, channel, activePreset]);
 
   useEffect(() => {
     if (!editSlideId) {
@@ -198,9 +198,9 @@ const Subtitles = () => {
       update: true,
       language,
       channel,
-      event: activeEvent,
+      preset: activePreset,
     })).then(() => {
-      return dispatch(GetBookmarks({ language, channel, event: activeEvent }));
+      return dispatch(GetBookmarks({ language, channel, preset: activePreset }));
     });
   };
 
@@ -541,11 +541,11 @@ const Subtitles = () => {
             <div className="top-head">
               <h3>Bookmarks</h3>
               <EventDropdown
-                events={bookmarkEvents}
-                activeEvent={activeEvent}
-                onSelect={(ev) => dispatch(setActiveEvent(ev))}
-                onCreate={(name) => { dispatch(CreateBookmarkEvent({ channel, event: name })); dispatch(setActiveEvent(name)); }}
-                onDelete={(ev) => dispatch(DeleteBookmarkEvent({ channel, language, event: ev })).then(() => dispatch(GetBookmarks({ language, channel, event: "" })))}
+                events={bookmarkPresets}
+                activeEvent={activePreset}
+                onSelect={(ev) => dispatch(setActivePreset(ev))}
+                onCreate={(name) => { dispatch(CreateBookmarkPreset({ channel, preset: name })); dispatch(setActivePreset(name)); }}
+                onDelete={(ev) => dispatch(DeleteBookmarkPreset({ channel, language, preset: ev })).then(() => dispatch(GetBookmarks({ language, channel, preset: "" })))}
               />
             </div>
             <DndProvider backend={HTML5Backend}>
@@ -561,7 +561,7 @@ const Subtitles = () => {
                       parentIndex={index}
                       moveCard={moveCard}
                       parentSlideId={bookmark.slide_id}
-                      bookmarkDeleted={(lsn = undefined) => dispatch(GetBookmarks({ language, channel, event: activeEvent, lsn }))}
+                      bookmarkDeleted={(lsn = undefined) => dispatch(GetBookmarks({ language, channel, preset: activePreset, lsn }))}
                     />
                   ))}
               </div>

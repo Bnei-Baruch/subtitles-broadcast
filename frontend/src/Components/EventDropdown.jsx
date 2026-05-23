@@ -4,16 +4,16 @@ import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 
-// Shared event-selector dropdown used on both Subtitles and Karaoke pages.
+// Shared preset-selector dropdown used on both Subtitles and Karaoke pages.
 // onRename is optional — omit it to hide the rename button.
-const EventDropdown = ({ events, activeEvent, onSelect, onCreate, onDelete, onRename }) => {
+const EventDropdown = ({ events: presets, activeEvent: activePreset, onSelect, onCreate, onDelete, onRename }) => {
   const containerRef = useRef(null);
   const menuRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState({});
-  const [newEventInput, setNewEventInput] = useState(false);
-  const [newEventName, setNewEventName] = useState("");
-  const [renamingEvent, setRenamingEvent] = useState(null);
+  const [newPresetInput, setNewPresetInput] = useState(false);
+  const [newPresetName, setNewPresetName] = useState("");
+  const [renamingPreset, setRenamingPreset] = useState(null);
   const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
@@ -24,8 +24,8 @@ const EventDropdown = ({ events, activeEvent, onSelect, onCreate, onDelete, onRe
         menuRef.current && !menuRef.current.contains(e.target)
       ) {
         setOpen(false);
-        setRenamingEvent(null);
-        setNewEventInput(false);
+        setRenamingPreset(null);
+        setNewPresetInput(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -48,22 +48,22 @@ const EventDropdown = ({ events, activeEvent, onSelect, onCreate, onDelete, onRe
   };
 
   const handleCreate = () => {
-    const name = newEventName.trim();
+    const name = newPresetName.trim();
     if (!name) return;
     onCreate(name);
-    setNewEventInput(false);
-    setNewEventName("");
+    setNewPresetInput(false);
+    setNewPresetName("");
     setOpen(false);
   };
 
-  const handleRename = (ev) => {
+  const handleRename = (p) => {
     const name = renameValue.trim();
-    if (!name || name === ev) return;
-    onRename(ev, name);
-    setRenamingEvent(null);
+    if (!name || name === p) return;
+    onRename(p, name);
+    setRenamingPreset(null);
   };
 
-  const allEvents = [...new Set(["", ...events, activeEvent ?? ""])];
+  const allPresets = [...new Set(["", ...presets, activePreset ?? ""])];
 
   return (
     <div className="event-dropdown-container" ref={containerRef}>
@@ -71,14 +71,14 @@ const EventDropdown = ({ events, activeEvent, onSelect, onCreate, onDelete, onRe
         className="event-dropdown-trigger"
         onClick={handleToggle}
       >
-        <span>{activeEvent === "" ? "Default" : activeEvent}</span>
+        <span>{activePreset === "" ? "Default" : activePreset}</span>
         <span className="event-dropdown-arrow">{open ? "▲" : "▼"}</span>
       </button>
       {open && ReactDOM.createPortal(
         <div className="event-dropdown-menu" style={menuStyle} ref={menuRef}>
-          {allEvents.map((ev) => (
-            <div key={ev} className={`event-dropdown-item${activeEvent === ev ? " active" : ""}`}>
-              {renamingEvent === ev ? (
+          {allPresets.map((p) => (
+            <div key={p} className={`event-dropdown-item${activePreset === p ? " active" : ""}`}>
+              {renamingPreset === p ? (
                 <span className="event-rename-row">
                   <input
                     autoFocus
@@ -86,35 +86,35 @@ const EventDropdown = ({ events, activeEvent, onSelect, onCreate, onDelete, onRe
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleRename(ev);
-                      if (e.key === "Escape") setRenamingEvent(null);
+                      if (e.key === "Enter") handleRename(p);
+                      if (e.key === "Escape") setRenamingPreset(null);
                     }}
                   />
-                  <IconButton size="small" disabled={!renameValue.trim() || renameValue.trim() === ev}
-                    onClick={() => handleRename(ev)}>✓</IconButton>
-                  <IconButton size="small" onClick={() => setRenamingEvent(null)}>✕</IconButton>
+                  <IconButton size="small" disabled={!renameValue.trim() || renameValue.trim() === p}
+                    onClick={() => handleRename(p)}>✓</IconButton>
+                  <IconButton size="small" onClick={() => setRenamingPreset(null)}>✕</IconButton>
                 </span>
               ) : (
                 <>
                   <button
                     className="event-dropdown-item-label"
-                    onClick={() => { onSelect(ev); setOpen(false); }}
+                    onClick={() => { onSelect(p); setOpen(false); }}
                   >
-                    {ev === "" ? "Default" : ev}
+                    {p === "" ? "Default" : p}
                   </button>
-                  {ev !== "" && (
+                  {p !== "" && (
                     <span className="event-dropdown-item-actions">
                       {onRename && (
-                        <IconButton size="small" title="Rename event"
-                          onClick={(e) => { e.stopPropagation(); setRenamingEvent(ev); setRenameValue(ev); }}>
+                        <IconButton size="small" title="Rename preset"
+                          onClick={(e) => { e.stopPropagation(); setRenamingPreset(p); setRenameValue(p); }}>
                           <EditIcon fontSize="small" />
                         </IconButton>
                       )}
-                      <IconButton size="small" title="Delete event"
+                      <IconButton size="small" title="Delete preset"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm(`Delete event "${ev}" and all its items?`)) {
-                            onDelete(ev);
+                          if (window.confirm(`Delete preset "${p}" and all its items?`)) {
+                            onDelete(p);
                             setOpen(false);
                           }
                         }}>
@@ -127,25 +127,25 @@ const EventDropdown = ({ events, activeEvent, onSelect, onCreate, onDelete, onRe
             </div>
           ))}
           <div className="event-dropdown-new">
-            {newEventInput ? (
+            {newPresetInput ? (
               <span className="event-new-input-row">
                 <input
                   autoFocus
                   className="event-rename-input"
-                  placeholder="Event name…"
-                  value={newEventName}
-                  onChange={(e) => setNewEventName(e.target.value)}
+                  placeholder="Preset name…"
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && newEventName.trim()) handleCreate();
-                    if (e.key === "Escape") { setNewEventInput(false); setNewEventName(""); }
+                    if (e.key === "Enter" && newPresetName.trim()) handleCreate();
+                    if (e.key === "Escape") { setNewPresetInput(false); setNewPresetName(""); }
                   }}
                 />
-                <IconButton size="small" disabled={!newEventName.trim()} onClick={handleCreate}>✓</IconButton>
-                <IconButton size="small" onClick={() => { setNewEventInput(false); setNewEventName(""); }}>✕</IconButton>
+                <IconButton size="small" disabled={!newPresetName.trim()} onClick={handleCreate}>✓</IconButton>
+                <IconButton size="small" onClick={() => { setNewPresetInput(false); setNewPresetName(""); }}>✕</IconButton>
               </span>
             ) : (
-              <button className="event-dropdown-new-btn" onClick={() => setNewEventInput(true)}>
-                + New event
+              <button className="event-dropdown-new-btn" onClick={() => setNewPresetInput(true)}>
+                + New preset
               </button>
             )}
           </div>
