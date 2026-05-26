@@ -1,0 +1,3 @@
+ALTER TABLE files
+ALTER COLUMN filename TYPE VARCHAR(200);
+
