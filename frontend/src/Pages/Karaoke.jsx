@@ -149,7 +149,9 @@ const Karaoke = () => {
   const resizingRef = useRef(null);
   const [libraryWidth, setLibraryWidth] = useState(500);
   const [setlistWidth, setSetlistWidth] = useState(400);
-  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(
+    () => localStorage.getItem("karaokeLibraryOpen") === "true"
+  );
   const [slidesFontSize, setSlidesFontSize] = useState(13);
   const [librarySearch, setLibrarySearch] = useState("");
   const [slideSearch, setSlideSearch] = useState("");
@@ -176,6 +178,10 @@ const Karaoke = () => {
 
   const isKaraokeActive = subtitlesDisplayMode === "karaoke";
   const liveSlide = visibleSlideOrNull(lastMessage(mqttMessages, DM_KARAOKE, "", channel));
+
+  useEffect(() => {
+    localStorage.setItem("karaokeLibraryOpen", String(libraryOpen));
+  }, [libraryOpen]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

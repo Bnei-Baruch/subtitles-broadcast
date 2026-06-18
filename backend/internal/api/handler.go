@@ -836,7 +836,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename, COUNT(s.id) as slide_count").
 			Table(DBTableBookmarks+" b").
 			Joins("INNER JOIN "+DBTableFiles+" f ON f.file_uid = b.file_uid").
-			Joins("LEFT JOIN "+DBTableSlides+" s ON s.file_uid = b.file_uid AND s.slide_type IN ('karaoke','karaoke_separator')").
+			Joins("LEFT JOIN "+DBTableSlides+" s ON s.file_uid = b.file_uid AND s.slide_type = 'karaoke'").
 			Where("b.channel = ? AND b.type = 'karaoke' AND b.preset = ?", channel, karaokePreset).
 			Group("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename").
 			Order("b.order_number ASC").
@@ -1050,17 +1050,24 @@ func (h *Handler) DeleteBookmarkPreset(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "channel and preset are required", "channel and preset are required"))
 		return
 	}
-	result := h.Database.WithContext(ctx).
-		Where("channel = ? AND preset = ? AND type = ?", channel, preset, bookmarkType).
-		Delete(&Bookmark{})
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Deleting preset has failed"))
+	tx := h.Database.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	h.Database.WithContext(ctx).
-		Where("channel = ? AND preset = ? AND type = ?", channel, preset, bookmarkType).
-		Delete(&BookmarkPreset{})
+	for _, model := range []interface{}{&Bookmark{}, &BookmarkPreset{}} {
+		if err := tx.Where("channel = ? AND preset = ? AND type = ?", channel, preset, bookmarkType).
+			Delete(model).Error; err != nil {
+			tx.Rollback()
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Deleting preset has failed"))
+			return
+		}
+	}
+	if err := tx.Commit().Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Committing transaction has failed"))
+		return
+	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Preset deleted"))
 }
 
@@ -1090,19 +1097,31 @@ func (h *Handler) RenameBookmarkPreset(ctx *gin.Context) {
 		ctx.JSON(http.StatusConflict, getResponse(false, nil, "target preset already exists", "A preset with that name already exists"))
 		return
 	}
-	result := h.Database.WithContext(ctx).
-		Table(DBTableBookmarks).
-		Where("channel = ? AND preset = ? AND type = ?", req.Channel, req.Preset, req.Type).
-		Update("preset", req.NewPreset)
-	if result.Error != nil {
-		log.Error(result.Error)
-		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, result.Error.Error(), "Renaming preset has failed"))
+	tx := h.Database.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, tx.Error.Error(), "Creating transaction has failed"))
 		return
 	}
-	h.Database.WithContext(ctx).
-		Model(&BookmarkPreset{}).
+	if err := tx.Table(DBTableBookmarks).
 		Where("channel = ? AND preset = ? AND type = ?", req.Channel, req.Preset, req.Type).
-		Update("preset", req.NewPreset)
+		Update("preset", req.NewPreset).Error; err != nil {
+		tx.Rollback()
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Renaming preset has failed"))
+		return
+	}
+	if err := tx.Model(&BookmarkPreset{}).
+		Where("channel = ? AND preset = ? AND type = ?", req.Channel, req.Preset, req.Type).
+		Update("preset", req.NewPreset).Error; err != nil {
+		tx.Rollback()
+		log.Error(err)
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Renaming preset has failed"))
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Committing transaction has failed"))
+		return
+	}
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Preset renamed"))
 }
 

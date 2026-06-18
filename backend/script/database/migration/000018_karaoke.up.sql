@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS bookmark_presets (
   id         SERIAL PRIMARY KEY,
   channel    VARCHAR(50)  NOT NULL,
   preset     VARCHAR(100) NOT NULL,
-  type       VARCHAR(20)  NOT NULL DEFAULT 'karaoke',
+  type       VARCHAR(20)  NOT NULL,
   created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
   UNIQUE (channel, preset)
 );

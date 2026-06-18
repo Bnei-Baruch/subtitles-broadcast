@@ -6,6 +6,7 @@ import HeaderBar from "../Layout/HeaderBar";
 import { isOperator, isTranslator } from "../Utils/Auth";
 import MqttLogsDialog from "../Components/MqttLogsDialog";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import LibraryMusicOutlinedIcon from "@mui/icons-material/LibraryMusicOutlined";
 
 const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
   const [mqttDialogOpen, setMqttDialogOpen] = useState(false);
@@ -42,6 +43,14 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
               </li>
             )}
 
+            {isOperator(securityRoles) && broadcastLangCode === "he" && (
+              <li>
+                <NavLink to={"/karaoke"} className="nav-link text-white">
+                  <LibraryMusicOutlinedIcon className="nav-icon" /> Karaoke
+                </NavLink>
+              </li>
+            )}
+
             {isOperator(securityRoles) && (
               <li>
                 <NavLink to={"/archive"} className="nav-link text-white">
@@ -62,14 +71,6 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
               <li>
                 <NavLink to={"/new"} className="nav-link text-white">
                   <img alt="queue" src="image/queue.svg" /> New
-                </NavLink>
-              </li>
-            )}
-
-            {isOperator(securityRoles) && broadcastLangCode === "he" && (
-              <li>
-                <NavLink to={"/karaoke"} className="nav-link text-white">
-                  <img alt="karaoke" src="image/queue.svg" /> Karaoke
                 </NavLink>
               </li>
             )}
