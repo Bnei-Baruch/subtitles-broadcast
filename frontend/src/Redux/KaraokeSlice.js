@@ -160,72 +160,9 @@ export const DeleteKaraokePreset = createAsyncThunk("karaoke/deletePreset", asyn
   }
 });
 
-export const ReorderKaraokeSlides = createAsyncThunk(
-  "karaoke/reorderSlides",
-  async ({ slides }, { rejectWithValue }) => {
-    try {
-      const updates = slides.map((s, idx) => ({
-        slide_id: s.ID ?? s.id,
-        slide: s.slide,
-        order_number: idx,
-        left_to_right: s.left_to_right,
-        slide_type: s.slide_type,
-        renderer: s.renderer || "default",
-      }));
-      await axios.patch(`${API}slide`, updates);
-      return slides.map((s, idx) => ({ ...s, order_number: idx }));
-    } catch (err) {
-      showErrorToast("Failed to reorder slides");
-      return rejectWithValue(err.response?.data);
-    }
-  }
-);
-
-export const UpdateKaraokeSlide = createAsyncThunk(
-  "karaoke/updateSlide",
-  async ({ slide_id, slide, order_number, left_to_right, slide_type, renderer }, { rejectWithValue }) => {
-    try {
-      await axios.patch(`${API}slide`, [{ slide_id, slide, order_number, left_to_right, slide_type, renderer }]);
-      return { slide_id, slide };
-    } catch (err) {
-      showErrorToast("Failed to update slide");
-      return rejectWithValue(err.response?.data);
-    }
-  }
-);
-
-export const DeleteKaraokeSlide = createAsyncThunk(
-  "karaoke/deleteSlide",
-  async ({ slide_id }, { rejectWithValue }) => {
-    try {
-      await axios.delete(`${API}slide`, { data: { slide_ids: [slide_id], force_delete_bookmarks: true } });
-      return slide_id;
-    } catch (err) {
-      showErrorToast("Failed to delete slide");
-      return rejectWithValue(err.response?.data);
-    }
-  }
-);
-
-export const AddKaraokeSlide = createAsyncThunk(
-  "karaoke/addSlide",
-  async ({ file_uid, order_number }, { rejectWithValue }) => {
-    try {
-      await axios.post(`${API}slide`, [{
-        file_uid,
-        slide: "",
-        order_number,
-        left_to_right: true,
-        slide_type: "karaoke",
-        renderer: "default",
-      }]);
-      return { file_uid };
-    } catch (err) {
-      showErrorToast("Failed to add slide");
-      return rejectWithValue(err.response?.data);
-    }
-  }
-);
+// Karaoke slide editing reuses the shared <Edit mode="karaoke"> component and
+// its SlidesSlice thunks (Add/Update/Delete/Get Slide), so no karaoke-specific
+// slide-mutation thunks are needed here.
 
 export const RenameKaraokePreset = createAsyncThunk("karaoke/renamePreset", async ({ channel, preset, new_preset }, { rejectWithValue }) => {
   try {
@@ -329,17 +266,6 @@ const KaraokeSlice = createSlice({
           state.activeKaraokePreset = "";
           state.setlist = [];
         }
-      })
-      .addCase(ReorderKaraokeSlides.fulfilled, (state, action) => {
-        state.slides = action.payload;
-      })
-      .addCase(UpdateKaraokeSlide.fulfilled, (state, action) => {
-        const { slide_id, slide } = action.payload;
-        const idx = state.slides.findIndex((s) => (s.ID ?? s.id) === slide_id);
-        if (idx !== -1) state.slides[idx] = { ...state.slides[idx], slide };
-      })
-      .addCase(DeleteKaraokeSlide.fulfilled, (state, action) => {
-        state.slides = state.slides.filter((s) => (s.ID ?? s.id) !== action.payload);
       })
       .addCase(RenameKaraokePreset.fulfilled, (state, action) => {
         const { preset, new_preset } = action.payload;

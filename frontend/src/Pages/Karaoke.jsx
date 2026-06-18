@@ -28,11 +28,7 @@ import {
   CreateKaraokePreset,
   DeleteKaraokePreset,
   RenameKaraokePreset,
-  UpdateKaraokeSlide,
   UpdateKaraokeSongName,
-  DeleteKaraokeSlide,
-  AddKaraokeSlide,
-  ReorderKaraokeSlides,
   setActiveSong,
   setActiveSlideIndex,
   setActiveGroup,
@@ -43,7 +39,7 @@ import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttS
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
 import { showSuccessToast, getKaraokeMqttTopic, isNonLatinScript } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
-import { Slide } from "../Components/Slide";
+import { Edit } from "../Components/Edit";
 import Preview from "../Components/Preview";
 import "./PagesCSS/Karaoke.css";
 
@@ -91,58 +87,6 @@ const DraggableSetlistItem = ({ item, idx, isActive, displayName, onSelect, onRe
   );
 };
 
-const SLIDE_DRAG_TYPE = "karaoke-slide-edit";
-
-const DraggableSlideEditCard = ({ slide, idx, editText, onTextChange, onBlur, onDelete, moveCard, onDragEnd }) => {
-  const ref = useRef(null);
-  const dragRef = useRef(null);
-  const id = slide.ID ?? slide.id;
-
-  const [{ isDragging }, drag] = useDrag({
-    type: SLIDE_DRAG_TYPE,
-    item: { index: idx },
-    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    end: onDragEnd,
-  });
-
-  const [, drop] = useDrop({
-    accept: SLIDE_DRAG_TYPE,
-    hover: (dragged) => {
-      if (dragged.index !== idx) {
-        moveCard(dragged.index, idx);
-        dragged.index = idx;
-      }
-    },
-  });
-
-  drag(dragRef);
-  drop(ref);
-
-  const currentText = editText ?? slide.slide;
-
-  return (
-    <div ref={ref} className={`slide-card-edit${isDragging ? " dragging" : ""}`} style={{ opacity: isDragging ? 0.4 : 1 }}>
-      <div ref={dragRef} className="slide-drag-handle" title="Drag to reorder">
-        <DragIndicatorIcon fontSize="small" sx={{ color: "#bbb", cursor: "grab" }} />
-      </div>
-      <span className="slide-num">{idx + 1}</span>
-      <div className="slide-edit-main">
-        <Slide content={currentText} slide_type="karaoke" />
-        <textarea
-          className="slide-edit-textarea"
-          value={currentText}
-          onChange={(e) => onTextChange(id, e.target.value)}
-          onBlur={onBlur}
-          rows={3}
-        />
-      </div>
-      <IconButton size="small" className="slide-delete-btn" title="Delete slide" onClick={() => onDelete(slide)}>
-        <DeleteIcon fontSize="small" />
-      </IconButton>
-    </div>
-  );
-};
-
 const Karaoke = () => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
@@ -162,8 +106,6 @@ const Karaoke = () => {
   const [showHidden, setShowHidden] = useState(false);
   const [editingSongName, setEditingSongName] = useState(null); // { sourceUid, sourcePathId, value }
   const [editMode, setEditMode] = useState(false);
-  const [editingTexts, setEditingTexts] = useState({});
-  const [localEditSlides, setLocalEditSlides] = useState([]);
   const [localSetlist, setLocalSetlist] = useState([]);
 
   const { songs, setlist, slides, activeSongFileUid, activeSlideIndex, activeGroup, karaokePresets, activeKaraokePreset } = useSelector(
@@ -261,7 +203,6 @@ const Karaoke = () => {
     (fileUid) => {
       if (activeSongFileUid === fileUid) return;
       setEditMode(false);
-      setEditingTexts({});
       dispatch(setActiveSong(fileUid));
       dispatch(GetKaraokeSlides({ file_uid: fileUid }));
     },
@@ -343,64 +284,14 @@ const Karaoke = () => {
     setEditingSongName(null);
   }, [dispatch, editingSongName]);
 
-  const enterEditMode = useCallback(() => {
-    const texts = {};
-    slides.forEach((s) => { texts[s.ID ?? s.id] = s.slide; });
-    setEditingTexts(texts);
-    setLocalEditSlides([...slides]);
-    setEditMode(true);
-  }, [slides]);
+  const enterEditMode = useCallback(() => setEditMode(true), []);
 
-  const handleSlideTextBlur = useCallback((slide) => {
-    const id = slide.ID ?? slide.id;
-    const newText = editingTexts[id];
-    if (newText === undefined || newText === slide.slide) return;
-    dispatch(UpdateKaraokeSlide({
-      slide_id: id,
-      slide: newText,
-      order_number: slide.order_number,
-      left_to_right: slide.left_to_right,
-      slide_type: slide.slide_type,
-      renderer: slide.renderer || "default",
-    }));
-  }, [dispatch, editingTexts]);
-
-  const handleDeleteSlide = useCallback((slide) => {
-    const id = slide.ID ?? slide.id;
-    dispatch(DeleteKaraokeSlide({ slide_id: id }));
-    setLocalEditSlides((prev) => prev.filter((s) => (s.ID ?? s.id) !== id));
-  }, [dispatch]);
-
-  const handleAddSlide = useCallback(() => {
-    if (!activeSongFileUid) return;
-    const maxOrder = slides.length > 0 ? Math.max(...slides.map((s) => s.order_number)) : -1;
-    dispatch(AddKaraokeSlide({ file_uid: activeSongFileUid, order_number: maxOrder + 1 })).then((r) => {
-      if (!r.error) {
-        dispatch(GetKaraokeSlides({ file_uid: activeSongFileUid })).then((res) => {
-          const newSlides = res.payload || [];
-          const texts = {};
-          newSlides.forEach((s) => { texts[s.ID ?? s.id] = s.slide; });
-          setEditingTexts(texts);
-          setLocalEditSlides([...newSlides]);
-        });
-      }
-    });
-  }, [dispatch, activeSongFileUid, slides]);
-
-  const moveSlideCard = useCallback((fromIndex, toIndex) => {
-    setLocalEditSlides((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
-  }, []);
-
-  const handleSlideReorderEnd = useCallback(() => {
-    if (localEditSlides.length > 0) {
-      dispatch(ReorderKaraokeSlides({ slides: localEditSlides }));
-    }
-  }, [dispatch, localEditSlides]);
+  // Karaoke editing now uses the shared <Edit mode="karaoke">. On close, reload
+  // the song's slides so the main list reflects any edits/additions/deletions.
+  const handleEditClose = useCallback(() => {
+    setEditMode(false);
+    if (activeSongFileUid) dispatch(GetKaraokeSlides({ file_uid: activeSongFileUid }));
+  }, [dispatch, activeSongFileUid]);
 
   const handleResizeStart = useCallback((col, e) => {
     e.preventDefault();
@@ -798,6 +689,10 @@ const Karaoke = () => {
 
         {/* Right: Slides */}
         <div className="karaoke-content karaoke-panel">
+          {editMode ? (
+            <Edit fileUid={activeSongFileUid} handleClose={handleEditClose} mode="karaoke" />
+          ) : (
+          <>
           <div className="slides-size-bar">
             <IconButton size="small" onClick={() => setSlidesFontSize((s) => Math.max(9, s - 1))}>A−</IconButton>
             <span className="slides-size-label">{slidesFontSize}px</span>
@@ -808,22 +703,17 @@ const Karaoke = () => {
               value={slideSearch}
               onChange={(e) => setSlideSearch(e.target.value)}
             />
-            {slides.length > 0 && !editMode && (
+            {slides.length > 0 && (
               <IconButton size="small" title="Edit slides" onClick={enterEditMode} sx={{ ml: "auto" }}>
                 <EditIcon fontSize="small" />
               </IconButton>
-            )}
-            {editMode && (
-              <Button size="small" variant="contained" sx={{ ml: "auto" }} onClick={() => setEditMode(false)}>
-                Done
-              </Button>
             )}
           </div>
           <div className="karaoke-slides-list" ref={slidesListRef} style={{ fontSize: slidesFontSize }}>
             {slides.length === 0 && (
               <div className="empty-hint">Click a song to load its slides</div>
             )}
-            {slides.length > 0 && !editMode && (() => {
+            {slides.length > 0 && (() => {
               const keyword = slideSearch.trim().toLowerCase();
               const highlight = (text) => {
                 if (!keyword) return text;
@@ -871,36 +761,9 @@ const Karaoke = () => {
                 </>
               );
             })()}
-            {slides.length > 0 && editMode && (
-              <div className="slides-edit-column">
-                {localEditSlides.map((slide, idx) => {
-                  const id = slide.ID ?? slide.id;
-                  return (
-                    <DraggableSlideEditCard
-                      key={id}
-                      slide={slide}
-                      idx={idx}
-                      editText={editingTexts[id]}
-                      onTextChange={(sid, val) => setEditingTexts((prev) => ({ ...prev, [sid]: val }))}
-                      onBlur={() => handleSlideTextBlur(slide)}
-                      onDelete={handleDeleteSlide}
-                      moveCard={moveSlideCard}
-                      onDragEnd={handleSlideReorderEnd}
-                    />
-                  );
-                })}
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  className="slide-add-btn"
-                  onClick={handleAddSlide}
-                >
-                  Add slide
-                </Button>
-              </div>
-            )}
           </div>
+          </>
+          )}
         </div>
       </div>
       </DndProvider>

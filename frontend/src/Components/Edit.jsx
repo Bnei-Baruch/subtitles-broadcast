@@ -113,8 +113,9 @@ const spliceSlideList = (editSlides, index, deleteCount, addSlides) => {
 };
 
 
-export const Edit = ({ fileUid, slideId, handleClose }) => {
+export const Edit = ({ fileUid, slideId, handleClose, mode }) => {
   const dispatch = useDispatch();
+  const isKaraoke = mode === "karaoke";
 
   // const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const {
@@ -159,10 +160,11 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
         file_uid: fileUid,
         language,
         channel,
+        slide_type: isKaraoke ? "karaoke" : undefined,
         read_after_write: read_after_write ? "true" : undefined,
       })
     );
-  }, [dispatch, fileUid, language, channel]);
+  }, [dispatch, fileUid, language, channel, isKaraoke]);
 
   // Load data when the component mounts
   useEffect(() => {
@@ -172,13 +174,15 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
   useEffect(() => {
     if (slides.length) {
       // Cancel or new set of slides loaded, reset editSlides.
-      setEditSlides(slides);
+      // Karaoke slides have no languages; give them a single empty language so
+      // the languages-based order-number math (i / languages.length) is a no-op.
+      setEditSlides(isKaraoke ? slides.map((s) => ({ ...s, languages: s.languages || [""] })) : slides);
       setSourcePath(slides[0].source_path);
       setSourcePathId(slides[0].source_path_id);
       setBookmarkId(slides.find((slide) => slide.bookmark_id !== null)?.bookmark_id || "");
       setDeleted([]);
     }
-  }, [slides]);
+  }, [slides, isKaraoke]);
 
   // Initial scroll Virtuoso into view.
   useEffect(() => {
@@ -517,8 +521,9 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 onKeyDown={(e) => textareaKeydown(e, index, slide)}
                 onChange={(e) => {
                   let newValue = e.target.value;
-                  // Perform any special handling for \r if needed
-                  if (newValue.includes("\n")) {
+                  // Subtitles use \r internally; karaoke keeps real \n (its bar
+                  // renderer splits lines on "\n").
+                  if (!isKaraoke && newValue.includes("\n")) {
                     newValue = newValue.replace(/\n/g, "\r");
                   }
 
@@ -540,7 +545,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => {
                     return toggleSlideDirection(index, slide);
@@ -563,7 +568,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => toggleRenderer(index, slide)}
                   className={
@@ -579,7 +584,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => toggleSlideType(index, slide)}
                   className={
@@ -595,7 +600,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => rerun()}
                   className="bi bi-bootstrap-reboot delete-icon "
@@ -614,7 +619,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                       file_uid: slide.file_uid,
                       slide: "",
                       addedNew: true,
-                      slide_type: "subtitle",
+                      slide_type: isKaraoke ? "karaoke" : "subtitle",
                       renderer: slide.renderer,
                       left_to_right: slide.left_to_right,
                       languages: slide.languages,
@@ -635,12 +640,15 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 isLtr={slide && slide.left_to_right === false ? false : true}
                 isQuestion={slide.slide_type === "question"}
                 renderer={slide.renderer}
+                slide_type={isKaraoke ? "karaoke" : undefined}
               />
-              <span className="order-number">{`${
-                slide?.languages.length > 1
-                  ? slide?.languages[+index % slide?.languages.length]
-                  : slide?.languages[0]
-              } ${+slide.order_number + 1}`}</span>
+              <span className="order-number">{isKaraoke
+                ? +slide.order_number + 1
+                : `${
+                    slide?.languages.length > 1
+                      ? slide?.languages[+index % slide?.languages.length]
+                      : slide?.languages[0]
+                  } ${+slide.order_number + 1}`}</span>
             </div>
           </div>
         </div>
@@ -652,22 +660,26 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
       <div className="archiveBackground bg-light Edit">
         <div className="button-container">
           <Search search={search} searchChanged={(newSearch) => setSearch(newSearch)} />
-          <Button
-            variant="contained"
-            onClick={handleToggleBookmark}
-            color="success"
-            className={`btn  bookmark-btn  ${bookmarkId ? "btn-secondary" : "btn-info"}`}
-          >
-            {bookmarkId ? "Unbookmark" : "Bookmark"}
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => rerun()}
-            className="btn btn-re-run"
-          >
-            Re-run
-          </Button>
+          {!isKaraoke && (
+            <>
+              <Button
+                variant="contained"
+                onClick={handleToggleBookmark}
+                color="success"
+                className={`btn  bookmark-btn  ${bookmarkId ? "btn-secondary" : "btn-info"}`}
+              >
+                {bookmarkId ? "Unbookmark" : "Bookmark"}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => rerun()}
+                className="btn btn-re-run"
+              >
+                Re-run
+              </Button>
+            </>
+          )}
           <Button
             variant="contained"
             color="success"
@@ -702,24 +714,26 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
             Save & Back
           </Button>
         </div>
-        <div className="card border-0 edit-source-path">
-          <div className="top-row d-flex sticky-holder">
-            <div className="responsive-container">
-              <div>
-                <input
-                  type="text"
-                  className={`update-source-path-inp form-control input  ${
-                    isLtr(language) ? "ltr" : "rtl"
-                  }`}
-                  value={sourcePath}
-                  onChange={(e) => setSourcePath(e.target.value)}
-                  placeholder="Update Source Path"
-                />
+        {!isKaraoke && (
+          <div className="card border-0 edit-source-path">
+            <div className="top-row d-flex sticky-holder">
+              <div className="responsive-container">
+                <div>
+                  <input
+                    type="text"
+                    className={`update-source-path-inp form-control input  ${
+                      isLtr(language) ? "ltr" : "rtl"
+                    }`}
+                    value={sourcePath}
+                    onChange={(e) => { console.log(e.target.value.trim());  setSourcePath(e.target.value.trim()); }}
+                    placeholder="Update Source Path"
+                  />
+                </div>
+                <span>{editSlides.length}</span>
               </div>
-              <span>{editSlides.length}</span>
             </div>
           </div>
-        </div>
+        )}
         <div className="edit-container">
           <Virtuoso
             ref={virtualRef}
