@@ -122,6 +122,8 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 		SlidesTypes []string `json:"slides_types"`
 		Renderers   []string `json:"renderers"`
 		LeftToRight bool     `json:"left_to_right"`
+		SourceType  string   `json:"source_type"`
+		SourceGroup string   `json:"source_group"`
 	}{}
 	err := ctx.BindJSON(&req)
 	if err != nil {
@@ -159,13 +161,15 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	now := time.Now()
 	userId, _ := ctx.Get("user_id")
 	sourcePathData := &SourcePath{
-		Languages: pq.StringArray(req.Languages),
-		SourceUid: req.SourceUid,
-		Path:      req.SourcePath,
-		CreatedBy: userId.(string),
-		UpdatedBy: userId.(string),
-		CreatedAt: now,
-		UpdatedAt: now,
+		Languages:   pq.StringArray(req.Languages),
+		SourceUid:   req.SourceUid,
+		Path:        req.SourcePath,
+		SourceType:  req.SourceType,
+		SourceGroup: req.SourceGroup,
+		CreatedBy:   userId.(string),
+		UpdatedBy:   userId.(string),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	if err = tx.Table(DBTableSourcePaths).Create(sourcePathData).Error; err != nil {
 		tx.Rollback()
@@ -198,10 +202,20 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 			getResponse(false, nil, err.Error(), "Creating file data has failed"))
 		return
 	}
+	langCount := len(req.Languages)
+	if langCount == 0 {
+		langCount = 1 // karaoke files have no languages: one slide per order number
+	}
 	for idx, slide := range req.Slides {
+		// Subtitle/question slides store newlines escaped; karaoke keeps real
+		// newlines (its renderer splits the bar into lines on "\n").
+		slideText := slide
+		if req.SlidesTypes[idx] != KaraokeSlideType {
+			slideText = strings.ReplaceAll(slide, "\n", "\\n")
+		}
 		slideData := Slide{
-			Slide:       strings.ReplaceAll(slide, "\n", "\\n"),
-			OrderNumber: idx / len(req.Languages),
+			Slide:       slideText,
+			OrderNumber: idx / langCount,
 			LeftToRight: req.LeftToRight,
 			SlideType:   req.SlidesTypes[idx],
 			Renderer:    req.Renderers[idx],
@@ -258,6 +272,36 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 	channel := ctx.Query("channel")
 	keyword := ctx.Query("keyword")
 	hidden := ctx.Query("hidden")
+
+	// Karaoke files have no languages, so they are excluded by the language-keyed
+	// query below. Serve them from a simple file_uid + slide_type lookup instead.
+	if ctx.Query("slide_type") == KaraokeSlideType {
+		if len(fileUid) == 0 {
+			ctx.JSON(http.StatusBadRequest, getResponse(false, nil, "file_uid is required", "file_uid is required"))
+			return
+		}
+		kq := h.Database.WithContext(ctx).Table(DBTableSlides).
+			Where("file_uid = ? AND slide_type = ?", fileUid, KaraokeSlideType)
+		if hidden != "true" {
+			kq = kq.Where("hidden = FALSE")
+		}
+		var kslides []Slide
+		if err := kq.Order("order_number ASC").Find(&kslides).Error; err != nil {
+			log.Error(err)
+			ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Getting data has failed"))
+			return
+		}
+		if kslides == nil {
+			kslides = []Slide{}
+		}
+		ctx.JSON(http.StatusOK, getResponse(true, struct {
+			Slides       []Slide      `json:"slides"`
+			LastModified sql.NullTime `json:"last_modified"`
+			Total        int64        `json:"total"`
+		}{Slides: kslides, Total: int64(len(kslides))}, "", "Getting data has succeeded"))
+		return
+	}
+
 	slides := []*SlideDetail{}
 	if len(language) == 0 {
 		ctx.JSON(http.StatusBadRequest,

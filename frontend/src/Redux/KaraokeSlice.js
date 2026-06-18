@@ -42,19 +42,41 @@ export const RestoreKaraokeSong = createAsyncThunk("karaoke/restoreSong", async 
 });
 
 export const GetKaraokeSlides = createAsyncThunk("karaoke/getSlides", async ({ file_uid }) => {
-  const response = await axios.get(`${API}karaoke/slides`, { params: { file_uid } });
-  return response.data.data;
+  const response = await axios.get(`${API}slide`, { params: { file_uid, slide_type: "karaoke" } });
+  return response.data.data.slides;
 });
 
+// 32-hex id, matching the backend's previous server-side uid format.
+function generateKaraokeUid() {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+// Parse the file server-side (no DB writes), then persist via the shared
+// POST /custom_slide path with slide_type "karaoke".
 export const ImportKaraokeFile = createAsyncThunk("karaoke/import", async ({ formData }, { rejectWithValue }) => {
   try {
-    const response = await axios.post(`${API}karaoke/import`, formData, {
+    const parseRes = await axios.post(`${API}karaoke/parse`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    if (response.data.success) {
-      showSuccessToast(`Imported: ${response.data.data.slide_count} slides`);
-    }
-    return response.data.data;
+    const { slides, title, group } = parseRes.data.data;
+    const uid = generateKaraokeUid();
+    await axios.post(`${API}custom_slide`, {
+      file_name: title,
+      source_path: title,
+      languages: [],
+      source_uid: uid,
+      file_uid: uid,
+      slides: slides.map((s) => s.slide),
+      slides_types: slides.map((s) => s.slide_type),
+      renderers: slides.map(() => "default"),
+      left_to_right: true,
+      source_type: "karaoke",
+      source_group: group,
+    });
+    showSuccessToast(`Imported: ${slides.length} slides`);
+    return { title, slide_count: slides.length, group };
   } catch (err) {
     showErrorToast(err.response?.data?.description || "Import failed");
     return rejectWithValue(err.response?.data);
