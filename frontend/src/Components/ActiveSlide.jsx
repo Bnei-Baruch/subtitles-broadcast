@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Slide } from "../Components/Slide";
-import { KaraokeSlide } from "../Components/KaraokeSlide";
 import { useSelector } from "react-redux";
 import { ST_QUESTION, broadcastLanguages, roundRobinQuestionsLanguages, DM_KARAOKE } from "../Utils/Const";
 import { visibleSlideOrNull, useDeepMemo } from "../Utils/Common"
@@ -102,7 +101,7 @@ export function ActiveSlide() {
   if (subtitlesDisplayMode === DM_KARAOKE) {
     const karaokeMsg = lastMessage(mqttMessages, DM_KARAOKE, broadcastLangCode, broadcastProgrammCode);
     const content = karaokeMsg?.visible !== false ? (karaokeMsg?.slide || "") : "";
-    return <KaraokeSlide content={content} />;
+    return <Slide content={content} slide_type="karaoke" />;
   }
 
   const activeSlide = visibleSlideOrNull(activeQuestion) || visibleSlideOrNull(slide);

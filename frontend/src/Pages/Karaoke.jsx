@@ -39,11 +39,12 @@ import {
   setActiveKaraokePreset,
 } from "../Redux/KaraokeSlice";
 import { publishKaraoke, clearKaraoke, publishDisplyNoneMqttMessage } from "../Utils/UseMqttUtils";
-import { setLiveModeEnabled, setSubtitlesDisplayMode, lastMessage } from "../Redux/MQTT/mqttSlice";
+import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { showSuccessToast, getKaraokeMqttTopic, visibleSlideOrNull, isNonLatinScript } from "../Utils/Common";
+import { showSuccessToast, getKaraokeMqttTopic, isNonLatinScript } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
-import KaraokeSlide from "../Components/KaraokeSlide";
+import { Slide } from "../Components/Slide";
+import Preview from "../Components/Preview";
 import "./PagesCSS/Karaoke.css";
 
 const GROUP_LABELS = { "": "All", songbook: "Songbook", shabat: "Shabat", origin: "Origin", general: "General" };
@@ -126,7 +127,7 @@ const DraggableSlideEditCard = ({ slide, idx, editText, onTextChange, onBlur, on
       </div>
       <span className="slide-num">{idx + 1}</span>
       <div className="slide-edit-main">
-        <KaraokeSlide content={currentText} />
+        <Slide content={currentText} slide_type="karaoke" />
         <textarea
           className="slide-edit-textarea"
           value={currentText}
@@ -177,7 +178,6 @@ const Karaoke = () => {
   const subscribed = mqttTopics[getKaraokeMqttTopic(channel)];
 
   const isKaraokeActive = subtitlesDisplayMode === "karaoke";
-  const liveSlide = visibleSlideOrNull(lastMessage(mqttMessages, DM_KARAOKE, "", channel));
 
   useEffect(() => {
     localStorage.setItem("karaokeLibraryOpen", String(libraryOpen));
@@ -755,11 +755,7 @@ const Karaoke = () => {
           style={{ flex: `0 0 ${setlistWidth}px`, minWidth: `${setlistWidth}px` }}
         >
           <div className="karaoke-setlist-preview">
-            {subtitlesDisplayMode === DM_KARAOKE && liveSlide?.slide?.trim() ? (
-              <KaraokeSlide content={liveSlide.slide} />
-            ) : (
-              <div className="setlist-preview-empty">—</div>
-            )}
+            <Preview />
           </div>
           <div className="panel-header">
             <span>Presets</span>

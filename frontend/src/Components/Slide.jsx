@@ -1,36 +1,31 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { createMarkdownit } from "../Utils/SlideSplit";
+import { isNonLatinScript } from "../Utils/Common";
+import { useScaledContainer } from "../Utils/useScaledContainer";
+import "../Pages/PagesCSS/GreenWindow.css";
 
-export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, onOverflow = undefined }) => {
-  const outerRef = useRef();
-  const slideRef = useRef();
+export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, slide_type, onOverflow = undefined }) => {
+  const isKaraoke = slide_type === "karaoke";
   const blueStripeRef = useRef();
   const greyStripeRef = useRef();
   const md = createMarkdownit();
   const backgroundColor = "#01cd27";
 
-  const handleResize = useCallback(() => {
-    const scale = outerRef.current.clientWidth / 1920;
-    slideRef.current.style.transform = `scale(${scale})`;
-    slideRef.current.style.transformOrigin = "top left";
-    if (isQuestion) {
-      outerRef.current.style.height = `${scale * 246}px`;
-    } else {
-      outerRef.current.style.height = `${scale * 310}px`;
+  const onScale = useCallback((scale, outer, inner) => {
+    if (isKaraoke) {
+      // Content-driven height: the karaoke bar has no fixed line count.
+      outer.style.height = `${Math.round(inner.offsetHeight * scale)}px`;
+      return;
     }
-    blueStripeRef.current.style.height = `${scale * 15}px`;
-    greyStripeRef.current.style.height = `${scale * 15}px`;
-  }, [outerRef, slideRef, blueStripeRef, greyStripeRef, isQuestion]);
+    outer.style.height = `${scale * (isQuestion ? 246 : 310)}px`;
+    if (blueStripeRef.current) blueStripeRef.current.style.height = `${scale * 15}px`;
+    if (greyStripeRef.current) greyStripeRef.current.style.height = `${scale * 15}px`;
+  }, [isKaraoke, isQuestion]);
+
+  const { outerRef, innerRef } = useScaledContainer(onScale);
 
   useEffect(() => {
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [handleResize]);
-
-  useEffect(() => {
+    if (isKaraoke || !innerRef.current) return;
     let markedContent = content;
     if (searchKeyword !== undefined && searchKeyword !== "") {
       const escapeRegex = (str) => {
@@ -43,11 +38,40 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, onO
         `<span style="background-color: ${backgroundColor};">$&</span>`,
       );
     }
-    slideRef.current.innerHTML = md.render(markedContent ? markedContent : "");
+    innerRef.current.innerHTML = md.render(markedContent ? markedContent : "");
     if (onOverflow) {
-      onOverflow(slideRef.current.scrollHeight > slideRef.current.clientHeight);
+      onOverflow(innerRef.current.scrollHeight > innerRef.current.clientHeight);
     }
-  }, [content, md, searchKeyword]);
+  }, [content, md, searchKeyword, isKaraoke, innerRef, onOverflow]);
+
+  if (isKaraoke) {
+    const lines = (content || "").split("\n").filter((l) => l.trim() !== "");
+    const primaryLine = lines[0] || "";
+    const secondaryLine = lines[1] || "";
+    const isSeparator = !primaryLine || /^[-_\s]+$/.test(primaryLine);
+    const primaryDir = isNonLatinScript(primaryLine) ? "rtl" : "ltr";
+    // Both lines Latin-script → same-language lyrics → yellow, same size.
+    // Otherwise (one line Hebrew/Arabic/Cyrillic) → transliteration pair → white, smaller.
+    const sameLang = !isNonLatinScript(primaryLine) && !isNonLatinScript(secondaryLine);
+    const secondaryColor = sameLang ? "#ffe566" : "#ffffff";
+    return (
+      <div ref={outerRef} className="karaoke-slide-outer">
+        <div ref={innerRef} className="karaoke-slide-inner">
+          <div className="karaoke-bar">
+            {!isSeparator && primaryLine && (
+              <div className="karaoke-line karaoke-line-primary" style={{ direction: primaryDir }}>{primaryLine}</div>
+            )}
+            {!isSeparator && secondaryLine && (
+              <div
+                className="karaoke-line karaoke-line-secondary"
+                style={{ color: secondaryColor, fontSize: sameLang ? "88px" : undefined }}
+              >{secondaryLine}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -59,7 +83,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, onO
         <div ref={greyStripeRef} className="grey-stripe"></div>
       </div>
       <div
-        ref={slideRef}
+        ref={innerRef}
         className={`slide-content  ${isLtr ? "ltr" : "rtl"}`}
       ></div>
     </div>
