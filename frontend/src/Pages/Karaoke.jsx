@@ -36,6 +36,7 @@ import {
 } from "../Redux/KaraokeSlice";
 import { publishKaraoke, clearKaraoke, publishDisplyNoneMqttMessage } from "../Utils/UseMqttUtils";
 import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
+import { clearSlices } from "../Redux/SlidesSlice";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
 import { showSuccessToast, getKaraokeMqttTopic, isNonLatinScript } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
@@ -290,6 +291,9 @@ const Karaoke = () => {
   // the song's slides so the main list reflects any edits/additions/deletions.
   const handleEditClose = useCallback(() => {
     setEditMode(false);
+    // <Edit mode="karaoke"> loaded karaoke rows into the shared state.slides;
+    // clear them so they aren't persisted forward into the Subtitles list.
+    dispatch(clearSlices());
     if (activeSongFileUid) dispatch(GetKaraokeSlides({ file_uid: activeSongFileUid }));
   }, [dispatch, activeSongFileUid]);
 
