@@ -13,8 +13,11 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
 
   const onScale = useCallback((scale, outer, inner) => {
     if (isKaraoke) {
-      // Content-driven height: the karaoke bar has no fixed line count.
-      outer.style.height = `${Math.round(inner.offsetHeight * scale)}px`;
+      // Content-driven height: the karaoke bar has no fixed line count. Only
+      // write when it actually changes — the ResizeObserver watches `outer`, so
+      // an unconditional write would feed back into itself (blink/jank).
+      const h = `${Math.round(inner.offsetHeight * scale)}px`;
+      if (outer.style.height !== h) outer.style.height = h;
       return;
     }
     outer.style.height = `${scale * (isQuestion ? 246 : 310)}px`;
@@ -22,7 +25,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
     if (greyStripeRef.current) greyStripeRef.current.style.height = `${scale * 15}px`;
   }, [isKaraoke, isQuestion]);
 
-  const { outerRef, innerRef } = useScaledContainer(onScale);
+  const { outerRef, innerRef } = useScaledContainer(onScale, { observe: isKaraoke });
 
   useEffect(() => {
     if (isKaraoke || !innerRef.current) return;
