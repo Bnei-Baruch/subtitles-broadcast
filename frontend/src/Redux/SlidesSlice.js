@@ -30,7 +30,15 @@ export const GetSlides = createAsyncThunk(
         ...offsetParams,
       },
     });
-    return { data: response.data.data, reset };
+    const data = response.data.data;
+    // Karaoke slides have no languages server-side (the backend returns plain
+    // Slide rows). Stamp a sentinel here so the shared, persisted state.slides
+    // never holds languageless rows — which would crash language-based renders
+    // (e.g. the Subtitles list). Frontend-only: never sent to or stored in the DB.
+    if (slide_type === "karaoke" && data?.slides) {
+      data.slides = data.slides.map((s) => ({ ...s, languages: s.languages?.length ? s.languages : ["karaoke"] }));
+    }
+    return { data, reset };
   }
 );
 

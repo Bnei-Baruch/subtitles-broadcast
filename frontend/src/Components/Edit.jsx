@@ -174,9 +174,7 @@ export const Edit = ({ fileUid, slideId, handleClose, mode }) => {
   useEffect(() => {
     if (slides.length) {
       // Cancel or new set of slides loaded, reset editSlides.
-      // Karaoke slides have no languages; give them a single empty language so
-      // the languages-based order-number math (i / languages.length) is a no-op.
-      setEditSlides(isKaraoke ? slides.map((s) => ({ ...s, languages: s.languages || [""] })) : slides);
+      setEditSlides(slides);
       setSourcePath(slides[0].source_path);
       setSourcePathId(slides[0].source_path_id);
       setBookmarkId(slides.find((slide) => slide.bookmark_id !== null)?.bookmark_id || "");
