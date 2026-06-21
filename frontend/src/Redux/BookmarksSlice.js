@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import { showErrorToast } from "../Utils/Common";
+import { makePresetThunks } from "./presetThunks";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -10,39 +10,10 @@ const initialState = {
   activePreset: "",
 };
 
-export const GetBookmarkPresets = createAsyncThunk(
-  "bookmarks/getPresets",
-  async ({ language, channel }) => {
-    const response = await axios.get(`${API}bookmark/presets`, { params: { language, channel, type: "subtitles" } });
-    return response.data.data;
-  }
-);
-
-export const CreateBookmarkPreset = createAsyncThunk(
-  "bookmarks/createPreset",
-  async ({ channel, preset }, { rejectWithValue }) => {
-    try {
-      await axios.post(`${API}bookmark/presets`, { channel, preset, type: "subtitles" });
-      return preset;
-    } catch (err) {
-      showErrorToast(err.response?.data?.description || "Failed to create preset");
-      return rejectWithValue(err.response?.data);
-    }
-  }
-);
-
-export const DeleteBookmarkPreset = createAsyncThunk(
-  "bookmarks/deletePreset",
-  async ({ channel, language, preset }, { rejectWithValue }) => {
-    try {
-      await axios.delete(`${API}bookmark/presets`, { params: { channel, language, preset, type: "subtitles" } });
-      return preset;
-    } catch (err) {
-      showErrorToast(err.response?.data?.description || "Failed to delete preset");
-      return rejectWithValue(err.response?.data);
-    }
-  }
-);
+const presetThunks = makePresetThunks("bookmarks", "subtitles", { withLanguage: true });
+export const GetBookmarkPresets = presetThunks.getPresets;
+export const CreateBookmarkPreset = presetThunks.createPreset;
+export const DeleteBookmarkPreset = presetThunks.deletePreset;
 
 export const GetBookmarks = createAsyncThunk(
   `bookmarks/get`,

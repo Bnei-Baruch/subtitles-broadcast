@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { showSuccessToast, showErrorToast } from "../Utils/Common";
+import { makePresetThunks } from "./presetThunks";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -110,10 +111,11 @@ export const UpdateKaraokeSongName = createAsyncThunk(
   }
 );
 
-export const GetKaraokePresets = createAsyncThunk("karaoke/getPresets", async ({ channel }) => {
-  const response = await axios.get(`${API}bookmark/presets`, { params: { channel, type: "karaoke" } });
-  return response.data.data;
-});
+const presetThunks = makePresetThunks("karaoke", "karaoke");
+export const GetKaraokePresets = presetThunks.getPresets;
+export const CreateKaraokePreset = presetThunks.createPreset;
+export const DeleteKaraokePreset = presetThunks.deletePreset;
+export const RenameKaraokePreset = presetThunks.renamePreset;
 
 export const GetKaraokeSetlist = createAsyncThunk("karaoke/getSetlist", async ({ channel, preset = "" }) => {
   const response = await axios.get(`${API}bookmark`, { params: { channel, preset, type: "karaoke" } });
@@ -140,39 +142,9 @@ export const ReorderSetlist = createAsyncThunk("karaoke/reorderSetlist", async (
   return items;
 });
 
-export const CreateKaraokePreset = createAsyncThunk("karaoke/createPreset", async ({ channel, preset }, { rejectWithValue }) => {
-  try {
-    await axios.post(`${API}bookmark/presets`, { channel, preset, type: "karaoke" });
-    return preset;
-  } catch (err) {
-    showErrorToast(err.response?.data?.description || "Failed to create preset");
-    return rejectWithValue(err.response?.data);
-  }
-});
-
-export const DeleteKaraokePreset = createAsyncThunk("karaoke/deletePreset", async ({ channel, preset }, { rejectWithValue }) => {
-  try {
-    await axios.delete(`${API}bookmark/presets`, { params: { channel, preset, type: "karaoke" } });
-    return preset;
-  } catch (err) {
-    showErrorToast(err.response?.data?.description || "Failed to delete preset");
-    return rejectWithValue(err.response?.data);
-  }
-});
-
 // Karaoke slide editing reuses the shared <Edit mode="karaoke"> component and
 // its SlidesSlice thunks (Add/Update/Delete/Get Slide), so no karaoke-specific
 // slide-mutation thunks are needed here.
-
-export const RenameKaraokePreset = createAsyncThunk("karaoke/renamePreset", async ({ channel, preset, new_preset }, { rejectWithValue }) => {
-  try {
-    await axios.patch(`${API}bookmark/presets`, { channel, preset, new_preset, type: "karaoke" });
-    return { preset, new_preset };
-  } catch (err) {
-    showErrorToast(err.response?.data?.description || "Failed to rename preset");
-    return rejectWithValue(err.response?.data);
-  }
-});
 
 const KaraokeSlice = createSlice({
   name: "karaoke",
