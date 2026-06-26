@@ -305,7 +305,10 @@ const Karaoke = () => {
 
     const onMove = (ev) => {
       const delta = ev.clientX - startX;
-      const next = Math.max(120, Math.min(600, startWidth + delta));
+      // The library handle sits on the library's right edge (drag right = wider);
+      // the preset column is now rightmost with its handle on its left edge, so
+      // its width grows as you drag left.
+      const next = Math.max(120, Math.min(600, startWidth + (col === "setlist" ? -delta : delta)));
       if (col === "library") setLibraryWidth(next);
       else setSetlistWidth(next);
     };
@@ -641,7 +644,7 @@ const Karaoke = () => {
 
         {/* Resize handle: library | setlist */}
         {libraryOpen && (
-          <div className="resize-handle" onMouseDown={(e) => handleResizeStart("library", e)} />
+          <div className="resize-handle resize-handle-lib" onMouseDown={(e) => handleResizeStart("library", e)} />
         )}
 
         {/* Middle: Setlist */}
@@ -688,8 +691,8 @@ const Karaoke = () => {
           </div>
         </div>
 
-        {/* Resize handle: setlist | content */}
-        <div className="resize-handle" onMouseDown={(e) => handleResizeStart("setlist", e)} />
+        {/* Resize handle: slides | green-preview+presets */}
+        <div className="resize-handle resize-handle-set" onMouseDown={(e) => handleResizeStart("setlist", e)} />
 
         {/* Right: Slides */}
         <div className="karaoke-content karaoke-panel">

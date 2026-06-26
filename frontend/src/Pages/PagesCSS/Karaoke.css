@@ -90,6 +90,13 @@
   background: #1976d2;
 }
 
+/* Column layout order: library | slides | green-preview+presets (mirrors Subtitles). */
+.karaoke-library { order: 1; }
+.resize-handle-lib { order: 2; }
+.karaoke-content { order: 3; }
+.resize-handle-set { order: 4; }
+.karaoke-setlist { order: 5; }
+
 .karaoke-library {
   /* width controlled via inline style when open */
 }
@@ -113,10 +120,17 @@
 }
 
 .karaoke-setlist-preview {
-  flex-shrink: 0;
+  position: relative;
+  flex: 0 0 auto;
   border-bottom: 2px solid #1976d2;
-  background: green;
-  min-height: 32px;
+}
+
+/* Here Preview's parent is a flex item (definite height), so the shared
+   .active-slide-msg-main-cont { height:100% } would let its green strip
+   (height:101%) overflow the header. Size to content instead — scoped to
+   karaoke so the Subtitles preview is untouched. */
+.karaoke-setlist-preview .active-slide-msg-main-cont {
+  height: auto;
 }
 
 .setlist-preview-empty {
@@ -454,7 +468,7 @@
   flex: 1;
   min-width: 0;
   border-right: 1px solid #e0e0e0;
-  padding-bottom: calc(100vh - 200px);
+  padding-bottom: 8px;
 }
 
 .slides-column:last-child {

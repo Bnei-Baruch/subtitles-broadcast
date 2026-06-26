@@ -1,8 +1,7 @@
 import React from "react";
 import { ActiveSlide } from "../Components/ActiveSlide";
 import { useSelector } from "react-redux";
-import { visibleSlideOrNull, useDeepMemo } from "../Utils/Common"
-import { DM_NONE, DM_QUESTIONS, DM_KARAOKE, ST_QUESTION } from "../Utils/Const"
+import { DM_NONE, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const"
 import { lastMessage } from "../Redux/MQTT/mqttSlice"
 
 export function Preview() {
@@ -18,27 +17,24 @@ export function Preview() {
       "morning_lesson"
   );
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
-  const slide = useDeepMemo(visibleSlideOrNull(lastMessage(mqttMessages, subtitlesDisplayMode, broadcastLangCode, broadcastProgrammCode)));
 
   const isKaraoke = subtitlesDisplayMode === DM_KARAOKE;
   const karaokeMsg = isKaraoke ? lastMessage(mqttMessages, DM_KARAOKE, broadcastLangCode, broadcastProgrammCode) : null;
   const hasLiveKaraoke = karaokeMsg?.visible !== false && karaokeMsg?.slide?.trim();
 
+  // The top green band shows in every mode. The bottom band is only for
+  // questions and karaoke (a subtitle sits at the bottom, with no band below it).
+  const showBottomGreen = isKaraoke || subtitlesDisplayMode === DM_QUESTIONS;
+
   return (
     <div className="active-slide-msg-main-cont">
       <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>
-      {!isKaraoke && (
+      {(!isKaraoke || hasLiveKaraoke) && (
         <div className="slide-part-cont">
           <ActiveSlide />
         </div>
       )}
-      {isKaraoke && hasLiveKaraoke && (
-        <div className="slide-part-cont">
-          <ActiveSlide />
-        </div>
-      )}
-      {((!isKaraoke && (!slide || subtitlesDisplayMode === DM_QUESTIONS || slide.slide_type === ST_QUESTION)) || (isKaraoke && !hasLiveKaraoke)) &&
-        <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
+      {showBottomGreen && <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>}
     </div>
   );
 }

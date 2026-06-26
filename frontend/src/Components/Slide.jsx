@@ -74,7 +74,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
     if (onOverflow) {
       onOverflow(slideRef.current.scrollHeight > slideRef.current.clientHeight);
     }
-  }, [content, md, searchKeyword, isKaraoke]);
+  }, [content, md, searchKeyword, isKaraoke, onOverflow]);
 
   if (isKaraoke) {
     const lines = (content || "").split("\n").filter((l) => l.trim() !== "");
@@ -87,7 +87,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
     const sameLang = !isNonLatinScript(primaryLine) && !isNonLatinScript(secondaryLine);
     const secondaryColor = sameLang ? "#ffe566" : "#ffffff";
     return (
-      <div ref={outerRef} className="karaoke-slide-outer">
+      <div key="karaoke" ref={outerRef} className="karaoke-slide-outer">
         <div ref={slideRef} className="karaoke-slide-inner">
           <div className="karaoke-bar">
             {!isSeparator && primaryLine && (
@@ -107,6 +107,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
 
   return (
     <div
+      key="subtitle"
       ref={outerRef}
       className={(isQuestion ? "slide-question" : "") + " slide-container renderer-" + renderer}
     >
