@@ -321,6 +321,14 @@ const Karaoke = () => {
     window.addEventListener("mouseup", onUp);
   }, [libraryWidth, setlistWidth]);
 
+  // Dragging a column slider changes the preview's container width but not the
+  // window, so the Slide's window-resize rescale never fires. Re-emit a resize
+  // once the new width has committed to the DOM so the preview rescales exactly
+  // as it does on a real window resize.
+  useEffect(() => {
+    window.dispatchEvent(new Event("resize"));
+  }, [libraryWidth, setlistWidth]);
+
   const handleSelectSlide = useCallback(
     (slide) => {
       dispatch(setActiveSlideIndex(slide.order_number));
