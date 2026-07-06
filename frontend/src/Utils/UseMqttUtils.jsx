@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import mqtt from "mqtt";
 import { useDispatch, useSelector } from "react-redux";
 import { setConnected, updateMqttTopic, mqttMessageReceived, setClientId, addMqttNotification } from "../Redux/MQTT/mqttSlice";
-import { DM_NONE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
-import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic } from "../Utils/Common";
+import { DM_NONE, DM_KARAOKE, ST_QUESTION, ST_SUBTITLE, broadcastLanguages } from "../Utils/Const";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic, getKaraokeMqttTopic } from "../Utils/Common";
 import debugLog from "../Utils/debugLog";
 import { store } from "../Redux/Store";
 
@@ -166,6 +166,7 @@ export default function useMqtt() {
           })
           .flat();
         broadcastMqttTopics.push(getOnOffAirTopic(broadcastProgrammCode));
+        broadcastMqttTopics.push(getKaraokeMqttTopic(broadcastProgrammCode));
 
         debugLog(`[CONNECT EVENT] Resetting ${broadcastMqttTopics.length} topics to isSubscribed=false`);
         broadcastMqttTopics.forEach((topic) => {
@@ -194,6 +195,7 @@ export default function useMqtt() {
             topic,
             message: message.toString(),
             broadcastLangCode,
+            broadcastChannel: broadcastProgrammCode,
           })
         );
       });
@@ -338,7 +340,21 @@ export function publishEvent(eventName, data) {
 export const publishDisplyNoneMqttMessage = (mqttMessages, channel, langCode) => {
   republishSubtitle(mqttMessages, channel, langCode, DM_NONE, false, "mode_change");
   republishQuestion(mqttMessages, channel, langCode, DM_NONE, false, "mode_change");
+  turnKaraokeOff(mqttMessages, channel);
 };
+
+// Karaoke is channel-wide and mutually exclusive with subtitles/questions: any
+// non-karaoke action turns it off for everyone. This flips the karaoke topic to
+// off (only when it's currently on, to avoid spamming the topic). It does NOT
+// touch any language's mode — each client falls back to its own langDisplayMode.
+function turnKaraokeOff(mqttMessages, channel, ignoreLiveMode = false) {
+  const karaokeTopic = getKaraokeMqttTopic(channel);
+  const lastKaraoke = mqttMessages[karaokeTopic];
+  if (lastKaraoke && lastKaraoke.display_status === DM_KARAOKE) {
+    const message = { ...lastKaraoke, display_status: DM_NONE, visible: false, action: "mode_change" };
+    publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
+  }
+}
 
 // Used only locally in this file, will only update question displayMode if needed.
 function republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode = false, action = "republish") {
@@ -363,6 +379,7 @@ export function publishQuestion(question, mqttMessages, channel, langCode, displ
   const questionMqttTopic = getQuestionMqttTopic(channel, langCode);
   publishMessage(question || {}, ST_QUESTION, questionMqttTopic, langCode, displayMode, ignoreLiveMode, action);
   republishSubtitle(mqttMessages, channel, langCode, displayMode, ignoreLiveMode, ["send", "clear", "restore"].includes(action) ? "republish" : action);
+  turnKaraokeOff(mqttMessages, channel, ignoreLiveMode);
 }
 
 // Updates subtitle and if needed also updated question displayMode.
@@ -370,6 +387,47 @@ export function publishSubtitle(subtitle, mqttMessages, channel, langCode, displ
   const subtitleMqttTopic = getSubtitleMqttTopic(channel, langCode);
   publishMessage(subtitle || {}, ST_SUBTITLE, subtitleMqttTopic, langCode, displayMode, ignoreLiveMode, action);
   republishQuestion(mqttMessages, channel, langCode, displayMode, ignoreLiveMode, action === "send" ? "republish" : action);
+  turnKaraokeOff(mqttMessages, channel, ignoreLiveMode);
+}
+
+function detectIsLtr(text) {
+  if (!text) return true;
+  const rtlPattern = /[֐-׿؀-ۿ]/;
+  return !rtlPattern.test(text);
+}
+
+// Karaoke ON. Channel-wide: every client flips karaokeActive=true on receipt,
+// which overrides subtitles/questions for all languages. Subtitle/question
+// topics are intentionally left untouched (per-language fallback is preserved
+// for when karaoke turns off).
+export function publishKaraoke(slide, channel, displayMode = "karaoke", ignoreLiveMode = false) {
+  const karaokeTopic = getKaraokeMqttTopic(channel);
+  const isLtr = detectIsLtr(slide?.slide);
+  const message = {
+    slide_type: "karaoke",
+    type: "karaoke",
+    ID: slide?.ID,
+    file_uid: slide?.file_uid,
+    order_number: slide?.order_number,
+    slide: slide?.slide || "",
+    isLtr,
+    visible: true,
+    renderer: slide?.renderer || "default",
+    display_status: displayMode,
+  };
+  publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
+}
+
+export function clearKaraoke(channel, ignoreLiveMode = false) {
+  const karaokeTopic = getKaraokeMqttTopic(channel);
+  const message = {
+    slide_type: "karaoke",
+    type: "karaoke",
+    slide: "",
+    visible: false,
+    display_status: DM_NONE,
+  };
+  publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
 }
 
 export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {

@@ -1,0 +1,688 @@
+.karaoke-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.karaoke-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5em 1.5em 0.4em;
+  background-color: #eeeeee;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+}
+
+.karaoke-onair-badge {
+  margin-left: auto;
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.karaoke-onair-badge.on-air {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.karaoke-onair-badge.off-air {
+  background-color: #444;
+  color: #aaa;
+}
+
+.karaoke-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.karaoke-topbar .btn {
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.2px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.karaoke-topbar .btn:disabled {
+  color: #888;
+  background-color: #e0e0e0;
+  border-color: #b0b0b0;
+  opacity: 0.75;
+}
+
+.karaoke-columns {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+.karaoke-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.resize-handle {
+  flex-shrink: 0;
+  width: 5px;
+  cursor: col-resize;
+  background: #ddd;
+  transition: background 0.15s;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background: #1976d2;
+}
+
+/* Column layout order: library | slides | green-preview+presets (mirrors Subtitles). */
+.karaoke-library { order: 1; }
+.resize-handle-lib { order: 2; }
+.karaoke-content { order: 3; }
+.resize-handle-set { order: 4; }
+.karaoke-setlist { order: 5; }
+
+.karaoke-library {
+  /* width controlled via inline style when open */
+}
+
+.karaoke-library.library-collapsed {
+  flex: 0 0 36px;
+  min-width: 36px;
+  overflow: hidden;
+}
+
+.karaoke-library.library-collapsed .panel-header {
+  justify-content: center;
+  border-bottom: none;
+  height: 100%;
+  align-items: flex-start;
+  padding: 6px 0;
+}
+
+.karaoke-setlist {
+  /* width controlled via inline style */
+}
+
+.karaoke-setlist-preview {
+  position: relative;
+  flex: 0 0 auto;
+  border-bottom: 2px solid #1976d2;
+}
+
+/* Here Preview's parent is a flex item (definite height), so the shared
+   .active-slide-msg-main-cont { height:100% } would let its green strip
+   (height:101%) overflow the header. Size to content instead — scoped to
+   karaoke so the Subtitles preview is untouched. */
+.karaoke-setlist-preview .active-slide-msg-main-cont {
+  height: auto;
+}
+
+.setlist-preview-empty {
+  color: #555;
+  font-size: 18px;
+  text-align: center;
+  padding: 6px;
+}
+
+.karaoke-content {
+  flex: 1;
+  border-right: none;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.karaoke-search {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  padding: 6px 12px;
+  font-size: 13px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+/* Library header buttons (recycle bin toggle, etc.) */
+.library-sort-btn {
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.library-sort-btn:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.library-sort-btn.active {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+/* Hidden (soft-deleted) songs */
+.song-item.song-hidden {
+  opacity: 0.45;
+  background: #fafafa;
+  text-decoration: line-through;
+}
+
+.song-item.song-hidden:hover {
+  opacity: 0.7;
+  background: #f5f5f5;
+}
+
+/* Import row */
+.import-group-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-import-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #ddd;
+  background: #fafafa;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+.library-import-bar .MuiButton-root {
+  height: 32px;
+}
+
+.group-select {
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  height: 32px;
+  box-sizing: border-box;
+}
+
+/* Group filter tabs */
+.group-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.group-tab-trash {
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 4px 8px;
+  line-height: 1.6;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.group-tab {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #555;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.group-tab:hover {
+  background: #f0f4ff;
+  color: #333;
+}
+
+.group-tab.active {
+  color: #1976d2;
+  border-bottom-color: #1976d2;
+  font-weight: 600;
+}
+
+.song-item-group {
+  font-size: 10px;
+  color: #aaa;
+  background: #f5f5f5;
+  padding: 1px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Song Library */
+.song-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.song-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+  flex-wrap: wrap;
+}
+
+.song-item:hover {
+  background: #f0f4ff;
+}
+
+.song-item.loaded {
+  background: #e3eaff;
+  font-weight: 600;
+}
+
+.song-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.song-item-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-name-edit-btn {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 2px !important;
+}
+
+.song-item:hover .song-name-edit-btn {
+  opacity: 1;
+}
+
+.song-name-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: inherit;
+  outline: none;
+}
+
+.song-item-meta {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.song-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Setlist */
+.setlist-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.setlist-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.setlist-item:hover {
+  background: #f0f4ff;
+}
+
+.setlist-item.active {
+  background: #dbeafe;
+  font-weight: 600;
+}
+
+.setlist-num {
+  color: #888;
+  font-size: 12px;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.setlist-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setlist-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* Right panel: slides + preview */
+
+.slides-size-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  background: #f5f5f5;
+}
+
+.slides-size-label {
+  font-size: 11px;
+  color: #888;
+  min-width: 28px;
+  text-align: center;
+}
+
+.slide-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  outline: none;
+}
+
+.slide-search-input:focus {
+  border-color: #1976d2;
+}
+
+.slide-search-highlight {
+  background-color: #b6f0b6;
+  color: inherit;
+  padding: 0;
+}
+
+.karaoke-slides-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+}
+
+.karaoke-slides-list:has(.slides-edit-column) {
+  align-items: stretch;
+}
+
+.slides-column {
+  flex: 1;
+  min-width: 0;
+  border-right: 1px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.slides-column:last-child {
+  border-right: none;
+}
+
+.slide-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 14px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.slide-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 46px;
+  right: 14px;
+  height: 1px;
+  background: #d0d0d0;
+}
+
+.slide-card:hover {
+  background: #f0f4ff;
+}
+
+.slide-card.active {
+  background: #1976d2;
+  color: #fff;
+}
+
+.slide-num {
+  color: #999;
+  font-size: 0.85em;
+  min-width: 24px;
+  padding-top: 1px;
+  flex-shrink: 0;
+}
+
+.slide-card.active .slide-num {
+  color: #cce;
+}
+
+.slide-text-preview {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slide-text-secondary {
+  font-size: 0.85em;
+  color: #888;
+  opacity: 0.85;
+}
+
+.slide-card.active .slide-text-secondary {
+  color: #cce;
+}
+
+
+/* Preview pane */
+.karaoke-preview {
+  flex-shrink: 0;
+  min-height: 180px;
+  max-height: 40%;
+  border-top: 2px solid #1976d2;
+  background: #fafafa;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-text {
+  flex: 1;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  direction: inherit;
+}
+
+.preview-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.preview-position {
+  font-size: 12px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.empty-hint {
+  color: #aaa;
+  font-size: 13px;
+  padding: 20px;
+  text-align: center;
+}
+
+
+/* Edit mode */
+.slides-edit-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  padding-bottom: calc(100vh - 200px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.slide-card-edit {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.slide-card-edit.dragging {
+  background: #f0f4ff;
+  border-color: #1976d2;
+}
+
+.slide-drag-handle {
+  flex-shrink: 0;
+  padding-top: 6px;
+  cursor: grab;
+}
+
+.slide-edit-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.slide-edit-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 60px;
+  font-size: inherit;
+  font-family: inherit;
+  border: 1px solid #c0c0c0;
+  border-radius: 3px;
+  padding: 4px 6px;
+  outline: none;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.slide-edit-textarea:focus {
+  border-color: #1976d2;
+}
+
+.slide-delete-btn {
+  flex-shrink: 0;
+  color: #999 !important;
+}
+
+.slide-delete-btn:hover {
+  color: #d32f2f !important;
+}
+
+.slide-add-btn {
+  margin: 8px 0 !important;
+  align-self: flex-start;
+}
+
+/* Import progress */
+.import-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 10px;
+  background: #f0f4ff;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.import-progress-bar-track {
+  height: 4px;
+  background: #dce3f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.import-progress-bar-fill {
+  height: 100%;
+  background: #1976d2;
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+.import-progress-label {
+  font-size: 11px;
+  color: #555;
+  text-align: center;
+}

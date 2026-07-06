@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic } from "../../Utils/Common";
-import { DM_SUBTITLES, DM_QUESTIONS, broadcastLanguages } from "../../Utils/Const";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getOnOffAirTopic, getKaraokeMqttTopic } from "../../Utils/Common";
+import { DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE, broadcastLanguages } from "../../Utils/Const";
 import debugLog from "../../Utils/debugLog";
 
 export const lastMessage = (mqttMessages, subtitlesDisplayMode, lang, channel) => {
@@ -10,6 +10,9 @@ export const lastMessage = (mqttMessages, subtitlesDisplayMode, lang, channel) =
   } else if (subtitlesDisplayMode === DM_QUESTIONS) {
     const questionTopic = getQuestionMqttTopic(channel, lang);
     return mqttMessages[questionTopic] || null;
+  } else if (subtitlesDisplayMode === DM_KARAOKE) {
+    const karaokeTopic = getKaraokeMqttTopic(channel);
+    return mqttMessages[karaokeTopic] || null;
   }
   return null;
 }
@@ -22,6 +25,19 @@ export const getAllQuestions = (mqttMessages, channel) => {
     }
     return questions;
   }, {});
+}
+
+// Map a selected mode onto the split state: karaoke is the channel-wide
+// override; anything else is this client's per-language mode. subtitlesDisplayMode
+// is the derived effective value.
+function applyDisplayMode(state, mode) {
+  if (mode === DM_KARAOKE) {
+    state.karaokeActive = true;
+  } else {
+    state.karaokeActive = false;
+    state.langDisplayMode = mode;
+  }
+  state.subtitlesDisplayMode = state.karaokeActive ? DM_KARAOKE : state.langDisplayMode;
 }
 
 const MQTT_LOGS_MAX_LENGTH = 1000;
@@ -37,7 +53,12 @@ const initialState = {
   mqttLogs: [],
 
   selectedSubtitleSlide: null,
+  // Effective display mode = karaokeActive ? "karaoke" : langDisplayMode.
+  // Karaoke is channel-wide (overrides everyone); langDisplayMode is this
+  // client's own per-language subtitle/question mode.
   subtitlesDisplayMode: null,
+  karaokeActive: false,
+  langDisplayMode: "none",
   isLiveModeEnabled: false,
   isOnAir: false,
   notificationLogs: [],
@@ -68,7 +89,7 @@ const mqttSlice = createSlice({
       state.selectedSubtitleSlide = action.payload;
     },
     mqttMessageReceived(state, action, dispatch) {
-      const { topic, message, broadcastLangCode } = action.payload;
+      const { topic, message, broadcastLangCode, broadcastChannel } = action.payload;
       if (topic.endsWith("/on_off_air")) {
         state.isOnAir = message.includes("onair");
         return;
@@ -80,9 +101,19 @@ const mqttSlice = createSlice({
         if (state.mqttLogs.length > MQTT_LOGS_MAX_LENGTH) {
           state.mqttLogs.shift();
         }
-        if (broadcastLangCode === parsedMessage.lang) {
-          state.subtitlesDisplayMode = parsedMessage?.display_status || "none";
+        // Karaoke is channel-wide: it only toggles karaokeActive (on/off for
+        // everyone). Subtitle/question are per-language: they set this client's
+        // langDisplayMode. The effective mode is derived below, so karaoke
+        // overrides while it's on and each client falls back to its own mode
+        // when it's off — with no cross-language clobbering and no reload race.
+        if (topic.endsWith("/karaoke")) {
+          if (broadcastChannel && topic === getKaraokeMqttTopic(broadcastChannel)) {
+            state.karaokeActive = parsedMessage?.display_status === DM_KARAOKE && parsedMessage?.visible !== false;
+          }
+        } else if (broadcastLangCode === parsedMessage.lang) {
+          state.langDisplayMode = parsedMessage?.display_status || "none";
         }
+        state.subtitlesDisplayMode = state.karaokeActive ? DM_KARAOKE : state.langDisplayMode;
       } catch (error) {
         debugLog("MQTT Message Processing Error:", error);
         dispatch(
@@ -94,10 +125,10 @@ const mqttSlice = createSlice({
       }
     },
     setSubtitlesDisplayMode: (state, action) => {
-      state.subtitlesDisplayMode = action.payload;
+      applyDisplayMode(state, action.payload);
     },
     updateSubtitlesDisplayMode: (state, action) => {
-      state.subtitlesDisplayMode = action.payload;
+      applyDisplayMode(state, action.payload);
     },
     setClientId: (state, action) => {
       state.clientId = action.payload;

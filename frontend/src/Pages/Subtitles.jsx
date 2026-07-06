@@ -9,14 +9,15 @@ import EditIcon from "@mui/icons-material/Edit";
 import "./PagesCSS/Subtitle.css";
 
 import { Search } from "../Layout/Search";
-import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS } from "../Utils/Const";
-import { GetBookmarks, UpdateBookmarks } from "../Redux/BookmarksSlice";
+import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
+import { GetBookmarks, GetBookmarkPresets, CreateBookmarkPreset, DeleteBookmarkPreset, UpdateBookmarks, setActivePreset } from "../Redux/BookmarksSlice";
+import EventDropdown from "../Components/EventDropdown";
 import { GetSlides, clearSlices } from "../Redux/SlidesSlice";
 import DraggableItem from "../Components/DraggableItem";
 import Preview from "../Components/Preview";
 import QuestionMessage from "../Components/QuestionMessage";
-import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
-import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle } from "../Utils/UseMqttUtils";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, getKaraokeMqttTopic } from "../Utils/Common";
+import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle, publishKaraoke } from "../Utils/UseMqttUtils";
 import {
   setLiveModeEnabled,
   setSubtitlesDisplayMode,
@@ -31,6 +32,7 @@ const Subtitles = () => {
   const btnSubtitlesRef = React.createRef();
   const btnQuestionsRef = React.createRef();
   const btnNoneRef = React.createRef();
+  const btnKaraokeRef = useRef();
   const virtualRef = useRef();
 
   const dispatch = useDispatch();
@@ -40,7 +42,7 @@ const Subtitles = () => {
   const { slides } = useSelector((state) => state.slides);
   const maxSlideIndex = slides.length ? slides[slides.length - 1].order_number : 0;
 
-	const { bookmarks } = useSelector((state) => state.bookmarks);
+	const { bookmarks, presets: bookmarkPresets, activePreset } = useSelector((state) => state.bookmarks);
 
   const {
     // Selected slide and file from bookmarks.
@@ -82,6 +84,7 @@ const Subtitles = () => {
 
     const targetSlideObj = slides.find((key) => key?.order_number === newSelectedSlideOrderNum);
     if (targetSlideObj) {
+      setSearchSlide("");
       publishSubtitle(targetSlideObj, mqttMessages, channel, language, subtitlesDisplayMode);
       Promise.all([
         dispatch(setMqttSelectedSlide(targetSlideObj)),
@@ -93,13 +96,13 @@ const Subtitles = () => {
           }],
           language,
           channel,
+          preset: activePreset,
           update: true,
         })).then(() => {
-          return dispatch(GetBookmarks({ language, channel }));
+          return dispatch(GetBookmarks({ language, channel, preset: activePreset }));
         }),
       ]).then(() => {
         canUpdateSelectedSlide.current = true;
-        setSearchSlide("");
       });
     }
   }, [slides, maxSlideIndex, dispatch, language, mqttMessages, subtitlesDisplayMode, channel]);
@@ -157,10 +160,16 @@ const Subtitles = () => {
   }, [handleKeyPress]);
 
   useEffect(() => {
+    if (language && channel) {
+      dispatch(GetBookmarkPresets({ language, channel }));
+    }
+  }, [dispatch, language, channel]);
+
+  useEffect(() => {
 		if (!editSlideId) {
-			dispatch(GetBookmarks({ language, channel }));
+			dispatch(GetBookmarks({ language, channel, preset: activePreset }));
 		}
-  }, [editSlideId, dispatch, language, channel]);
+  }, [editSlideId, dispatch, language, channel, activePreset]);
 
   useEffect(() => {
     if (!editSlideId) {
@@ -189,8 +198,9 @@ const Subtitles = () => {
       update: true,
       language,
       channel,
+      preset: activePreset,
     })).then(() => {
-      return dispatch(GetBookmarks({ language, channel }));
+      return dispatch(GetBookmarks({ language, channel, preset: activePreset }));
     });
   };
 
@@ -198,10 +208,8 @@ const Subtitles = () => {
     evt.target.classList.add("btn-success");
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
-
+    btnKaraokeRef.current.classList.remove("btn-success");
     dispatch(setSubtitlesDisplayMode(DM_QUESTIONS));
-
-    // Republish existing question.
     const questionMqttTopic = getQuestionMqttTopic(channel, language);
     publishQuestion(mqttMessages[questionMqttTopic] || {}, mqttMessages, channel, language, DM_QUESTIONS, false, "mode_change");
   }
@@ -210,7 +218,7 @@ const Subtitles = () => {
     evt.target.classList.add("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
-
+    btnKaraokeRef.current.classList.remove("btn-success");
     dispatch(setSubtitlesDisplayMode(DM_SUBTITLES));
     publishSubtitle(selectedUserSubtitleSlide, mqttMessages, channel, language, DM_SUBTITLES, false, "mode_change");
   }
@@ -219,16 +227,34 @@ const Subtitles = () => {
     evt.target.classList.add("btn-success");
     btnSubtitlesRef.current.classList.remove("btn-success");
     btnQuestionsRef.current.classList.remove("btn-success");
-
+    btnKaraokeRef.current.classList.remove("btn-success");
     dispatch(setSubtitlesDisplayMode(DM_NONE));
     publishDisplyNoneMqttMessage(mqttMessages, channel, language);
   }
 
+  function karaokeBtnOnClick(evt) {
+    evt.target.classList.add("btn-success");
+    btnSubtitlesRef.current.classList.remove("btn-success");
+    btnQuestionsRef.current.classList.remove("btn-success");
+    btnNoneRef.current.classList.remove("btn-success");
+    dispatch(setSubtitlesDisplayMode(DM_KARAOKE));
+    const lastKaraoke = mqttMessages[getKaraokeMqttTopic(channel)];
+    if (lastKaraoke?.slide) {
+      publishKaraoke({
+        slide: lastKaraoke.slide,
+        ID: lastKaraoke.ID,
+        file_uid: lastKaraoke.file_uid,
+        order_number: lastKaraoke.order_number,
+        renderer: lastKaraoke.renderer,
+      }, channel, DM_KARAOKE);
+    }
+  }
+
   useEffect(() => {
     const index = slides.findIndex((item) => item.ID === userSelectedSlideId);
-    if (index > -1 && virtualRef.current) {
+    if (index > -1) {
       setTimeout(() => {
-        virtualRef.current.scrollToIndex({
+        virtualRef.current?.scrollToIndex({
           index: Math.max(0, index-1),
           behavior: "smooth",
           block: "center",
@@ -338,6 +364,20 @@ const Subtitles = () => {
                 onClick={(evt) => questionsBtnOnClick(evt)}
               >
                 Questions
+              </button>
+              <button
+                ref={btnKaraokeRef}
+                disabled={!isLiveModeEnabled || !subscribed}
+                id="btnKaraoke"
+                type="button"
+                className={`btn karaoke-mod${
+                  subtitlesDisplayMode === DM_KARAOKE
+                    ? " btn-success display-mod-selected"
+                    : ""
+                }`}
+                onClick={(evt) => karaokeBtnOnClick(evt)}
+              >
+                Karaoke
               </button>
               <button
                 ref={btnNoneRef}
@@ -500,6 +540,13 @@ const Subtitles = () => {
           <div className="book-mark whit-s overflow-auto">
             <div className="top-head">
               <h3>Bookmarks</h3>
+              <EventDropdown
+                events={bookmarkPresets}
+                activeEvent={activePreset}
+                onSelect={(ev) => dispatch(setActivePreset(ev))}
+                onCreate={(name) => { dispatch(CreateBookmarkPreset({ channel, preset: name })); dispatch(setActivePreset(name)); }}
+                onDelete={(ev) => dispatch(DeleteBookmarkPreset({ channel, language, preset: ev })).then(() => dispatch(GetBookmarks({ language, channel, preset: "" })))}
+              />
             </div>
             <DndProvider backend={HTML5Backend}>
               <div>
@@ -514,7 +561,7 @@ const Subtitles = () => {
                       parentIndex={index}
                       moveCard={moveCard}
                       parentSlideId={bookmark.slide_id}
-                      bookmarkDeleted={(lsn = undefined) => dispatch(GetBookmarks({ language, channel, lsn }))}
+                      bookmarkDeleted={(lsn = undefined) => dispatch(GetBookmarks({ language, channel, preset: activePreset, lsn }))}
                     />
                   ))}
               </div>

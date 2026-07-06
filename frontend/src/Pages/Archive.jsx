@@ -6,7 +6,8 @@ import { Slide } from "../Components/Slide";
 import { Edit } from "../Components/Edit";
 import { Search } from "../Layout/Search";
 import { Virtuoso } from 'react-virtuoso';
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkPresets } from "../Redux/BookmarksSlice";
+import BookmarkEventDialog from "../Components/BookmarkEventDialog";
 
 const SearchSpan = ({text, searchKeyword}) => {
   const [parts, setParts] = useState([]);
@@ -62,6 +63,8 @@ const Archive = () => {
   const [search, setSearch] = useState("")
   const { slides, total } = useSelector((state) => state.slides);
 	const { bookmarks } = useSelector((state) => state.bookmarks);
+  const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false);
+  const [pendingBookmarkSlide, setPendingBookmarkSlide] = useState(null);
 
   const [{editSlideId, editFileUid, editLimit, editScrollIndex}, setEdit] = useState({
     editSlideId: null,
@@ -82,6 +85,7 @@ const Archive = () => {
 
   useEffect(() => {
     dispatch(GetBookmarks({ language, channel }));
+    dispatch(GetBookmarkPresets({ language, channel }));
   }, [dispatch, language, channel]);
 
   const refetchSlidesAndBookmarks = useCallback((limit) => {
@@ -98,7 +102,15 @@ const Archive = () => {
     }));
   }, [language, channel, dispatch, search]);
 
-  const bookmarkHandler = (slide, index) => {
+  const bookmarkHandler = (slide) => {
+    setPendingBookmarkSlide(slide);
+    setBookmarkDialogOpen(true);
+  };
+
+  const handleBookmarkConfirm = (preset) => {
+    setBookmarkDialogOpen(false);
+    const slide = pendingBookmarkSlide;
+    setPendingBookmarkSlide(null);
     dispatch(UpdateBookmarks({
       bookmarks: [{
         file_uid: slide.file_uid,
@@ -107,19 +119,18 @@ const Archive = () => {
       }],
       channel,
       language,
+      preset,
       update: false,
     })).then((res) => {
-      if (res.payload.startsWith("The bookmark with the same file")) {
+      if (typeof res.payload === "string" && res.payload.startsWith("The bookmark with the same file")) {
         if (window.confirm("A bookmark for this file exist, do you want to continue?")) {
           dispatch(UpdateBookmarks({
-            bookmarks: [{
-              file_uid: slide.file_uid,
-              slide_id: slide.ID,
-            }],
+            bookmarks: [{ file_uid: slide.file_uid, slide_id: slide.ID }],
             channel,
             language,
+            preset,
             update: true,
-          }))
+          }));
         }
       }
     }).finally(() => refetchSlidesAndBookmarks(slides.length));
@@ -225,6 +236,13 @@ const Archive = () => {
           </div>
         </div>
       }
+      <BookmarkEventDialog
+        open={bookmarkDialogOpen}
+        onClose={() => { setBookmarkDialogOpen(false); setPendingBookmarkSlide(null); }}
+        onConfirm={handleBookmarkConfirm}
+        language={language}
+        channel={channel}
+      />
     </>
   );
 };

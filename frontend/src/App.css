@@ -2,13 +2,220 @@
   display: flex;
 }
 
+/* EventDropdown (shared between Subtitles and Karaoke) */
+.event-dropdown-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.event-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+}
+
+.event-dropdown-trigger:hover {
+  border-color: #1976d2;
+  background: #f5f8ff;
+}
+
+.event-dropdown-arrow {
+  font-size: 10px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.event-dropdown-menu {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow-y: auto;
+  min-width: 160px;
+}
+
+.event-dropdown-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  min-height: 36px;
+}
+
+.event-dropdown-item.active {
+  background: #e8f0fe;
+}
+
+.event-dropdown-item-label {
+  flex: 1;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+}
+
+.event-dropdown-item-label:hover {
+  color: #1976d2;
+}
+
+.event-dropdown-item.active .event-dropdown-item-label {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.event-dropdown-item-actions {
+  display: flex;
+  align-items: center;
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+
+.event-rename-row,
+.event-new-input-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 4px 6px;
+}
+
+.event-rename-input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  outline: none;
+  min-width: 0;
+}
+
+.event-dropdown-new {
+  padding: 2px;
+}
+
+.event-dropdown-new-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1976d2;
+}
+
+.event-dropdown-new-btn:hover {
+  background: #f0f4ff;
+}
+
+/* BookmarkEventDialog */
+.bm-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.bm-event-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 1px solid #e0e0e0;
+  transition: background 0.1s;
+}
+
+.bm-event-delete-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: 6px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.bm-event-delete-btn:hover {
+  color: #c00;
+  background: #fee;
+}
+
+.bm-event-option.selected .bm-event-delete-btn {
+  color: rgba(255,255,255,0.7);
+}
+
+.bm-event-option.selected .bm-event-delete-btn:hover {
+  color: #fff;
+  background: rgba(0,0,0,0.2);
+}
+
+.bm-event-option:hover {
+  background: #f0f4ff;
+}
+
+.bm-event-option.selected {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+}
+
+.bm-event-new-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bm-event-input {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  outline: none;
+}
+
+.bm-event-new-btn {
+  padding: 8px 12px;
+  background: none;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1976d2;
+  text-align: left;
+}
+
+.bm-event-new-btn:hover {
+  background: #f0f4ff;
+  border-color: #1976d2;
+}
+
 .side-nav {
   flex: 0 0 200px; /* Fixed width for the side navigation */
   overflow-y: auto; /* Enable vertical scrolling for the side navigation */
 }
 
 .main-content {
-  flex: 1; /* Allow main content to grow and take up remaining space */
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
 }
 .bookmarkTruncate {
   direction: rtl;

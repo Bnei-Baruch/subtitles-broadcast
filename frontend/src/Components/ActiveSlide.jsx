@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Slide } from "../Components/Slide";
 import { useSelector } from "react-redux";
-import { ST_QUESTION, broadcastLanguages, roundRobinQuestionsLanguages } from "../Utils/Const";
+import { ST_QUESTION, broadcastLanguages, roundRobinQuestionsLanguages, DM_KARAOKE } from "../Utils/Const";
 import { visibleSlideOrNull, useDeepMemo } from "../Utils/Common"
 import { getAllQuestions, lastMessage } from "../Redux/MQTT/mqttSlice"
-import isEqual from 'lodash/isEqual'; 
+import isEqual from 'lodash/isEqual';
 
 const QST_SWAP_TIME = 10 * 1000;  // 10s
 
@@ -98,10 +98,17 @@ export function ActiveSlide() {
     questionMessagesList,
   ]);
 
+  if (subtitlesDisplayMode === DM_KARAOKE) {
+    const karaokeMsg = lastMessage(mqttMessages, DM_KARAOKE, broadcastLangCode, broadcastProgrammCode);
+    const content = karaokeMsg?.visible !== false ? (karaokeMsg?.slide || "") : "";
+    return <Slide content={content} slide_type="karaoke" />;
+  }
+
   const activeSlide = visibleSlideOrNull(activeQuestion) || visibleSlideOrNull(slide);
   if (!activeSlide) {
     return null;
   }
+
   return (
     <Slide
       content={(activeSlide && activeSlide.slide) || ""}

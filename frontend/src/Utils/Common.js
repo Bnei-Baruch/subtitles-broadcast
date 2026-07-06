@@ -59,6 +59,10 @@ export function getOnOffAirTopic(broadcastProgrammCode) {
   return `subtitles/${broadcastProgrammCode}/on_off_air`;
 }
 
+export function getKaraokeMqttTopic(broadcastProgrammCode) {
+  return `subtitles/${broadcastProgrammCode}/karaoke`;
+}
+
 export function getSubtitlesDisplayModeTopic(
   broadcastProgrammCode,
   broadcastLangCode
@@ -81,6 +85,10 @@ export function languageIsLtr(langCode) {
 }
 
 export const visibleSlideOrNull = (s) => (s && s.visible !== false && s.slide && s.slide.trim() && s) || null;
+// True when the line contains Hebrew, Arabic, or Cyrillic characters.
+// Used to detect transliteration vs same-language second lines.
+export const isNonLatinScript = (line) =>
+  /[֐-׿؀-ۿЀ-ӿ]/.test(line);
 
 export function useDeepMemo(value) {
     const ref = useRef();

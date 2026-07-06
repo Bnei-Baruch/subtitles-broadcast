@@ -15,8 +15,8 @@ const LIMIT = 1000;
 
 export const GetSlides = createAsyncThunk(
   'slides/get',
-  async ({ reset = true, all = true, language, channel, keyword, file_uid, limit = undefined, read_after_write = undefined }, { getState }) => {
-    console.log('GetSlides', reset, all, language, channel, keyword, file_uid, limit, read_after_write);
+  async ({ reset = true, all = true, language, channel, keyword, file_uid, slide_type = undefined, limit = undefined, read_after_write = undefined }, { getState }) => {
+    console.log('GetSlides', reset, all, language, channel, keyword, file_uid, slide_type, limit, read_after_write);
     const { slides } = getState().slides;
     const offsetParams = all ? {} : { offset: reset ? 0 : slides.length, limit: limit || LIMIT };
     const response = await axios.get(`${API}slide`, {
@@ -26,10 +26,19 @@ export const GetSlides = createAsyncThunk(
         channel,
         keyword,
         file_uid,
+        slide_type,
         ...offsetParams,
       },
     });
-    return { data: response.data.data, reset };
+    const data = response.data.data;
+    // Karaoke slides have no languages server-side (the backend returns plain
+    // Slide rows). Stamp a sentinel here so the shared, persisted state.slides
+    // never holds languageless rows — which would crash language-based renders
+    // (e.g. the Subtitles list). Frontend-only: never sent to or stored in the DB.
+    if (slide_type === "karaoke" && data?.slides) {
+      data.slides = data.slides.map((s) => ({ ...s, languages: s.languages?.length ? s.languages : ["karaoke"] }));
+    }
+    return { data, reset };
   }
 );
 

@@ -1,6 +1,7 @@
 export const DM_SUBTITLES = "subtitles";
 export const DM_QUESTIONS = "questions";
 export const DM_NONE = "none";
+export const DM_KARAOKE = "karaoke";
 
 export const ST_SUBTITLE = "subtitle";
 export const ST_QUESTION = "question";

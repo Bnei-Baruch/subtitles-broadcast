@@ -38,6 +38,12 @@ body {
 .side-menu .nav-pills .nav-link img {
   margin-right: 7px;
 }
+.side-menu .nav-pills .nav-link .nav-icon {
+  margin-right: 7px;
+  font-size: 20px;
+  vertical-align: middle;
+  color: #949494;
+}
 
 .top-header {
   position: -webkit-sticky;

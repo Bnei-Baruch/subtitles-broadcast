@@ -87,10 +87,10 @@ func archiveDataCopy(database *gorm.DB, sourcePaths []*SourcePath) {
 					contents[idx] = &AchiveTempData{
 						Texts: texts,
 						File: &File{
-							Type:      KabbalahmediaFileSourceType,
-							Languages: sourcePath.Languages,
-							SourceUid: sourcePath.SourceUid,
-							FileUid:   fileUid,
+							UploadType: KabbalahmediaFileSourceType,
+							Languages:  sourcePath.Languages,
+							SourceUid:  sourcePath.SourceUid,
+							FileUid:    fileUid,
 						},
 					}
 				}
@@ -155,7 +155,7 @@ func updateSourcePath(database *gorm.DB, newSourcePaths []*SourcePath) {
   log.Printf("Currently has %d source paths.", len(currentSourcePaths))
 	for _, currentSourcePath := range currentSourcePaths {
     key := sourcePathKey(currentSourcePath)
-		if !strings.Contains(currentSourcePath.SourceUid, "upload_") {
+		if currentSourcePath.SourceType == "subtitles" && !strings.Contains(currentSourcePath.SourceUid, "upload_") {
       sourcePathsToDelete[key] = currentSourcePath
     }
 	}
@@ -314,9 +314,10 @@ func getSourcePath(sourcePaths *[]*SourcePath, source *Source, language, path st
 	}
 	currentPath := path + delimiter + source.Name
 	sourcePath := SourcePath{
-		SourceUid: source.ID,
-		Languages: []string{language},
-		Path:      currentPath,
+		SourceUid:  source.ID,
+		Languages:  []string{language},
+		Path:       currentPath,
+		SourceType: "subtitles",
 	}
 	*sourcePaths = append(*sourcePaths, &sourcePath)
 	if source.Children != nil {

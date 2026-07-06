@@ -1,13 +1,18 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
 import "./Layout.css";
 import HeaderBar from "../Layout/HeaderBar";
 import { isOperator, isTranslator } from "../Utils/Auth";
 import MqttLogsDialog from "../Components/MqttLogsDialog";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import LibraryMusicOutlinedIcon from "@mui/icons-material/LibraryMusicOutlined";
 
 const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
   const [mqttDialogOpen, setMqttDialogOpen] = useState(false);
+  const broadcastLangCode = useSelector(
+    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
+  );
 
   return (
     <>
@@ -34,6 +39,14 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
                   aria-current="page"
                 >
                   <img alt="dashboard" src="image/dashboard.svg" /> Subtitles
+                </NavLink>
+              </li>
+            )}
+
+            {isOperator(securityRoles) && broadcastLangCode === "he" && (
+              <li>
+                <NavLink to={"/karaoke"} className="nav-link text-white">
+                  <LibraryMusicOutlinedIcon className="nav-icon" /> Karaoke
                 </NavLink>
               </li>
             )}

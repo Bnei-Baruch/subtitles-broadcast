@@ -7,9 +7,9 @@ import (
 )
 
 type File struct {
-	ID        uint           `gorm:"primarykey"`
-	Type      string         `json:"type"`
-	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
+	ID         uint           `gorm:"primarykey"`
+	UploadType string         `json:"upload_type" gorm:"column:upload_type"`
+	Languages  pq.StringArray `json:"languages" gorm:"type:text[]"`
 	Filename  string         `json:"filename"`
 	Content   []byte         `json:"content"`
 	SourceUid string         `json:"source_uid"`
@@ -29,9 +29,11 @@ type Bookmark struct {
 	CreatedAt   time.Time `json:"created_at"`
 	CreatedBy   string    `json:"created_by"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	UpdatedBy   string    `json:"created_by"`
+	UpdatedBy   string    `json:"updated_by"`
 	Language    string    `json:"language"`
 	Channel     string    `json:"channel"`
+	Preset      string    `json:"preset"`
+	Type        string    `json:"type"`
 }
 
 type Slide struct {
@@ -60,16 +62,28 @@ type SlideDetail struct {
 }
 
 type SourcePath struct {
-	ID        uint           `gorm:"primarykey"`
-	Languages pq.StringArray `json:"languages" gorm:"type:text[]"`
-	SourceUid string         `json:"source_uid"`
-	Path      string         `json:"path"`
+	ID          uint           `gorm:"primarykey"`
+	Languages   pq.StringArray `json:"languages" gorm:"type:text[]"`
+	SourceUid   string         `json:"source_uid"`
+	Path        string         `json:"path"`
+	SourceType  string         `json:"source_type"`
+	SourceGroup string         `json:"source_group"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	CreatedBy string    `json:"created_by"`
 	UpdatedBy string    `json:"updated_by"`
 }
+
+type BookmarkPreset struct {
+	ID        uint      `gorm:"primaryKey"`
+	Channel   string    `json:"channel"`
+	Preset    string    `json:"preset"`
+	Type      string    `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (BookmarkPreset) TableName() string { return "bookmark_presets" }
 
 // archive model
 
@@ -111,3 +125,4 @@ type AchiveTempData struct {
 	Texts []string
 	File  *File
 }
+

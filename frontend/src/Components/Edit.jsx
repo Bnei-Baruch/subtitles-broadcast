@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GetSlides, UpdateSourcePath, AddSlide, DeleteSlide, UpdateSlide } from "../Redux/SlidesSlice";
-import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks } from "../Redux/BookmarksSlice";
+import { UnBookmarkSlide, UpdateBookmarks, GetBookmarks, GetBookmarkPresets } from "../Redux/BookmarksSlice";
+import BookmarkEventDialog from "./BookmarkEventDialog";
 import { Slide } from "../Components/Slide";
 import { SplitToSlides } from "../Utils/SlideSplit";
 import Button from "@mui/material/Button";
@@ -112,8 +113,9 @@ const spliceSlideList = (editSlides, index, deleteCount, addSlides) => {
 };
 
 
-export const Edit = ({ fileUid, slideId, handleClose }) => {
+export const Edit = ({ fileUid, slideId, handleClose, mode }) => {
   const dispatch = useDispatch();
+  const isKaraoke = mode === "karaoke";
 
   // const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const {
@@ -128,6 +130,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
   const {slides} = useSelector((state) => state.slides);
   const [editSlides, setEditSlides] = useState([]);
   const { bookmarks } = useSelector((state) => state.bookmarks);
+  const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false);
 
   const [search, setSearch] = useState("")
 
@@ -146,9 +149,9 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
 
   const [bookmarkId, setBookmarkId] = useState("");
 
-  // Get bookmarks for order number if user adds a bookmark.
   useEffect(() => {
     dispatch(GetBookmarks({ language, channel }));
+    dispatch(GetBookmarkPresets({ language, channel }));
   }, [dispatch, language, channel]);
 
   const refetchSlides = useCallback(async (read_after_write = undefined) => {
@@ -157,10 +160,11 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
         file_uid: fileUid,
         language,
         channel,
+        slide_type: isKaraoke ? "karaoke" : undefined,
         read_after_write: read_after_write ? "true" : undefined,
       })
     );
-  }, [dispatch, fileUid, language, channel]);
+  }, [dispatch, fileUid, language, channel, isKaraoke]);
 
   // Load data when the component mounts
   useEffect(() => {
@@ -176,7 +180,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
       setBookmarkId(slides.find((slide) => slide.bookmark_id !== null)?.bookmark_id || "");
       setDeleted([]);
     }
-  }, [slides]);
+  }, [slides, isKaraoke]);
 
   // Initial scroll Virtuoso into view.
   useEffect(() => {
@@ -387,26 +391,30 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
 					setBookmarkId("");
 				}
 			}).finally(() => {
-        // Update number of bookmarks.
         dispatch(GetBookmarks({ language, channel }));
       });
     } else {
-      dispatch(UpdateBookmarks({
-				bookmarks: [{
-          file_uid: editSlides[0].file_uid,
-          slide_id: editSlides[0].ID,
-          order_number: bookmarks.length,
-				}],
-        language,
-        channel,
-				update: false,
-			})).then((response) => {
-        if (response.payload[0].success) {
-          setBookmarkId(response.payload[0].data.ID);
-        }
-        console.log(response);
-      });
+      setBookmarkDialogOpen(true);
     }
+  };
+
+  const handleBookmarkConfirm = (preset) => {
+    setBookmarkDialogOpen(false);
+    dispatch(UpdateBookmarks({
+      bookmarks: [{
+        file_uid: editSlides[0].file_uid,
+        slide_id: editSlides[0].ID,
+        order_number: bookmarks.length,
+      }],
+      language,
+      channel,
+      preset,
+      update: false,
+    })).then((response) => {
+      if (response.payload[0]?.success) {
+        setBookmarkId(response.payload[0].data.ID);
+      }
+    });
   };
 
   const textareaKeydown = (e, index, slide) => {
@@ -511,8 +519,9 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 onKeyDown={(e) => textareaKeydown(e, index, slide)}
                 onChange={(e) => {
                   let newValue = e.target.value;
-                  // Perform any special handling for \r if needed
-                  if (newValue.includes("\n")) {
+                  // Subtitles use \r internally; karaoke keeps real \n (its bar
+                  // renderer splits lines on "\n").
+                  if (!isKaraoke && newValue.includes("\n")) {
                     newValue = newValue.replace(/\n/g, "\r");
                   }
 
@@ -534,7 +543,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => {
                     return toggleSlideDirection(index, slide);
@@ -557,7 +566,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => toggleRenderer(index, slide)}
                   className={
@@ -573,7 +582,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => toggleSlideType(index, slide)}
                   className={
@@ -589,7 +598,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 />
               )}
 
-              {index === selected && (
+              {!isKaraoke && index === selected && (
                 <i
                   onClick={() => rerun()}
                   className="bi bi-bootstrap-reboot delete-icon "
@@ -608,7 +617,7 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                       file_uid: slide.file_uid,
                       slide: "",
                       addedNew: true,
-                      slide_type: "subtitle",
+                      slide_type: isKaraoke ? "karaoke" : "subtitle",
                       renderer: slide.renderer,
                       left_to_right: slide.left_to_right,
                       languages: slide.languages,
@@ -629,12 +638,15 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
                 isLtr={slide && slide.left_to_right === false ? false : true}
                 isQuestion={slide.slide_type === "question"}
                 renderer={slide.renderer}
+                slide_type={isKaraoke ? "karaoke" : undefined}
               />
-              <span className="order-number">{`${
-                slide?.languages.length > 1
-                  ? slide?.languages[+index % slide?.languages.length]
-                  : slide?.languages[0]
-              } ${+slide.order_number + 1}`}</span>
+              <span className="order-number">{isKaraoke
+                ? +slide.order_number + 1
+                : `${
+                    slide?.languages.length > 1
+                      ? slide?.languages[+index % slide?.languages.length]
+                      : slide?.languages[0]
+                  } ${+slide.order_number + 1}`}</span>
             </div>
           </div>
         </div>
@@ -646,22 +658,26 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
       <div className="archiveBackground bg-light Edit">
         <div className="button-container">
           <Search search={search} searchChanged={(newSearch) => setSearch(newSearch)} />
-          <Button
-            variant="contained"
-            onClick={handleToggleBookmark}
-            color="success"
-            className={`btn  bookmark-btn  ${bookmarkId ? "btn-secondary" : "btn-info"}`}
-          >
-            {bookmarkId ? "Unbookmark" : "Bookmark"}
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => rerun()}
-            className="btn btn-re-run"
-          >
-            Re-run
-          </Button>
+          {!isKaraoke && (
+            <>
+              <Button
+                variant="contained"
+                onClick={handleToggleBookmark}
+                color="success"
+                className={`btn  bookmark-btn  ${bookmarkId ? "btn-secondary" : "btn-info"}`}
+              >
+                {bookmarkId ? "Unbookmark" : "Bookmark"}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => rerun()}
+                className="btn btn-re-run"
+              >
+                Re-run
+              </Button>
+            </>
+          )}
           <Button
             variant="contained"
             color="success"
@@ -696,24 +712,26 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
             Save & Back
           </Button>
         </div>
-        <div className="card border-0 edit-source-path">
-          <div className="top-row d-flex sticky-holder">
-            <div className="responsive-container">
-              <div>
-                <input
-                  type="text"
-                  className={`update-source-path-inp form-control input  ${
-                    isLtr(language) ? "ltr" : "rtl"
-                  }`}
-                  value={sourcePath}
-                  onChange={(e) => setSourcePath(e.target.value)}
-                  placeholder="Update Source Path"
-                />
+        {!isKaraoke && (
+          <div className="card border-0 edit-source-path">
+            <div className="top-row d-flex sticky-holder">
+              <div className="responsive-container">
+                <div>
+                  <input
+                    type="text"
+                    className={`update-source-path-inp form-control input  ${
+                      isLtr(language) ? "ltr" : "rtl"
+                    }`}
+                    value={sourcePath}
+                    onChange={(e) => setSourcePath(e.target.value)}
+                    placeholder="Update Source Path"
+                  />
+                </div>
+                <span>{editSlides.length}</span>
               </div>
-              <span>{editSlides.length}</span>
             </div>
           </div>
-        </div>
+        )}
         <div className="edit-container">
           <Virtuoso
             ref={virtualRef}
@@ -733,6 +751,13 @@ export const Edit = ({ fileUid, slideId, handleClose }) => {
           />
         </div>
       </div>
+      <BookmarkEventDialog
+        open={bookmarkDialogOpen}
+        onClose={() => setBookmarkDialogOpen(false)}
+        onConfirm={handleBookmarkConfirm}
+        language={language}
+        channel={channel}
+      />
     </>
   );
 };
