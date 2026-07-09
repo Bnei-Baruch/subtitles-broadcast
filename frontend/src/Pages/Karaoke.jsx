@@ -115,7 +115,7 @@ const Karaoke = () => {
   const { broadcast_program_code: channel, broadcast_language_code: language } = useSelector(
     (state) => state.userSettings.userSettings
   );
-  const { isLiveModeEnabled, subtitlesDisplayMode, isOnAir, mqttTopics, mqttMessages } = useSelector(
+  const { isLiveModeEnabled, subtitlesDisplayMode, isOnAir, mqttTopics, mqttMessages, isConnected } = useSelector(
     (state) => state.mqtt
   );
   const subscribed = mqttTopics[getKaraokeMqttTopic(channel)];
@@ -404,7 +404,7 @@ const Karaoke = () => {
             {isLiveModeEnabled ? "Live: ON" : "Live: OFF"}
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn sources-mod${subtitlesDisplayMode === DM_SUBTITLES ? " btn-success display-mod-selected" : ""}`}
             onClick={() => {
@@ -415,7 +415,7 @@ const Karaoke = () => {
             Subtitles
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn questions-mod${subtitlesDisplayMode === DM_QUESTIONS ? " btn-success display-mod-selected" : ""}`}
             onClick={() => {
@@ -426,7 +426,7 @@ const Karaoke = () => {
             Questions
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn karaoke-mod${subtitlesDisplayMode === DM_KARAOKE ? " btn-success display-mod-selected" : ""}`}
             onClick={() => {
@@ -441,7 +441,7 @@ const Karaoke = () => {
             Karaoke
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn none-mod${subtitlesDisplayMode === DM_NONE ? " btn-success display-mod-selected" : ""}`}
             onClick={() => {

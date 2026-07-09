@@ -1,5 +1,6 @@
 import React from "react";
 import { ActiveSlide } from "../Components/ActiveSlide";
+import { DisconnectedBanner } from "../Components/DisconnectedBanner";
 import { useSelector } from "react-redux";
 import { DM_NONE, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const"
 
@@ -14,6 +15,7 @@ export function Preview() {
 
   return (
     <div className="active-slide-msg-main-cont">
+      <DisconnectedBanner />
       <div className={`green-part-cont active-slide-messaging`}>&nbsp;</div>
       <div className="slide-part-cont">
         <ActiveSlide />
