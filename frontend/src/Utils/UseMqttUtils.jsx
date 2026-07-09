@@ -418,19 +418,16 @@ export function publishKaraoke(slide, channel, displayMode = "karaoke", ignoreLi
   publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
 }
 
-export function clearKaraoke(channel, ignoreLiveMode = false) {
-  const karaokeTopic = getKaraokeMqttTopic(channel);
-  const message = {
-    slide_type: "karaoke",
-    type: "karaoke",
-    slide: "",
-    visible: false,
-    display_status: DM_NONE,
-  };
-  publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
+// Karaoke ON, restoring the retained selection. Guarded by identity, not text:
+// an empty slide is a valid selection (shows nothing, but keeps the position).
+export function restoreKaraoke(mqttMessages, channel) {
+  const lastKaraoke = mqttMessages[getKaraokeMqttTopic(channel)];
+  if (lastKaraoke?.file_uid) {
+    publishKaraoke(lastKaraoke, channel);
+  }
 }
 
-export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {
+export const publishMessage =(slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {
   const message = {
     slide_type: slide.slide_type || type,
     // Deprecated field. Keep for external systems.

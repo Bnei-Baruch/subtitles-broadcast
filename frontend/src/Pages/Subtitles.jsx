@@ -16,8 +16,8 @@ import { GetSlides, clearSlices } from "../Redux/SlidesSlice";
 import DraggableItem from "../Components/DraggableItem";
 import Preview from "../Components/Preview";
 import QuestionMessage from "../Components/QuestionMessage";
-import { getSubtitleMqttTopic, getQuestionMqttTopic, getKaraokeMqttTopic } from "../Utils/Common";
-import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle, publishKaraoke } from "../Utils/UseMqttUtils";
+import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
+import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle, restoreKaraoke } from "../Utils/UseMqttUtils";
 import {
   setLiveModeEnabled,
   setSubtitlesDisplayMode,
@@ -238,16 +238,7 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
     dispatch(setSubtitlesDisplayMode(DM_KARAOKE));
-    const lastKaraoke = mqttMessages[getKaraokeMqttTopic(channel)];
-    if (lastKaraoke?.slide) {
-      publishKaraoke({
-        slide: lastKaraoke.slide,
-        ID: lastKaraoke.ID,
-        file_uid: lastKaraoke.file_uid,
-        order_number: lastKaraoke.order_number,
-        renderer: lastKaraoke.renderer,
-      }, channel, DM_KARAOKE);
-    }
+    restoreKaraoke(mqttMessages, channel);
   }
 
   useEffect(() => {
