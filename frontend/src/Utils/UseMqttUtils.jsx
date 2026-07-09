@@ -45,7 +45,6 @@ export default function useMqtt() {
   const isReconnectingRef = useRef(false);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
-  const { username, firstName, lastName, token, email } = useSelector((state) => state.UserProfile.userProfile);
   const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
   const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_program_code || "morning_lesson"); 
   const isConnected = useSelector((state) => state.mqtt.isConnected);
@@ -84,45 +83,46 @@ export default function useMqtt() {
     }
   }, [dispatch, mqttTopics, isConnected, userSettingsLoaded]);
 
-  // Single reconnection function - prevents duplicate attempts
-  const tryReconnect = () => {
-    if (isReconnectingRef.current) {
-      debugLog('[RECONNECT] Already reconnecting, skipping duplicate');
-      return;
-    }
-
-    if (!clientRef.current) {
-      debugLog('[RECONNECT] No client, skipping');
-      return;
-    }
-
-    if (clientRef.current.connected) {
-      debugLog('[RECONNECT] Already connected');
-      return;
-    }
-
-    isReconnectingRef.current = true;
-    debugLog('[RECONNECT] Starting reconnection attempt');
-    clientRef.current.reconnect();
-  };
-
-  const startConnectionCheck = () => {
-    if (periodicCheckIntervalRef.current) {
-      clearInterval(periodicCheckIntervalRef.current);
-    }
-    periodicCheckIntervalRef.current = setInterval(tryReconnect, CONNECTION_CHECK_INTERVAL);
-    debugLog('Started periodic connection check');
-  };
-
-  const stopConnectionCheck = () => {
-    if (periodicCheckIntervalRef.current) {
-      clearInterval(periodicCheckIntervalRef.current);
-      periodicCheckIntervalRef.current = null;
-    }
-  };
-
   useEffect(() => {
+    // Single reconnection function - prevents duplicate attempts
+    const tryReconnect = () => {
+      if (isReconnectingRef.current) {
+        debugLog('[RECONNECT] Already reconnecting, skipping duplicate');
+        return;
+      }
+
+      if (!clientRef.current) {
+        debugLog('[RECONNECT] No client, skipping');
+        return;
+      }
+
+      if (clientRef.current.connected) {
+        debugLog('[RECONNECT] Already connected');
+        return;
+      }
+
+      isReconnectingRef.current = true;
+      debugLog('[RECONNECT] Starting reconnection attempt');
+      clientRef.current.reconnect();
+    };
+
+    const startConnectionCheck = () => {
+      if (periodicCheckIntervalRef.current) {
+        clearInterval(periodicCheckIntervalRef.current);
+      }
+      periodicCheckIntervalRef.current = setInterval(tryReconnect, CONNECTION_CHECK_INTERVAL);
+      debugLog('Started periodic connection check');
+    };
+
+    const stopConnectionCheck = () => {
+      if (periodicCheckIntervalRef.current) {
+        clearInterval(periodicCheckIntervalRef.current);
+        periodicCheckIntervalRef.current = null;
+      }
+    };
+
     if (!clientRef.current) {
+      const { email, token } = store.getState().UserProfile.userProfile;
       debugLog("Connecting to MQTT Broker...", mqttBrokerUrl);
       const client = mqtt.connect(mqttBrokerUrl, {
         keepalive: 60, // seconds
@@ -258,6 +258,7 @@ export default function useMqtt() {
       const { mqttTopic, message, ignoreLiveMode = false } = event.detail;
       const state = store.getState();
       const isLiveModeEnabled = state.mqtt.isLiveModeEnabled;
+      const { username, firstName, lastName } = state.UserProfile.userProfile;
 
       if (!ignoreLiveMode && !isLiveModeEnabled) {
         debugLog("Live mode is OFF. MQTT message not published.");
@@ -312,7 +313,7 @@ export default function useMqtt() {
       debugLog(" Removing MQTT publish listener");
       document.removeEventListener("mqttPublish", mqttPublishHandler);
     };
-  }, []); // Runs only once
+  }, [dispatch]); // dispatch is stable — still runs only once
 
   // Allow unsubscribing when application closes.
   return {

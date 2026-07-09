@@ -16,7 +16,7 @@ import { GetSlides, clearSlices } from "../Redux/SlidesSlice";
 import DraggableItem from "../Components/DraggableItem";
 import Preview from "../Components/Preview";
 import QuestionMessage from "../Components/QuestionMessage";
-import { getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, useDeepMemo } from "../Utils/Common";
 import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle, restoreKaraoke } from "../Utils/UseMqttUtils";
 import {
   setLiveModeEnabled,
@@ -42,7 +42,9 @@ const Subtitles = () => {
   const { slides } = useSelector((state) => state.slides);
   const maxSlideIndex = slides.length ? slides[slides.length - 1].order_number : 0;
 
-	const { bookmarks, presets: bookmarkPresets, activePreset } = useSelector((state) => state.bookmarks);
+	const { bookmarks: rawBookmarks, presets: bookmarkPresets, activePreset } = useSelector((state) => state.bookmarks);
+	// Content-stable identity: bookmark refetches return new arrays with equal content.
+	const bookmarks = useDeepMemo(rawBookmarks);
 
   const {
     // Selected slide and file from bookmarks.
@@ -105,7 +107,7 @@ const Subtitles = () => {
         canUpdateSelectedSlide.current = true;
       });
     }
-  }, [slides, maxSlideIndex, dispatch, language, mqttMessages, subtitlesDisplayMode, channel]);
+  }, [slides, maxSlideIndex, dispatch, language, mqttMessages, subtitlesDisplayMode, channel, activePreset]);
 
   const handleChange = (selectedOption) => {
     const inputValue = +selectedOption?.label - 1;
@@ -186,7 +188,7 @@ const Subtitles = () => {
         dispatch(clearSlices());
       }
     }
-  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, JSON.stringify(bookmarks)]);
+  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, bookmarks]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedBookmarks = [...bookmarks];

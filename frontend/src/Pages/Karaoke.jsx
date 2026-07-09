@@ -38,7 +38,7 @@ import { publishKaraoke, restoreKaraoke, publishSubtitle, publishQuestion, publi
 import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
 import { clearSlices } from "../Redux/SlidesSlice";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { showSuccessToast, getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic, isNonLatinScript } from "../Utils/Common";
+import { getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic, isNonLatinScript } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
 import { Edit } from "../Components/Edit";
 import Preview from "../Components/Preview";
@@ -120,8 +120,6 @@ const Karaoke = () => {
   );
   const subscribed = mqttTopics[getKaraokeMqttTopic(channel)];
 
-  const isKaraokeActive = subtitlesDisplayMode === "karaoke";
-
   useEffect(() => {
     localStorage.setItem("karaokeLibraryOpen", String(libraryOpen));
   }, [libraryOpen]);
@@ -187,10 +185,8 @@ const Karaoke = () => {
             return dispatch(ImportKaraokeFile({ formData }));
           })
         );
-        results.forEach((r) => {
-          done++;
-          if (r.status === "rejected" || r.value?.error) errors++;
-        });
+        done += results.length;
+        errors += results.filter((r) => r.status === "rejected" || r.value?.error).length;
         setImportProgress({ done, total: files.length, errors });
       }
 
@@ -394,8 +390,6 @@ const Karaoke = () => {
   const activeSlide = activeSlideIndex !== null
     ? slides.find((s) => s.order_number === activeSlideIndex)
     : null;
-
-  const activeSongInSetlist = setlist.find((s) => s.file_uid === activeSongFileUid);
 
   return (
     <div className="karaoke-page">
