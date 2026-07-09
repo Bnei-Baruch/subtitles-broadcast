@@ -68,12 +68,17 @@ const Auth = ({ children }) => {
                 dispatch(StoreProfile({ profile: { token: keycloak.token } }));
               }
             }).catch(() => {
-              refreshFailures++;
               // A single failure can be a Keycloak blip; a redirect wipes the operator's
               // page. Only force login when the refresh token is truly dead, or after
               // 3 consecutive online failures (~30s).
+              if (!navigator.onLine) {
+                refreshFailures = 0;
+                console.warn("Token refresh failed while offline — will retry in 10s.");
+                return;
+              }
+              refreshFailures++;
               const refreshExpired = keycloak.refreshTokenParsed?.exp * 1000 < Date.now();
-              if (navigator.onLine && (refreshExpired || refreshFailures >= 3)) {
+              if (refreshExpired || refreshFailures >= 3) {
                 console.error("Token refresh failed — SSO session expired, forcing re-login.");
                 keycloak.login();
               } else {
