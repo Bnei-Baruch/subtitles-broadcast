@@ -70,7 +70,11 @@ export default function useMqtt() {
             console.error(errMsg);
             debugLog(errMsg);
           } else {
-            debugLog(`[SUBSCRIBE CALLBACK] Subscription confirmed for ${granted.length} topics`);
+            debugLog(`[SUBSCRIBE CALLBACK] Requested ${topics.length}, granted ${granted.length}`);
+            if (granted.length < topics.length) {
+              const ok = new Set(granted.map((g) => g.topic));
+              debugLog(`[SUBSCRIBE CALLBACK] WARNING: not granted:`, topics.filter((t) => !ok.has(t)));
+            }
             for (const grant of granted) {
               dispatch(updateMqttTopic({ topic: grant.topic, isSubscribed: true }));
               debugLog(`[SUBSCRIBE CALLBACK] Marked as subscribed: ${grant.topic} (QoS ${grant.qos})`);
@@ -78,7 +82,7 @@ export default function useMqtt() {
           }
         });
       } else {
-        debugLog(`[SUBSCRIBE EFFECT] No unsubscribed topics to subscribe to`);
+        debugLog(`[SUBSCRIBE EFFECT] Steady state — all ${Object.keys(mqttTopics).length} topics subscribed`);
       }
     }
   }, [dispatch, mqttTopics, isConnected, userSettingsLoaded]);
@@ -121,12 +125,27 @@ export default function useMqtt() {
       }
     };
 
+    const handleOnline = () => {
+      debugLog("[NETWORK] Browser back online — forcing reconnect");
+      tryReconnect();
+    };
+    const handleOffline = () => {
+      debugLog("[NETWORK] Browser offline — marking disconnected");
+      dispatch(setConnected(false));
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     if (!clientRef.current) {
       const { email, token } = store.getState().UserProfile.userProfile;
       debugLog("Connecting to MQTT Broker...", mqttBrokerUrl);
       const client = mqtt.connect(mqttBrokerUrl, {
-        keepalive: 60, // seconds
+        keepalive: 5, // seconds — dead link detected in ~5-8s instead of 60-90s
         reconnectPeriod: 2000, // ms
+        // Redux subscribe-effect is the single owner of (re)subscription.
+        // mqtt.js internal resubscribe made post-reconnect subscribe() a no-op
+        // (granted=[]), leaving redux topics stuck on isSubscribed=false.
+        resubscribe: false,
 
         username: email,
         password: token,
@@ -215,7 +234,12 @@ export default function useMqtt() {
 
       client.on("reconnect", () => {
         if (clientRef.current !== client) return;
-        debugLog("[RECONNECT EVENT] MQTT attempting reconnection...");
+        // Connect-time token may be stale; Auth.js refreshes it every 10s.
+        const { email: currentEmail, token: currentToken } = store.getState().UserProfile.userProfile;
+        const refreshed = currentToken !== client.options.password;
+        debugLog(`[RECONNECT EVENT] MQTT attempting reconnection... credentials ${refreshed ? "REFRESHED" : "unchanged"} (token ...${(currentToken || "").slice(-8)})`);
+        client.options.username = currentEmail;
+        client.options.password = currentToken;
       });
 
       client.on("offline", () => {
@@ -240,6 +264,8 @@ export default function useMqtt() {
     }
 
     return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       stopConnectionCheck();
       if (clientRef.current && clientRef.current.end) {
         debugLog("Disconnecting MQTT...");

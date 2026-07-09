@@ -65,6 +65,13 @@ const Auth = ({ children }) => {
                 localStorage.setItem("token", keycloak.token);
                 dispatch(StoreProfile({ profile: { token: keycloak.token } }));
               }
+            }).catch(() => {
+              if (navigator.onLine) {
+                console.error("Token refresh failed while ONLINE — SSO session expired, forcing re-login.");
+                keycloak.login();
+              } else {
+                console.warn("Token refresh failed while OFFLINE — will retry in 10s.");
+              }
             });
           }, TOKEN_REFRESH_INTERVAL_SECONDS*1000);
         }
