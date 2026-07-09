@@ -140,7 +140,7 @@ export default function useMqtt() {
       const { email, token } = store.getState().UserProfile.userProfile;
       debugLog("Connecting to MQTT Broker...", mqttBrokerUrl);
       const client = mqtt.connect(mqttBrokerUrl, {
-        keepalive: 5, // seconds — dead link detected in ~5-8s instead of 60-90s
+        keepalive: 15, // seconds — dead link detected in ~15-23s; low enough for fast detection, high enough to survive background-tab timer throttling
         reconnectPeriod: 2000, // ms
         // Redux subscribe-effect is the single owner of (re)subscription.
         // mqtt.js internal resubscribe made post-reconnect subscribe() a no-op
@@ -257,6 +257,10 @@ export default function useMqtt() {
       client.on("close", () => {
         if (clientRef.current !== client) return;
         debugLog("[CLOSE EVENT] MQTT connection closed");
+        // Every failed connect attempt ends in 'close'. Clear the in-flight flag
+        // here (not only on 'connect'), otherwise one failed attempt permanently
+        // blocks manual reconnects — including the browser 'online' handler.
+        isReconnectingRef.current = false;
         dispatch(setConnected(false));
         // Immediately try to reconnect on close
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);

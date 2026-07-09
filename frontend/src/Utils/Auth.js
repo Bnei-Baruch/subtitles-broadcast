@@ -58,19 +58,26 @@ const Auth = ({ children }) => {
         const securityRoles = determineAccess(keycloak, setAccess);
 
         if (authenticated) {
+          let refreshFailures = 0;
           setInterval(() => {
             keycloak.updateToken(TOKEN_TTL_TIMEOUT_SECONDS).then((refreshed, something) => {
+              refreshFailures = 0;
               if (refreshed) {
                 console.log('Token refreshed successfully.');
                 localStorage.setItem("token", keycloak.token);
                 dispatch(StoreProfile({ profile: { token: keycloak.token } }));
               }
             }).catch(() => {
-              if (navigator.onLine) {
-                console.error("Token refresh failed while ONLINE — SSO session expired, forcing re-login.");
+              refreshFailures++;
+              // A single failure can be a Keycloak blip; a redirect wipes the operator's
+              // page. Only force login when the refresh token is truly dead, or after
+              // 3 consecutive online failures (~30s).
+              const refreshExpired = keycloak.refreshTokenParsed?.exp * 1000 < Date.now();
+              if (navigator.onLine && (refreshExpired || refreshFailures >= 3)) {
+                console.error("Token refresh failed — SSO session expired, forcing re-login.");
                 keycloak.login();
               } else {
-                console.warn("Token refresh failed while OFFLINE — will retry in 10s.");
+                console.warn(`Token refresh failed (attempt ${refreshFailures}) — will retry in 10s.`);
               }
             });
           }, TOKEN_REFRESH_INTERVAL_SECONDS*1000);
