@@ -45,7 +45,6 @@ export default function useMqtt() {
   const isReconnectingRef = useRef(false);
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
-  const { username, firstName, lastName, token, email } = useSelector((state) => state.UserProfile.userProfile);
   const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
   const broadcastProgrammCode = useSelector((state) => state.userSettings.userSettings.broadcast_program_code || "morning_lesson"); 
   const isConnected = useSelector((state) => state.mqtt.isConnected);
@@ -71,7 +70,11 @@ export default function useMqtt() {
             console.error(errMsg);
             debugLog(errMsg);
           } else {
-            debugLog(`[SUBSCRIBE CALLBACK] Subscription confirmed for ${granted.length} topics`);
+            debugLog(`[SUBSCRIBE CALLBACK] Requested ${topics.length}, granted ${granted.length}`);
+            if (granted.length < topics.length) {
+              const ok = new Set(granted.map((g) => g.topic));
+              debugLog(`[SUBSCRIBE CALLBACK] WARNING: not granted:`, topics.filter((t) => !ok.has(t)));
+            }
             for (const grant of granted) {
               dispatch(updateMqttTopic({ topic: grant.topic, isSubscribed: true }));
               debugLog(`[SUBSCRIBE CALLBACK] Marked as subscribed: ${grant.topic} (QoS ${grant.qos})`);
@@ -79,54 +82,70 @@ export default function useMqtt() {
           }
         });
       } else {
-        debugLog(`[SUBSCRIBE EFFECT] No unsubscribed topics to subscribe to`);
+        debugLog(`[SUBSCRIBE EFFECT] Steady state — all ${Object.keys(mqttTopics).length} topics subscribed`);
       }
     }
   }, [dispatch, mqttTopics, isConnected, userSettingsLoaded]);
 
-  // Single reconnection function - prevents duplicate attempts
-  const tryReconnect = () => {
-    if (isReconnectingRef.current) {
-      debugLog('[RECONNECT] Already reconnecting, skipping duplicate');
-      return;
-    }
-
-    if (!clientRef.current) {
-      debugLog('[RECONNECT] No client, skipping');
-      return;
-    }
-
-    if (clientRef.current.connected) {
-      debugLog('[RECONNECT] Already connected');
-      return;
-    }
-
-    isReconnectingRef.current = true;
-    debugLog('[RECONNECT] Starting reconnection attempt');
-    clientRef.current.reconnect();
-  };
-
-  const startConnectionCheck = () => {
-    if (periodicCheckIntervalRef.current) {
-      clearInterval(periodicCheckIntervalRef.current);
-    }
-    periodicCheckIntervalRef.current = setInterval(tryReconnect, CONNECTION_CHECK_INTERVAL);
-    debugLog('Started periodic connection check');
-  };
-
-  const stopConnectionCheck = () => {
-    if (periodicCheckIntervalRef.current) {
-      clearInterval(periodicCheckIntervalRef.current);
-      periodicCheckIntervalRef.current = null;
-    }
-  };
-
   useEffect(() => {
+    // Single reconnection function - prevents duplicate attempts
+    const tryReconnect = () => {
+      if (isReconnectingRef.current) {
+        debugLog('[RECONNECT] Already reconnecting, skipping duplicate');
+        return;
+      }
+
+      if (!clientRef.current) {
+        debugLog('[RECONNECT] No client, skipping');
+        return;
+      }
+
+      if (clientRef.current.connected) {
+        debugLog('[RECONNECT] Already connected');
+        return;
+      }
+
+      isReconnectingRef.current = true;
+      debugLog('[RECONNECT] Starting reconnection attempt');
+      clientRef.current.reconnect();
+    };
+
+    const startConnectionCheck = () => {
+      if (periodicCheckIntervalRef.current) {
+        clearInterval(periodicCheckIntervalRef.current);
+      }
+      periodicCheckIntervalRef.current = setInterval(tryReconnect, CONNECTION_CHECK_INTERVAL);
+      debugLog('Started periodic connection check');
+    };
+
+    const stopConnectionCheck = () => {
+      if (periodicCheckIntervalRef.current) {
+        clearInterval(periodicCheckIntervalRef.current);
+        periodicCheckIntervalRef.current = null;
+      }
+    };
+
+    const handleOnline = () => {
+      debugLog("[NETWORK] Browser back online — forcing reconnect");
+      tryReconnect();
+    };
+    const handleOffline = () => {
+      debugLog("[NETWORK] Browser offline — marking disconnected");
+      dispatch(setConnected(false));
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     if (!clientRef.current) {
+      const { email, token } = store.getState().UserProfile.userProfile;
       debugLog("Connecting to MQTT Broker...", mqttBrokerUrl);
       const client = mqtt.connect(mqttBrokerUrl, {
-        keepalive: 60, // seconds
+        keepalive: 15, // seconds — dead link detected in ~15-23s; low enough for fast detection, high enough to survive background-tab timer throttling
         reconnectPeriod: 2000, // ms
+        // Redux subscribe-effect is the single owner of (re)subscription.
+        // mqtt.js internal resubscribe made post-reconnect subscribe() a no-op
+        // (granted=[]), leaving redux topics stuck on isSubscribed=false.
+        resubscribe: false,
 
         username: email,
         password: token,
@@ -215,7 +234,12 @@ export default function useMqtt() {
 
       client.on("reconnect", () => {
         if (clientRef.current !== client) return;
-        debugLog("[RECONNECT EVENT] MQTT attempting reconnection...");
+        // Connect-time token may be stale; Auth.js refreshes it every 10s.
+        const { email: currentEmail, token: currentToken } = store.getState().UserProfile.userProfile;
+        const refreshed = currentToken !== client.options.password;
+        debugLog(`[RECONNECT EVENT] MQTT attempting reconnection... credentials ${refreshed ? "REFRESHED" : "unchanged"} (token ...${(currentToken || "").slice(-8)})`);
+        client.options.username = currentEmail;
+        client.options.password = currentToken;
       });
 
       client.on("offline", () => {
@@ -233,6 +257,10 @@ export default function useMqtt() {
       client.on("close", () => {
         if (clientRef.current !== client) return;
         debugLog("[CLOSE EVENT] MQTT connection closed");
+        // Every failed connect attempt ends in 'close'. Clear the in-flight flag
+        // here (not only on 'connect'), otherwise one failed attempt permanently
+        // blocks manual reconnects — including the browser 'online' handler.
+        isReconnectingRef.current = false;
         dispatch(setConnected(false));
         // Immediately try to reconnect on close
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);
@@ -240,6 +268,8 @@ export default function useMqtt() {
     }
 
     return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       stopConnectionCheck();
       if (clientRef.current && clientRef.current.end) {
         debugLog("Disconnecting MQTT...");
@@ -258,6 +288,7 @@ export default function useMqtt() {
       const { mqttTopic, message, ignoreLiveMode = false } = event.detail;
       const state = store.getState();
       const isLiveModeEnabled = state.mqtt.isLiveModeEnabled;
+      const { username, firstName, lastName } = state.UserProfile.userProfile;
 
       if (!ignoreLiveMode && !isLiveModeEnabled) {
         debugLog("Live mode is OFF. MQTT message not published.");
@@ -312,7 +343,7 @@ export default function useMqtt() {
       debugLog(" Removing MQTT publish listener");
       document.removeEventListener("mqttPublish", mqttPublishHandler);
     };
-  }, []); // Runs only once
+  }, [dispatch]); // dispatch is stable — still runs only once
 
   // Allow unsubscribing when application closes.
   return {
@@ -418,19 +449,16 @@ export function publishKaraoke(slide, channel, displayMode = "karaoke", ignoreLi
   publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
 }
 
-export function clearKaraoke(channel, ignoreLiveMode = false) {
-  const karaokeTopic = getKaraokeMqttTopic(channel);
-  const message = {
-    slide_type: "karaoke",
-    type: "karaoke",
-    slide: "",
-    visible: false,
-    display_status: DM_NONE,
-  };
-  publishEvent("mqttPublish", { mqttTopic: karaokeTopic, message, ignoreLiveMode });
+// Karaoke ON, restoring the retained selection. Guarded by identity, not text:
+// an empty slide is a valid selection (shows nothing, but keeps the position).
+export function restoreKaraoke(mqttMessages, channel) {
+  const lastKaraoke = mqttMessages[getKaraokeMqttTopic(channel)];
+  if (lastKaraoke?.file_uid) {
+    publishKaraoke(lastKaraoke, channel);
+  }
 }
 
-export const publishMessage = (slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {
+export const publishMessage =(slide, type, topic, lang, displayMode, ignoreLiveMode, action = "send") => {
   const message = {
     slide_type: slide.slide_type || type,
     // Deprecated field. Keep for external systems.

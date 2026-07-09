@@ -1452,7 +1452,7 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 	result := h.Database.Debug().WithContext(ctx).
 		Table(DBTableSourcePaths).
 		Where("id = ?", sourcePathID).
-		Where("source_type = 'karaoke'").
+		Where("source_uid LIKE 'upload_%' OR source_type = 'karaoke'").
 		Count(&uploadSourcePath)
 	if result.Error != nil {
 		log.Error(result.Error)

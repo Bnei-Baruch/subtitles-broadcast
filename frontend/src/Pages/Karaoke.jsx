@@ -34,11 +34,11 @@ import {
   setActiveGroup,
   setActiveKaraokePreset,
 } from "../Redux/KaraokeSlice";
-import { publishKaraoke, clearKaraoke, publishDisplyNoneMqttMessage } from "../Utils/UseMqttUtils";
+import { publishKaraoke, restoreKaraoke, publishSubtitle, publishQuestion, publishDisplyNoneMqttMessage } from "../Utils/UseMqttUtils";
 import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
 import { clearSlices } from "../Redux/SlidesSlice";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { showSuccessToast, getKaraokeMqttTopic, isNonLatinScript } from "../Utils/Common";
+import { getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic, isNonLatinScript } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
 import { Edit } from "../Components/Edit";
 import Preview from "../Components/Preview";
@@ -115,12 +115,10 @@ const Karaoke = () => {
   const { broadcast_program_code: channel, broadcast_language_code: language } = useSelector(
     (state) => state.userSettings.userSettings
   );
-  const { isLiveModeEnabled, subtitlesDisplayMode, isOnAir, mqttTopics, mqttMessages } = useSelector(
+  const { isLiveModeEnabled, subtitlesDisplayMode, isOnAir, mqttTopics, mqttMessages, isConnected } = useSelector(
     (state) => state.mqtt
   );
   const subscribed = mqttTopics[getKaraokeMqttTopic(channel)];
-
-  const isKaraokeActive = subtitlesDisplayMode === "karaoke";
 
   useEffect(() => {
     localStorage.setItem("karaokeLibraryOpen", String(libraryOpen));
@@ -187,10 +185,8 @@ const Karaoke = () => {
             return dispatch(ImportKaraokeFile({ formData }));
           })
         );
-        results.forEach((r) => {
-          done++;
-          if (r.status === "rejected" || r.value?.error) errors++;
-        });
+        done += results.length;
+        errors += results.filter((r) => r.status === "rejected" || r.value?.error).length;
         setImportProgress({ done, total: files.length, errors });
       }
 
@@ -395,8 +391,6 @@ const Karaoke = () => {
     ? slides.find((s) => s.order_number === activeSlideIndex)
     : null;
 
-  const activeSongInSetlist = setlist.find((s) => s.file_uid === activeSongFileUid);
-
   return (
     <div className="karaoke-page">
       {/* Top bar */}
@@ -410,41 +404,48 @@ const Karaoke = () => {
             {isLiveModeEnabled ? "Live: ON" : "Live: OFF"}
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn sources-mod${subtitlesDisplayMode === DM_SUBTITLES ? " btn-success display-mod-selected" : ""}`}
-            onClick={() => dispatch(setSubtitlesDisplayMode(DM_SUBTITLES))}
+            onClick={() => {
+              dispatch(setSubtitlesDisplayMode(DM_SUBTITLES));
+              publishSubtitle(mqttMessages[getSubtitleMqttTopic(channel, language)] || {}, mqttMessages, channel, language, DM_SUBTITLES, false, "mode_change");
+            }}
           >
             Subtitles
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn questions-mod${subtitlesDisplayMode === DM_QUESTIONS ? " btn-success display-mod-selected" : ""}`}
-            onClick={() => dispatch(setSubtitlesDisplayMode(DM_QUESTIONS))}
+            onClick={() => {
+              dispatch(setSubtitlesDisplayMode(DM_QUESTIONS));
+              publishQuestion(mqttMessages[getQuestionMqttTopic(channel, language)] || {}, mqttMessages, channel, language, DM_QUESTIONS, false, "mode_change");
+            }}
           >
             Questions
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn karaoke-mod${subtitlesDisplayMode === DM_KARAOKE ? " btn-success display-mod-selected" : ""}`}
             onClick={() => {
               dispatch(setSubtitlesDisplayMode(DM_KARAOKE));
               if (activeSlide) {
                 publishKaraoke(activeSlide, channel);
+              } else {
+                restoreKaraoke(mqttMessages, channel);
               }
             }}
           >
             Karaoke
           </button>
           <button
-            disabled={!isLiveModeEnabled || !subscribed}
+            disabled={!isLiveModeEnabled || !subscribed || !isConnected}
             type="button"
             className={`btn none-mod${subtitlesDisplayMode === DM_NONE ? " btn-success display-mod-selected" : ""}`}
             onClick={() => {
               publishDisplyNoneMqttMessage(mqttMessages, channel, language);
-              clearKaraoke(channel, true);
               dispatch(setSubtitlesDisplayMode(DM_NONE));
             }}
           >

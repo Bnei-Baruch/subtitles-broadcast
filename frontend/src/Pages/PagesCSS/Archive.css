@@ -220,10 +220,12 @@ select {
 .top-autocomplete span {
   font-size: 25px;
   margin-left: 10px;
+  flex-shrink: 0;
 }
 
 .top-autocomplete div.autoComplete {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .form-group.autoComplete input {

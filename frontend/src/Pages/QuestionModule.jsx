@@ -4,6 +4,7 @@ import { Slide } from "../Components/Slide";
 import { broadcastLangMapObj, ST_QUESTION } from "../Utils/Const";
 import { languageIsLtr } from "../Utils/Common";
 import { publishQuestion } from "../Utils/UseMqttUtils";
+import { DisconnectedBanner } from "../Components/DisconnectedBanner";
 import { useSelector } from "react-redux";
 
 const messageTime = (message) => message.date ? new Date(message.date).getTime() : 0;
@@ -29,6 +30,7 @@ const QuestionModule = () => {
     (state) => state.mqtt.subtitlesDisplayMode
   );
   const mqttMessages = useSelector((state) => state.mqtt.mqttMessages);
+  const isConnected = useSelector((state) => state.mqtt.isConnected);
   const [isLtr, setIsLtr] = useState(languageIsLtr(broadcastLangCode));
 
   const mqttLogs = useSelector((state) => state.mqtt.mqttLogs);
@@ -98,6 +100,7 @@ const QuestionModule = () => {
 
   return (
     <div className="form-Question">
+      <DisconnectedBanner />
       <p className="QutionTitle">Workshop question</p>
       <div className="d-flex flex-column h-auto">
         <div className="d-flex justify-content-end p-0 mb-2">
@@ -117,7 +120,7 @@ const QuestionModule = () => {
           <button
             className="btn btn-success mx-1"
             onClick={sendQuestionButtonClickHandler}
-            disabled={overflow}
+            disabled={overflow || !isConnected}
           >
             Send question
           </button>

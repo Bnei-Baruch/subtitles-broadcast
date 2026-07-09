@@ -16,8 +16,8 @@ import { GetSlides, clearSlices } from "../Redux/SlidesSlice";
 import DraggableItem from "../Components/DraggableItem";
 import Preview from "../Components/Preview";
 import QuestionMessage from "../Components/QuestionMessage";
-import { getSubtitleMqttTopic, getQuestionMqttTopic, getKaraokeMqttTopic } from "../Utils/Common";
-import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle, publishKaraoke } from "../Utils/UseMqttUtils";
+import { getSubtitleMqttTopic, getQuestionMqttTopic, useDeepMemo } from "../Utils/Common";
+import { publishDisplyNoneMqttMessage, publishQuestion, publishSubtitle, restoreKaraoke } from "../Utils/UseMqttUtils";
 import {
   setLiveModeEnabled,
   setSubtitlesDisplayMode,
@@ -42,7 +42,9 @@ const Subtitles = () => {
   const { slides } = useSelector((state) => state.slides);
   const maxSlideIndex = slides.length ? slides[slides.length - 1].order_number : 0;
 
-	const { bookmarks, presets: bookmarkPresets, activePreset } = useSelector((state) => state.bookmarks);
+	const { bookmarks: rawBookmarks, presets: bookmarkPresets, activePreset } = useSelector((state) => state.bookmarks);
+	// Content-stable identity: bookmark refetches return new arrays with equal content.
+	const bookmarks = useDeepMemo(rawBookmarks);
 
   const {
     // Selected slide and file from bookmarks.
@@ -105,7 +107,7 @@ const Subtitles = () => {
         canUpdateSelectedSlide.current = true;
       });
     }
-  }, [slides, maxSlideIndex, dispatch, language, mqttMessages, subtitlesDisplayMode, channel]);
+  }, [slides, maxSlideIndex, dispatch, language, mqttMessages, subtitlesDisplayMode, channel, activePreset]);
 
   const handleChange = (selectedOption) => {
     const inputValue = +selectedOption?.label - 1;
@@ -186,7 +188,7 @@ const Subtitles = () => {
         dispatch(clearSlices());
       }
     }
-  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, JSON.stringify(bookmarks)]);
+  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, bookmarks]);
 
   const moveCard = (fromIndex, toIndex) => {
     const updatedBookmarks = [...bookmarks];
@@ -238,16 +240,7 @@ const Subtitles = () => {
     btnQuestionsRef.current.classList.remove("btn-success");
     btnNoneRef.current.classList.remove("btn-success");
     dispatch(setSubtitlesDisplayMode(DM_KARAOKE));
-    const lastKaraoke = mqttMessages[getKaraokeMqttTopic(channel)];
-    if (lastKaraoke?.slide) {
-      publishKaraoke({
-        slide: lastKaraoke.slide,
-        ID: lastKaraoke.ID,
-        file_uid: lastKaraoke.file_uid,
-        order_number: lastKaraoke.order_number,
-        renderer: lastKaraoke.renderer,
-      }, channel, DM_KARAOKE);
-    }
+    restoreKaraoke(mqttMessages, channel);
   }
 
   useEffect(() => {

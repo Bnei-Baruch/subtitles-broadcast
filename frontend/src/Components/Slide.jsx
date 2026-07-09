@@ -5,6 +5,10 @@ import "../Pages/PagesCSS/GreenWindow.css";
 
 export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, slide_type, onOverflow = undefined }) => {
   const isKaraoke = slide_type === "karaoke";
+  // Karaoke renders nothing for empty/separator slides; the resize effect must
+  // re-attach when the bar (re)appears, since refs are null while hidden.
+  const karaokeLines = isKaraoke ? (content || "").split("\n").filter((l) => l.trim() !== "") : [];
+  const karaokeHidden = isKaraoke && (!karaokeLines[0] || /^[-_\s]+$/.test(karaokeLines[0]));
   const outerRef = useRef();
   const slideRef = useRef();
   const blueStripeRef = useRef();
@@ -54,7 +58,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
       if (ro) ro.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [handleResize, isKaraoke]);
+  }, [handleResize, isKaraoke, karaokeHidden]);
 
   useEffect(() => {
     if (isKaraoke || !slideRef.current) return;
@@ -77,10 +81,9 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
   }, [content, md, searchKeyword, isKaraoke, onOverflow]);
 
   if (isKaraoke) {
-    const lines = (content || "").split("\n").filter((l) => l.trim() !== "");
-    const primaryLine = lines[0] || "";
-    const secondaryLine = lines[1] || "";
-    const isSeparator = !primaryLine || /^[-_\s]+$/.test(primaryLine);
+    if (karaokeHidden) return null;
+    const primaryLine = karaokeLines[0];
+    const secondaryLine = karaokeLines[1] || "";
     const primaryDir = isNonLatinScript(primaryLine) ? "rtl" : "ltr";
     // Both lines Latin-script → same-language lyrics → yellow, same size.
     // Otherwise (one line Hebrew/Arabic/Cyrillic) → transliteration pair → white.
@@ -90,10 +93,8 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
       <div key="karaoke" ref={outerRef} className="karaoke-slide-outer">
         <div ref={slideRef} className="karaoke-slide-inner">
           <div className="karaoke-bar">
-            {!isSeparator && primaryLine && (
-              <div className="karaoke-line karaoke-line-primary" style={{ direction: primaryDir }}>{primaryLine}</div>
-            )}
-            {!isSeparator && secondaryLine && (
+            <div className="karaoke-line karaoke-line-primary" style={{ direction: primaryDir }}>{primaryLine}</div>
+            {secondaryLine && (
               <div
                 className="karaoke-line karaoke-line-secondary"
                 style={{ color: secondaryColor, fontSize: sameLang ? "88px" : undefined }}
