@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -22,6 +25,7 @@ import {
   ImportKaraokeFile,
   DeleteKaraokeSong,
   RestoreKaraokeSong,
+  MoveKaraokeSong,
   AddToSetlist,
   RemoveFromSetlist,
   ReorderSetlist,
@@ -102,6 +106,7 @@ const Karaoke = () => {
   const [librarySearch, setLibrarySearch] = useState("");
   const [slideSearch, setSlideSearch] = useState("");
   const [confirmDeleteSourceUid, setConfirmDeleteSourceUid] = useState(null);
+  const [moveMenu, setMoveMenu] = useState(null); // { anchorEl, song }
   const [importGroup, setImportGroup] = useState("general");
   const [importProgress, setImportProgress] = useState(null);
   const [showHidden, setShowHidden] = useState(false);
@@ -258,6 +263,18 @@ const Karaoke = () => {
       setConfirmDeleteSourceUid(null);
     },
     [dispatch, activeGroup, showHidden, channel, activeKaraokePreset, songs, setlist]
+  );
+
+  const handleMoveSong = useCallback(
+    (song, group) => {
+      dispatch(MoveKaraokeSong({ sourcePathId: song.source_path_id, group })).then((result) => {
+        if (!result.error) {
+          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, keyword: librarySearch }));
+        }
+      });
+      setMoveMenu(null);
+    },
+    [dispatch, activeGroup, showHidden, librarySearch]
   );
 
   const handleRestoreSong = useCallback(
@@ -616,6 +633,13 @@ const Karaoke = () => {
                             <AddIcon fontSize="small" />
                           </IconButton>
                         )}
+                        <IconButton
+                          size="small"
+                          title="Move to group"
+                          onClick={(e) => { e.stopPropagation(); setMoveMenu({ anchorEl: e.currentTarget, song }); }}
+                        >
+                          <DriveFileMoveOutlinedIcon fontSize="small" />
+                        </IconButton>
                         {confirmDeleteSourceUid === songSourceUid ? (
                           <>
                             <Button size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteSong(songSourceUid); }}>
@@ -643,6 +667,13 @@ const Karaoke = () => {
             {filteredSongs.length === 0 && (
               <div className="empty-hint">No songs yet. Import a PPTX file.</div>
             )}
+            <Menu anchorEl={moveMenu?.anchorEl} open={!!moveMenu} onClose={() => setMoveMenu(null)}>
+              {KARAOKE_GROUPS.filter((g) => g !== moveMenu?.song.source_group).map((g) => (
+                <MenuItem key={g} onClick={() => handleMoveSong(moveMenu.song, g)}>
+                  {GROUP_LABELS[g]}
+                </MenuItem>
+              ))}
+            </Menu>
           </div>
           </>}
         </div>

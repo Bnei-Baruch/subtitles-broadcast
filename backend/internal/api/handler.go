@@ -1439,7 +1439,8 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 
 	// Define a struct to parse the JSON request body
 	var req struct {
-		SourcePath string `json:"source_path"`
+		SourcePath  string `json:"source_path"`
+		SourceGroup string `json:"source_group"`
 	}
 
 	// Bind JSON data to the request struct
@@ -1468,12 +1469,17 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 		return
 	}
 
-	// Update the source_path in the database
+	// Update the source_path and/or source_group in the database
 	userId, _ := ctx.Get("user_id")
 	updates := map[string]interface{}{
-		"path":       req.SourcePath,
 		"updated_by": userId,
 		"updated_at": time.Now(),
+	}
+	if req.SourcePath != "" {
+		updates["path"] = req.SourcePath
+	}
+	if req.SourceGroup != "" {
+		updates["source_group"] = req.SourceGroup
 	}
 	result = h.Database.Debug().Model(&SourcePath{}).
 		Where("id = ?", sourcePathID).

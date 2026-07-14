@@ -111,6 +111,20 @@ export const UpdateKaraokeSongName = createAsyncThunk(
   }
 );
 
+export const MoveKaraokeSong = createAsyncThunk(
+  "karaoke/moveSong",
+  async ({ sourcePathId, group }, { rejectWithValue }) => {
+    try {
+      await axios.patch(`${API}source_path_id/${sourcePathId}`, { source_group: group });
+      showSuccessToast("Song moved");
+      return;
+    } catch (err) {
+      showErrorToast(err.response?.data?.description || "Failed to move song");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
 const presetThunks = makePresetThunks("karaoke", "karaoke");
 export const GetKaraokePresets = presetThunks.getPresets;
 export const CreateKaraokePreset = presetThunks.createPreset;
