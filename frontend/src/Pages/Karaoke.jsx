@@ -468,7 +468,35 @@ const Karaoke = () => {
             {libraryOpen ? (
               <>
                 <span>Song Library</span>
-                <IconButton size="small" onClick={() => setLibraryOpen(false)} title="Collapse library" style={{ marginLeft: "auto" }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pptx,.docx"
+                  multiple
+                  onChange={handleImport}
+                  style={{ display: "none" }}
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  disabled={!!importProgress}
+                  onClick={() => fileInputRef.current?.click()}
+                  sx={{ ml: "auto", height: 28, py: 0 }}
+                >
+                  Import
+                </Button>
+                <select
+                  className="group-select"
+                  value={importGroup}
+                  onChange={(e) => setImportGroup(e.target.value)}
+                  title="Destination group for import"
+                >
+                  {KARAOKE_GROUPS.map((g) => (
+                    <option key={g} value={g}>{GROUP_LABELS[g]}</option>
+                  ))}
+                </select>
+                <IconButton size="small" onClick={() => setLibraryOpen(false)} title="Collapse library">
                   <KeyboardDoubleArrowLeftIcon fontSize="small" />
                 </IconButton>
               </>
@@ -478,38 +506,6 @@ const Karaoke = () => {
               </IconButton>
             )}
           </div>
-          {libraryOpen && (
-            <div className="library-import-bar" onClick={(e) => e.stopPropagation()}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pptx,.docx"
-                multiple
-                onChange={handleImport}
-                style={{ display: "none" }}
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CloudUploadIcon />}
-                disabled={!!importProgress}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Import to
-              </Button>
-              <select
-                className="group-select"
-                value={importGroup}
-                onChange={(e) => setImportGroup(e.target.value)}
-                title="Destination group for import"
-              >
-                {KARAOKE_GROUPS.map((g) => (
-                  <option key={g} value={g}>{GROUP_LABELS[g]}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {libraryOpen && importProgress && (
             <div className="import-progress-container">
               <div className="import-progress-bar-track">
