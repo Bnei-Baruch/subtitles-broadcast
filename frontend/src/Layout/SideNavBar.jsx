@@ -7,28 +7,49 @@ import { isOperator, isTranslator } from "../Utils/Auth";
 import MqttLogsDialog from "../Components/MqttLogsDialog";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import LibraryMusicOutlinedIcon from "@mui/icons-material/LibraryMusicOutlined";
+import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
+import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 
 const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
   const [mqttDialogOpen, setMqttDialogOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("sideNavCollapsed") === "true"
+  );
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      localStorage.setItem("sideNavCollapsed", String(!c));
+      return !c;
+    });
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );
 
   return (
     <>
-      <div className="side-menu">
+      <div className={`side-menu${collapsed ? " collapsed" : ""}`}>
         <div
           className="d-flex flex-column flex-shrink-0"
-          style={{ width: "260px" }}
+          style={{ width: collapsed ? "64px" : "260px" }}
         >
-          <a href="/" className="d-flex admin-main">
-            <div className="img-src">
-              <img alt="user" src="image/user.png" />
-            </div>
-            <div className="fs-4">
-              BNEI BARUCH<span>ADMIN SUBTITLES</span>
-            </div>
-          </a>
+          <div className="d-flex align-items-center admin-row">
+            <a href="/" className="d-flex admin-main flex-grow-1" title="BNEI BARUCH — ADMIN SUBTITLES">
+              <div className="img-src">
+                <img alt="user" src="image/user.png" />
+              </div>
+              {!collapsed && (
+                <div className="fs-4">
+                  BNEI BARUCH<span>ADMIN SUBTITLES</span>
+                </div>
+              )}
+            </a>
+            <button
+              className="collapse-toggle"
+              onClick={toggleCollapsed}
+              title={collapsed ? "Expand menu" : "Collapse menu"}
+            >
+              {collapsed ? <KeyboardDoubleArrowRightIcon fontSize="small" /> : <KeyboardDoubleArrowLeftIcon fontSize="small" />}
+            </button>
+          </div>
 
           <ul className="nav nav-pills flex-column mb-auto">
             {isOperator(securityRoles) && (
@@ -37,48 +58,55 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
                   to={"/subtitle"}
                   className="nav-link text-white"
                   aria-current="page"
+                  title="Subtitles"
                 >
-                  <img alt="dashboard" src="image/dashboard.svg" /> Subtitles
+                  <img alt="dashboard" src="image/dashboard.svg" />{" "}
+                  <span className="nav-label">Subtitles</span>
                 </NavLink>
               </li>
             )}
 
             {isOperator(securityRoles) && broadcastLangCode === "he" && (
               <li>
-                <NavLink to={"/karaoke"} className="nav-link text-white">
-                  <LibraryMusicOutlinedIcon className="nav-icon" /> Karaoke
+                <NavLink to={"/karaoke"} className="nav-link text-white" title="Karaoke">
+                  <LibraryMusicOutlinedIcon className="nav-icon" />{" "}
+                  <span className="nav-label">Karaoke</span>
                 </NavLink>
               </li>
             )}
 
             {isOperator(securityRoles) && (
               <li>
-                <NavLink to={"/archive"} className="nav-link text-white">
-                  <img alt="folder" src="image/folder-special.svg" /> Archive
+                <NavLink to={"/archive"} className="nav-link text-white" title="Archive">
+                  <img alt="folder" src="image/folder-special.svg" />{" "}
+                  <span className="nav-label">Archive</span>
                 </NavLink>
               </li>
             )}
 
             {isOperator(securityRoles) && (
               <li>
-                <NavLink to={"/source"} className="nav-link text-white">
-                  <img alt="folder" src="image/folder-special.svg" /> Source
+                <NavLink to={"/source"} className="nav-link text-white" title="Source">
+                  <img alt="folder" src="image/folder-special.svg" />{" "}
+                  <span className="nav-label">Source</span>
                 </NavLink>
               </li>
             )}
 
             {isOperator(securityRoles) && (
               <li>
-                <NavLink to={"/new"} className="nav-link text-white">
-                  <img alt="queue" src="image/queue.svg" /> New
+                <NavLink to={"/new"} className="nav-link text-white" title="New">
+                  <img alt="queue" src="image/queue.svg" />{" "}
+                  <span className="nav-label">New</span>
                 </NavLink>
               </li>
             )}
 
             {isTranslator(securityRoles) && (
               <li>
-                <NavLink to={"/question"} className="nav-link text-white">
-                  <img alt="slider" src="image/sliders.svg" /> Question
+                <NavLink to={"/question"} className="nav-link text-white" title="Question">
+                  <img alt="slider" src="image/sliders.svg" />{" "}
+                  <span className="nav-label">Question</span>
                 </NavLink>
               </li>
             )}
