@@ -293,10 +293,12 @@ const Karaoke = () => {
     const { sourceUid, sourcePathId, value } = editingSongName;
     const trimmed = value.trim();
     if (trimmed && sourcePathId) {
-      dispatch(UpdateKaraokeSongName({ sourcePathId, name: trimmed, sourceUid }));
+      dispatch(UpdateKaraokeSongName({ sourcePathId, name: trimmed, sourceUid })).then((r) => {
+        if (!r.error) dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+      });
     }
     setEditingSongName(null);
-  }, [dispatch, editingSongName]);
+  }, [dispatch, editingSongName, channel, activeKaraokePreset]);
 
   const enterEditMode = useCallback(() => setEditMode(true), []);
 
@@ -705,22 +707,19 @@ const Karaoke = () => {
             />
           </div>
           <div className="setlist-list">
-            {localSetlist.map((item, idx) => {
-              const setlistSong = songs.find((s) => s.file_uid === item.file_uid);
-              return (
+            {localSetlist.map((item, idx) => (
               <DraggableSetlistItem
                 key={item.id ?? item.ID}
                 item={item}
                 idx={idx}
-                displayName={setlistSong?.path || item.filename || item.file_uid}
+                displayName={item.filename || item.file_uid}
                 isActive={activeSongFileUid === item.file_uid}
                 onSelect={handleSelectSong}
                 onRemove={handleRemoveFromSetlist}
                 moveCard={moveSetlistCard}
                 onDragEnd={handleSetlistReorderEnd}
               />
-              );
-            })}
+            ))}
             {setlist.length === 0 && (
               <div className="empty-hint">Add songs from the library using +</div>
             )}
