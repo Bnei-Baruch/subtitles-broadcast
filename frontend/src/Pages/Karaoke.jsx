@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -22,6 +25,7 @@ import {
   ImportKaraokeFile,
   DeleteKaraokeSong,
   RestoreKaraokeSong,
+  MoveKaraokeSong,
   AddToSetlist,
   RemoveFromSetlist,
   ReorderSetlist,
@@ -102,6 +106,7 @@ const Karaoke = () => {
   const [librarySearch, setLibrarySearch] = useState("");
   const [slideSearch, setSlideSearch] = useState("");
   const [confirmDeleteSourceUid, setConfirmDeleteSourceUid] = useState(null);
+  const [moveMenu, setMoveMenu] = useState(null); // { anchorEl, song }
   const [importGroup, setImportGroup] = useState("general");
   const [importProgress, setImportProgress] = useState(null);
   const [showHidden, setShowHidden] = useState(false);
@@ -260,6 +265,18 @@ const Karaoke = () => {
     [dispatch, activeGroup, showHidden, channel, activeKaraokePreset, songs, setlist]
   );
 
+  const handleMoveSong = useCallback(
+    (song, group) => {
+      dispatch(MoveKaraokeSong({ sourcePathId: song.source_path_id, group })).then((result) => {
+        if (!result.error) {
+          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, keyword: librarySearch }));
+        }
+      });
+      setMoveMenu(null);
+    },
+    [dispatch, activeGroup, showHidden, librarySearch]
+  );
+
   const handleRestoreSong = useCallback(
     (sourceUid) => {
       dispatch(RestoreKaraokeSong({ source_uid: sourceUid })).then((result) => {
@@ -276,10 +293,12 @@ const Karaoke = () => {
     const { sourceUid, sourcePathId, value } = editingSongName;
     const trimmed = value.trim();
     if (trimmed && sourcePathId) {
-      dispatch(UpdateKaraokeSongName({ sourcePathId, name: trimmed, sourceUid }));
+      dispatch(UpdateKaraokeSongName({ sourcePathId, name: trimmed, sourceUid })).then((r) => {
+        if (!r.error) dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+      });
     }
     setEditingSongName(null);
-  }, [dispatch, editingSongName]);
+  }, [dispatch, editingSongName, channel, activeKaraokePreset]);
 
   const enterEditMode = useCallback(() => setEditMode(true), []);
 
@@ -468,7 +487,35 @@ const Karaoke = () => {
             {libraryOpen ? (
               <>
                 <span>Song Library</span>
-                <IconButton size="small" onClick={() => setLibraryOpen(false)} title="Collapse library" style={{ marginLeft: "auto" }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pptx,.docx"
+                  multiple
+                  onChange={handleImport}
+                  style={{ display: "none" }}
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  disabled={!!importProgress}
+                  onClick={() => fileInputRef.current?.click()}
+                  sx={{ ml: "auto", height: 28, py: 0 }}
+                >
+                  Import
+                </Button>
+                <select
+                  className="group-select"
+                  value={importGroup}
+                  onChange={(e) => setImportGroup(e.target.value)}
+                  title="Destination group for import"
+                >
+                  {KARAOKE_GROUPS.map((g) => (
+                    <option key={g} value={g}>{GROUP_LABELS[g]}</option>
+                  ))}
+                </select>
+                <IconButton size="small" onClick={() => setLibraryOpen(false)} title="Collapse library">
                   <KeyboardDoubleArrowLeftIcon fontSize="small" />
                 </IconButton>
               </>
@@ -478,38 +525,6 @@ const Karaoke = () => {
               </IconButton>
             )}
           </div>
-          {libraryOpen && (
-            <div className="library-import-bar" onClick={(e) => e.stopPropagation()}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pptx,.docx"
-                multiple
-                onChange={handleImport}
-                style={{ display: "none" }}
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CloudUploadIcon />}
-                disabled={!!importProgress}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Import to
-              </Button>
-              <select
-                className="group-select"
-                value={importGroup}
-                onChange={(e) => setImportGroup(e.target.value)}
-                title="Destination group for import"
-              >
-                {KARAOKE_GROUPS.map((g) => (
-                  <option key={g} value={g}>{GROUP_LABELS[g]}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {libraryOpen && importProgress && (
             <div className="import-progress-container">
               <div className="import-progress-bar-track">
@@ -536,14 +551,16 @@ const Karaoke = () => {
                 {GROUP_LABELS[g]}
               </button>
             ))}
-            <button
-              className={`library-sort-btn group-tab-trash${showHidden ? " active" : ""}`}
-              title={showHidden ? "Hide deleted songs" : "Show deleted songs"}
-              onClick={() => setShowHidden((v) => !v)}
-              style={{ marginLeft: "auto" }}
-            >
-              🗑
-            </button>
+            <div className="form-check mb-0 text-nowrap" style={{ marginLeft: "auto", padding: "4px 8px 4px 28px" }}>
+              <input
+                className="form-check-input me-1"
+                type="checkbox"
+                id="karaokeShowDeleted"
+                checked={showHidden}
+                onChange={() => setShowHidden((v) => !v)}
+              />
+              <label className="form-check-label" htmlFor="karaokeShowDeleted">Show deleted</label>
+            </div>
           </div>
 
           <input
@@ -611,15 +628,21 @@ const Karaoke = () => {
                       </Button>
                     ) : (
                       <>
-                        {!inSetlist && (
-                          <IconButton
-                            size="small"
-                            title="Add to setlist"
-                            onClick={(e) => { e.stopPropagation(); handleAddToSetlist(songFileUid); }}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
-                        )}
+                        <IconButton
+                          size="small"
+                          title="Add to setlist"
+                          disabled={inSetlist}
+                          onClick={(e) => { e.stopPropagation(); handleAddToSetlist(songFileUid); }}
+                        >
+                          <AddIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          title="Move to group"
+                          onClick={(e) => { e.stopPropagation(); setMoveMenu({ anchorEl: e.currentTarget, song }); }}
+                        >
+                          <DriveFileMoveOutlinedIcon fontSize="small" />
+                        </IconButton>
                         {confirmDeleteSourceUid === songSourceUid ? (
                           <>
                             <Button size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteSong(songSourceUid); }}>
@@ -647,6 +670,13 @@ const Karaoke = () => {
             {filteredSongs.length === 0 && (
               <div className="empty-hint">No songs yet. Import a PPTX file.</div>
             )}
+            <Menu anchorEl={moveMenu?.anchorEl} open={!!moveMenu} onClose={() => setMoveMenu(null)}>
+              {KARAOKE_GROUPS.filter((g) => g !== moveMenu?.song.source_group).map((g) => (
+                <MenuItem key={g} onClick={() => handleMoveSong(moveMenu.song, g)}>
+                  {GROUP_LABELS[g]}
+                </MenuItem>
+              ))}
+            </Menu>
           </div>
           </>}
         </div>
@@ -678,22 +708,19 @@ const Karaoke = () => {
             />
           </div>
           <div className="setlist-list">
-            {localSetlist.map((item, idx) => {
-              const setlistSong = songs.find((s) => s.file_uid === item.file_uid);
-              return (
+            {localSetlist.map((item, idx) => (
               <DraggableSetlistItem
                 key={item.id ?? item.ID}
                 item={item}
                 idx={idx}
-                displayName={setlistSong?.path || item.filename || item.file_uid}
+                displayName={item.filename || item.file_uid}
                 isActive={activeSongFileUid === item.file_uid}
                 onSelect={handleSelectSong}
                 onRemove={handleRemoveFromSetlist}
                 moveCard={moveSetlistCard}
                 onDragEnd={handleSetlistReorderEnd}
               />
-              );
-            })}
+            ))}
             {setlist.length === 0 && (
               <div className="empty-hint">Add songs from the library using +</div>
             )}

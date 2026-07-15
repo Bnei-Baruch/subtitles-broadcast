@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -877,12 +878,13 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		karaokePreset := ctx.Query("preset")
 		var items []karaokeRow
 		result := h.Database.WithContext(ctx).
-			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename, COUNT(s.id) as slide_count").
+			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, COALESCE(NULLIF(sp.path, ''), f.filename) AS filename, COUNT(s.id) as slide_count").
 			Table(DBTableBookmarks+" b").
 			Joins("INNER JOIN "+DBTableFiles+" f ON f.file_uid = b.file_uid").
+			Joins("LEFT JOIN "+DBTableSourcePaths+" sp ON sp.source_uid = f.source_uid").
 			Joins("LEFT JOIN "+DBTableSlides+" s ON s.file_uid = b.file_uid AND s.slide_type = 'karaoke'").
 			Where("b.channel = ? AND b.type = 'karaoke' AND b.preset = ?", channel, karaokePreset).
-			Group("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, f.filename").
+			Group("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, sp.path, f.filename").
 			Order("b.order_number ASC").
 			Find(&items)
 		if result.Error != nil {
@@ -1439,7 +1441,8 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 
 	// Define a struct to parse the JSON request body
 	var req struct {
-		SourcePath string `json:"source_path"`
+		SourcePath  string `json:"source_path"`
+		SourceGroup string `json:"source_group"`
 	}
 
 	// Bind JSON data to the request struct
@@ -1468,12 +1471,22 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 		return
 	}
 
-	// Update the source_path in the database
+	// Update the source_path and/or source_group in the database
 	userId, _ := ctx.Get("user_id")
 	updates := map[string]interface{}{
-		"path":       req.SourcePath,
 		"updated_by": userId,
 		"updated_at": time.Now(),
+	}
+	if req.SourcePath != "" {
+		updates["path"] = req.SourcePath
+	}
+	if req.SourceGroup != "" {
+		if !slices.Contains(KaraokeGroups, req.SourceGroup) {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, "Invalid source_group: "+req.SourceGroup, "Update source path has failed"))
+			return
+		}
+		updates["source_group"] = req.SourceGroup
 	}
 	result = h.Database.Debug().Model(&SourcePath{}).
 		Where("id = ?", sourcePathID).

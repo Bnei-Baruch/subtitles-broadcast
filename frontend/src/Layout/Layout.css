@@ -45,6 +45,50 @@ body {
   color: #949494;
 }
 
+/* Collapsed icon rail */
+.admin-row {
+  position: relative;
+}
+
+.side-menu .collapse-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #949494;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+
+.side-menu.collapsed .nav-label {
+  display: none;
+}
+
+.side-menu.collapsed .nav-pills .nav-link {
+  padding: 15px 0;
+  text-align: center;
+}
+
+.side-menu.collapsed .nav-pills .nav-link img,
+.side-menu.collapsed .nav-pills .nav-link .nav-icon {
+  margin-right: 0;
+}
+
+.side-menu.collapsed .admin-main {
+  padding: 14px 8px;
+  justify-content: flex-start;
+}
+
+/* Bottom bar: keep the user/channel/language icons, hide their labels */
+.side-menu.collapsed .top-header .user-name,
+.side-menu.collapsed .broadcast-label-main-val,
+.side-menu.collapsed .broadcast-label-main-last {
+  display: none;
+}
+
 .top-header {
   position: -webkit-sticky;
   padding: 13px;
