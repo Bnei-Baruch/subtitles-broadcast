@@ -175,30 +175,6 @@
   flex-shrink: 0;
 }
 
-/* Library header buttons (recycle bin toggle, etc.) */
-.library-sort-btn {
-  font-size: 12px;
-  padding: 2px 6px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
-  color: #666;
-  cursor: pointer;
-  flex-shrink: 0;
-  line-height: 1.6;
-}
-
-.library-sort-btn:hover {
-  border-color: #1976d2;
-  color: #1976d2;
-}
-
-.library-sort-btn.active {
-  background: #dc3545;
-  border-color: #dc3545;
-  color: #fff;
-}
-
 /* Hidden (soft-deleted) songs */
 .song-item.song-hidden {
   opacity: 0.45;
@@ -238,15 +214,15 @@
   align-items: center;
 }
 
-.group-tab-trash {
-  border: none;
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
-  padding: 4px 8px;
-  line-height: 1.6;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
+.group-tabs .form-check-label {
+  font-size: 12px;
+  color: #555;
+}
+
+.group-tabs .form-check-input {
+  width: 12px;
+  height: 12px;
+  margin-top: 0.35em;
 }
 
 .group-tab {

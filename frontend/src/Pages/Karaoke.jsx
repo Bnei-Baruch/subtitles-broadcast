@@ -551,14 +551,16 @@ const Karaoke = () => {
                 {GROUP_LABELS[g]}
               </button>
             ))}
-            <button
-              className={`library-sort-btn group-tab-trash${showHidden ? " active" : ""}`}
-              title={showHidden ? "Hide deleted songs" : "Show deleted songs"}
-              onClick={() => setShowHidden((v) => !v)}
-              style={{ marginLeft: "auto" }}
-            >
-              🗑
-            </button>
+            <div className="form-check mb-0 text-nowrap" style={{ marginLeft: "auto", padding: "4px 8px 4px 28px" }}>
+              <input
+                className="form-check-input me-1"
+                type="checkbox"
+                id="karaokeShowDeleted"
+                checked={showHidden}
+                onChange={() => setShowHidden((v) => !v)}
+              />
+              <label className="form-check-label" htmlFor="karaokeShowDeleted">Show deleted</label>
+            </div>
           </div>
 
           <input
