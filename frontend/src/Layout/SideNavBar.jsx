@@ -15,11 +15,10 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("sideNavCollapsed") === "true"
   );
-  const toggleCollapsed = () =>
-    setCollapsed((c) => {
-      localStorage.setItem("sideNavCollapsed", String(!c));
-      return !c;
-    });
+  const toggleCollapsed = () => {
+    localStorage.setItem("sideNavCollapsed", String(!collapsed));
+    setCollapsed(!collapsed);
+  };
   const broadcastLangCode = useSelector(
     (state) => state.userSettings.userSettings.broadcast_language_code || "he"
   );

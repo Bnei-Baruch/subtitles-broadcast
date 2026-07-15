@@ -83,7 +83,7 @@ body {
 }
 
 /* Bottom bar: keep the user/channel/language icons, hide their labels */
-.side-menu.collapsed .top-header .m-2,
+.side-menu.collapsed .top-header .user-name,
 .side-menu.collapsed .broadcast-label-main-val,
 .side-menu.collapsed .broadcast-label-main-last {
   display: none;

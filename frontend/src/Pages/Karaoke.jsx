@@ -630,7 +630,7 @@ const Karaoke = () => {
                       <>
                         <IconButton
                           size="small"
-                          title={inSetlist ? "Already in setlist" : "Add to setlist"}
+                          title="Add to setlist"
                           disabled={inSetlist}
                           onClick={(e) => { e.stopPropagation(); handleAddToSetlist(songFileUid); }}
                         >

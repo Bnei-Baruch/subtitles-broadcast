@@ -26,7 +26,7 @@ const HeaderBar = ({ logout }) => {
                 className=""
                 src="/image/user_icon.svg"
               />
-              <span className="m-2">{logout?.profile?.firstName}</span>
+              <span className="m-2 user-name">{logout?.profile?.firstName}</span>
             </button>
             <ul className="dropdown-menu">
               <li>

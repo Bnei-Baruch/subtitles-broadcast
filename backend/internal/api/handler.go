@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -880,7 +881,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, COALESCE(NULLIF(sp.path, ''), f.filename) AS filename, COUNT(s.id) as slide_count").
 			Table(DBTableBookmarks+" b").
 			Joins("INNER JOIN "+DBTableFiles+" f ON f.file_uid = b.file_uid").
-			Joins("INNER JOIN "+DBTableSourcePaths+" sp ON sp.source_uid = f.source_uid").
+			Joins("LEFT JOIN "+DBTableSourcePaths+" sp ON sp.source_uid = f.source_uid").
 			Joins("LEFT JOIN "+DBTableSlides+" s ON s.file_uid = b.file_uid AND s.slide_type = 'karaoke'").
 			Where("b.channel = ? AND b.type = 'karaoke' AND b.preset = ?", channel, karaokePreset).
 			Group("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, sp.path, f.filename").
@@ -1480,6 +1481,11 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 		updates["path"] = req.SourcePath
 	}
 	if req.SourceGroup != "" {
+		if !slices.Contains(KaraokeGroups, req.SourceGroup) {
+			ctx.JSON(http.StatusBadRequest,
+				getResponse(false, nil, "Invalid source_group: "+req.SourceGroup, "Update source path has failed"))
+			return
+		}
 		updates["source_group"] = req.SourceGroup
 	}
 	result = h.Database.Debug().Model(&SourcePath{}).
