@@ -246,6 +246,19 @@ func (h *Handler) AddCustomSlides(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, getResponse(true, nil, "", "Adding custom slide data has succeeded"))
 }
 
+// forceMaster returns a select-list prefix honoring the read_after_write=true
+// query param. Production reads are load-balanced (pgpool) across async
+// replicas, so a read fired right after a write may see stale data. pgpool
+// routes any statement containing a volatile function to the primary, so
+// prepending "random()," to the SELECT forces a fresh primary read. Callers
+// should pass read_after_write=true only on the first read after a mutation.
+func forceMaster(ctx *gin.Context) string {
+	if ctx.Query("read_after_write") == "true" {
+		return "random(),"
+	}
+	return ""
+}
+
 // Get all slides with bookmarked info by user
 func (h *Handler) GetSlides(ctx *gin.Context) {
 	offsetStr := ctx.Query("offset")
@@ -282,6 +295,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 			return
 		}
 		kq := h.Database.WithContext(ctx).Table(DBTableSlides).
+			Select(forceMaster(ctx) + "slides.*").
 			Where("file_uid = ? AND slide_type = ?", fileUid, KaraokeSlideType)
 		if hidden != "true" {
 			kq = kq.Where("hidden = FALSE")
@@ -315,10 +329,7 @@ func (h *Handler) GetSlides(ctx *gin.Context) {
 		return
 	}
 
-	force_master := ""
-	if ctx.Query("read_after_write") == "true" {
-		force_master = "random(),"
-	}
+	force_master := forceMaster(ctx)
 
 	query := h.Database.Debug().WithContext(ctx).
 		Table(DBTableSlides).
@@ -906,10 +917,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		return
 	}
 	preset := ctx.Query("preset")
-	force_master := ""
-	if ctx.Query("read_after_write") == "true" {
-		force_master = "random(),"
-	}
+	force_master := forceMaster(ctx)
 	result := []struct {
 		Slide_Id     uint   `json:"slide_id"`
 		BookmarkId   uint   `json:"bookmark_id"`
@@ -1369,10 +1377,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 			getResponse(false, nil, "", "channel is needed"))
 		return
 	}
-	force_master := ""
-	if ctx.Query("read_after_write") == "true" {
-		force_master = "random(),"
-	}
+	force_master := forceMaster(ctx)
 	keyword := ctx.Query("keyword")
 	fields := `
 		slides.id AS slide_id,

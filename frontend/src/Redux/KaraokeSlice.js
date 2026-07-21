@@ -42,8 +42,10 @@ export const RestoreKaraokeSong = createAsyncThunk("karaoke/restoreSong", async 
   }
 });
 
-export const GetKaraokeSlides = createAsyncThunk("karaoke/getSlides", async ({ file_uid }) => {
-  const response = await axios.get(`${API}slide`, { params: { file_uid, slide_type: "karaoke" } });
+export const GetKaraokeSlides = createAsyncThunk("karaoke/getSlides", async ({ file_uid, read_after_write }) => {
+  const response = await axios.get(`${API}slide`, {
+    params: { file_uid, slide_type: "karaoke", read_after_write: read_after_write ? "true" : undefined },
+  });
   return response.data.data.slides;
 });
 
