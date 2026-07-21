@@ -154,8 +154,8 @@ export const Edit = ({ fileUid, slideId, handleClose, mode }) => {
     dispatch(GetBookmarkPresets({ language, channel }));
   }, [dispatch, language, channel]);
 
-  const refetchSlides = useCallback(async (read_after_write = undefined) => {
-    dispatch(
+  const refetchSlides = useCallback((read_after_write = undefined) => {
+    return dispatch(
       GetSlides({
         file_uid: fileUid,
         language,
@@ -309,7 +309,7 @@ export const Edit = ({ fileUid, slideId, handleClose, mode }) => {
     }
 
     await Promise.all(savePromises);
-    refetchSlides(/* read_after_write */ true);
+    await refetchSlides(/* read_after_write */ true);
   }, [deleted, dispatch, isSlideDataChanged, isSourcePathChanged, editSlides, sourcePath, sourcePathId, refetchSlides]);
 
 	// Re-split slides from selected slide and on.

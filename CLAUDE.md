@@ -69,6 +69,8 @@ All endpoints are prefixed with `/api/v1`:
 
 Uses PostgreSQL with GORM ORM. Migrations are in `script/database/migration/` and managed via golang-migrate.
 
+**Read-after-write**: production reads are load-balanced (pgpool) across async replicas, so a read fired right after a write may return stale data. GET handlers that support the `read_after_write=true` query param force the query to the primary by prepending `random(),` to the SELECT (pgpool routes statements containing volatile functions to the primary) — see `forceMaster` in `internal/api/handler.go`. The frontend passes the flag only on the first refetch after a mutation (e.g. `Source.jsx`, `Edit.jsx`, Karaoke's post-edit reload).
+
 ## Frontend (React)
 
 ### Development Commands

@@ -309,7 +309,9 @@ const Karaoke = () => {
     // <Edit mode="karaoke"> loaded karaoke rows into the shared state.slides;
     // clear them so they aren't persisted forward into the Subtitles list.
     dispatch(clearSlices());
-    if (activeSongFileUid) dispatch(GetKaraokeSlides({ file_uid: activeSongFileUid }));
+    // read_after_write: on Save & Back this runs milliseconds after the write;
+    // without it the load-balanced read can hit a not-yet-caught-up replica.
+    if (activeSongFileUid) dispatch(GetKaraokeSlides({ file_uid: activeSongFileUid, read_after_write: true }));
   }, [dispatch, activeSongFileUid]);
 
   const handleResizeStart = useCallback((col, e) => {
