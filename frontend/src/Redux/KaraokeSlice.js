@@ -7,6 +7,12 @@ const API = process.env.REACT_APP_API_BASE_URL;
 
 export const KARAOKE_GROUPS = ["songbook", "shabat", "origin", "general"];
 
+// Natural sort by displayed name (path with filename fallback, as rendered by
+// the library list): numeric runs compare as numbers, so "2_x" < "22_x".
+const songCollator = new Intl.Collator(undefined, { numeric: true });
+const sortSongs = (songs) =>
+  songs.sort((a, b) => songCollator.compare(a.path || a.filename || "", b.path || b.filename || ""));
+
 const initialState = {
   songs: [],
   setlist: [],
@@ -190,12 +196,15 @@ const KaraokeSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(GetKaraokeSongs.fulfilled, (state, action) => {
-        state.songs = action.payload || [];
+        state.songs = sortSongs(action.payload || []);
       })
       .addCase(UpdateKaraokeSongName.fulfilled, (state, action) => {
         const { sourceUid, name } = action.payload;
         const song = state.songs.find((s) => s.source_uid === sourceUid);
-        if (song) song.path = name;
+        if (song) {
+          song.path = name;
+          sortSongs(state.songs);
+        }
       })
       .addCase(GetKaraokeSlides.fulfilled, (state, action) => {
         state.slides = action.payload || [];
