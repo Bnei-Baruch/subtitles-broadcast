@@ -496,13 +496,11 @@
 }
 
 .slide-text-secondary {
-  font-size: 0.85em;
-  color: #888;
-  opacity: 0.85;
+  color: #666;
 }
 
 .slide-card.active .slide-text-secondary {
-  color: #cce;
+  color: #cfe0ff;
 }
 
 

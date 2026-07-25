@@ -42,7 +42,7 @@ import { publishKaraoke, restoreKaraoke, publishSubtitle, publishQuestion, publi
 import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
 import { clearSlices } from "../Redux/SlidesSlice";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic, isNonLatinScript } from "../Utils/Common";
+import { getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic, isNonLatinScript, isSameLanguagePair } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
 import { Edit } from "../Components/Edit";
 import Preview from "../Components/Preview";
@@ -781,7 +781,10 @@ const Karaoke = () => {
                 const lines = slide.slide.split("\n");
                 const firstLine = lines[0] || "";
                 const secondLine = lines[1] || "";
-                const sameLangSlide = secondLine && !isNonLatinScript(firstLine) && !isNonLatinScript(secondLine);
+                const sameLangSlide = secondLine && isSameLanguagePair(firstLine, secondLine);
+                // Hebrew pairs render both lines identically; Latin pairs keep
+                // the secondary tone to hint line 2 at a glance.
+                const secondaryClass = isNonLatinScript(secondLine) ? "" : "slide-text-secondary";
                 return (
                   <div
                     key={slide.ID}
@@ -793,7 +796,7 @@ const Karaoke = () => {
                     <span className="slide-text-preview">
                       <span>{highlight(firstLine.slice(0, 80))}</span>
                       {sameLangSlide && (
-                        <span className="slide-text-secondary">{highlight(secondLine.slice(0, 80))}</span>
+                        <span className={secondaryClass}>{highlight(secondLine.slice(0, 80))}</span>
                       )}
                     </span>
                   </div>
