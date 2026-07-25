@@ -90,6 +90,12 @@ export const visibleSlideOrNull = (s) => (s && s.visible !== false && s.slide &&
 export const isNonLatinScript = (line) =>
   /[֐-׿؀-ۿЀ-ӿ]/.test(line);
 
+// A karaoke slide's two lines are the same language when both are the same
+// script class (both Hebrew/Arabic/Cyrillic or both Latin); a mixed pair is a
+// transliteration and is styled differently.
+export const isSameLanguagePair = (line1, line2) =>
+  isNonLatinScript(line1) === isNonLatinScript(line2);
+
 export function useDeepMemo(value) {
     const ref = useRef();
     const cache = useRef();

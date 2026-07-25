@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { createMarkdownit } from "../Utils/SlideSplit";
-import { isNonLatinScript } from "../Utils/Common";
+import { isNonLatinScript, isSameLanguagePair } from "../Utils/Common";
 import "../Pages/PagesCSS/GreenWindow.css";
 
 export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, slide_type, onOverflow = undefined }) => {
@@ -85,9 +85,9 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
     const primaryLine = karaokeLines[0];
     const secondaryLine = karaokeLines[1] || "";
     const primaryDir = isNonLatinScript(primaryLine) ? "rtl" : "ltr";
-    // Both lines Latin-script → same-language lyrics → yellow, same size.
-    // Otherwise (one line Hebrew/Arabic/Cyrillic) → transliteration pair → white.
-    const sameLang = !isNonLatinScript(primaryLine) && !isNonLatinScript(secondaryLine);
+    // Same script on both lines → same-language lyrics → yellow, same size.
+    // Mixed scripts → transliteration pair → white.
+    const sameLang = isSameLanguagePair(primaryLine, secondaryLine);
     const secondaryColor = sameLang ? "#ffe566" : "#ffffff";
     return (
       <div key="karaoke" ref={outerRef} className="karaoke-slide-outer">
