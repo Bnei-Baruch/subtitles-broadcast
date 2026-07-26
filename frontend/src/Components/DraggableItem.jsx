@@ -14,6 +14,7 @@ const DraggableItem = ({
   text,
   parentIndex,
   moveCard,
+  onDragEnd,
   parentBookmarkFileUid,
   parentBookmarkId,
   setIsLtr,
@@ -25,6 +26,7 @@ const DraggableItem = ({
   const [, ref] = useDrag({
     type: ItemTypes.CARD,
     item: { parentId, parentIndex },
+    end: onDragEnd,
   });
 
   const {
@@ -35,9 +37,9 @@ const DraggableItem = ({
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
     hover: (draggedItem) => {
-      if (draggedItem.index !== parentIndex) {
-        moveCard(draggedItem.index, parentIndex);
-        draggedItem.index = parentIndex;
+      if (draggedItem.parentIndex !== parentIndex) {
+        moveCard(draggedItem.parentIndex, parentIndex);
+        draggedItem.parentIndex = parentIndex;
       }
     },
   });

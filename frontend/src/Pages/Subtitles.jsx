@@ -10,7 +10,7 @@ import "./PagesCSS/Subtitle.css";
 
 import { Search } from "../Layout/Search";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { GetBookmarks, GetBookmarkPresets, CreateBookmarkPreset, DeleteBookmarkPreset, UpdateBookmarks, setActivePreset } from "../Redux/BookmarksSlice";
+import { GetBookmarks, GetBookmarkPresets, CreateBookmarkPreset, DeleteBookmarkPreset, UpdateBookmarks, ReorderBookmarks, moveBookmark, setActivePreset } from "../Redux/BookmarksSlice";
 import EventDropdown from "../Components/EventDropdown";
 import { GetSlides, clearSlices } from "../Redux/SlidesSlice";
 import DraggableItem from "../Components/DraggableItem";
@@ -173,9 +173,13 @@ const Subtitles = () => {
 		}
   }, [editSlideId, dispatch, language, channel, activePreset]);
 
+  // Depend on membership, not the bookmarks array: reordering bookmarks
+  // (drag & drop) must not refetch the selected file's slides.
+  const selectedFileBookmarked = !!userSelectedFileUID &&
+    bookmarks.some((bookmark) => bookmark.file_uid === userSelectedFileUID);
   useEffect(() => {
     if (!editSlideId) {
-      if (userSelectedFileUID && bookmarks.find((bookmark) => bookmark.file_uid === userSelectedFileUID)) {
+      if (selectedFileBookmarked) {
         dispatch(GetSlides({
           file_uid: userSelectedFileUID,
           keyword: searchSlide,
@@ -188,21 +192,13 @@ const Subtitles = () => {
         dispatch(clearSlices());
       }
     }
-  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, bookmarks]);
+  }, [language, channel, editSlideId, searchSlide, userSelectedFileUID, dispatch, selectedFileBookmarked]);
 
-  const moveCard = (fromIndex, toIndex) => {
-    const updatedBookmarks = [...bookmarks];
-    const [movedItem] = updatedBookmarks.splice(fromIndex, 1);
-    updatedBookmarks.splice(toIndex, 0, movedItem);
-    // Reorder bookmarks.
-    dispatch(UpdateBookmarks({
-      bookmarks: updatedBookmarks.map((bookmark, index) => ({...bookmark, order_number: index})),
-      update: true,
-      language,
-      channel,
-      preset: activePreset,
-    })).then(() => {
-      return dispatch(GetBookmarks({ language, channel, preset: activePreset }));
+  // Dragging reorders locally; the single backend call happens on drop.
+  const moveCard = (fromIndex, toIndex) => dispatch(moveBookmark({ from: fromIndex, to: toIndex }));
+  const handleReorderEnd = () => {
+    dispatch(ReorderBookmarks()).then((r) => {
+      if (r.error) dispatch(GetBookmarks({ language, channel, preset: activePreset, read_after_write: true }));
     });
   };
 
@@ -546,13 +542,14 @@ const Subtitles = () => {
                 {bookmarks.length > 0 &&
                   bookmarks.map((bookmark, index) => (
                     <DraggableItem
-                      key={index}
+                      key={bookmark.bookmark_id}
                       parentId={bookmark.id}
                       parentBookmarkId={bookmark.bookmark_id}
                       text={bookmark.bookmark_path}
                       parentBookmarkFileUid={bookmark.file_uid}
                       parentIndex={index}
                       moveCard={moveCard}
+                      onDragEnd={handleReorderEnd}
                       parentSlideId={bookmark.slide_id}
                       bookmarkDeleted={(lsn = undefined) => dispatch(GetBookmarks({ language, channel, preset: activePreset, lsn }))}
                     />

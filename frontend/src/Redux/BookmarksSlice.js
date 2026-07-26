@@ -50,6 +50,16 @@ export const UpdateBookmarks = createAsyncThunk(
 );
 
 
+// Persists the current bookmark order in one transactional PATCH; called on
+// drop, after moveBookmark() has reordered the list locally during the drag.
+export const ReorderBookmarks = createAsyncThunk(
+  "bookmarks/reorder",
+  async (_, { getState }) => {
+    const items = getState().bookmarks.bookmarks.map((b, i) => ({ id: b.bookmark_id, order_number: i }));
+    await axios.patch(`${API}bookmark/reorder`, items);
+  }
+);
+
 // Delete bookmark.
 export const UnBookmarkSlide = createAsyncThunk(
   "bookmarks/delete",
@@ -65,6 +75,12 @@ const BookmarksSlice = createSlice({
   reducers: {
     setActivePreset(state, action) {
       state.activePreset = action.payload;
+    },
+    // Local-only reorder while dragging; no API call.
+    moveBookmark(state, action) {
+      const { from, to } = action.payload;
+      const [moved] = state.bookmarks.splice(from, 1);
+      state.bookmarks.splice(to, 0, moved);
     },
   },
   extraReducers: (builder) => {
@@ -92,5 +108,5 @@ const BookmarksSlice = createSlice({
   },
 });
 
-export const { setActivePreset } = BookmarksSlice.actions;
+export const { setActivePreset, moveBookmark } = BookmarksSlice.actions;
 export default BookmarksSlice.reducer;
