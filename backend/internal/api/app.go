@@ -27,6 +27,7 @@ const (
 	LanguageCodeTurkish   = "tr"
 	LanguageCodeGerman    = "de"
 	LanguageCodeFrench    = "fr"
+	LanguageCodeRomanian  = "ro"
 
 	SourcePathUpdateTermHour = 6
 )
@@ -41,6 +42,7 @@ var LanguageCodes = []string{
 	LanguageCodeTurkish,
 	LanguageCodeGerman,
 	LanguageCodeFrench,
+	LanguageCodeRomanian,
 }
 
 func NewApp(sig chan os.Signal) *http.Server {

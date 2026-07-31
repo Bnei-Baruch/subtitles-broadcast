@@ -13,6 +13,8 @@ config_test.yaml
 # Logs
 *.log
 
+.mcp.json
+
 ########################################
 # Go backend ignore rules
 ########################################
