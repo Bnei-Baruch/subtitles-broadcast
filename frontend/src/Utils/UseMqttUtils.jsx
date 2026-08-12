@@ -43,6 +43,8 @@ export default function useMqtt() {
   const clientIdRef = useRef(null);
   const periodicCheckIntervalRef = useRef(null);
   const isReconnectingRef = useRef(false);
+  const disconnectTimerRef = useRef(null);      // grace timer; non-null while a disconnect is pending a toast
+  const disconnectToastShownRef = useRef(false); // did we actually tell the user we're down?
   const dispatch = useDispatch();
   const mqttTopics = useSelector((state) => state.mqtt.mqttTopics);
   const broadcastLangCode = useSelector((state) => state.userSettings.userSettings.broadcast_language_code || "he");
@@ -125,6 +127,23 @@ export default function useMqtt() {
       }
     };
 
+    // Routine token-refresh reconnects recover within ~1-2s. Only toast a
+    // disconnect if we stay down past this window — that keeps the ~15-min
+    // token-refresh churn (and brief blips) off the green-screen video stream.
+    const DISCONNECT_GRACE = 10000; // ms
+    const scheduleDisconnectToast = () => {
+      if (disconnectTimerRef.current || disconnectToastShownRef.current) return;
+      disconnectTimerRef.current = setTimeout(() => {
+        disconnectTimerRef.current = null;
+        disconnectToastShownRef.current = true;
+        dispatch(addMqttNotification({ message: "MQTT disconnected. Reconnecting…", type: "error" }));
+      }, DISCONNECT_GRACE);
+    };
+    const cancelDisconnectToast = () => {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
+    };
+
     const handleOnline = () => {
       debugLog("[NETWORK] Browser back online — forcing reconnect");
       tryReconnect();
@@ -167,12 +186,13 @@ export default function useMqtt() {
         isReconnectingRef.current = false;  // Clear reconnecting flag
         dispatch(setConnected(true));
 
-        // Show success notification on reconnect
-        if (isReconnect) {
-          dispatch(addMqttNotification({
-            message: "MQTT reconnected successfully.",
-            type: "success"
-          }));
+        // A drop that recovers within the grace window (e.g. token refresh)
+        // never toasted — stay silent. Only announce recovery if we actually
+        // told the user we were down.
+        cancelDisconnectToast();
+        if (disconnectToastShownRef.current) {
+          disconnectToastShownRef.current = false;
+          dispatch(addMqttNotification({ message: "MQTT reconnected successfully.", type: "success" }));
         }
 
         // Populate MQTT topics for the questions, subtitles, and on/off air
@@ -223,10 +243,7 @@ export default function useMqtt() {
         if (clientRef.current !== client) return;
         console.error("MQTT Connection Error:", err);
         debugLog("[ERROR EVENT] MQTT connection error - will reconnect");
-        dispatch(addMqttNotification({
-          message: "MQTT Connection Failed.",
-          type: "error"
-        }));
+        scheduleDisconnectToast();
         dispatch(setConnected(false));
         // Immediately try to reconnect on error
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);
@@ -246,10 +263,7 @@ export default function useMqtt() {
         if (clientRef.current !== client) return;
         debugLog("[OFFLINE EVENT] MQTT went offline");
         dispatch(setConnected(false));
-        dispatch(addMqttNotification({
-          message: "MQTT offline. Will reconnect.",
-          type: "error"
-        }));
+        scheduleDisconnectToast();
         // Immediately try to reconnect when offline
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);
       });
@@ -262,6 +276,7 @@ export default function useMqtt() {
         // blocks manual reconnects — including the browser 'online' handler.
         isReconnectingRef.current = false;
         dispatch(setConnected(false));
+        scheduleDisconnectToast();
         // Immediately try to reconnect on close
         setTimeout(() => tryReconnect(), IMMEDIATE_RECONNECT_DELAY);
       });
@@ -271,6 +286,7 @@ export default function useMqtt() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       stopConnectionCheck();
+      cancelDisconnectToast();
       if (clientRef.current && clientRef.current.end) {
         debugLog("Disconnecting MQTT...");
         clientRef.current.end();

@@ -3,6 +3,14 @@ import { toast } from "react-toastify";
 import { useRef } from 'react';
 import isEqual from 'lodash/isEqual'; 
 
+// Per-window toast gate. Only the green window passes ?toasts=0|1 (set by the
+// checkbox next to the Green Window button). Any window without the param
+// (i.e. the main app) keeps toasts on. When off, toasts are suppressed but the
+// console.log in the helpers still fires — so the green-screen video stream
+// stays clean while everything is still observable in the console.
+const _toastParam = new URLSearchParams(window.location.search).get("toasts");
+const toastsEnabled = _toastParam === null || _toastParam === "1";
+
 export const defaultToastOptions = {
   position: "bottom-right",
   autoClose: 3000,
@@ -19,7 +27,8 @@ export const defaultToastOptions = {
  * @param {object} options - Additional options to override defaults.
  */
 export const showSuccessToast = (message, options = {}) => {
-  toast.success(message, { ...defaultToastOptions, ...options });
+  console.log(`[toast:success] ${message}`);
+  if (toastsEnabled) toast.success(message, { ...defaultToastOptions, ...options });
 };
 
 /**
@@ -28,7 +37,8 @@ export const showSuccessToast = (message, options = {}) => {
  * @param {object} options - Additional options to override defaults.
  */
 export const showErrorToast = (message, options = {}) => {
-  toast.error(message, { ...defaultToastOptions, ...options });
+  console.error(`[toast:error] ${message}`);
+  if (toastsEnabled) toast.error(message, { ...defaultToastOptions, ...options });
 };
 
 export function parseMqttMessage(mqttMessage) {
