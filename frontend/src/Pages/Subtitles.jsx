@@ -39,6 +39,7 @@ const Subtitles = () => {
 
   const [editSlideId, setEditSlideId] = useState("");
   const [searchSlide, setSearchSlide] = useState("");
+  const [showGreenToasts, setShowGreenToasts] = useState(false);
   const { slides } = useSelector((state) => state.slides);
   const maxSlideIndex = slides.length ? slides[slides.length - 1].order_number : 0;
 
@@ -303,7 +304,7 @@ const Subtitles = () => {
       'left=200',
       'top=200',
     ].join(',');
-    window.open('/green-window', '_blank', popupFeatures);
+    window.open(`/green-window?toasts=${showGreenToasts ? 1 : 0}`, '_blank', popupFeatures);
   };
 
   return (
@@ -389,6 +390,13 @@ const Subtitles = () => {
                 role="group"
                 aria-label="Basic mixed styles example"
               ></div>
+              <input
+                type="checkbox"
+                checked={showGreenToasts}
+                onChange={(e) => setShowGreenToasts(e.target.checked)}
+                title="Show MQTT toasts on the green window (console.log always logs)"
+                style={{ marginRight: 6 }}
+              />
               <button
                 type="button"
                 onClick={() => openGreenScreen()}
