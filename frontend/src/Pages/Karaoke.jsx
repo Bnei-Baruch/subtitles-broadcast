@@ -17,8 +17,8 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import {
-  KARAOKE_GROUPS,
   GetKaraokeSongs,
+  GetKaraokeGroups,
   GetKaraokeSlides,
   GetKaraokeSetlist,
   GetKaraokePresets,
@@ -42,13 +42,17 @@ import { publishKaraoke, restoreKaraoke, publishSubtitle, publishQuestion, publi
 import { setLiveModeEnabled, setSubtitlesDisplayMode } from "../Redux/MQTT/mqttSlice";
 import { clearSlices } from "../Redux/SlidesSlice";
 import { DM_NONE, DM_SUBTITLES, DM_QUESTIONS, DM_KARAOKE } from "../Utils/Const";
-import { getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic, isNonLatinScript, isSameLanguagePair } from "../Utils/Common";
+import { getKaraokeMqttTopic, getSubtitleMqttTopic, getQuestionMqttTopic } from "../Utils/Common";
 import EventDropdown from "../Components/EventDropdown";
 import { Edit } from "../Components/Edit";
 import Preview from "../Components/Preview";
 import "./PagesCSS/Karaoke.css";
 
 const GROUP_LABELS = { "": "All", songbook: "Songbook", shabat: "Shabat", origin: "Origin", general: "General" };
+// Known defaults get a pretty label; custom groups show their raw name.
+const labelFor = (g) => GROUP_LABELS[g] || g;
+// Trim + collapse whitespace, matching the backend's normalizeKaraokeGroup.
+const promptNewGroup = () => (window.prompt("New group name") || "").trim().replace(/\s+/g, " ");
 
 const SETLIST_DRAG_TYPE = "karaoke-setlist-item";
 
@@ -114,7 +118,7 @@ const Karaoke = () => {
   const [editMode, setEditMode] = useState(false);
   const [localSetlist, setLocalSetlist] = useState([]);
 
-  const { songs, setlist, slides, activeSongFileUid, activeSlideIndex, activeGroup, karaokePresets, activeKaraokePreset } = useSelector(
+  const { songs, setlist, slides, activeSongFileUid, activeSlideIndex, activeGroup, karaokeGroups, karaokePresets, activeKaraokePreset } = useSelector(
     (state) => state.karaoke
   );
   const { broadcast_program_code: channel, broadcast_language_code: language } = useSelector(
@@ -135,6 +139,16 @@ const Karaoke = () => {
     }, librarySearch ? 300 : 0);
     return () => clearTimeout(timer);
   }, [dispatch, activeGroup, showHidden, librarySearch]);
+
+  useEffect(() => {
+    dispatch(GetKaraokeGroups({ showHidden }));
+  }, [dispatch, showHidden]);
+
+  // A group auto-vanishes once its last song leaves; if the active filter was
+  // that group, fall back to "All" so we don't sit on an empty, missing tab.
+  useEffect(() => {
+    if (activeGroup && !karaokeGroups.includes(activeGroup)) dispatch(setActiveGroup(""));
+  }, [dispatch, karaokeGroups, activeGroup]);
 
   useEffect(() => {
     if (channel) {
@@ -172,7 +186,10 @@ const Karaoke = () => {
         formData.append("file", files[0]);
         formData.append("group", importGroup);
         const result = await dispatch(ImportKaraokeFile({ formData }));
-        if (!result.error) dispatch(GetKaraokeSongs({ group: activeGroup }));
+        if (!result.error) {
+          dispatch(GetKaraokeSongs({ group: activeGroup, readAfterWrite: true }));
+          dispatch(GetKaraokeGroups({ showHidden, readAfterWrite: true }));
+        }
         return;
       }
 
@@ -195,10 +212,11 @@ const Karaoke = () => {
         setImportProgress({ done, total: files.length, errors });
       }
 
-      dispatch(GetKaraokeSongs({ group: activeGroup }));
+      dispatch(GetKaraokeSongs({ group: activeGroup, readAfterWrite: true }));
+      dispatch(GetKaraokeGroups({ showHidden, readAfterWrite: true }));
       setImportProgress(null);
     },
-    [dispatch, importGroup, activeGroup]
+    [dispatch, importGroup, activeGroup, showHidden]
   );
 
   const handleSelectSong = useCallback(
@@ -256,7 +274,8 @@ const Karaoke = () => {
             const toRemove = setlist.filter((s) => s.file_uid === deletedSong.file_uid);
             toRemove.forEach((s) => dispatch(RemoveFromSetlist({ id: s.id })));
           }
-          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden }));
+          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, readAfterWrite: true }));
+          dispatch(GetKaraokeGroups({ showHidden, readAfterWrite: true }));
           dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
         }
       });
@@ -269,7 +288,8 @@ const Karaoke = () => {
     (song, group) => {
       dispatch(MoveKaraokeSong({ sourcePathId: song.source_path_id, group })).then((result) => {
         if (!result.error) {
-          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, keyword: librarySearch }));
+          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, keyword: librarySearch, readAfterWrite: true }));
+          dispatch(GetKaraokeGroups({ showHidden, readAfterWrite: true }));
         }
       });
       setMoveMenu(null);
@@ -281,7 +301,8 @@ const Karaoke = () => {
     (sourceUid) => {
       dispatch(RestoreKaraokeSong({ source_uid: sourceUid })).then((result) => {
         if (!result.error) {
-          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden }));
+          dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, readAfterWrite: true }));
+          dispatch(GetKaraokeGroups({ showHidden, readAfterWrite: true }));
         }
       });
     },
@@ -510,12 +531,18 @@ const Karaoke = () => {
                 <select
                   className="group-select"
                   value={importGroup}
-                  onChange={(e) => setImportGroup(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value === "__new__") {
+                      const name = promptNewGroup();
+                      if (name) setImportGroup(name);
+                    } else setImportGroup(e.target.value);
+                  }}
                   title="Destination group for import"
                 >
-                  {KARAOKE_GROUPS.map((g) => (
-                    <option key={g} value={g}>{GROUP_LABELS[g]}</option>
+                  {[...new Set([...karaokeGroups, importGroup])].map((g) => (
+                    <option key={g} value={g}>{labelFor(g)}</option>
                   ))}
+                  <option value="__new__">＋ New group…</option>
                 </select>
                 <IconButton size="small" onClick={() => setLibraryOpen(false)} title="Collapse library">
                   <KeyboardDoubleArrowLeftIcon fontSize="small" />
@@ -544,13 +571,13 @@ const Karaoke = () => {
           {libraryOpen && <>
           {/* Group filter tabs */}
           <div className="group-tabs">
-            {["", ...KARAOKE_GROUPS].map((g) => (
+            {["", ...karaokeGroups].map((g) => (
               <button
                 key={g}
                 className={`group-tab${activeGroup === g ? " active" : ""}`}
                 onClick={() => handleGroupChange(g)}
               >
-                {GROUP_LABELS[g]}
+                {labelFor(g)}
               </button>
             ))}
             <div className="form-check mb-0 text-nowrap" style={{ marginLeft: "auto", padding: "4px 8px 4px 28px" }}>
@@ -673,11 +700,19 @@ const Karaoke = () => {
               <div className="empty-hint">No songs yet. Import a PPTX file.</div>
             )}
             <Menu anchorEl={moveMenu?.anchorEl} open={!!moveMenu} onClose={() => setMoveMenu(null)}>
-              {KARAOKE_GROUPS.filter((g) => g !== moveMenu?.song.source_group).map((g) => (
+              {karaokeGroups.filter((g) => g !== moveMenu?.song.source_group).map((g) => (
                 <MenuItem key={g} onClick={() => handleMoveSong(moveMenu.song, g)}>
-                  {GROUP_LABELS[g]}
+                  {labelFor(g)}
                 </MenuItem>
               ))}
+              <MenuItem
+                onClick={() => {
+                  const name = promptNewGroup();
+                  if (name && moveMenu) handleMoveSong(moveMenu.song, name);
+                }}
+              >
+                ＋ New group…
+              </MenuItem>
             </Menu>
           </div>
           </>}
@@ -778,13 +813,7 @@ const Karaoke = () => {
               const half = Math.ceil(visibleSlides.length / 2);
               const renderSlide = (slide) => {
                 const isActive = activeSlideIndex === slide.order_number;
-                const lines = slide.slide.split("\n");
-                const firstLine = lines[0] || "";
-                const secondLine = lines[1] || "";
-                const sameLangSlide = secondLine && isSameLanguagePair(firstLine, secondLine);
-                // Hebrew pairs render both lines identically; Latin pairs keep
-                // the secondary tone to hint line 2 at a glance.
-                const secondaryClass = isNonLatinScript(secondLine) ? "" : "slide-text-secondary";
+                const lines = slide.slide.split("\n").map((l) => l.trim()).filter(Boolean);
                 return (
                   <div
                     key={slide.ID}
@@ -794,10 +823,10 @@ const Karaoke = () => {
                   >
                     <span className="slide-num">{slide.order_number + 1}</span>
                     <span className="slide-text-preview">
-                      <span>{highlight(firstLine.slice(0, 80))}</span>
-                      {sameLangSlide && (
-                        <span className={secondaryClass}>{highlight(secondLine.slice(0, 80))}</span>
-                      )}
+                      {lines.length === 0 && <span>&nbsp;</span>}
+                      {lines.map((line, i) => (
+                        <span key={i} dir="auto">{highlight(line.slice(0, 80))}</span>
+                      ))}
                     </span>
                   </div>
                 );

@@ -43,6 +43,7 @@ func NewRouter(handler *Handler) http.Handler {
 	v1.POST("/user/settings", handler.UpdateUserSettings)
 
 	v1.POST("/karaoke/parse", handler.ParseKaraokeFile)
+	v1.GET("/karaoke/groups", handler.GetKaraokeGroups)
 
 	v1.GET("/ready", handler.Ready)
 

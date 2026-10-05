@@ -26,4 +26,17 @@ describe("isSameLanguagePair (karaoke secondary-line styling)", () => {
     expect(isSameLanguagePair("שורה ראשונה", "Shura rishona")).toBe(false);
     expect(isSameLanguagePair("Shura rishona", "שורה ראשונה")).toBe(false);
   });
+
+  it("two different non-Latin languages are not a same-language pair", () => {
+    // Hebrew + Arabic (both orders)
+    expect(isSameLanguagePair("שלום עולם", "أغنية")).toBe(false);
+    expect(isSameLanguagePair("أغنية", "שלום עולם")).toBe(false);
+    // Cyrillic + Hebrew
+    expect(isSameLanguagePair("Привет мир", "שלום עולם")).toBe(false);
+  });
+
+  it("same non-Latin language on both lines is a same-language pair", () => {
+    expect(isSameLanguagePair("Привет", "мир")).toBe(true); // Cyrillic + Cyrillic
+    expect(isSameLanguagePair("أغنية", "جديدة")).toBe(true); // Arabic + Arabic
+  });
 });

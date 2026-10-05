@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -1316,6 +1315,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		sourceGroup := ctx.Query("source_group")
 		keyword := ctx.Query("keyword")
 		showHidden := ctx.Query("show_hidden") == "true"
+		force_master := forceMaster(ctx)
 		filesJoin := "INNER JOIN " + DBTableFiles + " f ON f.file_uid = sp.source_uid"
 		if !showHidden {
 			filesJoin += " AND f.hidden = FALSE"
@@ -1326,7 +1326,7 @@ func (h *Handler) GetSourcePath(ctx *gin.Context) {
 		}
 		query := h.Database.Debug().WithContext(ctx).
 			Table(DBTableSourcePaths+" sp").
-			Select(`sp.id AS source_path_id,
+			Select(force_master + `sp.id AS source_path_id,
 				sp.source_uid AS source_uid,
 				sp.path AS path,
 				sp.source_type AS source_type,
@@ -1485,13 +1485,10 @@ func (h *Handler) UpdateSourcePath(ctx *gin.Context) {
 	if req.SourcePath != "" {
 		updates["path"] = req.SourcePath
 	}
-	if req.SourceGroup != "" {
-		if !slices.Contains(KaraokeGroups, req.SourceGroup) {
-			ctx.JSON(http.StatusBadRequest,
-				getResponse(false, nil, "Invalid source_group: "+req.SourceGroup, "Update source path has failed"))
-			return
-		}
-		updates["source_group"] = req.SourceGroup
+	if group := normalizeKaraokeGroup(req.SourceGroup); group != "" {
+		// Groups are free-form: any non-empty name is accepted (created on first
+		// use, auto-removed when its last song leaves). No fixed allow-list.
+		updates["source_group"] = group
 	}
 	result = h.Database.Debug().Model(&SourcePath{}).
 		Where("id = ?", sourcePathID).
