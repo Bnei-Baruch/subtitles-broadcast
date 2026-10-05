@@ -95,11 +95,6 @@ export function languageIsLtr(langCode) {
 }
 
 export const visibleSlideOrNull = (s) => (s && s.visible !== false && s.slide && s.slide.trim() && s) || null;
-// True when the line contains Hebrew, Arabic, or Cyrillic characters.
-// Used to detect transliteration vs same-language second lines.
-export const isNonLatinScript = (line) =>
-  /[֐-׿؀-ۿЀ-ӿ]/.test(line);
-
 // Classify a line by its dominant script. Each real script is its own class so
 // different-language pairs (e.g. Hebrew+Arabic, Cyrillic+Hebrew) are never
 // mistaken for same-language lyrics.

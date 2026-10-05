@@ -1,17 +1,4 @@
-import { isNonLatinScript, isSameLanguagePair } from "./Common";
-
-describe("isNonLatinScript", () => {
-  it("detects Hebrew, Arabic and Cyrillic", () => {
-    expect(isNonLatinScript("שיר חדש")).toBe(true);
-    expect(isNonLatinScript("أغنية")).toBe(true);
-    expect(isNonLatinScript("песня")).toBe(true);
-  });
-
-  it("is false for Latin script and empty lines", () => {
-    expect(isNonLatinScript("Shir Chadash")).toBe(false);
-    expect(isNonLatinScript("")).toBe(false);
-  });
-});
+import { isSameLanguagePair } from "./Common";
 
 describe("isSameLanguagePair (karaoke secondary-line styling)", () => {
   it("Hebrew + Hebrew is a same-language pair", () => {

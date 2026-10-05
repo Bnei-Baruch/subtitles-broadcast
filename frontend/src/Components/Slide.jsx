@@ -7,7 +7,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
   const isKaraoke = slide_type === "karaoke";
   // Karaoke renders nothing for empty/separator slides; the resize effect must
   // re-attach when the bar (re)appears, since refs are null while hidden.
-  const karaokeLines = isKaraoke ? (content || "").split("\n").filter((l) => l.trim() !== "") : [];
+  const karaokeLines = isKaraoke ? (content || "").split("\n").map((l) => l.trim()).filter(Boolean) : [];
   const karaokeHidden = isKaraoke && (!karaokeLines[0] || /^[-_\s]+$/.test(karaokeLines[0]));
   const outerRef = useRef();
   const slideRef = useRef();
