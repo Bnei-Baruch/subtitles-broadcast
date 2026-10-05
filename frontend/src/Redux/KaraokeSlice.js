@@ -20,18 +20,33 @@ const initialState = {
   activeSongFileUid: null,
   activeSlideIndex: null,
   activeGroup: "",
+  karaokeGroups: [...KARAOKE_GROUPS],
   karaokePresets: [],
   activeKaraokePreset: "",
 };
 
-export const GetKaraokeSongs = createAsyncThunk("karaoke/getSongs", async ({ group = "", showHidden = false, keyword = "" } = {}) => {
+export const GetKaraokeSongs = createAsyncThunk("karaoke/getSongs", async ({ group = "", showHidden = false, keyword = "", readAfterWrite = false } = {}) => {
   const params = {
     source_type: "karaoke",
     ...(group && { source_group: group }),
     ...(showHidden && { show_hidden: "true" }),
     ...(keyword && { keyword }),
+    ...(readAfterWrite && { read_after_write: "true" }),
   };
   const response = await axios.get(`${API}source_path`, { params });
+  return response.data.data;
+});
+
+// Distinct groups currently in use, unioned with the defaults (server-side).
+// A new group appears once a song is imported/moved into it, and auto-vanishes
+// when its last song leaves — no table, no explicit delete.
+export const GetKaraokeGroups = createAsyncThunk("karaoke/getGroups", async ({ showHidden = false, readAfterWrite = false } = {}) => {
+  const response = await axios.get(`${API}karaoke/groups`, {
+    params: {
+      ...(showHidden && { show_hidden: "true" }),
+      ...(readAfterWrite && { read_after_write: "true" }),
+    },
+  });
   return response.data.data;
 });
 
@@ -197,6 +212,9 @@ const KaraokeSlice = createSlice({
     builder
       .addCase(GetKaraokeSongs.fulfilled, (state, action) => {
         state.songs = sortSongs(action.payload || []);
+      })
+      .addCase(GetKaraokeGroups.fulfilled, (state, action) => {
+        state.karaokeGroups = action.payload || [...KARAOKE_GROUPS];
       })
       .addCase(UpdateKaraokeSongName.fulfilled, (state, action) => {
         const { sourceUid, name } = action.payload;

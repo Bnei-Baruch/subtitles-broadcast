@@ -25,7 +25,59 @@ const (
 	wordprocessingNS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 )
 
+// KaraokeGroups are the built-in defaults always offered in the UI. Groups are
+// otherwise free-form: any name is created on first use and auto-removed when
+// its last song leaves (see GetKaraokeGroups).
 var KaraokeGroups = []string{"songbook", "shabat", "origin", "general"}
+
+// normalizeKaraokeGroup trims and collapses whitespace so " shabat " and
+// "shabat" don't become distinct groups. Case is preserved for display.
+func normalizeKaraokeGroup(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
+// GetKaraokeGroups returns the distinct karaoke group names currently in use,
+// unioned with the built-in defaults so the UI always has a baseline set.
+// A group is "in use" only while it has a visible song — delete soft-hides the
+// song's file (the SourcePath row lingers), so we join files and filter on
+// hidden to match the library list's visibility. show_hidden=true includes
+// groups whose only songs are hidden.
+func (h *Handler) GetKaraokeGroups(ctx *gin.Context) {
+	filesJoin := "INNER JOIN " + DBTableFiles + " f ON f.file_uid = sp.source_uid"
+	if ctx.Query("show_hidden") != "true" {
+		filesJoin += " AND f.hidden = FALSE"
+	}
+	force_master := forceMaster(ctx)
+	// GROUP BY (not DISTINCT) so force_master's random() can live in the SELECT
+	// list, matching how the primary is forced elsewhere.
+	var rows []struct{ SourceGroup string }
+	if err := h.Database.WithContext(ctx).Table(DBTableSourcePaths+" sp").
+		Select(force_master + "sp.source_group AS source_group").
+		Joins(filesJoin).
+		Where("sp.source_type = ? AND sp.source_group <> ''", KaraokeSlideType).
+		Group("sp.source_group").
+		Scan(&rows).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, getResponse(false, nil, err.Error(), "Failed to load karaoke groups"))
+		return
+	}
+	used := make([]string, len(rows))
+	for i, r := range rows {
+		used[i] = r.SourceGroup
+	}
+	set := map[string]bool{}
+	for _, g := range KaraokeGroups {
+		set[g] = true
+	}
+	for _, g := range used {
+		set[g] = true
+	}
+	groups := make([]string, 0, len(set))
+	for g := range set {
+		groups = append(groups, g)
+	}
+	sort.Strings(groups)
+	ctx.JSON(http.StatusOK, getResponse(true, groups, "", ""))
+}
 
 type parsedSlide struct {
 	text      string
@@ -302,15 +354,8 @@ func (h *Handler) ParseKaraokeFile(ctx *gin.Context) {
 		title = header.Filename
 	}
 
-	group := ctx.PostForm("group")
-	validGroup := false
-	for _, g := range KaraokeGroups {
-		if g == group {
-			validGroup = true
-			break
-		}
-	}
-	if !validGroup {
+	group := normalizeKaraokeGroup(ctx.PostForm("group"))
+	if group == "" {
 		group = "general"
 	}
 

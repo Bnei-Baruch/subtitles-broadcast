@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { createMarkdownit } from "../Utils/SlideSplit";
-import { isNonLatinScript, isSameLanguagePair } from "../Utils/Common";
+import { isSameLanguagePair } from "../Utils/Common";
 import "../Pages/PagesCSS/GreenWindow.css";
 
 export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, slide_type, onOverflow = undefined }) => {
   const isKaraoke = slide_type === "karaoke";
   // Karaoke renders nothing for empty/separator slides; the resize effect must
   // re-attach when the bar (re)appears, since refs are null while hidden.
-  const karaokeLines = isKaraoke ? (content || "").split("\n").filter((l) => l.trim() !== "") : [];
+  const karaokeLines = isKaraoke ? (content || "").split("\n").map((l) => l.trim()).filter(Boolean) : [];
   const karaokeHidden = isKaraoke && (!karaokeLines[0] || /^[-_\s]+$/.test(karaokeLines[0]));
   const outerRef = useRef();
   const slideRef = useRef();
@@ -84,7 +84,6 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
     if (karaokeHidden) return null;
     const primaryLine = karaokeLines[0];
     const secondaryLine = karaokeLines[1] || "";
-    const primaryDir = isNonLatinScript(primaryLine) ? "rtl" : "ltr";
     // Same script on both lines → same-language lyrics → yellow, same size.
     // Mixed scripts → transliteration pair → white.
     const sameLang = isSameLanguagePair(primaryLine, secondaryLine);
@@ -93,10 +92,11 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
       <div key="karaoke" ref={outerRef} className="karaoke-slide-outer">
         <div ref={slideRef} className="karaoke-slide-inner">
           <div className="karaoke-bar">
-            <div className="karaoke-line karaoke-line-primary" style={{ direction: primaryDir }}>{primaryLine}</div>
+            <div className="karaoke-line karaoke-line-primary" dir="auto">{primaryLine}</div>
             {secondaryLine && (
               <div
                 className="karaoke-line karaoke-line-secondary"
+                dir="auto"
                 style={{ color: secondaryColor, fontSize: sameLang ? "88px" : undefined }}
               >{secondaryLine}</div>
             )}

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { useSelector } from "react-redux";
 import "./Layout.css";
 import HeaderBar from "../Layout/HeaderBar";
 import { isOperator, isTranslator } from "../Utils/Auth";
@@ -19,9 +18,6 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
     localStorage.setItem("sideNavCollapsed", String(!collapsed));
     setCollapsed(!collapsed);
   };
-  const broadcastLangCode = useSelector(
-    (state) => state.userSettings.userSettings.broadcast_language_code || "he"
-  );
 
   return (
     <>
@@ -65,7 +61,7 @@ const SideNavBar = ({ logout, securityRoles, authKeycloak }) => {
               </li>
             )}
 
-            {isOperator(securityRoles) && broadcastLangCode === "he" && (
+            {isOperator(securityRoles) && (
               <li>
                 <NavLink to={"/karaoke"} className="nav-link text-white" title="Karaoke">
                   <LibraryMusicOutlinedIcon className="nav-icon" />{" "}

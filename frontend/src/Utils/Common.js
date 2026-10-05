@@ -95,16 +95,19 @@ export function languageIsLtr(langCode) {
 }
 
 export const visibleSlideOrNull = (s) => (s && s.visible !== false && s.slide && s.slide.trim() && s) || null;
-// True when the line contains Hebrew, Arabic, or Cyrillic characters.
-// Used to detect transliteration vs same-language second lines.
-export const isNonLatinScript = (line) =>
-  /[֐-׿؀-ۿЀ-ӿ]/.test(line);
+// Classify a line by its dominant script. Each real script is its own class so
+// different-language pairs (e.g. Hebrew+Arabic, Cyrillic+Hebrew) are never
+// mistaken for same-language lyrics.
+export const scriptOf = (line) =>
+  /[֐-׿]/.test(line) ? "he" :
+  /[؀-ۿݐ-ݿ]/.test(line) ? "ar" :
+  /[Ѐ-ӿ]/.test(line) ? "cyr" : "latin";
 
-// A karaoke slide's two lines are the same language when both are the same
-// script class (both Hebrew/Arabic/Cyrillic or both Latin); a mixed pair is a
-// transliteration and is styled differently.
+// A karaoke slide's two lines are the same language when they share the exact
+// same script class; any mismatch (transliteration OR a different language) is
+// styled differently.
 export const isSameLanguagePair = (line1, line2) =>
-  isNonLatinScript(line1) === isNonLatinScript(line2);
+  scriptOf(line1) === scriptOf(line2);
 
 export function useDeepMemo(value) {
     const ref = useRef();

@@ -1,17 +1,4 @@
-import { isNonLatinScript, isSameLanguagePair } from "./Common";
-
-describe("isNonLatinScript", () => {
-  it("detects Hebrew, Arabic and Cyrillic", () => {
-    expect(isNonLatinScript("שיר חדש")).toBe(true);
-    expect(isNonLatinScript("أغنية")).toBe(true);
-    expect(isNonLatinScript("песня")).toBe(true);
-  });
-
-  it("is false for Latin script and empty lines", () => {
-    expect(isNonLatinScript("Shir Chadash")).toBe(false);
-    expect(isNonLatinScript("")).toBe(false);
-  });
-});
+import { isSameLanguagePair } from "./Common";
 
 describe("isSameLanguagePair (karaoke secondary-line styling)", () => {
   it("Hebrew + Hebrew is a same-language pair", () => {
@@ -25,5 +12,18 @@ describe("isSameLanguagePair (karaoke secondary-line styling)", () => {
   it("Hebrew + transliteration is not a same-language pair", () => {
     expect(isSameLanguagePair("שורה ראשונה", "Shura rishona")).toBe(false);
     expect(isSameLanguagePair("Shura rishona", "שורה ראשונה")).toBe(false);
+  });
+
+  it("two different non-Latin languages are not a same-language pair", () => {
+    // Hebrew + Arabic (both orders)
+    expect(isSameLanguagePair("שלום עולם", "أغنية")).toBe(false);
+    expect(isSameLanguagePair("أغنية", "שלום עולם")).toBe(false);
+    // Cyrillic + Hebrew
+    expect(isSameLanguagePair("Привет мир", "שלום עולם")).toBe(false);
+  });
+
+  it("same non-Latin language on both lines is a same-language pair", () => {
+    expect(isSameLanguagePair("Привет", "мир")).toBe(true); // Cyrillic + Cyrillic
+    expect(isSameLanguagePair("أغنية", "جديدة")).toBe(true); // Arabic + Arabic
   });
 });
