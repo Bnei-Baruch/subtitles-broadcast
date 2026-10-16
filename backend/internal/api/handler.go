@@ -888,7 +888,7 @@ func (h *Handler) GetBookmarks(ctx *gin.Context) {
 		karaokePreset := ctx.Query("preset")
 		var items []karaokeRow
 		result := h.Database.WithContext(ctx).
-			Select("b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, COALESCE(NULLIF(sp.path, ''), f.filename) AS filename, COUNT(s.id) as slide_count").
+			Select(forceMaster(ctx) + "b.id, b.file_uid, b.order_number, b.channel, b.created_at, b.created_by, COALESCE(NULLIF(sp.path, ''), f.filename) AS filename, COUNT(s.id) as slide_count").
 			Table(DBTableBookmarks+" b").
 			Joins("INNER JOIN "+DBTableFiles+" f ON f.file_uid = b.file_uid").
 			Joins("LEFT JOIN "+DBTableSourcePaths+" sp ON sp.source_uid = f.source_uid").

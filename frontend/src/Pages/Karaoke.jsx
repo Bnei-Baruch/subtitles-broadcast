@@ -233,7 +233,7 @@ const Karaoke = () => {
     (fileUid) => {
       dispatch(AddToSetlist({ file_uid: fileUid, channel, preset: activeKaraokePreset })).then((result) => {
         if (!result.error) {
-          dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+          dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset, readAfterWrite: true }));
           dispatch(GetKaraokePresets({ channel }));
         }
       });
@@ -276,7 +276,7 @@ const Karaoke = () => {
           }
           dispatch(GetKaraokeSongs({ group: activeGroup, showHidden, readAfterWrite: true }));
           dispatch(GetKaraokeGroups({ showHidden, readAfterWrite: true }));
-          dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+          dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset, readAfterWrite: true }));
         }
       });
       setConfirmDeleteSourceUid(null);
@@ -315,7 +315,7 @@ const Karaoke = () => {
     const trimmed = value.trim();
     if (trimmed && sourcePathId) {
       dispatch(UpdateKaraokeSongName({ sourcePathId, name: trimmed, sourceUid })).then((r) => {
-        if (!r.error) dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+        if (!r.error) dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset, readAfterWrite: true }));
       });
     }
     setEditingSongName(null);
