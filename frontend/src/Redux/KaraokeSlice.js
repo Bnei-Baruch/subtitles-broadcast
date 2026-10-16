@@ -154,8 +154,10 @@ export const CreateKaraokePreset = presetThunks.createPreset;
 export const DeleteKaraokePreset = presetThunks.deletePreset;
 export const RenameKaraokePreset = presetThunks.renamePreset;
 
-export const GetKaraokeSetlist = createAsyncThunk("karaoke/getSetlist", async ({ channel, preset = "" }) => {
-  const response = await axios.get(`${API}bookmark`, { params: { channel, preset, type: "karaoke" } });
+export const GetKaraokeSetlist = createAsyncThunk("karaoke/getSetlist", async ({ channel, preset = "", readAfterWrite = false }) => {
+  const response = await axios.get(`${API}bookmark`, {
+    params: { channel, preset, type: "karaoke", ...(readAfterWrite && { read_after_write: "true" }) },
+  });
   return response.data.data;
 });
 
