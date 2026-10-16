@@ -158,7 +158,8 @@ const Karaoke = () => {
 
   useEffect(() => {
     if (channel) {
-      dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset }));
+      // read_after_write: a preset rename switches activeKaraokePreset right after the write.
+      dispatch(GetKaraokeSetlist({ channel, preset: activeKaraokePreset, readAfterWrite: true }));
     }
   }, [dispatch, channel, activeKaraokePreset]);
 
