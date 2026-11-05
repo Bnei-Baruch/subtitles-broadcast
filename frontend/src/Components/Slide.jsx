@@ -52,6 +52,7 @@ export const Slide = ({ content, isLtr, searchKeyword, isQuestion, renderer, sli
     if (isKaraoke && outerRef.current) {
       ro = new ResizeObserver(run);
       ro.observe(outerRef.current);
+      ro.observe(slideRef.current); // bar height follows its lines (1↔2, wraps, font swap)
     }
     return () => {
       window.removeEventListener("resize", run);
